@@ -68,6 +68,7 @@ K.fm = (c, t, W, H, p, C) => {            // operators (circles) orbit and feed 
   trace(c, (x) => Math.sin(TAU * 3 * x + idx * Math.sin(TAU * 3 * r * x + t * 2)), W * .5, H * .2, W * .45, H * .6, C.acc, 2.5);
 };
 K.osc = (c, t, W, H, p, C) => {           // the shapes, morphing one into the next
+  if ((p.shapes || []).includes("fold")) return K.west(c, t, W, H, p, C);
   const shapes = [Math.sin, (x) => saw(x / TAU), (x) => sq(x / TAU), (x) => tri(x / TAU)];
   const k = Math.floor(t / 2) % 4, m = Math.min(1, fract(t / 2) * 2), a = shapes[k], b = shapes[(k + 1) % 4];
   trace(c, (x) => lerp(a(TAU * 2 * x + t), b(TAU * 2 * x + t), m) * .85, 20, H * .15, W - 40, H * .7, C.acc, 3);
@@ -227,7 +228,7 @@ K.chord = (c, t, W, H, p, C) => {         // one key, a chord: the notes stack o
 };
 K.arp = (c, t, W, H, p, C) => {           // the held notes, played one by one in a pattern
   const notes = [0, 4, 7, 12], pat = p.pattern || "updown", s = Math.floor(t * 5);
-  const seq = pat === "down" ? [3, 2, 1, 0] : pat === "up" ? [0, 1, 2, 3] : pat === "random" ? [0, 2, 1, 3] : [0, 1, 2, 3, 2, 1];
+  const seq = pat === "down" ? [3, 2, 1, 0] : pat === "up" ? [0, 1, 2, 3] : pat === "random" || pat === "formula" ? [0, 2, 1, 3, 3, 0, 2] : [0, 1, 2, 3, 2, 1];
   const cur = seq[s % seq.length];
   for (let i = 0; i < 24; i++) { const k = seq[(s - 23 + i + 24 * seq.length) % seq.length]; dot(c, 20 + i * (W - 40) / 23, H * .8 - notes[k] * (H * .05), i === 23 ? 8 : 4, i === 23 ? C.acc : alpha(C.a2, .3 + i / 30)); }
   text(c, `${pat.toUpperCase()} · ${["C", "E", "G", "C"][cur]}`, W / 2, 18, C.fg, 12);
@@ -288,8 +289,8 @@ K.buses = (c, t, W, H, p, C) => {         // six tracks sending to the shared ef
   fx.forEach((f, k) => { box(c, W - 108, H * (.25 + k * .25) - 12, 92, 24, C.a2); text(c, f, W - 62, H * (.25 + k * .25), C.fg, 10); });
 };
 // MODULATORS -------------------------------------------------------------------------------------------------
-K.lfo = (c, t, W, H, p, C) => {           // a slow wave, and the knob it moves
-  const f = (x) => Math.sin(TAU * x);
+K.lfo = (c, t, W, H, p, C) => {           // a slow wave (its shape), and the knob it moves
+  const sh = p.shape || "sine", f = sh === "step" ? (x) => hash(Math.floor(x * 4)) * 2 - 1 : sh === "tri" ? tri : sh === "saw" ? saw : sh === "square" ? sq : (x) => Math.sin(TAU * x);
   trace(c, (x) => f(x * 2 + t * .4) * .8, 20, H * .15, W * .62, H * .7, C.acc, 2.5);
   const v = f(t * .4) * .5 + .5, cx = W * .83, cy = H / 2;
   ring(c, cx, cy, 30, alpha(C.fg, .3), 3);
@@ -411,8 +412,9 @@ export class Player {
       this.raf = 0;
       const r = this.c.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1), W = Math.max(1, r.width), H = Math.max(1, r.height);
       if (this.c.width !== Math.round(W * d)) { this.c.width = Math.round(W * d); this.c.height = Math.round(H * d); }
-      const c = this.ctx; c.setTransform(d, 0, 0, d, 0, 0); c.clearRect(0, 0, W, H);
-      try { anim(this.kind)(c, this.still ? 1.3 : (performance.now() - this.t0) / 1000, W, H, this.params, this.C || this.palette()); } catch (_) {}
+      const c = this.ctx, VW = Math.max(W, 520), k = W / VW;   // (a phone's small stage: drawn as a wider one, scaled down)
+      c.setTransform(d * k, 0, 0, d * k, 0, 0); c.clearRect(0, 0, VW, H / k);
+      try { anim(this.kind)(c, this.still ? 1.3 : (performance.now() - this.t0) / 1000, VW, H / k, this.params, this.C || this.palette()); } catch (_) {}
       if (!this.still && this.seen && document.contains(this.c)) this.raf = requestAnimationFrame(step);
     };
     this.raf = requestAnimationFrame(step);

@@ -234,7 +234,7 @@ jobs:
           cp rescue/fm1-rescue.html build/pages/rescue/index.html
           # (0.9.11) old and mistyped links (/installer/, /webapp/, a link with ":1:1" stuck to it) to the page they meant
           cp web/404.html build/pages/404.html
-          mkdir -p build/pages/docs && cp docs/cheatsheet-controls.pdf docs/cheatsheet-sound.pdf docs/cheatsheet-controls.png docs/cheatsheet-sound.png build/pages/docs/
+          mkdir -p build/pages/docs && cp docs/studio.png build/pages/docs/ && cp docs/cheatsheet-controls.pdf docs/cheatsheet-sound.pdf docs/cheatsheet-controls.png docs/cheatsheet-sound.png build/pages/docs/
           # (0.9.2) the navigation map the front page shows (tools/gen_nav_map.py), English and Spanish
           cp docs/navigation-map.png docs/navigation-map.svg docs/navigation-map.es.png docs/navigation-map.es.svg build/pages/docs/
           # (V10.8.21) the guides: what's new and the full manual, EN and ES, one self-contained page each

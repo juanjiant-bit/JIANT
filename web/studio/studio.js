@@ -10,7 +10,7 @@
 // same on their own.
 import { scrDecode, scrEncode, wavFile, zipStored, midiFile, SCR } from "./studio-lib.js";
 import { Daw } from "./daw.js";
-import { Player } from "./learn.js";
+import { Player, anim } from "./learn.js";
 import { captureBackup, restoreBackup, readBackup, songsNotRestored, BACKUP_IDS, bkU32, bkR32, bkCrc, bkPack, bkUnpack } from "./fm1backup.js";
 
 const $ = (id) => document.getElementById(id);
@@ -20,7 +20,7 @@ const MOCK = QS.get("mock") === "1";
 /* ------------------------------------------------------------------------------------------------- the words */
 const TEXT = {
   es: {
-    vLearn: "Cómo funciona", lrTitleFm: "JIANT FM por dentro", lrTitleByte: "JIANT BYTE por dentro", lrTry: "Probarlo en el emulador", lrWhere: "En la FM-1: ", lrNone: "Esta guía todavía se está escribiendo.",
+    vLearn: "Cómo funciona", lrIndex: "Índice", lrIndexLead: "Todo, de un vistazo: tocá cualquier elemento para abrir su página. Con ← y → pasás al siguiente.", lrTitleFm: "JIANT FM por dentro", lrTitleByte: "JIANT BYTE por dentro", lrTry: "Probarlo en el emulador", lrWhere: "En la FM-1: ", lrNone: "Esta guía todavía se está escribiendo.",
     vRescue: "Rescate", rsTitle: "Rescatar un FM-1", rsBeta: "experimental · sin probar en hardware",
     rsLead: "Para un FM-1 que no enciende o que la computadora no ve por USB (hard brick). Una placa RP2040 de pocos dólares hace todo sola: se conecta al USB-C del FM-1 con tres cables y le vuelve a escribir el firmware. Sin Python ni terminal: Studio arma el archivo para la placa.",
     rsFirstT: "Antes de empezar", rsFirst: "Si el FM-1 enciende y la computadora lo ve (aunque esté trabado o suene raro), no hace falta esto: usá Instalar, que lo actualiza por USB.", rsToInstall: "Ir a Instalar",
@@ -147,7 +147,7 @@ const TEXT = {
     foot: "JIANT Studio, de Juan Jiant",
   },
   en: {
-    vLearn: "How it works", lrTitleFm: "Inside JIANT FM", lrTitleByte: "Inside JIANT BYTE", lrTry: "Try it in the emulator", lrWhere: "On the FM-1: ", lrNone: "This guide is still being written.",
+    vLearn: "How it works", lrIndex: "Index", lrIndexLead: "Everything at a glance: tap any element to open its page. ← and → go to the next one.", lrTitleFm: "Inside JIANT FM", lrTitleByte: "Inside JIANT BYTE", lrTry: "Try it in the emulator", lrWhere: "On the FM-1: ", lrNone: "This guide is still being written.",
     vRescue: "Rescue", rsTitle: "Rescue an FM-1", rsBeta: "experimental · not tried on hardware yet",
     rsLead: "For an FM-1 that does not turn on, or that the computer does not see over USB (hard brick). A few-dollar RP2040 board does it all by itself: wired to the FM-1's USB-C with three wires, it writes the firmware again. No Python, no terminal: Studio makes the board's file.",
     rsFirstT: "Before you start", rsFirst: "If the FM-1 turns on and the computer sees it (even stuck or sounding wrong), you do not need this: use Install, which updates it over USB.", rsToInstall: "Go to Install",
@@ -437,7 +437,7 @@ function go(view, push = true) {
   if (!VIEWS.includes(view)) view = "home";
   state.view = view;
   for (const v of VIEWS) $("v-" + v).hidden = v !== view;
-  if (push) history.replaceState(null, "", location.pathname + location.search + "#" + view);
+  if (push && !(view === "learn" && /^#learn\//.test(location.hash))) history.replaceState(null, "", location.pathname + location.search + "#" + view);
   showFrames();
   render();
   window.scrollTo({ top: 0 });
@@ -1233,7 +1233,22 @@ function renderProj() {
 /* each firmware's ideas (learn-fm.json, learn-byte.json): sectors (the concept, the engines, the sequencers, the
  * effects, the modulators, the generators, the songs), each item its statement, how it works, where it is on the
  * FM-1 and its animation (learn.js) */
-const lr = { data: {}, fw: null, sec: 0, item: 0, player: null };
+const lr = { data: {}, fw: null, sec: -1, item: 0, player: null, want: null };   // sec -1: the index
+/* #learn/<sector>/<item>: a page of its own (kept for when the data is there) */
+function lrRoute(hash) {
+  const m = /^#learn\/([\w-]+)(?:\/([\w-]+))?/.exec(hash || "");
+  if (!m) return false;
+  lr.want = { sec: m[1], item: m[2] || null };
+  return true;
+}
+const lrSecs = () => ((lr.data[state.fw] || {}).sectors || []).filter((x) => x.items && x.items.length);
+function lrOpen(si, ii) {
+  lr.sec = si; lr.item = ii;
+  const S = lrSecs()[si];
+  const h = si < 0 || !S ? "#learn" : `#learn/${S.id}/${S.items[ii].id}`;
+  if (location.hash !== h) history.replaceState(null, "", location.pathname + location.search + h);
+  renderLearn();
+}
 async function lrLoad(fw) {
   if (!lr.data[fw]) {
     try { const r = await fetch(`learn-${fw}.json`, { cache: "no-cache" }); lr.data[fw] = r.ok ? await r.json() : { sectors: [] }; }
@@ -1244,24 +1259,27 @@ async function lrLoad(fw) {
 const L = (o) => (o && typeof o === "object" ? o[lang] || o.es || o.en || "" : o || "");
 async function renderLearn() {
   const fw = state.fw, D = await lrLoad(fw);
-  if (lr.fw !== fw) { lr.fw = fw; lr.sec = 0; lr.item = 0; }
+  if (lr.fw !== fw) { lr.fw = fw; lr.sec = -1; lr.item = 0; }
+  if (lr.want) {                                         // a link to a page: its sector and item
+    const secs0 = (D.sectors || []).filter((x) => x.items && x.items.length), si = secs0.findIndex((x) => x.id === lr.want.sec);
+    if (si >= 0) { lr.sec = si; lr.item = Math.max(0, secs0[si].items.findIndex((x) => x.id === lr.want.item)); }
+    lr.want = null;
+  }
   $("lrtitle").textContent = t(fw === "byte" ? "lrTitleByte" : "lrTitleFm");
   $("lrintro").textContent = L(D.intro) || t("lrNone");
   const secs = (D.sectors || []).filter((x) => x.items && x.items.length);
-  $("lrsec").replaceChildren(...secs.map((x, i) => {
-    const b = document.createElement("button"); b.type = "button"; b.setAttribute("aria-pressed", String(i === lr.sec));
-    b.append(L(x.name)); const n = document.createElement("b"); n.textContent = x.items.length; b.append(n);
-    b.addEventListener("click", () => { lr.sec = i; lr.item = 0; renderLearn(); });
-    return b;
-  }));
+  const chip = (label, n, on, f) => { const b = document.createElement("button"); b.type = "button"; b.setAttribute("aria-pressed", String(on)); b.append(label);
+    if (n != null) { const c = document.createElement("b"); c.textContent = n; b.append(c); } b.addEventListener("click", f); return b; };
+  $("lrsec").replaceChildren(chip(t("lrIndex"), secs.reduce((a, x) => a + x.items.length, 0), lr.sec < 0, () => lrOpen(-1, 0)),
+    ...secs.map((x, i) => chip(L(x.name), x.items.length, i === lr.sec, () => lrOpen(i, 0))));
   const S = secs[lr.sec];
-  $("lrcard").hidden = !S; $("lritems").hidden = !S;
-  if (!S) { $("lrlead").textContent = ""; return; }
+  $("lrcard").hidden = !S; $("lritems").hidden = !S; $("lrindex").hidden = !!S || !secs.length;
+  if (!S) { $("lrlead").textContent = secs.length ? t("lrIndexLead") : ""; lrIndex(secs); return; }
   $("lrlead").textContent = L(S.lead);
   $("lritems").replaceChildren(...S.items.map((it, i) => {
     const b = document.createElement("button"); b.type = "button"; b.setAttribute("role", "option"); b.setAttribute("aria-selected", String(i === lr.item));
     const n = document.createElement("b"), g = document.createElement("span"); n.textContent = it.name; g.textContent = L(it.tag); b.append(n, g);
-    b.addEventListener("click", () => { lr.item = i; renderLearn(); if (matchMedia("(max-width: 820px)").matches) $("lrcard").scrollIntoView({ behavior: "smooth", block: "start" }); });
+    b.addEventListener("click", () => { lrOpen(lr.sec, i); if (matchMedia("(max-width: 820px)").matches) $("lrcard").scrollIntoView({ behavior: "smooth", block: "start" }); });
     return b;
   }));
   const it = S.items[Math.min(lr.item, S.items.length - 1)];
@@ -1276,14 +1294,52 @@ async function renderLearn() {
   const sel = $("lritems").children[lr.item]; if (sel && sel.scrollIntoView) sel.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
 function lrStep(d) {
-  const secs = ((lr.data[state.fw] || {}).sectors || []).filter((x) => x.items && x.items.length), S = secs[lr.sec];
+  const secs = lrSecs(), S = secs[lr.sec];
   if (!S) return;
-  lr.item += d;
-  if (lr.item < 0) { lr.sec = (lr.sec - 1 + secs.length) % secs.length; lr.item = secs[lr.sec].items.length - 1; }
-  else if (lr.item >= S.items.length) { lr.sec = (lr.sec + 1) % secs.length; lr.item = 0; }
-  renderLearn();
+  let si = lr.sec, ii = lr.item + d;
+  if (ii < 0) { si = (si - 1 + secs.length) % secs.length; ii = secs[si].items.length - 1; }
+  else if (ii >= S.items.length) { si = (si + 1) % secs.length; ii = 0; }
+  lrOpen(si, ii);
+}
+/* the index: every sector, every item a tile (its animation still, its name and line); a tap opens its page */
+let lrIndexFor = "";
+function lrIndex(secs) {
+  const key = state.fw + lang + document.documentElement.dataset.skin;
+  if (lrIndexFor === key) return;
+  lrIndexFor = key;
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const tiles = [];
+  $("lrindex").replaceChildren(...secs.map((S, si) => {
+    const sec = el("section", "lrisec");
+    sec.append(el("h2", null, L(S.name)), el("p", "dim", L(S.lead)));
+    const grid = el("div", "lrigrid");
+    grid.append(...S.items.map((it, ii) => {
+      const b = el("button", "lritile"); b.type = "button";
+      const cv = el("canvas"); tiles.push([cv, it.anim || {}]);
+      b.append(cv, el("b", null, it.name), el("span", null, L(it.tag)));
+      b.addEventListener("click", () => { lrOpen(si, ii); window.scrollTo({ top: $("v-learn").offsetTop - 10, behavior: "smooth" }); });
+      return b;
+    }));
+    sec.append(grid);
+    return sec;
+  }));
+  // their stills, drawn once each as they come into sight
+  const io = "IntersectionObserver" in window ? new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { io.unobserve(e.target); e.target._draw(); } })) : null;
+  for (const [cv, a] of tiles) {
+    cv._draw = () => lrStill(cv, a.kind, a.params);
+    io ? io.observe(cv) : cv._draw();
+  }
+}
+function lrStill(cv, kind, params) {
+  const r = cv.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1), W = Math.max(1, r.width), H = Math.max(1, r.height);
+  cv.width = Math.round(W * d); cv.height = Math.round(H * d);
+  const c = cv.getContext("2d"), VW = 520, k = W / VW;   // (drawn at the card's size, then scaled down: the same picture)
+  c.setTransform(d * k, 0, 0, d * k, 0, 0);
+  const s = getComputedStyle(cv), v = (n, f) => s.getPropertyValue(n).trim() || f;
+  try { anim(kind)(c, 1.3, VW, H / k, params || {}, { fg: v("--fg", "#efe6c8"), dim: v("--dim", "#a39bb6"), acc: v("--accent", "#ff7a1a"), a2: v("--accent-2", "#ff9a8a"), bg: v("--bg", "#000") }); } catch (_) {}
 }
 $("lrprev").addEventListener("click", () => lrStep(-1));
+$("lrback").addEventListener("click", () => lrOpen(-1, 0));
 $("lrnext").addEventListener("click", () => lrStep(1));
 document.addEventListener("keydown", (e) => { if (state.view !== "learn" || /input|select|textarea/i.test(e.target.tagName)) return; if (e.key === "ArrowRight") lrStep(1); else if (e.key === "ArrowLeft") lrStep(-1); });
 
@@ -1714,10 +1770,15 @@ function mockAccess() {
 
 /* ------------------------------------------------------------------------------------------------- the start */
 document.documentElement.dataset.skin = state.fw;
-const fromHash = (location.hash || "").replace(/^#/, "").split("?")[0];
+const fromHash = (location.hash || "").replace(/^#/, "").split("?")[0].split("/")[0];
+lrRoute(location.hash);
 applyLang();
 go(QS.get("view") || (VIEWS.includes(fromHash) ? fromHash : state.view), false);
-window.addEventListener("hashchange", () => { const h = location.hash.replace(/^#/, ""); if (VIEWS.includes(h) && h !== state.view) go(h, false); });
+window.addEventListener("hashchange", () => {
+  const h = location.hash.replace(/^#/, "").split("/")[0];
+  if (lrRoute(location.hash) && state.view === "learn") { renderLearn(); return; }
+  if (VIEWS.includes(h) && h !== state.view) go(h, false);
+});
 if (MOCK || QS.has("screen")) find().then(() => { if (QS.has("screen") && state.dev) { screenStart(); } });
 /* (for the tests) */
 loadList();

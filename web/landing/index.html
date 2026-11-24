@@ -114,6 +114,17 @@ h2{font:400 clamp(24px,3.4vw,36px)/1.2 var(--display);letter-spacing:.01em;margi
 .intro{max-width:64ch;margin:0;color:var(--text)}
 .head{margin-bottom:22px}
 
+/* JIANT Studio: its picture and what is inside */
+.studio{--bc:var(--yellow);display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;padding:20px;align-items:start}
+.studio .shot{display:block;grid-row:span 2;border:1px solid rgba(239,230,200,.16);border-radius:8px;overflow:hidden}
+.studio .shot img{display:block;width:100%;height:auto}
+.studio .tabs{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.studio .tabs li{display:flex;flex-direction:column;gap:2px;padding-left:12px;border-left:2px solid var(--violet)}
+.studio .tabs b{font:400 14px/1.3 var(--display);color:var(--line)}
+.studio .tabs span{font-size:14px;color:var(--dim)}
+.studio .btn{align-self:end;justify-self:start}
+@media (max-width:820px){.studio{grid-template-columns:minmax(0,1fr)}.studio .shot{grid-row:auto}}
+
 /* three steps */
 .steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .step{display:flex;flex-direction:column;gap:12px;padding:24px;min-width:0}
@@ -258,7 +269,8 @@ footer .tm{flex-basis:100%;letter-spacing:0}
     <div class="pitch brk">
       <p class="lede" data-i18n="lede">A free firmware that turns the FM-1 into a complete instrument: six tracks, eleven synthesis engines plus one for your audio input, a deep sequencer and effects, all inside the little keyboard. Install it from your browser in a couple of minutes, and go back to the official firmware whenever you want.</p>
       <div class="ctas">
-        <a class="btn hot" href="https://juanjiant-bit.github.io/JIANT/webapp/installer/"><span class="sq"></span><span data-i18n="cta_install">Install on your FM-1</span></a>
+        <a class="btn hot" href="https://juanjiant-bit.github.io/JIANT/studio/"><span class="sq"></span><span data-i18n="cta_studio">Open JIANT Studio</span></a>
+        <a class="btn" href="https://juanjiant-bit.github.io/JIANT/webapp/installer/" data-i18n="cta_install">Install on your FM-1</a>
         <a class="btn" href="https://juanjiant-bit.github.io/JIANT/emu/" data-i18n="cta_emu">Try it in the browser</a>
         <a class="btn" href="https://juanjiant-bit.github.io/JIANT/webapp/editor/" data-i18n="cta_editor">Open the editor</a>
       </div>
@@ -269,6 +281,28 @@ footer .tm{flex-basis:100%;letter-spacing:0}
       <div class="devwrap"><canvas id="fm1" role="img" aria-label="Drawing of the M-VAVE FM-1: MASTER, SELECT, PRESETS and ALGORITHM knobs with OCT- and OCT+ on the left, a small square screen showing JIANT's HOME (ECO) as the firmware draws it: the status line, four knob cards and one creature with a face per track, KNOB1 to KNOB4 over a grid of twelve buttons (FX, SCL, ENV, LFO, EDIT, GLO, HOME, SAVE, ARP, SEQ, PLAY/STOP, REC), and two rows of touch keys that light orange as a demo arpeggio plays"></canvas><img id="lcd" src="screens/home.webp" width="240" height="240" alt="" decoding="async"></div>
       <figcaption class="dev-cap"><span>M-VAVE FM-1</span><span><b id="lcdname">HOME › ECO</b> · <span data-i18n="dev_cap">on its screen, V10's real pages, one after another</span></span></figcaption>
     </figure>
+  </section>
+
+  <section id="studio">
+    <div class="head plate">
+      <p class="eyebrow" data-i18n="sd_eb">JIANT Studio</p>
+      <h2 data-i18n="sd_h2">Everything in one page</h2>
+      <p class="intro" data-i18n="sd_in">Install, edit, see the FM-1's screen big, play the emulator, record stems and MIDI, keep your projects and backups, learn how every engine works and rescue a bricked FM-1: for JIANT FM and JIANT BYTE, in your browser, on a computer or a phone.</p>
+    </div>
+    <div class="studio brk">
+      <a class="shot" href="https://juanjiant-bit.github.io/JIANT/studio/"><img src="docs/studio.png" alt="JIANT Studio: the tools for JIANT FM and JIANT BYTE in one page" loading="lazy"></a>
+      <ul class="tabs">
+        <li><b data-i18n="sd_t1">Install</b><span data-i18n="sd_d1">the firmware, safely, with a backup first</span></li>
+        <li><b data-i18n="sd_t2">Editor</b><span data-i18n="sd_d2">every sound and setting on screen</span></li>
+        <li><b data-i18n="sd_t3">Screen</b><span data-i18n="sd_d3">the FM-1's screen, full screen on your phone</span></li>
+        <li><b data-i18n="sd_t4">Emulator</b><span data-i18n="sd_d4">the real firmware, playable, with MIDI</span></li>
+        <li><b data-i18n="sd_t5">Record</b><span data-i18n="sd_d5">master or stems, WAV and MIDI, like a DAW</span></li>
+        <li><b data-i18n="sd_t6">Projects</b><span data-i18n="sd_d6">slots A–D and backups by hand</span></li>
+        <li><b data-i18n="sd_t7">How it works</b><span data-i18n="sd_d7">every engine, sequencer and effect, animated</span></li>
+        <li><b data-i18n="sd_t8">Rescue</b><span data-i18n="sd_d8">an RP2040 brings a bricked FM-1 back</span></li>
+      </ul>
+      <a class="btn hot" href="https://juanjiant-bit.github.io/JIANT/studio/"><span class="sq"></span><span data-i18n="sd_go">Open JIANT Studio</span></a>
+    </div>
   </section>
 
   <section id="start">
@@ -398,8 +432,8 @@ footer .tm{flex-basis:100%;letter-spacing:0}
       <span class="go" data-i18n="mi_go">Open the manual →</span>
     </a>
     <div class="docs">
-      <a class="doc brk" href="https://github.com/juanjiant-bit/JIANT/blob/main/docs/MANUAL.md" target="_blank" rel="noopener"><span class="t">EN</span><h3 data-i18n="m1_h">User manual</h3><p data-i18n="m1_p">Every page, layer and engine, in English.</p><span class="go">MANUAL.md ↗</span></a>
-      <a class="doc brk" href="https://github.com/juanjiant-bit/JIANT/blob/main/docs/MANUAL.es.md" target="_blank" rel="noopener"><span class="t">ES</span><h3 data-i18n="m2_h">Manual de usuario</h3><p data-i18n="m2_p">The same manual, in Spanish.</p><span class="go">MANUAL.es.md ↗</span></a>
+      <a class="doc brk" href="docs/guide/manual.html"><span class="t">EN</span><h3 data-i18n="m1_h">User manual</h3><p data-i18n="m1_p">Every page, layer and engine, in English.</p><span class="go">manual.html →</span></a>
+      <a class="doc brk" href="docs/guide/manual.es.html"><span class="t">ES</span><h3 data-i18n="m2_h">Manual de usuario</h3><p data-i18n="m2_p">The same manual, in Spanish.</p><span class="go">manual.es.html →</span></a>
       <a class="doc brk" href="https://juanjiant-bit.github.io/JIANT/docs/cheatsheet-controls.pdf" target="_blank" rel="noopener"><span class="t">PDF</span><h3 data-i18n="m3_h">Controls cheat sheet</h3><p data-i18n="m3_p">Buttons, layers and combinations on one page.</p><span class="go">cheatsheet-controls.pdf ↗</span></a>
       <a class="doc brk" href="https://juanjiant-bit.github.io/JIANT/docs/cheatsheet-sound.pdf" target="_blank" rel="noopener"><span class="t">PDF</span><h3 data-i18n="m4_h">Sound cheat sheet</h3><p data-i18n="m4_p">Engines, filter, envelopes and effects on one page.</p><span class="go">cheatsheet-sound.pdf ↗</span></a>
     </div>
@@ -643,7 +677,7 @@ const BEAT=60/118,BAR=4*BEAT;
 <script>
 /* languages: EN (the page's own text), ES, PT, FR, 中文, 日本語; the browser's language at first, then the choice (when storage allows) */
 (function(){
-  const ES={sc_in:'Grabadas del propio firmware, corriendo en un FM-1 simulado mientras suena un tema del generador: nada redibujado. Cada página dibuja lo que hace.',sc_h2:'Las pantallas reales, en movimiento',sc_eb:'V10 en pantalla',live:'gratis · código abierto · GPL-3.0',kicker:'un firmware para el M-VAVE FM-1',down:'entrar al organismo',
+  const ES={cta_studio:"Abrir JIANT Studio",sd_eb:"JIANT Studio",sd_h2:"Todo en una sola página",sd_in:"Instalar, editar, ver la pantalla de la FM-1 en grande, tocar el emulador, grabar stems y MIDI, guardar tus proyectos y backups, aprender cómo funciona cada motor y rescatar una FM-1 brickeada: para JIANT FM y JIANT BYTE, en el navegador, en la computadora o el celular.",sd_t1:"Instalar",sd_d1:"el firmware, con un backup primero",sd_t2:"Editor",sd_d2:"cada sonido y ajuste en pantalla",sd_t3:"Pantalla",sd_d3:"la pantalla de la FM-1, completa en tu celular",sd_t4:"Emulador",sd_d4:"el firmware real, para tocar, con MIDI",sd_t5:"Grabar",sd_d5:"master o stems, WAV y MIDI, como en un DAW",sd_t6:"Proyectos",sd_d6:"ranuras A–D y backups a mano",sd_t7:"Cómo funciona",sd_d7:"cada motor, secuenciador y efecto, animado",sd_t8:"Rescate",sd_d8:"un RP2040 revive una FM-1 brickeada",sd_go:"Abrir JIANT Studio",sc_in:'Grabadas del propio firmware, corriendo en un FM-1 simulado mientras suena un tema del generador: nada redibujado. Cada página dibuja lo que hace.',sc_h2:'Las pantallas reales, en movimiento',sc_eb:'V10 en pantalla',live:'gratis · código abierto · GPL-3.0',kicker:'un firmware para el M-VAVE FM-1',down:'entrar al organismo',
     lede:'Un firmware gratis que convierte al FM-1 en un instrumento completo: seis pistas, once motores de síntesis y uno para tu entrada de audio, un secuenciador profundo y efectos, todo adentro del tecladito. Se instala desde el navegador en un par de minutos, y podés volver al firmware oficial cuando quieras.',
     cta_install:'Instalar en tu FM-1',cta_emu:'Probarlo en el navegador',cta_editor:'Abrir el editor',new:'Nuevo en esta versión: los temas en TIMELINE, PARTS y CLIPS · velocidad y aftertouch en las teclas del propio FM-1 · redobles y batería cromática en DRUM-X · géneros nuevos en GENE (cumbia, phonk, baile funk, hip hop, jazz…). Guarda 6 canciones (antes 8): hacé backup antes de actualizar.',ver:'Versión actual:',dev_cap:'en su pantalla, las páginas reales de V10, una tras otra',
     s_eb:'Empezá acá',s_h2:'Tres pasos, sin programar',s_in:'Todo funciona en el navegador. No hace falta instalar ningún programa, y podés probar JIANT antes de tocar tu FM-1.',
@@ -679,7 +713,7 @@ const BEAT=60/118,BAR=4*BEAT;
     q4:'El instalador no encuentra mi FM-1.',a4:'Usá un cable USB que pase datos (muchos solo cargan), conectalo directo a la compu sin hub, y cerrá otros programas que usen el FM-1 por MIDI.',
     nat_k:'Página nueva · frecuencia',nat_h:'La frecuencia en la naturaleza',nat_p:'La materia es luz, el color es frecuencia: una escalera del ciclo solar a los rayos gamma, y cuatro ejemplos que suenan de cómo un sintetizador ya vive ahí.',nat_go:'Subir la escalera →',f_nat:'La frecuencia en la naturaleza',
     tm:'Hecho sobre Felucca de Hügelton Instruments. M-VAVE y FM-1 son marcas de sus respectivos dueños; JIANT no está afiliado ni avalado por ellos, ni por Hügelton Instruments.'};
-  const ZH={sc_in:'直接录自固件本身：在模拟的 FM-1 上运行，同时播放生成器写的一首曲子，没有任何重绘。每个页面都画出它正在做的事。',sc_h2:'真实的屏幕，动起来',sc_eb:'V10 屏幕实录',live:'免费 · 开源 · GPL-3.0',kicker:'M-VAVE FM-1 的固件',down:'进入有机体',
+  const ZH={cta_studio:"打开 JIANT Studio",sd_eb:"JIANT Studio",sd_h2:"一切都在一个页面里",sd_in:"安装、编辑、放大查看 FM-1 的屏幕、弹奏模拟器、录制分轨和 MIDI、保存工程与备份、学习每个引擎如何工作，还能救回变砖的 FM-1：支持 JIANT FM 和 JIANT BYTE，在电脑或手机的浏览器里。",sd_t1:"安装",sd_d1:"固件，先备份",sd_t2:"编辑器",sd_d2:"每个音色和设置都在屏幕上",sd_t3:"屏幕",sd_d3:"FM-1 的屏幕，在手机上全屏",sd_t4:"模拟器",sd_d4:"真正的固件，可弹奏，支持 MIDI",sd_t5:"录音",sd_d5:"主输出或分轨，WAV 和 MIDI，像 DAW 一样",sd_t6:"工程",sd_d6:"A–D 槽位与手动备份",sd_t7:"工作原理",sd_d7:"每个引擎、音序器和效果，动画演示",sd_t8:"救援",sd_d8:"用 RP2040 救回变砖的 FM-1",sd_go:"打开 JIANT Studio",sc_in:'直接录自固件本身：在模拟的 FM-1 上运行，同时播放生成器写的一首曲子，没有任何重绘。每个页面都画出它正在做的事。',sc_h2:'真实的屏幕，动起来',sc_eb:'V10 屏幕实录',live:'免费 · 开源 · GPL-3.0',kicker:'M-VAVE FM-1 的固件',down:'进入有机体',
     lede:'一款免费固件，把 FM-1 变成一件完整的乐器：六条音轨、十一种合成引擎外加一个音频输入引擎、深度音序器和效果器，全部装进这台小键盘里。在浏览器里几分钟就能装好，想回到官方固件随时都可以。',
     cta_install:'安装到你的 FM-1',cta_emu:'在浏览器里试玩',cta_editor:'打开编辑器',new:'本版本新增：用 TIMELINE、PARTS 和 CLIPS 编排歌曲 · FM-1 自身琴键的力度与触后 · DRUM-X 的过门与半音鼓 · GENE 的新曲风（昆比亚、phonk、baile funk、嘻哈、爵士……）。现在保存 6 首歌（以前是 8 首）：更新前请先备份。',ver:'当前版本：',dev_cap:'屏幕上依次轮播 V10 的真实页面',
     s_eb:'从这里开始',s_h2:'三步完成，无需编程',s_in:'一切都在浏览器中运行。无需安装任何程序，还可以在动你的 FM-1 之前先试玩 JIANT。',
@@ -715,7 +749,7 @@ const BEAT=60/118,BAR=4*BEAT;
     q4:'安装器找不到我的 FM-1。',a4:'请使用能传输数据的 USB 线（很多线只能充电），直接连到电脑不要经过集线器，并关闭其他通过 MIDI 使用 FM-1 的程序。',
     nat_k:'新页面 · 频率',nat_h:'自然中的频率',nat_p:'物质是光，颜色是频率：一架从太阳周期到伽马射线的阶梯，以及四个会发声的例子，说明合成器早已身在其中。',nat_go:'登上阶梯 →',f_nat:'自然中的频率',
     tm:'基于 Hügelton Instruments 的 Felucca 开发。M-VAVE 和 FM-1 是其各自所有者的商标；JIANT 与它们以及 Hügelton Instruments 均无关联，也未获其认可。'};
-  const JA={sc_in:'ファームウェアそのものをシミュレートした FM-1 で動かし、ジェネレーターの曲を鳴らしながら録画しました。描き直しは一切ありません。各ページは自分のしていることを描きます。',sc_h2:'本物の画面が動く',sc_eb:'画面の V10',live:'無料 · オープンソース · GPL-3.0',kicker:'M-VAVE FM-1 のためのファームウェア',down:'有機体の中へ',
+  const JA={cta_studio:"JIANT Studio を開く",sd_eb:"JIANT Studio",sd_h2:"すべてを 1 ページに",sd_in:"インストール、編集、FM-1 の画面を大きく表示、エミュレーターの演奏、ステムと MIDI の録音、プロジェクトとバックアップの管理、各エンジンの仕組みの学習、文鎮化した FM-1 の救出まで。JIANT FM と JIANT BYTE に対応し、パソコンでもスマホでもブラウザで動きます。",sd_t1:"インストール",sd_d1:"まずバックアップしてからファームウェアを",sd_t2:"エディター",sd_d2:"すべての音色と設定を画面で",sd_t3:"画面",sd_d3:"FM-1 の画面をスマホで全画面に",sd_t4:"エミュレーター",sd_d4:"本物のファームウェアを MIDI で演奏",sd_t5:"録音",sd_d5:"マスターかステム、WAV と MIDI を DAW のように",sd_t6:"プロジェクト",sd_d6:"スロット A–D と手動バックアップ",sd_t7:"仕組み",sd_d7:"すべてのエンジン、シーケンサー、エフェクトをアニメで",sd_t8:"救出",sd_d8:"RP2040 で文鎮化した FM-1 を復活",sd_go:"JIANT Studio を開く",sc_in:'ファームウェアそのものをシミュレートした FM-1 で動かし、ジェネレーターの曲を鳴らしながら録画しました。描き直しは一切ありません。各ページは自分のしていることを描きます。',sc_h2:'本物の画面が動く',sc_eb:'画面の V10',live:'無料 · オープンソース · GPL-3.0',kicker:'M-VAVE FM-1 のためのファームウェア',down:'有機体の中へ',
     lede:'FM-1 をひとつの完全な楽器に変える無料のファームウェア。6 トラック、11 のシンセシスエンジンとオーディオ入力用のエンジン 1 つ、奥深いシーケンサーとエフェクトが、この小さなキーボードに収まります。ブラウザから数分でインストールでき、いつでも公式ファームウェアに戻せます。',
     cta_install:'FM-1 にインストール',cta_emu:'ブラウザで試す',cta_editor:'エディターを開く',new:'このバージョンの新機能：TIMELINE・PARTS・CLIPS で曲づくり · FM-1 本体の鍵盤でベロシティとアフタータッチ · DRUM-X のフィルとクロマチックなドラム · GENE の新ジャンル（クンビア、フォンク、バイレファンキ、ヒップホップ、ジャズ…）。保存できる曲は 6 曲（以前は 8 曲）：更新の前にバックアップを。',ver:'現在のバージョン：',dev_cap:'画面には V10 の本物のページが次々と',
     s_eb:'はじめに',s_h2:'3 ステップ、プログラミング不要',s_in:'すべてブラウザで動きます。ソフトのインストールは不要で、FM-1 に触れる前に JIANT を試せます。',
@@ -751,7 +785,7 @@ const BEAT=60/118,BAR=4*BEAT;
     q4:'インストーラーが FM-1 を見つけません。',a4:'データ通信できる USB ケーブルを使い（充電専用のケーブルが多いです）、ハブを通さずパソコンに直接つなぎ、MIDI で FM-1 を使う他のソフトを閉じてください。',
     nat_k:'新しいページ · 周波数',nat_h:'自然の中の周波数',nat_p:'物質は光、色は周波数。太陽周期からガンマ線までのはしごと、シンセがすでにその中にいることを示す 4 つの鳴る例。',nat_go:'はしごを登る →',f_nat:'自然の中の周波数',
     tm:'Hügelton Instruments の Felucca をもとに作られています。M-VAVE と FM-1 は各所有者の商標です。JIANT はそれらおよび Hügelton Instruments とは無関係で、承認も受けていません。'};
-  const PT={sc_in:'Gravadas do próprio firmware, rodando num FM-1 simulado enquanto toca uma música do gerador: nada redesenhado. Cada página desenha o que faz.',sc_h2:'As telas reais, em movimento',sc_eb:'V10 na tela',live:'grátis · código aberto · GPL-3.0',kicker:'um firmware para o M-VAVE FM-1',down:'entrar no organismo',
+  const PT={cta_studio:"Abrir o JIANT Studio",sd_eb:"JIANT Studio",sd_h2:"Tudo numa só página",sd_in:"Instalar, editar, ver a tela do FM-1 em tamanho grande, tocar o emulador, gravar stems e MIDI, guardar projetos e backups, aprender como funciona cada motor e resgatar um FM-1 travado: para JIANT FM e JIANT BYTE, no navegador, no computador ou no celular.",sd_t1:"Instalar",sd_d1:"o firmware, com um backup antes",sd_t2:"Editor",sd_d2:"cada som e ajuste na tela",sd_t3:"Tela",sd_d3:"a tela do FM-1, em tela cheia no celular",sd_t4:"Emulador",sd_d4:"o firmware real, tocável, com MIDI",sd_t5:"Gravar",sd_d5:"master ou stems, WAV e MIDI, como numa DAW",sd_t6:"Projetos",sd_d6:"slots A–D e backups à mão",sd_t7:"Como funciona",sd_d7:"cada motor, sequenciador e efeito, animado",sd_t8:"Resgate",sd_d8:"um RP2040 recupera um FM-1 travado",sd_go:"Abrir o JIANT Studio",sc_in:'Gravadas do próprio firmware, rodando num FM-1 simulado enquanto toca uma música do gerador: nada redesenhado. Cada página desenha o que faz.',sc_h2:'As telas reais, em movimento',sc_eb:'V10 na tela',live:'grátis · código aberto · GPL-3.0',kicker:'um firmware para o M-VAVE FM-1',down:'entrar no organismo',
     lede:'Um firmware gratuito que transforma o FM-1 num instrumento completo: seis faixas, onze motores de síntese e mais um para a sua entrada de áudio, um sequenciador profundo e efeitos, tudo dentro do pequeno teclado. Instala-se pelo navegador em poucos minutos, e você pode voltar ao firmware oficial quando quiser.',
     cta_install:'Instalar no seu FM-1',cta_emu:'Experimentar no navegador',cta_editor:'Abrir o editor',new:'Novo nesta versão: músicas em TIMELINE, PARTS e CLIPS · velocity e aftertouch nas teclas do próprio FM-1 · viradas e bateria cromática no DRUM-X · gêneros novos no GENE (cumbia, phonk, baile funk, hip hop, jazz…). Guarda 6 músicas (antes 8): faça backup antes de atualizar.',ver:'Versão atual:',
     dev_cap:'na tela, as páginas reais do V10, uma depois da outra',s_eb:'Comece aqui',s_h2:'Três passos, sem programar',
@@ -817,7 +851,7 @@ const BEAT=60/118,BAR=4*BEAT;
     a4:'Use um cabo USB que passe dados (muitos cabos só carregam), conecte-o direto ao computador sem hub, e feche outros programas que usem o FM-1 por MIDI.',
     f_nat:'A frequência na natureza',
     tm:'Feito sobre o Felucca da Hügelton Instruments. M-VAVE e FM-1 são marcas dos seus respectivos donos; o JIANT não é afiliado a eles nem endossado por eles, nem pela Hügelton Instruments.'};
-  const FR={sc_in:'Enregistrés depuis le firmware lui-même, sur un FM-1 simulé pendant qu’un morceau du générateur joue : rien n’est redessiné. Chaque page dessine ce qu’elle fait.',sc_h2:'Les vrais écrans, en mouvement',sc_eb:'V10 à l’écran',live:'gratuit · open source · GPL-3.0',kicker:'un firmware pour le M-VAVE FM-1',down:'entrer dans l’organisme',
+  const FR={cta_studio:"Ouvrir JIANT Studio",sd_eb:"JIANT Studio",sd_h2:"Tout sur une seule page",sd_in:"Installer, éditer, voir l’écran du FM-1 en grand, jouer l’émulateur, enregistrer des stems et du MIDI, garder vos projets et sauvegardes, apprendre comment marche chaque moteur et sauver un FM-1 briqué : pour JIANT FM et JIANT BYTE, dans le navigateur, sur ordinateur ou téléphone.",sd_t1:"Installer",sd_d1:"le firmware, avec une sauvegarde d’abord",sd_t2:"Éditeur",sd_d2:"chaque son et réglage à l’écran",sd_t3:"Écran",sd_d3:"l’écran du FM-1, en plein écran sur le téléphone",sd_t4:"Émulateur",sd_d4:"le vrai firmware, jouable, avec MIDI",sd_t5:"Enregistrer",sd_d5:"master ou stems, WAV et MIDI, comme dans une DAW",sd_t6:"Projets",sd_d6:"emplacements A–D et sauvegardes à la main",sd_t7:"Comment ça marche",sd_d7:"chaque moteur, séquenceur et effet, animé",sd_t8:"Sauvetage",sd_d8:"un RP2040 ramène un FM-1 briqué",sd_go:"Ouvrir JIANT Studio",sc_in:'Enregistrés depuis le firmware lui-même, sur un FM-1 simulé pendant qu’un morceau du générateur joue : rien n’est redessiné. Chaque page dessine ce qu’elle fait.',sc_h2:'Les vrais écrans, en mouvement',sc_eb:'V10 à l’écran',live:'gratuit · open source · GPL-3.0',kicker:'un firmware pour le M-VAVE FM-1',down:'entrer dans l’organisme',
     lede:'Un firmware gratuit qui fait du FM-1 un instrument complet : six pistes, onze moteurs de synthèse plus un pour votre entrée audio, un séquenceur profond et des effets, le tout dans le petit clavier. Il s’installe depuis le navigateur en quelques minutes, et vous pouvez revenir au firmware officiel quand vous voulez.',
     cta_install:'Installer sur votre FM-1',cta_emu:'L’essayer dans le navigateur',cta_editor:'Ouvrir l’éditeur',new:'Nouveau dans cette version : les morceaux en TIMELINE, PARTS et CLIPS · vélocité et aftertouch sur les touches du FM-1 lui-même · roulements et batterie chromatique dans DRUM-X · nouveaux genres dans GENE (cumbia, phonk, baile funk, hip hop, jazz…). Il garde 6 morceaux (8 avant) : faites une sauvegarde avant de mettre à jour.',ver:'Version actuelle :',
     dev_cap:'sur son écran, les vraies pages de V10, l’une après l’autre',s_eb:'Commencer ici',s_h2:'Trois étapes, sans coder',
