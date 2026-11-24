@@ -20,6 +20,13 @@ const MOCK = QS.get("mock") === "1";
 /* ------------------------------------------------------------------------------------------------- the words */
 const TEXT = {
   es: {
+    lvChip: "● En vivo", lvLead: "Tocá tu FM-1 y mirá acá: cada perilla que girás, el motor que elegís, los pasos y el play se explican solos, mientras pasan.",
+    lvStartBtn: "Seguir mi FM-1", lvStopBtn: "Dejar de seguir", lvOff: "Conectá la FM-1 (Inicio › Buscar) o prendé el emulador, y tocá «Seguir mi FM-1».",
+    lvNoDev: "No hay FM-1 conectada ni emulador prendido.", lvWaiting: "Siguiendo %s: tocá algo…", lvTouch: "Siguiendo: girá una perilla, cambiá de sonido o dale play.",
+    lvTrack: "Pista", lvGlobal: "Global", lvSound: "Sonido", lvPreset: "preset", lvStep: "Paso", lvBar: "compás",
+    lvUnknown: "Un parámetro de esta página.", lvReload: "Cambiaste de sonido: el motor y su preset en la pista elegida.", lvStepWhat: "Editaste un paso de la secuencia de esta pista.",
+    lvPlay: "La música está sonando: el secuenciador avanza paso a paso.", lvStop: "Se detuvo la reproducción.", lvPunch: "Mantené FX y tocá teclas: un efecto suena solo mientras lo sostenés.",
+    lvPunchOn: "un efecto activo", lvPunchOff: "ninguno", lvMutate: "MUTATE cambió el patrón de esta pista.", lvPage: "La página que está en pantalla y sus perillas.", lvMore: "Ver en la guía:",
     siteLink: "El sitio de %s: qué es, sus pantallas y su historia →", vLearn: "Cómo funciona", lrIndex: "Índice", lrIndexLead: "Todo, de un vistazo: tocá cualquier elemento para abrir su página. Con ← y → pasás al siguiente.", lrTitleFm: "JIANT FM por dentro", lrTitleByte: "JIANT BYTE por dentro", lrTry: "Probarlo en el emulador", lrWhere: "En la FM-1: ", lrNone: "Esta guía todavía se está escribiendo.",
     vRescue: "Rescate", rsTitle: "Rescatar un FM-1", rsBeta: "experimental · sin probar en hardware",
     rsLead: "Para un FM-1 que no enciende o que la computadora no ve por USB (hard brick). Una placa RP2040 de pocos dólares hace todo sola: se conecta al USB-C del FM-1 con tres cables y le vuelve a escribir el firmware. Sin Python ni terminal: Studio arma el archivo para la placa.",
@@ -147,6 +154,13 @@ const TEXT = {
     foot: "JIANT Studio, de Juan Jiant",
   },
   en: {
+    lvChip: "● Live", lvLead: "Play your FM-1 and watch here: every knob you turn, the engine you pick, the steps and play explain themselves as they happen.",
+    lvStartBtn: "Follow my FM-1", lvStopBtn: "Stop following", lvOff: "Connect the FM-1 (Home › Find) or switch the emulator on, and press “Follow my FM-1”.",
+    lvNoDev: "No FM-1 connected and no emulator on.", lvWaiting: "Following %s: touch something…", lvTouch: "Following: turn a knob, change the sound or press play.",
+    lvTrack: "Track", lvGlobal: "Global", lvSound: "Sound", lvPreset: "preset", lvStep: "Step", lvBar: "bar",
+    lvUnknown: "A parameter of this page.", lvReload: "You changed the sound: the engine and its preset on the selected track.", lvStepWhat: "You edited a step of this track's sequence.",
+    lvPlay: "The music is playing: the sequencer moves step by step.", lvStop: "Playback stopped.", lvPunch: "Hold FX and play keys: an effect sounds only while you hold it.",
+    lvPunchOn: "an effect on", lvPunchOff: "none", lvMutate: "MUTATE changed this track's pattern.", lvPage: "The page on screen and its knobs.", lvMore: "See it in the guide:",
     siteLink: "%s's site: what it is, its screens and its story →", vLearn: "How it works", lrIndex: "Index", lrIndexLead: "Everything at a glance: tap any element to open its page. ← and → go to the next one.", lrTitleFm: "Inside JIANT FM", lrTitleByte: "Inside JIANT BYTE", lrTry: "Try it in the emulator", lrWhere: "On the FM-1: ", lrNone: "This guide is still being written.",
     vRescue: "Rescue", rsTitle: "Rescue an FM-1", rsBeta: "experimental · not tried on hardware yet",
     rsLead: "For an FM-1 that does not turn on, or that the computer does not see over USB (hard brick). A few-dollar RP2040 board does it all by itself: wired to the FM-1's USB-C with three wires, it writes the firmware again. No Python, no terminal: Studio makes the board's file.",
@@ -308,6 +322,9 @@ try { const f = localStorage.getItem("jiant.studio.fw"); if (!QS.get("fw") && (f
 /* ------------------------------------------------------------------------------------- the USB link (SysEx) */
 const HDR = [0x7D, 0x46, 0x4C];
 const CMD = { INFO: 1, PING: 25, SCREEN: 78, SCREEN_DATA: 79 };
+/* the pushes the live guide reads (EDITOR_PROTOCOL.md, WATCH): CHANGED 23, RELOAD 24, STEP_CHANGED 26, TRACK_CHANGED 32,
+   TRANSPORT 40, PUNCH 41, MUTATE 42, and (when the firmware has it) UI 43 */
+const LIVE_PUSH = new Set([23, 24, 26, 32, 40, 41, 42, 43]);
 const frame = (cmd, args = []) => [0xF0, ...HDR, cmd & 0x7F, ...args, 0xF7];
 function unframe(d) {
   if (!d || d.length < 6 || d[0] !== 0xF0 || d[d.length - 1] !== 0xF7 || d[1] !== HDR[0] || d[2] !== HDR[1] || d[3] !== HDR[2]) return null;
@@ -337,6 +354,7 @@ class Link {
     const f = unframe(data);
     if (!f) return;
     if (f.cmd === CMD.SCREEN_DATA) { this.onPush(f); return; }
+    if (LIVE_PUSH.has(f.cmd)) { livePush(f, this); return; }    // (the live guide: what moved on the FM-1)
     if (this.cur && f.cmd === this.cur.cmd && (f.cmd !== CMD.SCREEN || f.a[0] === this.cur.args[0]) && (!this.cur.match || this.cur.match(f.a))) this.finish(f.a);
   }
   close() { this.closed = true; for (const c of [this.cur, ...this.q].filter(Boolean)) { clearTimeout(c.timer); c.rej(new Error("closed")); } this.cur = null; this.q = []; }
@@ -1261,6 +1279,7 @@ const L = (o) => (o && typeof o === "object" ? o[lang] || o.es || o.en || "" : o
 async function renderLearn() {
   const fw = state.fw, D = await lrLoad(fw);
   if (lr.fw !== fw) { lr.fw = fw; lr.sec = -1; lr.item = 0; }
+  if (lr.want && lr.want.sec === "live") { lr.sec = -2; lr.want = null; }
   if (lr.want) {                                         // a link to a page: its sector and item
     const secs0 = (D.sectors || []).filter((x) => x.items && x.items.length), si = secs0.findIndex((x) => x.id === lr.want.sec);
     if (si >= 0) { lr.sec = si; lr.item = Math.max(0, secs0[si].items.findIndex((x) => x.id === lr.want.item)); }
@@ -1271,10 +1290,13 @@ async function renderLearn() {
   const secs = (D.sectors || []).filter((x) => x.items && x.items.length);
   const chip = (label, n, on, f) => { const b = document.createElement("button"); b.type = "button"; b.setAttribute("aria-pressed", String(on)); b.append(label);
     if (n != null) { const c = document.createElement("b"); c.textContent = n; b.append(c); } b.addEventListener("click", f); return b; };
-  $("lrsec").replaceChildren(chip(t("lrIndex"), secs.reduce((a, x) => a + x.items.length, 0), lr.sec < 0, () => lrOpen(-1, 0)),
+  $("lrsec").replaceChildren(chip(t("lvChip"), null, lr.sec === -2, () => { lr.sec = -2; history.replaceState(null, "", location.pathname + location.search + "#learn/live"); renderLearn(); }),
+    chip(t("lrIndex"), secs.reduce((a, x) => a + x.items.length, 0), lr.sec === -1, () => lrOpen(-1, 0)),
     ...secs.map((x, i) => chip(L(x.name), x.items.length, i === lr.sec, () => lrOpen(i, 0))));
   const S = secs[lr.sec];
-  $("lrcard").hidden = !S; $("lritems").hidden = !S; $("lrindex").hidden = !!S || !secs.length;
+  $("lrlive").hidden = lr.sec !== -2;
+  $("lrcard").hidden = !S; $("lritems").hidden = !S; $("lrindex").hidden = !!S || !secs.length || lr.sec === -2;
+  if (lr.sec === -2) { $("lrlead").textContent = t("lvLead"); await liveGloss(fw); renderLive(); return; }
   if (!S) { $("lrlead").textContent = secs.length ? t("lrIndexLead") : ""; lrIndex(secs); return; }
   $("lrlead").textContent = L(S.lead);
   $("lritems").replaceChildren(...S.items.map((it, i) => {
@@ -1343,6 +1365,151 @@ $("lrprev").addEventListener("click", () => lrStep(-1));
 $("lrback").addEventListener("click", () => lrOpen(-1, 0));
 $("lrnext").addEventListener("click", () => lrStep(1));
 document.addEventListener("keydown", (e) => { if (state.view !== "learn" || /input|select|textarea/i.test(e.target.tagName)) return; if (e.key === "ArrowRight") lrStep(1); else if (e.key === "ArrowLeft") lrStep(-1); });
+
+/* -------------------------------------------------------------------------------- how it works: live */
+/* Following the FM-1 (or the emulator): WATCH 31 and a PING a second keep its pushes coming; a knob turned (CHANGED)
+ * is named by its DESC (cached per engine) and explained by the firmware's glossary (live-fm.json, live-byte.json:
+ * the label's meaning, by engine where it differs), with the guide's related element (its animation); RELOAD (engine,
+ * preset, track), STEP_CHANGED, TRACK_CHANGED, TRANSPORT, PUNCH and MUTATE are told too, and UI (43, page and buttons)
+ * when the firmware sends it. The last ones in a list */
+const live = { on: false, link: null, timer: 0, desc: new Map(), engine: -1, engines: [], track: 0, gloss: {}, log: [], last: null, player: null, shown: null, status: "" };
+const v14 = (a, i) => (a[i] | (a[i + 1] << 7)) - 8192;
+function readStr(a, i) { let s = ""; while (i < a.length && a[i]) s += String.fromCharCode(a[i++]); return [s, i + 1]; }
+function parseDesc(a) {
+  const o = { scope: a[0], id: a[1], fmt: a[2], min: v14(a, 3), max: v14(a, 5), def: v14(a, 7) };
+  let i = 9; [o.label, i] = readStr(a, i); [o.unit, i] = readStr(a, i);
+  o.names = [];
+  if (o.fmt === 8) for (let k = 0; k <= o.max - o.min && k < 32 && i < a.length; k++) { let n; [n, i] = readStr(a, i); o.names.push(n); }
+  return o;
+}
+async function liveGloss(fw) {
+  if (!live.gloss[fw]) { try { const r = await fetch(`live-${fw}.json`, { cache: "no-cache" }); live.gloss[fw] = r.ok ? await r.json() : {}; } catch (_) { live.gloss[fw] = {}; } }
+  return live.gloss[fw];
+}
+function liveSource() {
+  if (state.target === "fm1") return state.dev ? { link: state.dev.link, name: devName(state.dev), engines: state.dev.engines } : null;
+  const L = projLink(); return L ? { link: L.link, name: t("bkTarget"), engines: null } : null;
+}
+async function liveStart() {
+  const S = liveSource();
+  if (!S) { live.status = t("lvNoDev"); renderLive(); return; }
+  live.on = true; live.link = S.link; live.desc.clear(); live.status = t("lvWaiting").replace("%s", S.name); renderLive();
+  try {
+    live.engines = S.engines || parseInfo(await S.link.request(CMD.INFO, [], 900)).engines;
+    await S.link.request(22, [31], 900);                     // WATCH: every push this firmware has
+    const d = await S.link.request(4, [], 1500);             // DUMP: the selected track's engine
+    live.engine = d[0];
+  } catch (_) {}
+  await lrLoad(state.fw); await liveGloss(state.fw);
+  clearInterval(live.timer);
+  let tick = 0;                                              // (a PING a second; WATCH again every 5 s: another tool's WATCH 0 ends it)
+  live.timer = setInterval(() => { if (!live.on || state.busy) return; live.link.request(++tick % 5 ? CMD.PING : 22, tick % 5 ? [] : [31], 600).catch(() => {}); }, 1000);
+  renderLive();
+}
+function liveStop() {
+  live.on = false; clearInterval(live.timer);
+  try { if (live.link) live.link.request(22, [0], 600).catch(() => {}); } catch (_) {}
+  live.status = ""; renderLive();
+}
+const engName = (e) => { const n = live.engines && live.engines[e]; return n && n !== "-" ? n : ""; };
+/* a push, as it comes in (from Link.receive) */
+async function livePush(f, link) {
+  if (!live.on || link !== live.link) return;
+  const a = f.a;
+  if (f.cmd === 23 || f.cmd === 32) {                        // a parameter: this track's (CHANGED) or another's (TRACK_CHANGED)
+    const other = f.cmd === 32, scope = other ? 0 : a[0], id = a[1], v = v14(a, 2);
+    const key = `${scope}:${id}:${scope ? "" : live.engine}`;
+    let d = live.desc.get(key);
+    if (!d) {
+      try { d = parseDesc(await link.request(5, [scope, id], 800)); live.desc.set(key, d); }
+      catch (_) { d = { label: `#${id}`, min: 0, max: 127, names: [], unit: "" }; }
+    }
+    liveShow({ kind: "param", d, v, scope, track: other ? a[0] : null });
+  } else if (f.cmd === 24) {                                  // RELOAD: engine, preset (, the selected track)
+    live.engine = a[0]; if (a.length > 2) live.track = a[2];
+    for (const k of [...live.desc.keys()]) if (k.startsWith("0:")) live.desc.delete(k);
+    liveShow({ kind: "reload", engine: a[0], preset: a[1], track: a[2] });
+  } else if (f.cmd === 26) liveShow({ kind: "step", index: a[0] });
+  else if (f.cmd === 40) liveShow({ kind: "transport", playing: a[0], beat: a[1], bar: a[2] | (a[3] << 7) }, true);
+  else if (f.cmd === 41) liveShow({ kind: "punch", bits: a[0] | a[1] << 7 | a[2] << 14 | a[3] << 21 });
+  else if (f.cmd === 42) liveShow({ kind: "mutate", track: a[0] });
+  else if (f.cmd === 43) {                                    // UI (when the firmware sends it): section, page, layer, button, knobs
+    let i = 1, page; const knobs = [];
+    [page, i] = readStr(a, i);
+    const layer = a[i], button = a[i + 1]; i += 2;
+    for (let k = 0; k < 4 && i < a.length; k++) { let s1; [s1, i] = readStr(a, i); knobs.push(s1); }
+    liveShow({ kind: "ui", section: a[0], page, layer, button, knobs });
+  }
+}
+/* the guide's element whose id or name matches a word (an engine, FILTER, DELAY…) */
+function lrFind(word) {
+  if (!word) return null;
+  const w = String(word).toLowerCase(), D = lr.data[state.fw];
+  if (!D) return null;
+  for (const sec of D.sectors || []) for (const it of sec.items) if (it.id === w || it.name.toLowerCase() === w) return `${sec.id}/${it.id}`;
+  for (const sec of D.sectors || []) for (const it of sec.items) if (it.name.toLowerCase().split(/[^a-z0-9-]+/).includes(w)) return `${sec.id}/${it.id}`;
+  return null;
+}
+function lrItem(path) {
+  const [sid, iid] = String(path).split("/"), D = lr.data[state.fw];
+  const sec = D && (D.sectors || []).find((x) => x.id === sid);
+  return sec && sec.items.find((i) => i.id === iid);
+}
+/* what an event says: a title, a line, the value, its explanation (what, how) and the guide's element to show */
+function liveExplain(e) {
+  const G = live.gloss[state.fw] || {}, eng = engName(live.engine), L2 = (o) => (o ? o[lang] || o.es || o.en : null);
+  if (e.kind === "param") {
+    const d = e.d, g = (e.scope === 0 && e.track == null && G.engines && G.engines[eng] && G.engines[eng][d.label]) || (G.labels && G.labels[d.label]) || null;
+    const span = d.max - d.min || 1, frac = Math.max(0, Math.min(1, (e.v - d.min) / span));
+    const val = d.names && d.names.length ? d.names[e.v - d.min] || e.v : `${e.v}${d.unit ? " " + d.unit : ""}`;
+    const where = e.track != null ? `${t("lvTrack")} ${e.track + 1}` : e.scope ? t("lvGlobal") : `${t("lvTrack")} ${live.track + 1}${eng ? " · " + eng : ""}`;
+    const gx = g ? L2(g) : null;
+    let learn = g && g.learn ? (lrFind(g.learn) || null) : null;
+    if (!learn) learn = lrFind(d.label) || lrFind(eng);
+    return { title: d.label, line: where, value: String(val), frac, what: gx ? gx.what : t("lvUnknown"), how: gx ? gx.how : "", learn };
+  }
+  if (e.kind === "reload") { const en = engName(e.engine); return { title: en || t("lvSound"), line: `${t("lvTrack")} ${(e.track ?? live.track) + 1} · ${t("lvPreset")} ${e.preset + 1}`, what: t("lvReload"), how: "", learn: lrFind(en) }; }
+  if (e.kind === "step") return { title: `${t("lvStep")} ${e.index + 1}`, line: `${t("lvTrack")} ${live.track + 1}`, what: t("lvStepWhat"), how: "", learn: lrFind("seq") || lrFind("step") };
+  if (e.kind === "transport") return { title: e.playing ? "PLAY" : "STOP", line: e.playing ? `${t("lvBar")} ${e.bar + 1} · ${e.beat + 1}` : "", what: t(e.playing ? "lvPlay" : "lvStop"), how: "", learn: lrFind("song") };
+  if (e.kind === "punch") return { title: "FX PUNCH-IN", line: e.bits ? t("lvPunchOn") : t("lvPunchOff"), what: t("lvPunch"), how: "", learn: lrFind("punch") };
+  if (e.kind === "mutate") return { title: "MUTATE", line: `${t("lvTrack")} ${e.track + 1}`, what: t("lvMutate"), how: "", learn: lrFind("mutate") };
+  if (e.kind === "ui") return { title: e.page || "—", line: e.knobs.filter(Boolean).join(" · "), what: t("lvPage"), how: "", learn: lrFind(e.page) };
+  return { title: "?", line: "", what: "", how: "" };
+}
+function liveShow(e, quiet) {
+  const x = liveExplain(e);
+  if (!(quiet && live.last && live.last.kind === e.kind)) {
+    const same = live.log[0] && live.log[0].title === x.title && live.log[0].line === x.line;
+    if (same) live.log[0] = x; else { live.log.unshift(x); if (live.log.length > 12) live.log.length = 12; }
+  }
+  live.last = { kind: e.kind, x }; live.status = "";
+  renderLive();
+}
+function renderLive() {
+  if (!$("lrlive") || state.view !== "learn" || lr.sec !== -2) return;
+  $("lvgo").textContent = t(live.on ? "lvStopBtn" : "lvStartBtn");
+  $("lvstat").textContent = live.status || (live.on ? t("lvTouch") : t("lvOff"));
+  const x = live.last && live.last.x;
+  $("lvcard").hidden = !x;
+  if (x) {
+    $("lvtitle").textContent = x.title; $("lvline").textContent = x.line || "";
+    $("lvval").hidden = x.value == null; $("lvvaltext").textContent = x.value ?? ""; $("lvbar").style.width = `${Math.round((x.frac ?? 0) * 100)}%`;
+    $("lvwhat").textContent = x.what || ""; $("lvhow").textContent = x.how || ""; $("lvhow").hidden = !x.how;
+    const it = x.learn && lrItem(x.learn);
+    $("lvmore").hidden = !it; $("lvstage").hidden = !it;
+    if (it) {
+      $("lvmore").textContent = `${t("lvMore")} ${it.name} →`; $("lvmore").href = `#learn/${x.learn}`;
+      live.player = live.player || new Player($("lvcanvas"));
+      if (live.shown !== x.learn) { live.shown = x.learn; live.player.show(it.anim && it.anim.kind, it.anim && it.anim.params); }
+    }
+  }
+  $("lvlog").replaceChildren(...live.log.map((l) => {
+    const li = document.createElement("li"), b = document.createElement("b");
+    b.textContent = l.title; li.append(b, ` ${l.line || ""}${l.value != null ? " · " + l.value : ""}`);
+    return li;
+  }));
+}
+$("lvgo").addEventListener("click", () => (live.on ? liveStop() : liveStart()));
 
 /* ------------------------------------------------------------------------------------------------- rescue */
 /* FM-1 Rescue (rescue/, android/rescue): an RP2040 wired to the FM-1's USB-C puts it in the JieLi ROM's boot mode
@@ -1713,6 +1880,7 @@ function mockAccess() {
   };
   // its projects (A and C saved) and its archive (backups: the current music, the settings, the song index, two songs)
   const slots = [true, false, true, false];
+  let mockWatch = 0;
   const arch = new Map(BACKUP_IDS.map((id) => {
     const n = { 0: 520, 1: 140, 10: 64, 40: 300, 41: 300, 44: 280 }[id] || 0;
     return [id, Uint8Array.from({ length: n }, (_, i) => (i * 7 + id * 13) & 255)];
@@ -1722,6 +1890,21 @@ function mockAccess() {
     const f = unframe(Uint8Array.from(d));
     if (!f) return;
     last = Date.now();
+    if (f.cmd === 22) {                                         // WATCH: then a knob turning (CUT), now and then a sound change
+      clearInterval(mockWatch);
+      if (f.a[0]) { let k = 0; mockWatch = setInterval(() => {
+        k++;
+        if (k % 12 === 0) deliver(frame(24, [(k / 12) % 2 ? 2 : 0, k % 5, 0]));
+        else { const v = 40 + Math.round(40 * Math.sin(k / 3)) + 8192; deliver(frame(23, [0, 20, v & 127, v >> 7])); }
+      }, 250); }
+      deliver(frame(22, [f.a[0] ? 31 : 0])); return;
+    }
+    if (f.cmd === 4) { deliver(frame(4, [0, 0])); return; }    // DUMP (the engine and preset are all the guide reads)
+    if (f.cmd === 5) {                                          // DESC: CUT on any id
+      const s = (x) => [...x].map((c) => c.charCodeAt(0)).concat(0), e = (v) => [(v + 8192) & 127, (v + 8192) >> 7];
+      deliver(frame(5, [f.a[0], f.a[1], 0, ...e(0), ...e(127), ...e(64), ...s("CUT"), ...s("")])); return;
+    }
+    if (f.cmd === CMD.PING) { deliver(frame(CMD.PING, [])); return; }
     if (f.cmd === 9) {                                          // PROJECT: 0 load, 1 save, 2 query
       const [op, k] = f.a;
       if (op === 1) slots[k] = true;
