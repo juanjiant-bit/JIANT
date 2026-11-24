@@ -81,7 +81,7 @@ Antes de instalar, revisá los apartados **Compatibilidad**.
 ## V10.8.28 — WEST: DUST nuevo y METAL (2026-11-24, beta)
 
 - **DUST 1–95**: ruido blanco que entra al plegador con el núcleo (se pliega y pasa la compuerta con él); desde 48, una parte directo a la compuerta. Ya no crepita. **DUST 96–127: METAL**, un tono metálico afinado a la nota.
-- Los proyectos y presets hechos con el motor NOISE vuelven a mapearse a WEST; diez presets de WEST revoiceados.
+- Los proyectos y presets hechos con el motor NOISE vuelven a mapearse a WEST; los presets WIND, RAIN, METAL, SEA, HISS PAD, INIT NOISE y TAPE AIR se rehicieron para el DUST nuevo.
 
 ## V10.8.27 — DRONE CLAY como en JIANT BYTE (2026-11-24, beta)
 

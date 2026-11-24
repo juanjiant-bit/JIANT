@@ -80,7 +80,7 @@ The sections marked **Compatibility notes** are the ones to check before you ins
 ## V10.8.28 — WEST: a new DUST, and METAL (2026-11-24, beta)
 
 - **DUST 1–95**: white noise into the folder with the core (it folds and passes the gate with it); from 48 some of it straight to the gate. It no longer crackles. **DUST 96–127: METAL**, a metallic tone tuned to the note.
-- Projects and presets made with the NOISE engine are mapped to WEST again; ten WEST presets revoiced.
+- Projects and presets made with the NOISE engine are mapped to WEST again; the presets WIND, RAIN, METAL, SEA, HISS PAD, INIT NOISE and TAPE AIR are revoiced for the new DUST.
 
 ## V10.8.27 — DRONE CLAY as JIANT BYTE has it (2026-11-24, beta)
 
