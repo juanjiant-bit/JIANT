@@ -150,6 +150,59 @@
   }
  },
  "versions": {
+  "V10.8.34": {
+   "date": "2026-11-24",
+   "status": "beta",
+   "summary": {
+    "es": "Beta: primera etapa del generador de canciones nuevo (más progresiones, secciones con contraste, diálogo entre lead y arpegio), sobre V10.8.33.",
+    "en": "Beta: the first stage of the new song generator (more progressions, contrasting sections, lead and arp in dialogue), on top of V10.8.33."
+   },
+   "has": [
+    "eng_west",
+    "drumx_math",
+    "life",
+    "punch_editor",
+    "fx_punchins",
+    "song_mode",
+    "stepfx_keys",
+    "drone_clay",
+    "macros_dest",
+    "euclid",
+    "euclid_role",
+    "harmony",
+    "scene",
+    "flt_ms20_lp24",
+    "env_stage",
+    "half_rate",
+    "track_colours",
+    "hud_screens",
+    "no_power_click",
+    "velocity_at",
+    "gen_new_genres",
+    "copy_paste_oct",
+    "clay_rate",
+    "clay_bars",
+    "clay_keys",
+    "west_dust_metal",
+    "ui_push",
+    "screen_mirror",
+    "emu_editor",
+    "emu_stems"
+   ],
+   "hasnt": [
+    "eng_noise",
+    "mutate",
+    "stretch",
+    "live",
+    "seq_dice",
+    "punch_lane",
+    "help_hints"
+   ],
+   "notes": {
+    "es": "Beta: puede tener errores. Se quitaron la página PUNCH LANE, el dibujo del carril de PUNCH IN y muchos textos de ayuda para hacer lugar. Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
+    "en": "Beta: it may have bugs. The PUNCH LANE page, PUNCH IN's lane picture and many help texts were removed for room. Make a complete backup of your projects before changing version."
+   }
+  },
   "V10.8.33": {
    "date": "2026-11-24",
    "status": "beta",
