@@ -6,7 +6,7 @@ Custom firmware for the M-VAVE FM-1 by Juan Jiant. Newest version first.
 
 | Version | Date | Status |
 | --- | --- | --- |
-| V10.8.22 … V10.8.36 | 2026-11-23 … 11-24 | Beta |
+| V10.8.22 … V10.8.37 | 2026-11-23 … 11-24 | Beta |
 | **V10.8.21** | 2026-11-23 | **Public** |
 | V10.8.1 … V10.8.20 | 2026-11-21 … 11-23 | Beta |
 | **V10.7.81** | 2026-11-21 | **Public** |
@@ -42,6 +42,12 @@ The sections marked **Compatibility notes** are the ones to check before you ins
 > 31 October 2026 are much older builds with the same names; they are covered under "Older versions" at the end.
 
 ---
+
+## V10.8.37 — MUTATE without a page, KEY TRK on FILTER, the factory sounds retouched (2026-11-24, beta)
+
+- **MUTATE**: its page is gone. EVERY (OFF, 1, 2, 4, 8 bars) is a tag in EUCLID's picture ("EVERY 4"), set with OCT+ held + KNOB 4 on EUCLID. OCT+ alone mutates when let go; OCT− goes back to the anchor.
+- **KEY TRK** (EDIT › FILTER): OCT+ held + KNOB 2 (CUT's) picks OFF / 50 / 100 / NOTE, with a tag on the curve. At 50 and 100 the cutoff follows the key (100: a semitone a semitone, around C4) on every type, the combs too; on NOTE the final cutoff lands on the semitones (MOD SEQ › CUT plays tuned resonances). A track's, saved with the project, OFF by default.
+- **Factory sounds**: sends by role (basses dry, leads more delay than reverb, pads more reverb), a late vibrato on the leads, the plucked strings darker when played softly, GONG and MATH BELL brighter struck hard, and movement on the sounds that had none (the kits, ANIMAL, WEST's struck ones and basses). The INIT sounds and EXT as they were.
 
 ## V10.8.36 — NOISE on DIST, MIX on CHORUS, CLOUD starts with the note (2026-11-24, beta)
 

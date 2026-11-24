@@ -1,7 +1,7 @@
 # JIANT FM — User Manual
 
-**JIANT FM V10.8.36 for the M-VAVE FM-1** (the public version is V10.8.21; V10.8.22 to V10.8.36 are betas: what
-changed in them is in [New in V10.8.36](#new-in-v10836-since-v10821))
+**JIANT FM V10.8.37 for the M-VAVE FM-1** (the public version is V10.8.21; V10.8.22 to V10.8.37 are betas: what
+changed in them is in [New in V10.8.37](#new-in-v10837-since-v10821))
 
 > *Versión en español: [MANUAL.es.md](MANUAL.es.md).*
 
@@ -37,10 +37,19 @@ public version) or earlier: [What's new in this version](#whats-new-in-this-vers
 
 ## What's new in this version
 
-### New in V10.8.36 (since V10.8.21)
+### New in V10.8.37 (since V10.8.21)
 
-The betas V10.8.22 to V10.8.36 in one list. Where a chapter below still describes the earlier screen, this list is right.
+The betas V10.8.22 to V10.8.37 in one list. Where a chapter below still describes the earlier screen, this list is right.
 
+- **KEY TRK on FILTER** (V10.8.37): on EDIT › FILTER, **OCT+ held + KNOB 2** (CUT's) picks **OFF / 50 / 100 / NOTE**,
+  with a tag on the curve. At 50 and 100 the cutoff follows the key (100: a semitone a semitone, around C4), on every
+  type, the combs too; NOTE is 100 with the final cutoff on the semitones: MOD SEQ › CUT plays tuned resonances. A
+  track's, saved with the project, OFF by default.
+- **MUTATE without a page** (V10.8.37): EVERY is a tag in EUCLID's picture ("EVERY 4"); set it with **OCT+ held + KNOB
+  4** on EUCLID. OCT+ alone (when let go) mutates; OCT− goes back to the anchor.
+- **Factory sounds retouched** (V10.8.37): sends by role (basses dry, leads more delay than reverb, pads more reverb),
+  a late vibrato on the leads, the plucked strings darker when played softly, and movement on the sounds that had none
+  (the kits, ANIMAL, WEST's struck ones and basses).
 - **FX › DIST, KNOB 4: NOISE** (V10.8.36; 0–127, a track's): a noise that moves the gain and the tone inside the
   distortion: grain stuck to the note, not a hiss added (silence stays silent). Not on the AMP type.
 - **FX › CHORUS, KNOB 4: MIX** (V10.8.36; 0–100 %, global): at 0 the chorus as it was; towards 100 each track's dry
@@ -59,8 +68,9 @@ The betas V10.8.22 to V10.8.36 in one list. Where a chapter below still describe
 - **WEST › DUST** (V10.8.28): 1 to 95 is white noise going into the folder with the core (it folds and passes the gate
   with it: inside the timbre, not beside it); 96 to 127 is **METAL**, a metallic tone instead of the noise. It no
   longer crackles.
-- **MUTATE is back, compact** (V10.8.35): **SEQ › MUTATE** has one knob, **EVERY** (OFF, 1, 2, 4, 8 bars). On EUCLID or
-  MUTATE, **OCT+** mutates now and **OCT−** goes back to the anchor. See [MUTATE](#mutate-v1016-compact-since-v10835).
+- **MUTATE is back, compact** (V10.8.35; without a page since V10.8.37): EUCLID's pattern mutates by itself every
+  **EVERY** bars (OFF, 1, 2, 4, 8). On EUCLID, **OCT+** mutates and **OCT−** goes back to the anchor. See
+  [MUTATE](#mutate-v1016-no-page-since-v10837).
 - **LIVE is back, compact** (V10.8.35): on **SEQ › STEP FX**, the **black keys 1–9** change live how the selected
   track's sequence walks: RATE x2, x3/2, x2/3, REVERSE, PING-PONG, RANDOM, THIN, GIRO − and GIRO +. See
   [Live sequences](#live-sequences-the-black-keys-of-seq--step-fx-v10835).
@@ -525,7 +535,7 @@ it was in 0.9.1, with its knobs and its picture (the ones 0.8.5's lenses drew).
 | **EDIT** (a synth) | **SOUND**: the engine's two pages, shown by their own names (WAVES · SHAPE, FORMULA · MOTION …, see [4](#4-engines); ANALOG has one, OSC) — **TONE**: FILTER · WORDS (VOICE) · SWARM · SWARM 2 (EXT with SOURCE SWARM) — **FOCUS**: FOCUS (not on EXT) — **PLAY**: MORE (ANALOG, PHASE, MATH, WHEEL) · PLAY | 4 to 6 |
 | **EDIT** (FM6) | **SOUND**: ALGO · PATCH — **TONE**: FILTER — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 — **PLAY**: PLAY | 7 |
 | **EDIT** (DRUM) | **KIT**: KIT · KIT 2 — **SOUND**: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — **TONE**: CROSS MOD · FILTER | 8 |
-| **SEQ** | (V10.8.35) **STEP**: STEP — **PATTERN**: LENGTH · RHYTHM · TRACK — **EUCLID**: EUCLID · MODES (on a melodic track: MELODY) · MUTATE — **PLAYHEADS**: PLAYHEADS — **STEP FX**: STEP FX · STEP FX 2 — **AUTO**: AUTOMATION · AUTO LIST · LYRIC STEP (VOICE) — **TRACK GEN**: TRACK GEN (not on EXT) — **DRONE CLAY**: DRONE CLAY · CLAY MOD · CLAY RHYTHM · CLAY TIME | up to 18 |
+| **SEQ** | (V10.8.35) **STEP**: STEP — **PATTERN**: LENGTH · RHYTHM · TRACK — **EUCLID**: EUCLID · MODES (on a melodic track: MELODY) — **PLAYHEADS**: PLAYHEADS — **STEP FX**: STEP FX · STEP FX 2 — **AUTO**: AUTOMATION · AUTO LIST · LYRIC STEP (VOICE) — **TRACK GEN**: TRACK GEN (not on EXT) — **DRONE CLAY**: DRONE CLAY · CLAY MOD · CLAY RHYTHM · CLAY TIME | up to 18 |
 | **FX** | **TRACK**: SENDS · DIST · AUTO PAN — **BUSES**: BUSES — **DELAY**: DLY · DLY 2 · DLY 3 — **REVERB**: REVERB · REVERB 2 — **CHORUS**: CHORUS — **SLICER**: SLICER · SL BUS · SL BUS 2 · SL PITCH — **PUNCH IN**: PUNCH IN · MACROS — **MASTER**: MASTER · TAPE · EQ | 19 |
 | **GLO** | **MIXER**: MIXER · SENDS — **SETUP**: GLOBAL · SYSTEM · MIDI · KEY SPLIT · KEY SPLIT 2 | 7 |
 | **ENV** | (V10.8.35) **ENV**: ENV · ENV DEST · ENV 2 | 3 |
@@ -727,7 +737,6 @@ them page by page, a **SEQ** tap jumps to the next group.
 | PATTERN | TRACK | PITCH | CHANCE | HUMAN | REC GRID |
 | EUCLID | EUCLID (V10.6) | HITS (DRUM-X LANE ALL: DENSITY, V10.7) | STEPS (2–64) | ROTATE | LANE (DRUM-X: ALL, BD … CB) · ROLE (melodic, V10.8.35: MELODY, CHORDS, BASS, ARP) |
 | EUCLID | MODES (DRUM-X) · MELODY (melodic) | ACCENT · CONTOUR | GHOST · RANGE | RATCHET · MOTIF | VARY · VARY |
-| EUCLID | MUTATE (V10.8.35) | EVERY (OFF, 1, 2, 4, 8 bars) | — | — | — |
 | PLAYHEADS | PLAYHEADS | HEAD | RATE | DIR | INTVL |
 | STEP FX | STEP FX | ACTION | LENGTH | COND | VALUE (the step's first component) |
 | STEP FX | STEP FX 2 | ACTION 2 | LENGTH | COND (ELSE: MONO) | VALUE (its second) |
@@ -1196,6 +1205,12 @@ it rings), **CUT**, **RES**, and KNOB 4: on ANALOG its own DRIVE, on every other
 the filter is per voice; on MATH the filter page drives its per-voice filter; on the others it is a filter on the
 track that follows LFO DEST / ENV DEST FILTER.
 
+**KEY TRK** (V10.8.37): hold **OCT+** and turn **KNOB 2** (CUT's): **OFF, 50, 100 or NOTE**, with a tag on the curve.
+At 50 and 100 the cutoff follows the newest note sounding (100: a semitone for a semitone, around C4), on every filter
+type, the combs included. **NOTE** is 100 and the cutoff, after all its modulation, lands on the semitones: with MOD
+SEQ on CUT you play tuned resonances. A track's, saved with the project, OFF by default (OFF is exactly the sound as
+before). OCT+ alone, on FILTER, is still the keys' octave, when let go.
+
 **COMB** and **COMB-** (0.9.9-snd1): the comb is tuned to the newest note (CUT 64 = the note, ±32 semitones either
 side) and glides when CUT or the note moves (no zipper). **RES** is how long it rings, the same on every note: from a
 short colour (25 ms) up to ~9 s near self-oscillation at the top; a soft clip inside the loop keeps the ring bounded
@@ -1357,7 +1372,7 @@ groups, **PATT · TRACK · BAR · STEP · AUTO**, the one you are on lit with a 
 tap went round each level's sets: the pages and their pictures are the same, only the way between them is new. The
 pattern's bars (up to four, at LEN 64) are drawn as small cells: the bar you edit tinted violet with its number violet,
 the number of the bar playing orange, a bar past LEN dark.
-(V10.8.35) The chain is **STEP · LENGTH · RHYTHM · TRACK · EUCLID · MODES (MELODY on a melodic track) · MUTATE ·
+(V10.8.35) The chain is **STEP · LENGTH · RHYTHM · TRACK · EUCLID · MODES (MELODY on a melodic track) ·
 PLAYHEADS · STEP FX · STEP FX 2 · AUTOMATION · AUTO LIST · LYRIC STEP · TRACK GEN · DRONE CLAY · CLAY MOD · CLAY RHYTHM ·
 CLAY TIME**, in eight tabs (STEP · PAT · EUCL · HEAD · SFX · AUTO · GEN · CLAY). STRETCH went in V10.8.20.
 LYRIC STEP shows only on a VOICE track, TRACK GEN only where the track generator can write the track.
@@ -1579,7 +1594,7 @@ to the last step).
 
 Under the **EUCLID** (**EUCL**) tab of the SEQ chain, after TRACK, there are three pages: **EUCLID** writes the
 selected track's pattern as a euclidean rhythm, **MODES** (named **MELODY** on a melodic track) adds to it, and
-**MUTATE** (V10.8.35) makes it change by itself every few bars.
+**MUTATE** (V10.8.35; without a page of its own since V10.8.37) makes it change by itself every few bars.
 
 **EUCLID in one minute**
 
@@ -1612,7 +1627,7 @@ Melodic (any other track):
 | EUCLID | melodic | HITS | STEPS (2–64) | ROTATE | ROLE (MELODY CHORDS BASS ARP; V10.8.35) |
 | MODES | DRUM-X | ACCENT | GHOST | RATCHET | VARY |
 | MELODY (MODES on a melodic track) | melodic | CONTOUR (WALK UP DOWN ARCH WAVE LEAP RANDOM) | RANGE (2–15) | MOTIF (OFF 2 3 4 8) | VARY (0–100) |
-| MUTATE (V10.8.35) | any | EVERY (OFF, 1 BAR, 2 BARS, 4 BARS, 8 BARS) | — | — | — |
+| EUCLID, with OCT+ held (V10.8.37) | any | — | — | — | MUTATE's EVERY (OFF, 1, 2, 4, 8 bars) |
 
 - **The picture** (V10.8.35): one ring of dots, the cycle of STEPS at the turn playing: the hits in the track's
   colour (an accent larger), the step playing white, and ROTATE's mark outside its first step. On DRUM-X it shows the
@@ -1662,19 +1677,21 @@ Melodic (any other track):
   keeps the register the track had at the first turn (an empty track: around C4).
 - **Live**: turning a knob writes the track's whole pattern again, at once (its automation stays). A new gesture
   after two seconds is an UNDO point (**GLO + G4**). On **MODES / MELODY**, **OCT+** is a new variation (NEW VARIATION: the same
-  settings, new notes and details) and **OCT−** the one before (VARIATION BEFORE). On **EUCLID** and **MUTATE**
-  (V10.8.35), **OCT+** mutates now (MUTATED) and **OCT−** goes back to the anchor (ANCHOR). While a song plays the page
+  settings, new notes and details) and **OCT−** the one before (VARIATION BEFORE). On **EUCLID**
+  (V10.8.35), **OCT+** mutates when let go (MUTATED) and **OCT−** goes back to the anchor (ANCHOR). While a song plays the page
   says **SONG PLAYS: STOP IT TO EDIT**.
 - The EUCLID and MODES settings live in RAM for the session; the pattern itself is saved with the project like any
   pattern.
 
-### MUTATE (V10.16; compact since V10.8.35)
+### MUTATE (V10.16; no page since V10.8.37)
 
-*MUTATE was removed in V10.8.20 and came back in V10.8.35, reduced to its essentials.*
+*MUTATE was removed in V10.8.20, came back compact in V10.8.35, and since V10.8.37 has no page of its own: it lives on
+EUCLID.*
 
-**SEQ › MUTATE** (the third page of the EUCL tab) has one knob: **KNOB 1 EVERY** — OFF, 1 BAR, 2 BARS, 4 BARS or 8 BARS.
-With EVERY on and the transport playing, that track's EUCLID pattern **mutates by itself** every so many bars: the
-change is worked out in the last beat and the new pattern comes in on the next bar.
+On **SEQ › EUCLID**, hold **OCT+** and turn **KNOB 4**: you pick **EVERY** — OFF, 1, 2, 4 or 8 bars. EUCLID's picture
+shows it as a tag ("EVERY 4"; nothing when OFF). With EVERY on and the transport playing, that track's EUCLID pattern
+**mutates by itself** every so many bars: the change is worked out in the last beat and the new pattern comes in on
+the next bar.
 
 - **The anchor** is what you dialled with the knobs of EUCLID and MODES / MELODY (each time you turn one, that is the
   anchor). Every mutation starts **from the anchor**, not from the mutation before: the pattern orbits what you built
@@ -1682,7 +1699,7 @@ change is worked out in the last beat and the new pattern comes in on the next b
 - **What changes**: always a new seed (on a melody, some of the anchor's notes crossed with new ones), and by chance
   HITS (DENSITY), ROTATE and the amounts of MODES / MELODY. **How far**: as far as **VARY** says (a quarter at least).
   On DRUM-X with a lane picked on LANE, that lane mutates.
-- **By hand**: on EUCLID or MUTATE, **OCT+** makes a mutation now (MUTATED) and **OCT−** goes back to the anchor
+- **By hand**: on EUCLID, **OCT+** alone (when let go) makes a mutation (MUTATED) and **OCT−** goes back to the anchor
   (ANCHOR).
 - It does not mutate while a song plays (ARRANGE's chain); stopped, it starts from the top again.
 - V10.16's settings that are gone: AMOUNT, MODE and WHAT, and its page's picture. Old projects open all the same.

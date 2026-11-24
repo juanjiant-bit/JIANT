@@ -6,7 +6,7 @@ Firmware personalizado para el M-VAVE FM-1, de Juan Jiant. Primero la versión m
 
 | Versión | Fecha | Estado |
 | --- | --- | --- |
-| V10.8.22 … V10.8.36 | 2026-11-23 … 11-24 | Beta |
+| V10.8.22 … V10.8.37 | 2026-11-23 … 11-24 | Beta |
 | **V10.8.21** | 2026-11-23 | **Pública** |
 | V10.8.1 … V10.8.20 | 2026-11-21 … 11-23 | Beta |
 | **V10.7.81** | 2026-11-21 | **Pública** |
@@ -43,6 +43,12 @@ Antes de instalar, revisá los apartados **Compatibilidad**.
 > al final.
 
 ---
+
+## V10.8.37 — MUTATE sin página, KEY TRK en FILTER, sonidos de fábrica retocados (2026-11-24, beta)
+
+- **MUTATE**: su página se fue. EVERY (OFF, 1, 2, 4, 8 compases) es una etiqueta en el dibujo de EUCLID ("EVERY 4") y se cambia con OCT+ mantenido + KNOB 4 en EUCLID. OCT+ solo muta al soltarlo; OCT− vuelve al ancla.
+- **KEY TRK** (EDIT › FILTER): OCT+ mantenido + KNOB 2 (la de CUT) elige OFF / 50 / 100 / NOTE, con una etiqueta sobre la curva. En 50 y 100 el corte sigue a la tecla (100: un semitono por semitono, alrededor de C4) en todos los tipos, los peines también; en NOTE el corte final cae en semitonos (MOD SEQ › CUT toca resonancias afinadas). Por pista, se guarda con el proyecto, OFF por defecto.
+- **Sonidos de fábrica**: envíos según el rol (bajos secos, leads con más delay que reverb, pads con más reverb), vibrato tardío en los leads, cuerdas punteadas más oscuras al tocar suave, GONG y MATH BELL más brillantes al golpear fuerte, y movimiento en los sonidos que no lo tenían (kits, ANIMAL, los golpeados y los bajos de WEST). Los INIT y EXT quedan como estaban.
 
 ## V10.8.36 — NOISE en DIST, MIX en CHORUS, CLOUD arranca con la nota (2026-11-24, beta)
 

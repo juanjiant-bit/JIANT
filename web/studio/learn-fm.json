@@ -737,13 +737,13 @@
       "es": [
        "TYPE: LP, HP, BP, COMB y COMB- (un peine afinado a la nota que tocás); hasta V10.8.34 también MS20 y LP24 (uno guardado abre como LP).",
        "CUT mueve el corte, RES la resonancia; en el peine, cuánto resuena.",
-       "LFO DEST y ENV DEST mueven el filtro; en la matriz MOD, KEY › CUT hace que siga a la nota; KNOB 4 es IMAGE, la imagen estéreo.",
+       "LFO DEST y ENV DEST mueven el filtro; KEY TRK (V10.8.37: OCT+ mantenido + KNOB 2; OFF, 50, 100, NOTE) hace que el corte siga a la tecla, y en NOTE cae en semitonos; KNOB 4 es IMAGE, la imagen estéreo.",
        "En ANALOG el filtro es por voz (su DRIVE, en FOCUS)."
       ],
       "en": [
        "TYPE: LP, HP, BP, COMB and COMB- (a comb tuned to the note you play); up to V10.8.34 also MS20 and LP24 (a stored one opens as LP).",
        "CUT moves the cutoff, RES the resonance; on the comb, how much it rings.",
-       "LFO DEST and ENV DEST move the filter; in the MOD matrix, KEY › CUT makes it follow the note; KNOB 4 is IMAGE, the stereo image.",
+       "LFO DEST and ENV DEST move the filter; KEY TRK (V10.8.37: OCT+ held + KNOB 2; OFF, 50, 100, NOTE) makes the cutoff follow the key, and on NOTE it lands on semitones; KNOB 4 is IMAGE, the stereo image.",
        "On ANALOG the filter is per voice (its DRIVE on FOCUS)."
       ]
      },
@@ -1324,21 +1324,21 @@
      },
      "how": {
       "es": [
-       "EVERY: OFF, 1, 2, 4 u 8 compases; en cada uno llega una mutación nueva al compás.",
+       "EVERY: OFF, 1, 2, 4 u 8 compases; se elige en EUCLID con OCT+ mantenido + KNOB 4 y se ve como una etiqueta (EVERY 4) en el dibujo (hasta V10.8.36 era la página SEQ › MUTATE).",
        "Muta desde el ancla tanto como VARY: la semilla, HITS, ROTATE y los MODES.",
-       "OCT+ (en EUCLID o MUTATE) muta ya; OCT− vuelve al ancla.",
+       "OCT+ solo, en EUCLID, muta al soltarlo; OCT− vuelve al ancla.",
        "En MODES / MELODY, OCT+ / OCT− siguen siendo una variación nueva / la anterior."
       ],
       "en": [
-       "EVERY: OFF, 1, 2, 4 or 8 bars; each time a new mutation arrives on the bar.",
+       "EVERY: OFF, 1, 2, 4 or 8 bars; set on EUCLID with OCT+ held + KNOB 4 and shown as a tag (EVERY 4) in the picture (until V10.8.36 it was the SEQ › MUTATE page).",
        "It mutates from the anchor as far as VARY: the seed, HITS, ROTATE and the MODES.",
-       "OCT+ (on EUCLID or MUTATE) mutates now; OCT− goes back to the anchor.",
+       "OCT+ alone, on EUCLID, mutates when let go; OCT− goes back to the anchor.",
        "On MODES / MELODY, OCT+ / OCT− are still a new variation / the previous one."
       ]
      },
      "where": {
-      "es": "SEQ › MUTATE",
-      "en": "SEQ › MUTATE"
+      "es": "SEQ › EUCLID: OCT+ mantenido + KNOB 4",
+      "en": "SEQ › EUCLID: OCT+ held + KNOB 4"
      },
      "anim": {
       "kind": "euclid",
