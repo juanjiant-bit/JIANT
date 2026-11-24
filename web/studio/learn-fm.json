@@ -665,13 +665,15 @@
        "SOURCE: IN 1, IN 2, 1+2, STEREO (la entrada de audio USB) o SWARM.",
        "GAIN el nivel de entrada y GATE la compuerta.",
        "MODE: THRU suena todo el tiempo; KEYS solo mientras se tocan teclas o pasos.",
-       "Según la fuente aparecen IMAGE, DRIFT, PLUCK, FM, OCTAVE y CHAOS."
+       "Según la fuente aparecen IMAGE, DRIFT, PLUCK, FM, OCTAVE y CHAOS.",
+       "Todo lo que se puede hacer con la entrada está en la sección Entrada de audio de esta guía."
       ],
       "en": [
        "SOURCE: IN 1, IN 2, 1+2, STEREO (the USB audio input) or SWARM.",
        "GAIN the input level and GATE the gate.",
        "MODE: THRU sounds all the time; KEYS only while keys or steps play.",
-       "Depending on the source, IMAGE, DRIFT, PLUCK, FM, OCTAVE and CHAOS appear."
+       "Depending on the source, IMAGE, DRIFT, PLUCK, FM, OCTAVE and CHAOS appear.",
+       "Everything you can do with the input is in this guide's Audio in section."
       ]
      },
      "where": {
@@ -752,6 +754,363 @@
       "params": {
        "res": 0.7
       }
+     }
+    }
+   ]
+  },
+  {
+   "id": "audioin",
+   "name": {
+    "es": "Entrada de audio",
+    "en": "Audio in"
+   },
+   "lead": {
+    "es": "Lo que entra por USB se vuelve una pista más de JIANT: filtros, peines afinados, punch-in de stutter, reverse y freeze, el SLICER, los efectos, y hasta modular el resto del tema.",
+    "en": "What comes in over USB becomes one more JIANT track: filters, tuned combs, stutter, reverse and freeze punch-ins, the SLICER, the effects, and even modulating the rest of the song."
+   },
+   "items": [
+    {
+     "id": "audio-in",
+     "name": "ENTRADA DE AUDIO",
+     "tag": {
+      "es": "Tu sonido, dentro de JIANT",
+      "en": "Your sound, inside JIANT"
+     },
+     "statement": {
+      "es": "La FM-1 no solo suena: también escucha. Cualquier sonido de afuera (tu voz, una guitarra, un sintetizador, un loop de la compu) entra como una pista más y pasa por todo lo que JIANT sabe hacer.",
+      "en": "The FM-1 doesn't only sound: it listens too. Any sound from outside (your voice, a guitar, a synth, a loop from the computer) comes in as one more track and goes through everything JIANT can do."
+     },
+     "how": {
+      "es": [
+       "Desde la compu o el celular: MENU › SYSTEM › USB › IN+OUT y la FM-1 aparece como parlante USB; lo que reproduzcas entra a JIANT.",
+       "Desde una interfaz de audio USB enchufada al puerto host de la FM-1: sus entradas 1 y 2.",
+       "Con STEMS+IN, el micrófono del celular entra y vuelve grabado en su propio canal.",
+       "Elegí una pista, cambiale el motor a EXT y ya suena la entrada."
+      ],
+      "en": [
+       "From the computer or phone: MENU › SYSTEM › USB › IN+OUT and the FM-1 shows as a USB speaker; whatever you play goes into JIANT.",
+       "From a USB audio interface plugged into the FM-1's host port: its inputs 1 and 2.",
+       "With STEMS+IN, the phone's microphone comes in and comes back recorded on its own channel.",
+       "Pick a track, change its engine to EXT and the input plays."
+      ]
+     },
+     "where": {
+      "es": "MENU › SYSTEM › USB › IN+OUT; una pista con el motor EXT",
+      "en": "MENU › SYSTEM › USB › IN+OUT; a track with the EXT engine"
+     },
+     "anim": {
+      "kind": "input",
+      "params": {}
+     }
+    },
+    {
+     "id": "ext-source",
+     "name": "EXT · SOURCE",
+     "tag": {
+      "es": "De dónde viene y cuánto",
+      "en": "Where it comes from, how much"
+     },
+     "statement": {
+      "es": "Una pista EXT es un instrumento hecho de lo que entra. Podés tener dos: una con la entrada 1 y otra con la 2, cada una con su propia cadena.",
+      "en": "An EXT track is an instrument made of what comes in. You can have two: one on input 1 and another on input 2, each with its own chain."
+     },
+     "how": {
+      "es": [
+       "SOURCE: IN 1, IN 2, 1+2 (las dos juntas en mono) o STEREO (la imagen estéreo entera); también SWARM, el dron del entorno.",
+       "GAIN levanta la entrada hasta +12 dB; GATE es una compuerta de ruido: abajo de su nivel, silencio.",
+       "WIDTH abre o cierra el estéreo en STEREO.",
+       "Después, como cualquier pista: LEVEL, PAN, MUTE, la matriz de modulación y los envíos."
+      ],
+      "en": [
+       "SOURCE: IN 1, IN 2, 1+2 (both summed to mono) or STEREO (the whole stereo image); also SWARM, the drone of the surroundings.",
+       "GAIN lifts the input up to +12 dB; GATE is a noise gate: below its level, silence.",
+       "WIDTH opens or narrows the stereo in STEREO.",
+       "Then, like any track: LEVEL, PAN, MUTE, the modulation matrix and the sends."
+      ]
+     },
+     "where": {
+      "es": "EDIT en una pista EXT",
+      "en": "EDIT on an EXT track"
+     },
+     "anim": {
+      "kind": "input",
+      "params": {}
+     }
+    },
+    {
+     "id": "ext-keys",
+     "name": "EXT · KEYS · RING",
+     "tag": {
+      "es": "Las teclas abren la entrada",
+      "en": "The keys open the input"
+     },
+     "statement": {
+      "es": "En KEYS la entrada solo suena cuando tocás: las teclas y los pasos del secuenciador la abren y la cierran con su envolvente. Un pad sostenido se vuelve un trance gate al tempo, una voz se vuelve percusión.",
+      "en": "In KEYS the input only sounds when you play: the keys and the sequencer's steps open and close it with their envelope. A held pad turns into a trance gate in time, a voice turns into percussion."
+     },
+     "how": {
+      "es": [
+       "PLAY: THRU suena siempre; KEYS solo mientras suena una nota, con su ATK, DEC, SUS y REL.",
+       "Programá pasos en el SEQ y la entrada queda recortada al ritmo: un gate rítmico sobre cualquier sonido.",
+       "RING multiplica la entrada por un seno afinado a la nota que tocás: ring mod que sigue tus teclas, de metálico a robótico.",
+       "Probá: una voz hablada, KEYS, pasos de 1/16 con DEC corto, y RING a la mitad."
+      ],
+      "en": [
+       "PLAY: THRU sounds all the time; KEYS only while a note plays, with its ATK, DEC, SUS and REL.",
+       "Program steps in SEQ and the input gets cut to the rhythm: a rhythmic gate over any sound.",
+       "RING multiplies the input by a sine tuned to the note you play: ring mod that follows your keys, metallic to robotic.",
+       "Try it: a spoken voice, KEYS, 1/16 steps with a short DEC, and RING halfway."
+      ]
+     },
+     "where": {
+      "es": "EDIT en una pista EXT: PLAY y RING; ENV para la envolvente",
+      "en": "EDIT on an EXT track: PLAY and RING; ENV for the envelope"
+     },
+     "anim": {
+      "kind": "slicer",
+      "params": {}
+     }
+    },
+    {
+     "id": "ext-filter",
+     "name": "FILTER · COMB",
+     "tag": {
+      "es": "Filtros y un peine afinado",
+      "en": "Filters and a tuned comb"
+     },
+     "statement": {
+      "es": "El filtro de la pista también filtra la entrada, y los dos peines la hacen resonar afinada: tocás una nota y tu sonido vibra como una cuerda o un tubo en esa altura.",
+      "en": "The track's filter filters the input too, and the two combs make it ring in tune: play a note and your sound vibrates like a string or a tube at that pitch."
+     },
+     "how": {
+      "es": [
+       "TYPE: LP, HP, BP, MS20 (más sucio) y LP24 (más empinado), con CUTOFF y RES.",
+       "COMB pasa la entrada por un peine con realimentación afinado a la última nota que tocaste; COMB- es el mismo con la realimentación negativa: más hueco, armónicos impares.",
+       "Con COMB y RES alta, un ruido o una voz se vuelven una cuerda que tocás con las teclas.",
+       "Mové CUTOFF con un LFO o con FOLLOW para que el filtro respire con la música."
+      ],
+      "en": [
+       "TYPE: LP, HP, BP, MS20 (dirtier) and LP24 (steeper), with CUTOFF and RES.",
+       "COMB runs the input through a feedback comb tuned to the last note you played; COMB- is the same with negative feedback: hollower, odd harmonics.",
+       "With COMB and high RES, noise or a voice becomes a string you play from the keys.",
+       "Move CUTOFF with an LFO or with FOLLOW so the filter breathes with the music."
+      ]
+     },
+     "where": {
+      "es": "EDIT › FILTER de la pista EXT",
+      "en": "The EXT track's EDIT › FILTER"
+     },
+     "anim": {
+      "kind": "filter",
+      "params": {
+       "res": 0.9
+      }
+     }
+    },
+    {
+     "id": "ext-lofi",
+     "name": "BITS · RATE · DIST",
+     "tag": {
+      "es": "Ensuciarla a gusto",
+      "en": "Dirty it to taste"
+     },
+     "statement": {
+      "es": "La entrada se puede volver lo-fi: menos bits, menos muestras y saturación, del crujido de un sampler viejo a un rugido digital.",
+      "en": "The input can go lo-fi: fewer bits, fewer samples and drive, from an old sampler's crunch to a digital roar."
+     },
+     "how": {
+      "es": [
+       "BITS baja la resolución: grano, ruido de cuantización.",
+       "RATE sostiene muestras (de 1 a 32): aliasing, el sonido de los samplers de los 80.",
+       "DIST de la pista satura; en STEREO también achica un poco la imagen.",
+       "Combinado con KEYS y COMB, convierte cualquier entrada en un instrumento propio."
+      ],
+      "en": [
+       "BITS lowers the resolution: grain, quantization noise.",
+       "RATE holds samples (1 to 32): aliasing, the sound of 80s samplers.",
+       "The track's DIST drives it; in STEREO it also narrows the image a little.",
+       "With KEYS and COMB, it turns any input into an instrument of its own."
+      ]
+     },
+     "where": {
+      "es": "EDIT de la pista EXT; FX › TRACK › DIST",
+      "en": "The EXT track's EDIT; FX › TRACK › DIST"
+     },
+     "anim": {
+      "kind": "lofi",
+      "params": {}
+     }
+    },
+    {
+     "id": "ext-slicer",
+     "name": "SLICER",
+     "tag": {
+      "es": "Cortar la entrada al ritmo",
+      "en": "Slice the input to the beat"
+     },
+     "statement": {
+      "es": "El SLICER corta lo que le mandes en patrones rítmicos o lo repite en stutters, y puede reafinar cada repetición: tu loop o tu voz se vuelven un instrumento rítmico.",
+      "en": "The SLICER cuts whatever you send it into rhythmic patterns or repeats it as stutters, and can retune each repeat: your loop or your voice becomes a rhythm instrument."
+     },
+     "how": {
+      "es": [
+       "SL BUS: encendé la pista EXT (y si querés los retornos de efectos) para que pase por el SLICER.",
+       "MODE GATE corta en patrones (PAT 1–16), STUT repite trozos; RATE de 1/8 a 32T; DEPTH cuánto.",
+       "SL PITCH: una secuencia de 16 pasos que afina cada repetición, en semitonos o en la escala del tema.",
+       "Cada sección guarda su propio SLICER: un corte distinto en cada parte del tema."
+      ],
+      "en": [
+       "SL BUS: turn the EXT track on (and the effect returns if you like) so it goes through the SLICER.",
+       "MODE GATE cuts in patterns (PAT 1–16), STUT repeats pieces; RATE 1/8 to 32T; DEPTH how much.",
+       "SL PITCH: a 16-step sequence that tunes each repeat, in semitones or in the song's scale.",
+       "Each section keeps its own SLICER: a different cut in each part of the song."
+      ]
+     },
+     "where": {
+      "es": "FX › SLICER, SL BUS y SL PITCH",
+      "en": "FX › SLICER, SL BUS and SL PITCH"
+     },
+     "anim": {
+      "kind": "slicer",
+      "params": {}
+     }
+    },
+    {
+     "id": "ext-punch",
+     "name": "PUNCH-IN DE AUDIO",
+     "tag": {
+      "es": "Stutter, reverse, freeze…",
+      "en": "Stutter, reverse, freeze…"
+     },
+     "statement": {
+      "es": "Mantené FX y tocá teclas: los efectos de audio agarran el sonido de la mezcla, tu entrada incluida, y lo repiten, lo dan vuelta, lo congelan o lo frenan como una cinta. Soltás y vuelve todo, exacto.",
+      "en": "Hold FX and play keys: the audio effects grab the sound of the mix, your input included, and repeat it, reverse it, freeze it or stop it like tape. Let go and everything comes back, exactly."
+     },
+     "how": {
+      "es": [
+       "REPEAT 1/8, 1/16 y 1/32: stutters que entran en el próximo 1/16.",
+       "REVERSE da vuelta lo último que sonó; FREEZE lo congela en una nota sostenida.",
+       "TAPE STOP frena como una cinta; PITCH UP y PITCH DOWN suben o bajan la mezcla; STRETCH la estira.",
+       "Con FX mantenido las perillas son FILTER (pasabajos a la izquierda, pasaaltos a la derecha), CRUSH, THROW y DEPTH (el nivel del REPEAT).",
+       "Trabá la capa (mantené FX y soltalo sin tocar nada) para tener las dos manos libres."
+      ],
+      "en": [
+       "REPEAT 1/8, 1/16 and 1/32: stutters that come in on the next 1/16.",
+       "REVERSE plays back what just sounded; FREEZE holds it as a sustained note.",
+       "TAPE STOP slows down like tape; PITCH UP and PITCH DOWN move the mix up or down; STRETCH stretches it.",
+       "With FX held the knobs are FILTER (low-pass left, high-pass right), CRUSH, THROW and DEPTH (the REPEAT's level).",
+       "Lock the layer (hold FX and let go without touching anything) to have both hands free."
+      ]
+     },
+     "where": {
+      "es": "Mantené FX: las teclas blancas de la izquierda son los efectos de audio",
+      "en": "Hold FX: the white keys on the left are the audio effects"
+     },
+     "anim": {
+      "kind": "punch",
+      "params": {}
+     }
+    },
+    {
+     "id": "ext-sends",
+     "name": "DELAY · REVERB · CHORUS · THROW",
+     "tag": {
+      "es": "La entrada en el espacio",
+      "en": "The input in space"
+     },
+     "statement": {
+      "es": "Tu sonido entra a los mismos efectos que el resto de JIANT, así que se mezcla con los sintes como si hubiera nacido adentro. THROW lo tira entero al eco en el momento justo, como en el dub.",
+      "en": "Your sound goes into the same effects as the rest of JIANT, so it blends with the synths as if it were born inside. THROW throws all of it into the echo at the right moment, dub style."
+     },
+     "how": {
+      "es": [
+       "Los envíos de la pista EXT mandan la entrada a CHORUS, DELAY y REVERB (cinco modelos de reverb).",
+       "THROW (con FX mantenido, KNOB 3) manda la mezcla seca al delay y la reverb mientras lo girás; las repeticiones pasan por una banda como un eco de cinta.",
+       "Con DUCK, el bombo baja las demás pistas: tu entrada respira con el beat.",
+       "Probá: una guitarra con delay al tempo y THROW al final de cada compás."
+      ],
+      "en": [
+       "The EXT track's sends feed the input to CHORUS, DELAY and REVERB (five reverb models).",
+       "THROW (with FX held, KNOB 3) sends the dry mix into the delay and reverb while you turn it; the repeats go through a band like a tape echo.",
+       "With DUCK, the kick ducks the other tracks: your input breathes with the beat.",
+       "Try it: a guitar with a delay in time and THROW at the end of each bar."
+      ]
+     },
+     "where": {
+      "es": "FX › TRACK › SENDS; FX › DELAY, REVERB, CHORUS; DUCK en el MIXER",
+      "en": "FX › TRACK › SENDS; FX › DELAY, REVERB, CHORUS; DUCK on the MIXER"
+     },
+     "anim": {
+      "kind": "delay",
+      "params": {}
+     }
+    },
+    {
+     "id": "ext-follow",
+     "name": "FOLLOW",
+     "tag": {
+      "es": "La entrada mueve todo lo demás",
+      "en": "The input moves everything else"
+     },
+     "statement": {
+      "es": "La entrada no solo suena: también modula. FOLLOW es el volumen de lo que entra, y lo podés usar para mover cualquier parámetro de cualquier pista. Cantás, y el filtro de un sinte se abre; tocás la batería de afuera, y una pista bombea.",
+      "en": "The input doesn't only sound: it modulates too. FOLLOW is the level of what comes in, and you can use it to move any parameter of any track. You sing and a synth's filter opens; you play an outside drum and a track pumps."
+     },
+     "how": {
+      "es": [
+       "En la matriz MOD, elegí FOLLOW como fuente y cualquier destino: CUTOFF, PITCH, AMP, PAN, los envíos…",
+       "FOLLOW sigue lo que entra por USB aunque ninguna pista lo esté sonando: la entrada puede ser solo un controlador.",
+       "Con cantidad negativa, la entrada hace ducking: los sintes bajan cuando hablás.",
+       "Probá: FOLLOW → CUT en un pad, y hablale a la FM-1."
+      ],
+      "en": [
+       "In the MOD matrix, pick FOLLOW as the source and any destination: CUTOFF, PITCH, AMP, PAN, the sends…",
+       "FOLLOW follows what comes in over USB even when no track is playing it: the input can be just a controller.",
+       "With a negative amount, the input ducks: the synths go down when you talk.",
+       "Try it: FOLLOW → CUT on a pad, and talk to the FM-1."
+      ]
+     },
+     "where": {
+      "es": "LFO › MOD (la matriz): SRC FOLLOW",
+      "en": "LFO › MOD (the matrix): SRC FOLLOW"
+     },
+     "anim": {
+      "kind": "matrix",
+      "params": {}
+     }
+    },
+    {
+     "id": "ext-record",
+     "name": "GRABAR CON LA ENTRADA",
+     "tag": {
+      "es": "Tu toma, en pistas",
+      "en": "Your take, on tracks"
+     },
+     "statement": {
+      "es": "Todo lo que hiciste con la entrada se puede grabar: la mezcla completa, o cada pista por separado con tu sonido en su propio canal, listo para el DAW.",
+      "en": "Everything you did with the input can be recorded: the full mix, or each track apart with your sound on its own channel, ready for the DAW."
+     },
+     "how": {
+      "es": [
+       "STEREO: la mezcla por USB, con la entrada incluida.",
+       "STEMS: T1–T6 por separado y la vuelta de efectos.",
+       "STEMS+IN: además, la voz como la mezcló la pista y como llegó, en canales propios.",
+       "En JIANT Studio › Grabar ves cada canal como pista de DAW y exportás WAV, stems y MIDI."
+      ],
+      "en": [
+       "STEREO: the mix over USB, input included.",
+       "STEMS: T1–T6 apart and the effects return.",
+       "STEMS+IN: also, the voice as the track mixed it and as it came, on their own channels.",
+       "In JIANT Studio › Record you see each channel as a DAW track and export WAV, stems and MIDI."
+      ]
+     },
+     "where": {
+      "es": "MENU › SYSTEM › USB; JIANT Studio › Grabar",
+      "en": "MENU › SYSTEM › USB; JIANT Studio › Record"
+     },
+     "anim": {
+      "kind": "tracks",
+      "params": {}
      }
     }
    ]
