@@ -782,21 +782,22 @@ static const ggenre_t GENRE[] = {
      * simple: the complexity in one dimension) */
     /* Autechre, Aphex Twin's edits (Windowlicker, Come to Daddy), Squarepusher: the Amen edited bar by bar (rolls,
      * stutters, a beat moved, half a bar reversed, the kick out), an acid or FM bass, a lullaby on bells */
-    {"IDM GLITCH", 135, 165, 0, {SC_MIN, SC_PHRY, SC_DOR, SC_HARM}, DM_AMEN, 100, KIT_CLICK, 2, HC_FLAT, FL_ROLL, 0,
-     {BA_ACID, BA_ANGULAR, BA_JUNGLE}, 33, KM_INTERLOCK, 50, {PR_MINOR4, PR_IDM2, PR_IV_I}, 2, CS_SPARSE, VM_PAD,
-     {AP_WALK, AP_CYCLE5}, LD_MOTIF, AMT(90, 70, 45, 55, 50), {KIT_CLICK, SR_FMBASS, SR_EP, SR_BELL, SR_BELL}, SR_TEXTURE,
-     4, 5, 45, DT(1, FXS_NONE), FM_ARC, 10, HF_JAZZY, 3},
+    {"IDM GLITCH", 140, 170, 0, {SC_MIN, SC_PHRY, SC_DOR, SC_HARM}, DM_AMEN, 100, KIT_CLICK, 3, HC_FLAT, FL_ROLL, 0,
+     {BA_ACID, BA_ANGULAR, BA_JUNGLE}, 31, KM_INTERLOCK, 60, {PR_MINOR4, PR_IDM2, PR_DEEPVI}, 2, CS_SPARSE, VM_PAD,
+     {AP_WALK, AP_CYCLE5}, LD_MOTIF, AMT(100, 95, 35, 60, 75), {KIT_CLICK, SR_FMBASS, SR_EP, SR_CHIP, SR_BELL}, SR_TEXTURE,
+     4, 5, 40, DT(1, FXS_GROWL), FM_ARC, 10, HF_JAZZY, 3},   /* (V10.8.39, the owner: "far more extreme: ratchets, powerful
+                                                         * basses, melodies": the bass louder and driven, the lead up) */
     /* Boards of Canada, Floating Points, Aphex Twin's SAW: a soft hip hop break laid back, a sub on long roots, warm
      * sevenths and ninths a chord every four bars, pads with the tape's wobble, a few notes of melody */
     {"IDM AMBIENT", 85, 100, 30, {SC_DOR, SC_MAJ, SC_MIN, SC_LYD}, DM_BOC, 100, KIT_SOFT, 1, HC_FUNK, FL_NONE, 2,
      {BA_PEDAL, BA_FIFTHS, BA_DUST}, 31, KM_SUSTAIN, 110, {PR_IDM1, PR_IDM2, PR_SUS}, 4, CS_SWELL, VM_RICH,
-     {AP_GLASS, AP_UPDOWN}, LD_SPARSE, AMT(60, 60, 90, 35, 40), {KIT_SOFT, SR_SUB, SR_PAD, SR_BELL, SR_SINEKEY}, SR_DRONE,
+     {AP_GLASS, AP_UPDOWN}, LD_SPARSE, AMT(60, 60, 90, 50, 45), {KIT_SOFT, SR_SUB, SR_PAD, SR_BELL, SR_SINEKEY}, SR_DRONE,
      4, 4, 75, DT(0, FXS_WARM), FM_ARC, 30, HF_COLOR, 1 | GSP_WOW},
     /* Aphex Twin (drukqs), Venetian Snares made musical: a break edited, a 3:4 arp and lead over a three-bar cycle,
      * detuned, bells and chips, playful */
-    {"IDM WEIRD", 100, 130, 12, {SC_LYD, SC_DOR, SC_PHRY, SC_MIX}, DM_BREAKS, 100, KIT_CLICK, 1, HC_FLAT, FL_KICK16, 0,
-     {BA_ANGULAR, BA_DUST, BA_ACID}, 33, KM_INTERLOCK, 55, {PR_I_II, PR_IDM1, PR_DEEPVI}, 2, CS_SPARSE, VM_SUS,
-     {AP_CYCLE3, AP_WALK}, LD_MOTIF, AMT(80, 70, 50, 60, 45), {KIT_CLICK, SR_FMBASS, SR_EP, SR_CHIP, SR_BELL}, SR_TEXTURE,
+    {"IDM WEIRD", 100, 130, 12, {SC_LYD, SC_HARM, SC_PHRY, SC_MIX}, DM_BREAKS, 100, KIT_CLICK, 1, HC_FLAT, FL_KICK16, 0,
+     {BA_ANGULAR, BA_DUST, BA_ACID}, 33, KM_INTERLOCK, 55, {PR_IDM1, PR_JAZZ3, PR_PROG2}, 2, CS_SPARSE, VM_QUART,
+     {AP_CYCLE3, AP_CYCLE5}, LD_MOTIF, AMT(80, 70, 50, 65, 55), {KIT_CLICK, SR_FMBASS, SR_CHOIR, SR_CHIP, SR_MALLET}, SR_TEXTURE,
      4, 3, 50, DT(1, FXS_LOFI), FM_ARC, 10, HF_COLOR, 2 | GSP_POLY | GSP_WOW},
     /* ---- kraut, EBM */
     /* NEU! (Hallogallo), Can, Harmonia: the motorik beat, one chord, a droning guitar, the layers coming in over time */
@@ -939,6 +940,28 @@ static const uint16_t GGRAM[] = {   /* (gen3: + LIFT, 2 = none; V10.6n: the owne
     GG(1, 2, 1, 1, 0, 0, 6), GG(0, 0, 0, 0, 0, 1, 3), GG(2, 0, 0, 2, 0, 0, 6),   /* (V10.7.63) DUBSTEP SHOEGAZE METALCORE */
 };
 _Static_assert(sizeof GGRAM / sizeof GGRAM[0] == NGENRE, "GGRAM: a grammar a genre");
+/* (V10.8.39, the owner: "every genre its character") a genre's traits, two bits each (0 none .. 3; gen.c gchr, after the
+ * grammar): HR the closed hats' rolls (x2 x4 x8, the bar's end more), GH the snare's, the tom's and the rim's touches
+ * (a soft hit a GHOST, an accent a FLAM), NR the arp's and the lead's ratchets (bursts, louder or softer), PL the loops of
+ * other lengths (GC_LEN: 1 the arp three bars, 2 dotted, 3 odd metres), JP the arp's octave jumps, LK a hit's own
+ * cutoff or send (parameter locks), BB the bass's bursts, EV the arp's notes walking the scale loop after loop */
+#define GC(hr, gh, nr, pl, jp, lk, bb, ev) (uint16_t)((hr) | (gh) << 2 | (nr) << 4 | (pl) << 6 | (jp) << 8 | (lk) << 10 | (bb) << 12 | (ev) << 14)
+#define GC_F(c, f) (((c) >> 2u * (f)) & 3u)
+enum { GC_HR, GC_GH, GC_NR, GC_PL, GC_JP, GC_LK, GC_BB, GC_EV };
+static const uint16_t GCHAR[] = {
+    GC(0, 0, 0, 2, 0, 1, 0, 1), GC(1, 0, 1, 0, 0, 0, 1, 0), GC(0, 0, 1, 0, 0, 0, 2, 0),   /* MINIMAL TECHNO HARD TECHNO HARD BASS */
+    GC(0, 1, 0, 0, 0, 0, 0, 0), GC(0, 1, 0, 0, 0, 1, 0, 0), GC(1, 0, 0, 0, 0, 1, 1, 0), GC(0, 3, 0, 0, 0, 0, 0, 0),   /* HOUSE DEEP HOUSE TECH HOUSE TRIBAL */
+    GC(0, 1, 1, 0, 0, 0, 0, 0), GC(1, 0, 0, 0, 0, 0, 1, 0), GC(2, 0, 1, 0, 0, 0, 0, 0),   /* CUMBIA REGGAETON DEMBOW */
+    GC(1, 0, 2, 0, 1, 0, 0, 0), GC(1, 3, 0, 0, 0, 0, 0, 0), GC(1, 2, 0, 0, 0, 0, 1, 0),   /* ELECTRO BREAKBEAT DRUM & BASS */
+    GC(3, 1, 3, 2, 3, 3, 3, 1), GC(0, 2, 0, 1, 0, 1, 0, 2), GC(1, 1, 2, 3, 2, 2, 1, 2),   /* IDM GLITCH IDM AMBIENT IDM WEIRD */
+    GC(0, 0, 0, 0, 0, 1, 0, 1), GC(0, 0, 1, 0, 0, 1, 2, 0), GC(0, 0, 0, 0, 0, 0, 0, 0), GC(0, 0, 0, 0, 0, 0, 0, 0),   /* KRAUT EBM NEO CLASSIC FUGA */
+    GC(0, 1, 0, 0, 0, 0, 1, 0), GC(0, 1, 0, 0, 0, 0, 1, 0),   /* ELECTRO METAL TECHNO ROCK */
+    GC(0, 1, 0, 0, 0, 1, 0, 0), GC(3, 0, 0, 0, 1, 0, 1, 0), GC(0, 0, 2, 0, 1, 0, 0, 0),   /* DREAM POP PHONK BAILE FUNK */
+    GC(0, 3, 0, 0, 0, 0, 0, 0), GC(2, 2, 0, 0, 0, 0, 0, 0),   /* JAZZ HIP HOP */
+    GC(2, 0, 0, 0, 0, 2, 2, 0), GC(0, 1, 0, 0, 0, 1, 0, 0), GC(0, 1, 0, 0, 0, 0, 2, 0),   /* DUBSTEP SHOEGAZE METALCORE */
+};
+_Static_assert(sizeof GCHAR / sizeof GCHAR[0] == NGENRE, "GCHAR: its traits a genre");
+static const uint8_t GC_LEN[3][3] = {{0, 48, 40}, {0, 24, 20}, {40, 28, 22}};   /* (PL 1..3: the lead's, the arp's, the texture's steps; 0 the piece's) */
 /* (the GENE mix pass, the owner: "it sounds unprofessional, previous versions better mixed") each genre's mix, a role's
  * level past gen_mix's in 1.5 dB steps (-8 .. 7, a nibble a role: DRUM BASS, PAD LEAD, ARP TEX; the texture's 4 dB),
  * set from the stems of eight throws a genre on the host, each part's loudness while it plays (0.37 s windows, gated
@@ -963,7 +986,7 @@ static const uint8_t GMIX[][3] = {
     GMX(-3, 0, 1, 7, 7, 5),   /* ELECTRO */
     GMX(-2, 2, -2, 5, 6, 5),   /* BREAKBEAT (V10.7.2: the bass +1.5, z10's ~1.8 under) */
     GMX(-3, -3, 0, 6, 5, 6),   /* DRUM & BASS */
-    GMX(-1, -3, 1, 4, -1, 3),   /* IDM GLITCH */
+    GMX(-2, -2, 1, 5, 3, 3),   /* IDM GLITCH (V10.8.39: the bass and the melody up) */
     GMX(-3, 0, 0, 3, 3, 4),   /* IDM AMBIENT */
     GMX(0, -3, 0, 2, 5, 3),   /* IDM WEIRD */
     GMX(-3, 1, 5, 7, 7, 5),   /* KRAUT */

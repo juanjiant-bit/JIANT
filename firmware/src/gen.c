@@ -47,6 +47,11 @@ static struct {
     uint32_t sig;                                       /* the settings of the last piece made (OCT+ again: a new seed) */
     char last[26];                                      /* the last piece: "HOUSE 0421+7733" */
 } gp = {GEN_EXPLORE, 1, 50, 1, {GA_AUTO, GA_AUTO, GA_AUTO, GA_AUTO, GA_AUTO}, 50, GA_AUTO, 30, 0, 0, 0, 0, 0, 0, 0, ""};
+/* (V10.8.39, the owner) RADIO: a piece ended, the next one made and played with no press (rn: how many so far; go: this
+ * one is its); MOOD -50 CALM .. 50 DANCE (0: none): the energy, RANDOM's genres, a DANCE radio's tempo near the piece
+ * before (bpm0). (Its own section: the data's addresses as they were, the pinned sound's code with them) */
+static struct { uint8_t on, rn, go; int8_t mood; int16_t bpm0; } grd __attribute__((section(".bss.dice")));
+#define GMOOD ((int32_t)grd.mood + 50)
 
 /* (V10.7.39) the cost model of gcpu_est (below, gen_make's), on CPU TEST's scale (instructions a sample on the host: its
  * song 3083): a track its engine's own cost (in eighths), the voices the piece keeps sounding GCPU_VOX each, the reverb's
@@ -480,9 +485,10 @@ static void gx_drums(track_t *t, uint32_t len)
 /* (p1, main 0.9.18) a roll on lane l of step s alone (its mode x2 / x4: n 2..3, 4; main's x3 -> x4 put HOUSE's drums
  * past gen5's 75 % of the energy), not the step's RATCH: the step's other sounds (a kick under the hat) and a hit
  * recorded live into it never roll with it */
+static __attribute__((noinline)) void glm(step_t *s, uint32_t l, uint32_t m) { step_set_lmode(s, l, m); }
 static void glane_rat(step_t *s, uint32_t l, uint32_t n)
 {
-    step_set_lmode(s, l, n > 2u ? LM_X4 : LM_X2);
+    glm(s, l, n > 4u ? LM_X8 : n > 2u ? LM_X4 : LM_X2);
 }
 /* (V10.6n, the study's 6.3) IDM: the break edited a bar at a time (after Attack's Warp drums: program a bar, then edit
  * each copy), the phrase's fourth bar most: a roll (the snare's or a hat's x2 / x4), a stutter (a step again one to three
@@ -492,11 +498,19 @@ static __attribute__((noinline)) void gidm_edit(track_t *t, uint32_t len, uint32
 {
     uint32_t b, i, j, k, nb = len / 16u;
     for (b = 0; b < nb; b++) {
-        uint32_t n = gch(lv * 22u + (b % 4u == 3u ? 30u : 0u)) + (lv > 2u && b % 4u == 3u);
+        uint32_t n = gch(lv * 22u + (b % 4u == 3u ? 30u : 0u)) + (lv > 2u && b % 4u == 3u) + (lv > 2u ? 2u + gr() % 3u : 0u);   /* (V10.8.39:
+                                                         * GLITCH's three to six a bar) */
         for (j = 0; j < n; j++) {
-            uint32_t p = gr() % 16u, at = b * 16u + p, q = b * 16u + (p & ~3u);
+            uint32_t d, p = gr() % 16u, at = b * 16u + p, q = b * 16u + (p & ~3u);
             step_t *s = &t->step[at], x;
-            switch (gr() % 5u) {
+            switch (gr() % (lv > 1u ? 8u : 5u)) {
+            case 5: case 6: case 7:                     /* (V10.8.39) a burst over three steps, faster (x2 x4 x8) or slower */
+                d = gr() & 1u; q = gr() & 2u ? 1u : 3u;
+                for (k = 0; k < 3u && p + k < 16u; k++) {
+                    gdrum_hit(t, at + k, q, 70 + (int32_t)k * 14, 0);
+                    glm(&t->step[at + k], q, d ? LM_X8 - k : LM_X2 + k);
+                }
+                break;
             case 0:                                     /* a roll */
                 if (s->time == ST_NOTE && (s->hit & 0x0Au)) glane_rat(s, s->hit & 2u ? 1u : 3u, (uint32_t)grr(2, 4));
                 break;
@@ -1802,6 +1816,15 @@ static __attribute__((noinline)) void gen_kit(track_t *t)
         if (hi - lo == 5u) dx_kit[DV_HATC].a[DXP_PMOD] = (uint8_t)grr(96, 116);   /* (CUMBIA: the guiro's SCRAPE) */
     }
     gkit_math();
+    {   /* (V10.8.39, the study's stage 3) the kick tuned: its PITCH (3/4 of a semitone a step, 0 at C1) moved to the key's
+         * tonic or its fifth, the nearer (3.5 semitones at most), both patches alike */
+        dx_lane_t *K = &dx_kit[DV_KICK];
+        int32_t d0 = (((int32_t)gs.root * 16 - 384 - K->a[DXP_PITCH] * 12) % 192 + 288) % 192 - 96, d1 = (d0 + 112 + 96) % 192 - 96;
+        if ((d1 < 0 ? -d1 : d1) < (d0 < 0 ? -d0 : d0)) d0 = d1;
+        d0 = (d0 + (d0 < 0 ? -6 : 6)) / 12;
+        K->a[DXP_PITCH] = (uint8_t)clamp(K->a[DXP_PITCH] + d0, 0, 127);
+        K->b[DXP_PITCH] = (uint8_t)clamp(K->b[DXP_PITCH] + d0, 0, 127);
+    }
     if (gx.on)                                          /* (0.8.6) EXPLORE: the sounds far from the kit's, each its own */
         for (l = 0; l < 8u; l++) {
             dx_lane_t *L = &dx_kit[l];
@@ -2526,6 +2549,54 @@ static void gx_heads(void)
     fg_set[ti][0].ivl = IV[gr() % 6u];
 }
 
+/* (V10.8.39, the owner: "every genre its character") the genre's traits (gen_tables.c GCHAR) over the piece as written,
+ * from the grammar's stream after it */
+BTAPP_FN static __attribute__((noinline)) void gchr_s(track_t *t, uint32_t i, uint32_t r, uint32_t c)   /* (a step off the kit; the
+                                                         * segment's room) */
+{
+    step_t *s = &t->step[i];
+    uint32_t f = r == RL_BASS ? GC_F(c, GC_BB) : r == RL_ARP || r == RL_LEAD ? GC_F(c, GC_NR) : 0u;
+    if (r != RL_DRUM && s->n && !s->comp) {
+        if (gch(f * 6u)) {
+            s->comp = CO_MAKE(CA_RATCH, f > 2u && gch(40) ? CC_P50 : CC_ALWAYS);
+            s->carg = (uint8_t)(gr() % (2u * f) | (gr() % 3u) << 3);
+        } else if (r == RL_ARP) {
+            if (gch(GC_F(c, GC_JP) * 7u)) s->note[0] = (uint8_t)(s->note[0] + (s->note[0] < 72u ? 12 : -12));
+            else if (gch(GC_F(c, GC_EV) * 5u)) comp_legacy(s, 0, CP_WALK, CP_WARG(1u + gr() % 4u, gr() % 4u, 0u));
+        }
+    }
+    f = GC_F(c, GC_LK);
+    if (r != RL_BASS && r != RL_PAD && (r != RL_DRUM || f > 1u) && motion.count < 12u * f && gch(f * 4u)) {
+        uint32_t id = r == RL_DRUM ? (gr() & 1u ? P_DLY : P_DIST) : P_FCUT;
+        motion_set_lock(t, i, id, (int16_t)clamp(t->p[id] + grr(-30, 45), 0, 127));
+    }
+}
+static __attribute__((noinline)) void gchr(void)
+{
+    uint32_t c = gs.gi < NGENRE && !gx.on ? GCHAR[gs.gi] : 0u, k, i, q;
+    gseed(GS_GRAM);
+    q = gq;
+    for (k = 0; k < NTRK && c; k++) {
+        track_t *t = &trk[k];
+        uint32_t r = gs.role[k], len = dlen(t), f;
+        if (!gs.act[r]) continue;
+        gq = q + r * 0x9E3779B9u; gr();                 /* (a stream a role: a part's knob moves its own alone) */
+        for (i = 0; i < len; i++) {
+            step_t *s = &t->step[i];
+            uint32_t p = i % 16u;
+            if (s->time != ST_NOTE) continue;
+            if (r == RL_DRUM) {
+                f = GC_F(c, GC_HR);
+                if ((s->hit & 0x0Bu) == 8u && p % 4u >= 2u && gch(f * (p > 11u ? 14u : 7u))) glane_rat(s, 3u, (uint32_t)grr(2, 2 * (int32_t)f));
+                f = GC_F(c, GC_GH);
+                if ((s->hit & 0x62u) && !(s->hit & 1u) && gch(f * 14u))
+                    glm(s, s->hit & 2u ? 1u : s->hit & 0x20u ? 5u : 6u, s->acc & s->hit & 0x62u ? LM_FLAM : LM_GHOST);
+            }
+            gchr_s(t, i, r, c);
+        }
+    }
+}
+
 /* --------------------------------------------------------------------------------------------- the piece --- */
 static void gen_post(void)
 {
@@ -2574,6 +2645,7 @@ static void gen_post(void)
                     }
             }
         }
+        gchr();
         gq = q0;
     }
     /* (0.8.3: the lead's clashes with the bass are avoided as it is written, against the chord's root: so turning
@@ -2733,7 +2805,7 @@ BTAPP_FN static void gen_pick(void)
             }
         }
     }
-    gs.energy = dice_force_energy >= 0 ? (uint32_t)dice_force_energy * 50u : gp.energy;
+    gs.energy = dice_force_energy >= 0 ? (uint32_t)dice_force_energy * 50u : (uint32_t)clamp((int32_t)gp.energy + grd.mood * 4 / 5, 0, 100);   /* (V10.8.39: MOOD) */
     gs.complex = gp.complex;
     if (gs.mutant) gs.complex = gs.complex + 20u > 100u ? 100u : gs.complex + 20u;   /* (a mutant: more going on) */
     if (gx.on) gs.complex = (uint32_t)clamp((int32_t)gs.complex + grr(10, 40), 0, 100);   /* (EXPLORE: more still) */
@@ -2867,6 +2939,19 @@ static BTAPP_FN void gwobble(track_t *b)
     uint32_t i, len = dlen(b);
     for (i = 0; i < len; i += 8u) motion_set_event(b, i, P_LRATE, WR[gr() % 5u]);
 }
+/* (V10.8.39) RANDOM's genre under MOOD: of one to seven draws (the further from the middle, the more) the one whose
+ * tempo sits nearest the mood (80 BPM calm .. 150 dance); MOOD 50: the one draw, as ever */
+static uint32_t gmood_pick(void)
+{
+    uint32_t n = (uint32_t)(grd.mood < 0 ? -grd.mood : grd.mood) / 8u, best = 0, bd = ~0u, i;
+    for (i = 0; i <= n; i++) {
+        uint32_t c = gr() % NGENRE;
+        int32_t d = ((int32_t)GENRE[c].bpm_lo + GENRE[c].bpm_hi - 160) * 5 / 7 - GMOOD;
+        if (d < 0) d = -d;
+        if ((uint32_t)d < bd) { bd = (uint32_t)d; best = c; }
+    }
+    return best;
+}
 static __attribute__((noinline)) void gen_make(void)
 {
     const ggenre_t *g;
@@ -2875,6 +2960,7 @@ static __attribute__((noinline)) void gen_make(void)
     for (k = 0; k < nlive && ENGINES[trk[k].eng_req % NENGINES]->oneshot; k++) {}
     gkey_rt = k < nlive ? trk[k].p[P_ROOT] : 0;         /* (V10.7.66 KEY KEEP: the key before gen_clean) */
     gkey_sc = k < nlive ? trk[k].p[P_SCALE] : -1;
+    grd.bpm0 = song.g[G_BPM];
     gen_clean();                                        /* (0.9.9-gen1) from NEW PROJECT's state, nothing of before */
     /* the choices from the seed: the genre (RANDOM), the root, the scale, the progression, the bass */
     gseed(GS_PICK);
@@ -2885,7 +2971,7 @@ static __attribute__((noinline)) void gen_make(void)
         gx_genre(&gmut);
         g = gs.g = &gmut;
     } else {
-        gs.gi = dice_force_style >= 0 ? (uint32_t)dice_force_style % NGENRE : gp.genre ? (gp.genre - 1u) % NGENRE : gr() % NGENRE;
+        gs.gi = dice_force_style >= 0 ? (uint32_t)dice_force_style % NGENRE : gp.genre ? (gp.genre - 1u) % NGENRE : gmood_pick();
         g = gs.g = &GENRE[gs.gi];
         gmut = *g;
         if (!gp.genre && dice_force_style < 0 && gch(15)) {   /* (0.6.95) RANDOM: a mutant, the drums of one genre, the bass
@@ -3043,7 +3129,8 @@ static __attribute__((noinline)) void gen_make(void)
                                                          * another metre */
                         static const uint8_t ODD[4] = {12, 20, 24, 28};
                         len = ODD[gr() % 4u];
-                    }
+                    } else if (gs.gi < NGENRE && r >= RL_LEAD && GC_F(GCHAR[gs.gi], GC_PL) && GC_LEN[GC_F(GCHAR[gs.gi], GC_PL) - 1u][r - RL_LEAD])
+                        len = GC_LEN[GC_F(GCHAR[gs.gi], GC_PL) - 1u][r - RL_LEAD];   /* (V10.8.39) the genre's loops of other lengths */
                 }
                 load_begin(t, LOAD_PAT);           /* (0.9.9-gen1: no step, no automation: the clean base's) */
                 gclear_all(t);
@@ -3079,6 +3166,7 @@ static __attribute__((noinline)) void gen_make(void)
                                                          * either way, 3 at least; JAZZ's 3: its energy is ballad .. bebop) */
         int32_t lo = g->bpm_lo, hi = g->bpm_hi, w = g->drum == DM_JAZZ || hi - lo < 9 ? 3 : (hi - lo) / 3;
         int32_t v = lo + (hi - lo) * (int32_t)gs.energy / 100 + grr(-w, w);
+        if (grd.on && grd.rn && grd.mood > 10) v = grd.bpm0;   /* (V10.8.39: a DANCE radio mixes: the nearest tempo of its range) */
         song.g[G_BPM] = (int16_t)clamp(v, lo, hi);
     }
     song.g[G_SWING] = (int16_t)clamp((int32_t)gs.swing - (g->drum == DM_JAZZ ? (song.g[G_BPM] - 40) / 12 : 0), 0, 100);
@@ -3160,8 +3248,10 @@ static void gen_go(void)
     uint32_t n;
     uint32_t k;
     char b[8];
-    uint32_t play = song.playing || chain_busy() || seq_counting();
+    uint32_t play = song.playing || chain_busy() || seq_counting() || grd.go;   /* (RADIO: on after a song's END too) */
     if (!bt_hw_seg()) { seg_missing(); return; }        /* (V10.6y: gen_pick in the segment) */
+    grd.rn = (uint8_t)(grd.go ? grd.rn + 1u : 0u);
+    grd.go = 0;
     if (play) {
         fm1_irq_off(); seq_stop(); transport_req = 0; fm1_irq_on();
         song_poll();
@@ -3196,7 +3286,7 @@ static uint32_t gen_sig(void)                           /* the settings that mak
     h = (h ^ gp.genre) * 16777619u; h = (h ^ gp.seed) * 16777619u; h = (h ^ gp.energy) * 16777619u; h = (h ^ gp.form) * 16777619u;
     for (k = 0; k < GP_N; k++) h = (h ^ gp.amt[k]) * 16777619u;
     h = (h ^ gp.complex) * 16777619u; h = (h ^ gp.swing) * 16777619u; h = (h ^ gp.human) * 16777619u;
-    h = (h ^ gp.seed2 ^ (uint32_t)gp.mix << 14) * 16777619u;
+    h = (h ^ gp.seed2 ^ (uint32_t)gp.mix << 14 ^ (uint32_t)GMOOD << 24) * 16777619u;
     return h ^ (trk_live << 28);
 }
 static __attribute__((noinline)) void gen_new_seed(void)
@@ -3236,7 +3326,7 @@ static void gen_press(void)
         }
     }
     {
-        uint32_t pl = song.playing;                     /* (gen_go stops it; it plays again from the next block) */
+        uint32_t pl = song.playing | grd.go;           /* (gen_go stops it; it plays again from the next block) */
         gen_wait = 0;
         gen_go();
         if (gp.entry && pl) gst_begin();
@@ -3244,13 +3334,21 @@ static void gen_press(void)
     gsr.thrown = 0;                                     /* (a throw gen_go did not make: never a later piece's) */
     gp.sig = gen_sig();
 }
-static void gen_tick(void)                              /* (every UI frame) */
+static __attribute__((noinline)) void gen_tick(void)   /* (every UI frame) */
 {
     if (song.g[G_HPROG]) {                              /* (V10.7.66) SCL > HARMONY's progression for seq.c */
         const gprog_t *pr = &PROG[(uint32_t)(song.g[G_HPROG] - 1) % PR_N];
         uint32_t k;
         for (k = 0; k < 4u; k++) hm_dg[k] = pr->deg[k];
         hm_n = pr->n;
+    }
+    /* (V10.8.39, the owner) RADIO: the piece's last bar (a song's last row's; a loop's sixteenth, its thirty-second
+     * over 110 BPM): the next one asked for, made on the bar line as OCT+'s (ENTRY's way; not MY LOOP's) */
+    if (grd.on && song.playing && song_draft && !gen_wait && gp.form < 3u &&   /* (a draft: GEN's own piece, never a saved song) */
+        (chain.running ? chain.row + 1u >= chain.config.count && chain.remaining <= 1u : bar_n % (song.g[G_BPM] > 110 ? 32u : 16u) == (song.g[G_BPM] > 110 ? 31u : 15u))) {
+        gen_new_seed();
+        gen_wait = grd.go = 1;
+        gen_wbar = bar_n;
     }
     if (gen_wait && (!song.playing || bar_n != gen_wbar)) gen_press();
     gst_tick();
@@ -3277,7 +3375,7 @@ static uint32_t dice_print(void)                        /* a fingerprint of the 
 
 /* ------------------------------------------------------------------------------------------- the GEN screen --- */
 static const char *const GEN_LBL[4][4] BTAPP_RO = {{"GENRE", "SEED", "ENERGY", "FORM"}, {"DRUMS", "BASS", "CHORDS", "ARP"},
-                                          {"LEAD", "COMPLEX", "SWING", "HUMAN"}, {"KEY", "ENTRY", "", ""}};
+                                          {"LEAD", "COMPLEX", "SWING", "HUMAN"}, {"KEY", "ENTRY", "RADIO", "MOOD"}};
 static const char *const GEN_FORM[4] BTAPP_RO = {"LOOP", "PARTS", "SONG", "MY LOOP"};   /* (FROM LOOP: gen_loop.c) */
 static uint8_t gen_fresh;                               /* (0.6.96) the screen's first frame: the body cleared once */
 static void gen_open(void)
@@ -3314,6 +3412,8 @@ BTAPP_FN static __attribute__((noinline)) void gen_knob_bt(uint32_t k, int32_t s
         gen_amt_turn(&gp.amt[k], s);
     } else if (p == 3u) {                               /* (V10.7.66) KEY NEW / KEEP, ENTRY ALL / BUILD */
         if (k < 2u) (&gp.key)[k] = s > 0;               /* (key, entry: side by side) */
+        else if (k == 2u) grd.on = s > 0;
+        else grd.mood = (int8_t)clamp(grd.mood + s * 5, -50, 50);
     } else {
         if (k == 0u) gen_amt_turn(&gp.amt[GP_LEAD], s);
         else if (k == 1u) gp.complex = (uint8_t)clamp((int32_t)gp.complex + s * 5, 0, 100);
@@ -3335,7 +3435,11 @@ static void gen_value(uint32_t p, uint32_t k, char *b)   /* (V10.7.66: out of th
 {
     uint32_t v;
     b[0] = 0;
-    if (p == 3u) { if (k < 2u) str_cpy(b, k ? (gp.entry ? "BUILD" : "ALL") : (gp.key ? "KEEP" : "NEW"), 16); return; }
+    if (p == 3u) {
+        str_cpy(b, k == 3u ? (grd.mood < -10 ? "CALM" : grd.mood > 10 ? "DANCE" : "MID") : k == 2u ? (grd.on ? "ON" : "OFF") :
+                k ? (gp.entry ? "BUILD" : "ALL") : (gp.key ? "KEEP" : "NEW"), 16);
+        return;
+    }
     if (p == 0u) {
         if (k == 0u) { str_cpy(b, gp.genre == GEN_EXPLORE ? "EXPLORE" : gp.genre ? GENRE[(gp.genre - 1u) % NGENRE].name : "RANDOM", 16); return; }
         if (k == 1u) { b[0] = (char)('0' + gp.seed / 1000u % 10u); b[1] = (char)('0' + gp.seed / 100u % 10u); b[2] = (char)('0' + gp.seed / 10u % 10u); b[3] = (char)('0' + gp.seed % 10u); b[4] = 0; return; }
@@ -3363,7 +3467,7 @@ BTAPP_FN static void gen_cards_bt(void)
         int32_t r;
         gen_value(p, k, v);
         a = p == 1u ? gp.amt[k] : p == 2u && k == 0u ? gp.amt[GP_LEAD] : p == 2u && k == 2u ? gp.swing : 0u;
-        r = p == 0u ? (k == 0u ? (int32_t)(gp.genre == GEN_EXPLORE ? 0u : gp.genre + 1u) * 1000 / (int32_t)(GEN_NPOS - 1u) :   /* (0.8.7:
+        r = p == 3u ? (k == 3u ? GMOOD * 10 : k == 2u ? grd.on * 1000 : (int32_t)(&gp.key)[k] * 1000) : p == 0u ? (k == 0u ? (int32_t)(gp.genre == GEN_EXPLORE ? 0u : gp.genre + 1u) * 1000 / (int32_t)(GEN_NPOS - 1u) :   /* (0.8.7:
                                                          * KNOB 1's order, EXPLORE at the left) */ k == 1u ? gp.seed / 10 : k == 2u ? gp.energy * 10 :
                        (gp.form > 2u ? 2u : gp.form) * 500) :
             (p == 1u || (p == 2u && (k == 0u || k == 2u))) ? (a == GA_AUTO ? 1000 : (int32_t)a * 10) :
@@ -3375,19 +3479,41 @@ static void gen_cards(void)
 {
     if (bt_hw_seg()) gen_cards_bt();
 }
-static uint32_t gen_draw_sig(void)
+static __attribute__((noinline)) uint32_t gen_draw_sig(void)
 {
-    return gen_sig() * 31u + gp.page * 7u + str_hash(gp.hot * 977u, gp.last) + ux.gen + song_draft * 3u +
+    return gen_sig() * 31u + gp.page * 7u + str_hash(gp.hot * 977u, gp.last) + ux.gen + song_draft * 3u + grd.on * 5u +
+        (gp.page == 3u ? anim_fr / 4u * 40503u + grd.rn : 0u) +   /* (the radio: alive) */
         chain_config.count * 7919u + live.mode * 13u + song.playing * 29u +
         (chain.running ? (chain.row + 1u) * 104729u + chain.remaining * 1299709u : 0u);
 }
 /* (V10.8.14, the owner's "partitura viva") GEN's panel: its four settings on the cards, the song under them as
  * ARRANGE draws it (ui_lzsave.c graph_score; no song yet: the sections), one line of state and what to press */
+/* (V10.8.39, the owner: "a light picture of a radio, the system's graphics' way") GEN 4's panel: its case, the speaker's
+ * dots pulsing with the beat in the heat's colours, the dial's needle MOOD, its light RADIO; grey: off */
+static __attribute__((noinline)) void gen_radio(void)
+{
+    int32_t i, pl = grd.on && song.playing ? 255 - (int32_t)(beat_pos * 255u / beat_samples()) : -1;
+    uint16_t c = grd.on ? T_TEXT : T_DIM, a = grd.on ? T_ACCENT : T_DIM;
+    char v[12];
+    cv_frame(20, 10, 200, 104, c);
+    for (i = 0; i < 35; i++) {
+        int32_t x = i % 7 - 3, y = i / 7 - 2;
+        cv_rect(64 + x * 10, 60 + y * 10, 5, 5, pl < 0 ? T_DIM : heat_col(pl - (x * x + y * y) * 16));
+    }
+    cv_rect(124, 48, 82, 2, c);
+    cv_rect(124 + GMOOD * 4 / 5, 38, 3, 22, a);
+    cv_rect(198, 20, 8, 8, a);
+    str_cpy(v, "RADIO ", sizeof v);
+    fmt_int(v + 6, grd.rn);
+    cv_text(124, 78, &AF_X, v, c);
+}
 static void gen_panel(void)
 {
     char v[40];
     uint32_t k;
-    if (chain_config.count)
+    if (gp.page == 3u)
+        gen_radio();
+    else if (chain_config.count)
         graph_score(1);
     else {
         proj_nofoot = 1;

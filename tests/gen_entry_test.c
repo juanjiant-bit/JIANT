@@ -88,6 +88,64 @@ int main(void)
         if (!ok) printf("  cross: %s mix %x s2 %u  %x %x %x %x\n", gp.last, mx, b2, hx, ha, hb, hy);
         bad += check("GEN: two seeds crossed (A+B, neither alone, the same three the same piece)", ok);
     }
+    {   /* (V10.8.39, the owner) RADIO: a loop's 32 bars (over 110 BPM) played, the next piece made on the bar line and
+         * played on, and again; off: the piece stays. MOOD: RANDOM's genres slower CALM than DANCE, the middle the piece
+         * as ever; a DANCE radio's tempo the nearest its genre has to the piece before */
+        uint32_t h0, r, n, sc = 0, sd = 0;
+        uint16_t sd0;
+        gp.genre = 1; gp.form = 0; gp.entry = 0; gp.key = 0; gp.sig = 0; gp.mix = 0;
+        gen_press(); frames(64);
+        h0 = dice_print(); sd0 = gp.seed;
+        transport_req = 1; blk();
+        bars(40);
+        ok = song.playing && dice_print() == h0 && !grd.rn;       /* (off: nothing) */
+        transport_req = 2; blk();
+        grd.on = 1;
+        transport_req = 1; blk();
+        bars(30);
+        ok &= song.playing && dice_print() == h0 && !grd.rn;      /* (its 31st bar: still the piece) */
+        bars(3); blk();
+        ok &= song.playing && grd.rn == 1u && gp.seed != sd0 && dice_print() != h0;
+        h0 = dice_print();
+        for (n = 0; n < 40u && grd.rn < 2u; n++) bars(1);
+        blk();
+        ok &= song.playing && grd.rn == 2u && n >= 31u && dice_print() != h0;
+        if (!ok) printf("  radio: playing %u rn %u seed %u (was %u)\n", (unsigned)song.playing, grd.rn, gp.seed, sd0);
+        bad += check("RADIO: off nothing; on, the next piece after the loop's 32 bars, playing on, twice", ok);
+        gp.form = 2; gp.sig = 0;                         /* (a song: its END the next piece's cue) */
+        transport_req = 2; blk();
+        gen_press(); frames(64);
+        ok = chain_config.count > 0u && !grd.rn;
+        h0 = dice_print();
+        if (live.mode) chain_play_ui(); else transport_req = 1;
+        blk();
+        for (n = 0; n < 400u && !grd.rn; n++) { bars(1); song_poll(); }   /* (the next row staged: the main loop's) */
+        blk();
+        ok &= grd.rn == 1u && song.playing && dice_print() != h0;
+        if (!ok) printf("  radio song: rows %u bars waited %u playing %u rn %u\n", chain_config.count, n, (unsigned)song.playing, grd.rn);
+        bad += check("RADIO: a song's last row ended, the next song made and playing", ok);
+        transport_req = 2; blk();
+        grd.on = 0; gp.form = 0; gp.genre = 0;
+        for (r = 0; r < 24u; r++) {
+            gp.seed = (uint16_t)(100u + r * 37u);
+            grd.mood = -50; gen_make(); sc += (uint32_t)song.g[G_BPM];
+            grd.mood = 50; gen_make(); sd += (uint32_t)song.g[G_BPM];
+        }
+        grd.mood = 0;
+        ok = sd > sc + 24u * 20u;
+        printf("  MOOD: RANDOM's mean tempo CALM %u, DANCE %u BPM\n", sc / 24u, sd / 24u);
+        bad += check("MOOD: RANDOM's pieces over 20 BPM slower CALM than DANCE", ok);
+        grd.on = 1; grd.mood = 50; gp.genre = 0;
+        for (r = 0, ok = 1; r < 12u; r++) {
+            int32_t b0 = song.g[G_BPM];
+            gp.seed = (uint16_t)(900u + r * 53u);
+            grd.rn = 1;
+            gen_make();
+            ok &= song.g[G_BPM] == clamp(b0, gs.g->bpm_lo, gs.g->bpm_hi);
+        }
+        grd.on = 0; grd.mood = 0; grd.rn = 0;
+        bad += check("MOOD DANCE on the radio: each piece's tempo the nearest its genre has to the one before", ok);
+    }
     printf(bad ? "gen-entry: %d FAILED\n" : "gen-entry: all ok\n", bad);
     return bad != 0;
 }
