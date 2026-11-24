@@ -102,11 +102,11 @@
   },
   "WAVE": {
    "es": {
-    "what": "La forma de onda: la del LFO o del AUTO PAN (SIN, TRI, SAW, SQR, S&H, DRIFT) o la del oscilador del motor.",
+    "what": "La forma de onda: la del LFO (SIN, TRI, SAW, SQR, S&H, DRIFT), la del AUTO PAN (las mismas, sin DRIFT) o la del oscilador del motor.",
     "how": "En el LFO, SIN y TRI mecen suave, SQR salta, S&H da pasos al azar y DRIFT deriva lento para pads que respiran."
    },
    "en": {
-    "what": "The waveform: the LFO's or AUTO PAN's (SIN, TRI, SAW, SQR, S&H, DRIFT), or the engine oscillator's.",
+    "what": "The waveform: the LFO's (SIN, TRI, SAW, SQR, S&H, DRIFT), AUTO PAN's (the same without DRIFT), or the engine oscillator's.",
     "how": "On the LFO, SIN and TRI rock gently, SQR jumps, S&H steps at random and DRIFT wanders slowly for breathing pads."
    },
    "learn": "lfo"
@@ -158,11 +158,11 @@
   "DEST1": {
    "es": {
     "what": "El destino de la ruta 1 de la matriz MOD: qué parámetro mueve (PITCH, CUT, PAN, los efectos, E1–E8, las macros…).",
-    "how": "Con la fuente elegida, buscá acá qué querés que se mueva; la pantalla muestra la ruta con nombres completos."
+    "how": "Con la fuente elegida, buscá acá qué querés que se mueva; E1–E8 aparecen con el nombre que les da el motor de la pista."
    },
    "en": {
     "what": "The target of route 1 in the MOD matrix: which parameter it moves (PITCH, CUT, PAN, the effects, E1–E8, the macros…).",
-    "how": "With the source chosen, pick here what should move; the screen shows the route with full names."
+    "how": "With the source chosen, pick here what should move; E1–E8 show under the names the track's engine gives them."
    },
    "learn": "mod-matrix"
   },
@@ -191,11 +191,11 @@
   "DEST2": {
    "es": {
     "what": "El destino de la ruta 2 de la matriz MOD: qué parámetro mueve (PITCH, CUT, PAN, los efectos, E1–E8, las macros…).",
-    "how": "Con la fuente elegida, buscá acá qué querés que se mueva; la pantalla muestra la ruta con nombres completos."
+    "how": "Con la fuente elegida, buscá acá qué querés que se mueva; E1–E8 aparecen con el nombre que les da el motor de la pista."
    },
    "en": {
     "what": "The target of route 2 in the MOD matrix: which parameter it moves (PITCH, CUT, PAN, the effects, E1–E8, the macros…).",
-    "how": "With the source chosen, pick here what should move; the screen shows the route with full names."
+    "how": "With the source chosen, pick here what should move; E1–E8 show under the names the track's engine gives them."
    },
    "learn": "mod-matrix"
   },
@@ -224,11 +224,11 @@
   "DEST3": {
    "es": {
     "what": "El destino de la ruta 3 de la matriz MOD: qué parámetro mueve (PITCH, CUT, PAN, los efectos, E1–E8, las macros…).",
-    "how": "Con la fuente elegida, buscá acá qué querés que se mueva; la pantalla muestra la ruta con nombres completos."
+    "how": "Con la fuente elegida, buscá acá qué querés que se mueva; E1–E8 aparecen con el nombre que les da el motor de la pista."
    },
    "en": {
     "what": "The target of route 3 in the MOD matrix: which parameter it moves (PITCH, CUT, PAN, the effects, E1–E8, the macros…).",
-    "how": "With the source chosen, pick here what should move; the screen shows the route with full names."
+    "how": "With the source chosen, pick here what should move; E1–E8 show under the names the track's engine gives them."
    },
    "learn": "mod-matrix"
   },
@@ -257,11 +257,11 @@
   "DEST4": {
    "es": {
     "what": "El destino de la ruta 4 de la matriz MOD: qué parámetro mueve (PITCH, CUT, PAN, los efectos, E1–E8, las macros…).",
-    "how": "Con la fuente elegida, buscá acá qué querés que se mueva; la pantalla muestra la ruta con nombres completos."
+    "how": "Con la fuente elegida, buscá acá qué querés que se mueva; E1–E8 aparecen con el nombre que les da el motor de la pista."
    },
    "en": {
     "what": "The target of route 4 in the MOD matrix: which parameter it moves (PITCH, CUT, PAN, the effects, E1–E8, the macros…).",
-    "how": "With the source chosen, pick here what should move; the screen shows the route with full names."
+    "how": "With the source chosen, pick here what should move; E1–E8 show under the names the track's engine gives them."
    },
    "learn": "mod-matrix"
   },
@@ -289,11 +289,11 @@
   },
   "LEVEL": {
    "es": {
-    "what": "El volumen de la pista, de un operador o de un sonido del kit, o el valor de un paso del MSEQ.",
+    "what": "El volumen de la pista en la mezcla, o el valor de un paso del MSEQ.",
     "how": "En la mezcla, balanceá las pistas de oído; en el MSEQ, dibujá la forma de la modulación paso a paso."
    },
    "en": {
-    "what": "The volume of a track, an operator or a kit sound, or the value of one MSEQ step.",
+    "what": "The track's volume in the mix, or the value of one MSEQ step.",
     "how": "In the mix, balance tracks by ear; in the MSEQ, draw the modulation shape step by step."
    }
   },
@@ -473,6 +473,39 @@
    },
    "learn": "harmony"
   },
+  "CHORD": {
+   "es": {
+    "what": "Hace que una tecla toque un acorde: en la escala (TRIAD, 7TH, ADD9, SUS2, SUS4), fijo (MAJ, MIN, 7, MAJ7, MIN7, POWER) o un set (POP, JAZZ, SOUL, DREAM, QUART).",
+    "how": "Los de escala y los sets nunca se salen del tono; un set le da a cada grado su color, para tocar progresiones con un dedo. OFF lo apaga."
+   },
+   "en": {
+    "what": "Makes one key play a chord: in the scale (TRIAD, 7TH, ADD9, SUS2, SUS4), fixed (MAJ, MIN, 7, MAJ7, MIN7, POWER) or a set (POP, JAZZ, SOUL, DREAM, QUART).",
+    "how": "The scale ones and the sets never leave the key; a set gives each degree its own colour, to play progressions with one finger. OFF turns it off."
+   },
+   "learn": "chord"
+  },
+  "VOICING": {
+   "es": {
+    "what": "Cómo se arma el acorde de CHORD: CLOSE (cerrado), LEAD (la inversión más cercana al acorde anterior), OPEN (abierto) o +BASS (la tónica una octava abajo).",
+    "how": "LEAD encadena los acordes casi sin saltos, como un tecladista; +BASS le da peso a un pad."
+   },
+   "en": {
+    "what": "How CHORD's chord is laid out: CLOSE, LEAD (the inversion nearest the previous chord), OPEN or +BASS (the root an octave down).",
+    "how": "LEAD chains the chords with hardly a jump, like a keyboard player; +BASS gives a pad weight."
+   },
+   "learn": "chord"
+  },
+  "STRUM": {
+   "es": {
+    "what": "Rasguea el acorde de CHORD: separa sus notas de grave a agudo, hasta unos 63 ms entre una y otra.",
+    "how": "En 0 suenan todas juntas; un poco suena a guitarra o arpa; mucho, un arpegio rápido."
+   },
+   "en": {
+    "what": "Strums CHORD's chord: spreads its notes from low to high, up to about 63 ms apart.",
+    "how": "At 0 they sound together; a little sounds like a guitar or harp; a lot, a fast arpeggio."
+   },
+   "learn": "chord"
+  },
   "LEN": {
    "es": {
     "what": "El largo en pasos: de la secuencia (1–64), del MSEQ, de la secuencia de SL PITCH o del carril de punch-in.",
@@ -505,6 +538,50 @@
     "how": "Try ±1 or ±2 so the pattern lands somewhere else in the bar: a new groove with the same music."
    },
    "learn": "pattern"
+  },
+  "CHANCE": {
+   "es": {
+    "what": "La probabilidad de toda la pista: escala la chance de cada uno de sus pasos.",
+    "how": "Con todo sonando, bajala para que falten pasos al azar y el patrón respire. El número que llega va al revés: 0 es 100 %."
+   },
+   "en": {
+    "what": "The whole track's probability: it scales the chance of each of its steps.",
+    "how": "From everything playing, lower it so steps drop out at random and the pattern breathes. The number sent runs backwards: 0 is 100 %."
+   },
+   "learn": "pattern"
+  },
+  "HUMAN": {
+   "es": {
+    "what": "Cuánto varían al azar la fuerza, el momento y el largo de cada nota que toca la secuencia.",
+    "how": "Un poco le saca lo mecánico; mucho suena a músico distraído. El número que llega va al revés: 127 es nada."
+   },
+   "en": {
+    "what": "How much the force, timing and length of each sequenced note vary at random.",
+    "how": "A little takes the machine out of it; a lot sounds like a distracted player. The number sent runs backwards: 127 is none."
+   },
+   "learn": "pattern"
+  },
+  "REC GRID": {
+   "es": {
+    "what": "Cuánto se ajusta a la grilla lo que grabás en vivo: al máximo cada nota cae justo en su paso.",
+    "how": "Bajalo antes de grabar para conservar parte de tu propio timing en vez de cuantizar todo."
+   },
+   "en": {
+    "what": "How much live recording snaps to the grid: at maximum every note lands right on its step.",
+    "how": "Lower it before recording to keep some of your own timing instead of quantising everything."
+   },
+   "learn": "live-rec"
+  },
+  "C.LEN": {
+   "es": {
+    "what": "Hace que los componentes de los pasos (COMP) corran como un carril propio de 1 a 64 pasos; OFF deja a cada paso el suyo.",
+    "how": "Con un largo distinto del de la secuencia, los componentes giran contra las notas: polimetría sin reescribir nada."
+   },
+   "en": {
+    "what": "Makes the steps' components (COMP) run as a lane of their own, 1 to 64 steps long; OFF leaves each step its own.",
+    "how": "With a length unlike the sequence's, the components turn against the notes: polymetre without rewriting anything."
+   },
+   "learn": "comp"
   },
   "DIST": {
    "es": {
@@ -552,23 +629,23 @@
   },
   "TYPE": {
    "es": {
-    "what": "Elige el tipo: de la distorsión de la pista (SOFT, HARD, FOLD, CRUSH, RECT, AMP), del filtro, de la reverb o del delay.",
+    "what": "Elige el tipo: de la distorsión de la pista (SOFT, HARD, FOLD, CRUSH, RECT, AMP), del filtro (LP, HP, BP, COMB, COMB-), de la reverb o del delay.",
     "how": "En DIST, AMP suena a ampli de guitarra y CRUSH a bits rotos; en el filtro, LP oscurece, HP afina y COMB resuena a la nota."
    },
    "en": {
-    "what": "Picks the type: of the track's distortion (SOFT, HARD, FOLD, CRUSH, RECT, AMP), the filter, the reverb or the delay.",
+    "what": "Picks the type: of the track's distortion (SOFT, HARD, FOLD, CRUSH, RECT, AMP), the filter (LP, HP, BP, COMB, COMB-), the reverb or the delay.",
     "how": "On DIST, AMP is a guitar amp and CRUSH broken bits; on the filter, LP darkens, HP thins and COMB rings at the note."
    },
    "learn": "sends"
   },
   "TONE": {
    "es": {
-    "what": "El color: de la distorsión de la pista o de las repeticiones del DELAY, de más oscuro a más brillante.",
-    "how": "Oscuro para una mugre cálida o ecos tipo cinta que se pierden; brillante para que corten la mezcla."
+    "what": "El color: en DIST, el de la distorsión de la pista; en el DELAY, el de las repeticiones (abiertas en el medio, abajo más oscuras, arriba más finas).",
+    "how": "Oscuro para una mugre cálida o ecos tipo cinta que se pierden; hacia arriba los ecos pierden graves y se despegan de la mezcla."
    },
    "en": {
-    "what": "The colour: of the track's distortion or of the DELAY's repeats, from darker to brighter.",
-    "how": "Dark for warm grit or tape-like echoes that fade away; bright so they cut through the mix."
+    "what": "The colour: on DIST, the track distortion's; on the DELAY, the repeats' (open in the middle, darker below, thinner above).",
+    "how": "Dark for warm grit or tape-like echoes that fade away; upwards the echoes lose their lows and stand clear of the mix."
    },
    "learn": "delay"
   },
@@ -644,7 +721,7 @@
     "how": "TIME for even, acid-style slides; RATE for a more natural portamento, like a singer."
    }
   },
-  "NOTE PRIO": {
+  "NOTE PRI": {
    "es": {
     "what": "En MONO o LEG, qué nota gana cuando mantenés varias: la última, la más grave o la más aguda.",
     "how": "LAST es lo natural; LOW para bajos que siempre tocan la de abajo; HIGH para leads que siguen la de arriba."
@@ -654,7 +731,7 @@
     "how": "LAST feels natural; LOW for basses that always play the bottom note; HIGH for leads that follow the top."
    }
   },
-  "VOICE ORDER": {
+  "VOICE OR": {
    "es": {
     "what": "Qué voz toma cada nota nueva: ROT las va rotando, REUSE usa la libre que estaba más cerca en altura.",
     "how": "REUSE hace que los glides en POLY salgan de la nota vecina; ROT deja que las colas se superpongan."
@@ -672,6 +749,37 @@
    "en": {
     "what": "How far apart in pitch the voices of UNI mode are spread.",
     "how": "Low for a lead only slightly fattened; high for a wide supersaw wall. It only acts with POLY on UNI."
+   }
+  },
+  "VEL": {
+   "es": {
+    "what": "Cuánto responde el sonido a la fuerza de cada nota: al máximo, tal como se tocó; en 0, todas las notas iguales.",
+    "how": "Bajalo en bajos y leads que tienen que sonar parejos; dejalo alto en pianos y percusiones expresivas."
+   },
+   "en": {
+    "what": "How much the sound responds to each note's force: at maximum, as played; at 0, every note the same.",
+    "how": "Lower it on basses and leads that must stay even; keep it high on expressive pianos and percussion."
+   },
+   "learn": "velocity"
+  },
+  "IMAGE": {
+   "es": {
+    "what": "La imagen estéreo de la pista: en un sinte reparte las voces a lo ancho; en DRUM recorre los mapas de paneo del kit.",
+    "how": "Sin imagen todo queda al medio; la DIST de la pista la angosta. En un sinte el número que llega va al revés: 127 es nada."
+   },
+   "en": {
+    "what": "The track's stereo image: on a synth it spreads the voices across the field; on DRUM it sweeps the kit's pan maps.",
+    "how": "With no image everything sits in the middle; the track's DIST narrows it. On a synth the number sent runs backwards: 127 is none."
+   }
+  },
+  "DRIFT": {
+   "es": {
+    "what": "Hace que cada voz derive lento en afinación (y en filtro), cada una a su manera, como un sinte analógico inestable.",
+    "how": "Un poco le da vida a un pad; mucho lo desafina. El número que llega va al revés: 127 es nada."
+   },
+   "en": {
+    "what": "Makes each voice wander slowly in pitch (and filter), each its own way, like an unstable analogue synth.",
+    "how": "A little brings a pad to life; a lot puts it out of tune. The number sent runs backwards: 127 is none."
    }
   },
   "CUT": {
@@ -896,11 +1004,11 @@
   },
   "DAMP": {
    "es": {
-    "what": "Cuánto se apagan los agudos en la cola de la REVERB.",
+    "what": "Cuánto se apagan los agudos en la cola de la REVERB. En RESO este lugar es FOLLOW: la pista cuyas notas sigue el acorde (0 ninguna, 1–6 la pista).",
     "how": "Bajo, un espacio brillante y metálico; alto, uno cálido y oscuro que molesta menos en la mezcla."
    },
    "en": {
-    "what": "How much the treble dies away in the REVERB's tail.",
+    "what": "How much the treble dies away in the REVERB's tail. On RESO this slot is FOLLOW: the track whose notes the chord follows (0 none, 1–6 the track).",
     "how": "Low gives a bright, metallic space; high, a warm, dark one that crowds the mix less."
    },
    "learn": "reverb"
@@ -1102,12 +1210,12 @@
   },
   "MIDI": {
    "es": {
-    "what": "Elige la entrada MIDI que se muestra: USB o el jack TRS.",
-    "how": "Sirve para revisar si llegan mensajes cuando conectás un controlador o la computadora y algo no suena."
+    "what": "Un ajuste guardado (USB o TRS) que hoy no cambia nada: en el FM-1, la página SYSTEM 2 solo muestra cómo están las entradas MIDI.",
+    "how": "Para saber si llegan mensajes mirá GLO > SYSTEM 2 en el aparato: el estado del USB, la cuenta de mensajes del TRS y el Bluetooth."
    },
    "en": {
-    "what": "Picks which MIDI input is shown: USB or the TRS jack.",
-    "how": "Useful to check that messages arrive when you plug in a controller or computer and nothing sounds."
+    "what": "A stored setting (USB or TRS) that changes nothing today: on the FM-1, the SYSTEM 2 page only shows the state of the MIDI inputs.",
+    "how": "To check that messages arrive, look at GLO > SYSTEM 2 on the device: the USB state, the TRS message count and Bluetooth."
    }
   },
   "ROUTE": {
@@ -1175,7 +1283,7 @@
    },
    "learn": "organism"
   },
-  "CLEAR SEQ": {
+  "CLEAR SE": {
    "es": {
     "what": "Borra los pasos y la automatización de la pista elegida.",
     "how": "Poné GO para limpiar la pista y empezar de cero; si te arrepentís, UNDO la devuelve."
@@ -1188,12 +1296,12 @@
   },
   "INIT": {
    "es": {
-    "what": "Devuelve el sonido de la pista a los valores por defecto de su motor, seco y sin efectos.",
-    "how": "Poné GO para partir de un sonido limpio y construir el tuyo desde cero; UNDO lo devuelve."
+    "what": "Devuelve el sonido de la pista al punto de partida de su motor: sus valores por defecto y su primer sonido. Los pasos quedan.",
+    "how": "Poné GO para partir de una base conocida y construir tu sonido desde ahí; UNDO lo devuelve."
    },
    "en": {
-    "what": "Resets the track's sound to its engine's defaults, dry and without effects.",
-    "how": "Set GO to start from a clean sound and build your own from scratch; UNDO brings it back."
+    "what": "Resets the track's sound to its engine's starting point: its defaults and its first sound. The steps stay.",
+    "how": "Set GO to start from a known base and build your own sound from there; UNDO brings it back."
    },
    "learn": "undo"
   },
@@ -1205,6 +1313,17 @@
    "en": {
     "what": "The interval of ANALOG's second oscillator, −24 to +24 semitones.",
     "how": "7 adds a fifth, 12 an octave: power chords and fat basses. Balance them with MIX."
+   },
+   "learn": "analog"
+  },
+  "INT 3": {
+   "es": {
+    "what": "El intervalo del tercer oscilador de ANALOG en SAW3 y PLS3, de −24 a +24 semitonos; ocupa el lugar de NOISE.",
+    "how": "Con INT y INT 3 armás un acorde de tres osciladores: probá 7 y 12, o −12 para sumar un sub."
+   },
+   "en": {
+    "what": "The interval of ANALOG's third oscillator on SAW3 and PLS3, −24 to +24 semitones; it takes NOISE's place.",
+    "how": "With INT and INT 3 you build a three-oscillator chord: try 7 and 12, or −12 to add a sub."
    },
    "learn": "analog"
   },
@@ -1284,33 +1403,33 @@
   },
   "CHIP": {
    "es": {
-    "what": "La resolución del sonido de MATH: 4 bits, 4 bits retenidos (4B/2), 8 bits o 1 bit.",
+    "what": "La resolución del sonido de MATH en BYTE: 4 bits, 4 bits retenidos (4B/2), 8 bits o 1 bit. En FLOAT esta perilla es ALGO B.",
     "how": "8BIT suena más suave; 4BIT y 1BIT, crudos, de consola vieja. 4B/2 agrega todavía más grano."
    },
    "en": {
-    "what": "MATH's sound resolution: 4 bits, held 4 bits (4B/2), 8 bits or 1 bit.",
+    "what": "MATH's sound resolution on BYTE: 4 bits, held 4 bits (4B/2), 8 bits or 1 bit. On FLOAT this knob is ALGO B.",
     "how": "8BIT is smoother; 4BIT and 1BIT are raw, old-console sounds. 4B/2 adds even more grain."
    },
    "learn": "math"
   },
   "ALGO": {
    "es": {
-    "what": "Elige la fórmula de MATH: una línea de matemática que da ritmo, melodía y timbre a la vez.",
-    "how": "Girala despacio, cada valor es otra fórmula. Cuando encontrás una que te gusta, mutala con VARIANT."
+    "what": "Elige la fórmula de MATH: una línea de matemática que da ritmo, melodía y timbre a la vez. Hay 48 por tipo: B01–B48 en BYTE, F01–F48 en FLOAT.",
+    "how": "Girala despacio: cada cuatro valores cambia la fórmula. Cuando encontrás una que te gusta, mutala con VARIANT."
    },
    "en": {
-    "what": "Picks MATH's formula: one line of maths that gives rhythm, melody and timbre at once.",
-    "how": "Turn it slowly, every value is another formula. When you find one you like, mutate it with VARIANT."
+    "what": "Picks MATH's formula: one line of maths that gives rhythm, melody and timbre at once. There are 48 per type: B01–B48 on BYTE, F01–F48 on FLOAT.",
+    "how": "Turn it slowly: the formula changes every four values. When you find one you like, mutate it with VARIANT."
    },
    "learn": "math"
   },
   "VARIANT": {
    "es": {
-    "what": "Muta la fórmula elegida en ALGO: cambia una de sus variables y con ella el patrón.",
+    "what": "Muta la fórmula elegida en ALGO: transforma su tiempo (escalones, saltos, la frase al revés…) y con él el patrón.",
     "how": "Probá valores cercanos para variaciones de la misma idea; lockealo en pasos distintos para que cada uno suene diferente."
    },
    "en": {
-    "what": "Mutates the formula chosen in ALGO: changes one of its variables, and the pattern with it.",
+    "what": "Mutates the formula chosen in ALGO: transforms its time (stairs, holes, the phrase backwards…), and the pattern with it.",
     "how": "Try nearby values for variations on the same idea; lock it on different steps so each sounds different."
    },
    "learn": "math"
@@ -1318,32 +1437,54 @@
   "MOTION": {
    "es": {
     "what": "El movimiento propio del motor: el tiempo de la fórmula en MATH o el barrido del espectro en ADD.",
-    "how": "En 0 queda quieto; subilo para que el sonido se mueva solo, sin LFO."
+    "how": "En ADD, 0 lo deja quieto; en MATH, 64 corre la fórmula tal cual está escrita."
    },
    "en": {
     "what": "The engine's own motion: the formula's time in MATH or the spectrum sweep in ADD.",
-    "how": "At 0 it stays still; raise it so the sound moves on its own, no LFO needed."
+    "how": "On ADD, 0 keeps it still; on MATH, 64 runs the formula as written."
    }
   },
   "GRIT": {
    "es": {
-    "what": "Ensucia la fórmula de MATH: retiene cada muestra más tiempo en BYTE, o la realimenta en FLOAT.",
+    "what": "Ensucia la fórmula de MATH en BYTE: retiene cada muestra hasta 16 veces más. En FLOAT esta perilla es FEEDBK.",
     "how": "Un poco da un crujido lo-fi; mucho la tritura hasta el ruido. En 0, la fórmula limpia."
    },
    "en": {
-    "what": "Dirties MATH's formula: holds each sample longer on BYTE, or feeds it back on FLOAT.",
+    "what": "Dirties MATH's formula on BYTE: holds each sample up to 16 times longer. On FLOAT this knob is FEEDBK.",
     "how": "A little gives lo-fi crunch; a lot grinds it into noise. At 0, the clean formula."
    },
    "learn": "math"
   },
   "BEND": {
    "es": {
-    "what": "Pliega el tiempo de la fórmula de MATH: el ritmo y la melodía se doblan sobre sí mismos.",
+    "what": "Pliega el tiempo de la fórmula de MATH en BYTE: el ritmo y la melodía se doblan sobre sí mismos. En FLOAT esta perilla es MORPH.",
     "how": "En 0 suena tal cual; al subirlo aparecen giros y quiebres. Andá de a poco, cambia mucho entre valores cercanos."
    },
    "en": {
-    "what": "Folds the time of MATH's formula: rhythm and melody bend back on themselves.",
+    "what": "Folds the time of MATH's formula on BYTE: rhythm and melody bend back on themselves. On FLOAT this knob is MORPH.",
     "how": "At 0 it plays as written; raising it brings twists and breaks. Go slowly, nearby values differ a lot."
+   },
+   "learn": "math"
+  },
+  "ALGO B": {
+   "es": {
+    "what": "La segunda fórmula de MATH en FLOAT (F01–F48): hacia ella lleva MORPH.",
+    "how": "Elegí una bien distinta de ALGO y movete entre las dos con MORPH."
+   },
+   "en": {
+    "what": "MATH's second formula on FLOAT (F01–F48): the one MORPH moves toward.",
+    "how": "Pick one quite unlike ALGO and travel between the two with MORPH."
+   },
+   "learn": "math"
+  },
+  "RESTART": {
+   "es": {
+    "what": "En MATH, si cada nota reinicia el tiempo de la fórmula (1, ON) o la fórmula sigue corriendo (0, OFF).",
+    "how": "ON para que cada nota arranque igual; OFF para que cada nota caiga en otro momento de la fórmula."
+   },
+   "en": {
+    "what": "On MATH, whether each note restarts the formula's time (1, ON) or the formula keeps running (0, OFF).",
+    "how": "ON so every note starts the same; OFF so each note lands at another moment of the formula."
    },
    "learn": "math"
   },
@@ -1425,14 +1566,69 @@
   },
   "RAND": {
    "es": {
-    "what": "La inquietud de VOICE: pequeñas variaciones al azar en cada nota.",
-    "how": "Un poco la hace humana; mucho, una voz nerviosa e inestable."
+    "what": "El azar de VOICE: en cada nota las dos vocales se corren hacia una vocal sorteada.",
+    "how": "En 0 no hace nada; un poco le da vida; al máximo cada nota canta una vocal distinta."
    },
    "en": {
-    "what": "VOICE's restlessness: small random variations on each note.",
-    "how": "A little makes it human; a lot, a nervous, unstable voice."
+    "what": "VOICE's randomness: on each note both vowels move toward a vowel drawn at random.",
+    "how": "At 0 it does nothing; a little brings it to life; at maximum every note sings a different vowel."
    },
    "learn": "voice"
+  },
+  "LANG": {
+   "es": {
+    "what": "El idioma en que canta VOICE: OFF, ES, EN, JA, RU, DE, FR, ZH, PT o GN. Con un idioma, la pista canta sílabas y palabras.",
+    "how": "En OFF quedan las vocales de siempre; con un idioma, VOWEL, VOWEL2, TALK y RAND pasan a ser POS, THEME, ARTIC y LOOP."
+   },
+   "en": {
+    "what": "The language VOICE sings in: OFF, ES, EN, JA, RU, DE, FR, ZH, PT or GN. With a language, the track sings syllables and words.",
+    "how": "On OFF the usual vowels stay; with a language, VOWEL, VOWEL2, TALK and RAND become POS, THEME, ARTIC and LOOP."
+   },
+   "learn": "voice-words"
+  },
+  "LYRIC": {
+   "es": {
+    "what": "Qué canta VOICE: TEXT (tu letra), W1–W16 (palabras del idioma), S1–S8 (scat) o TEXT FIXED (tu letra con las sílabas puestas en los pasos).",
+    "how": "Probá W y S para encontrar frases al toque; escribí tu letra desde el editor y elegí TEXT. Un TEXT vacío canta W1."
+   },
+   "en": {
+    "what": "What VOICE sings: TEXT (your lyric), W1–W16 (words of the language), S1–S8 (scat) or TEXT FIXED (your lyric with its syllables placed on the steps).",
+    "how": "Try W and S to find phrases at once; write your lyric from the editor and pick TEXT. An empty TEXT sings W1."
+   },
+   "learn": "voice-words"
+  },
+  "CONS": {
+   "es": {
+    "what": "El largo de las consonantes de VOICE, de 50 % a 400 %.",
+    "how": "Cortas para un canto ligado; largas para que se entienda cada sílaba. El número que llega no va en orden: 127 es 100 %."
+   },
+   "en": {
+    "what": "The length of VOICE's consonants, 50 % to 400 %.",
+    "how": "Short for a legato line; long so every syllable is understood. The number sent is not in order: 127 is 100 %."
+   },
+   "learn": "voice-words"
+  },
+  "THEME": {
+   "es": {
+    "what": "El tema de las palabras que arma el dado de VOICE: LOVE, NIGHT, SEA, SKY, ANY, ROAD, DREAM o FIRE (16 valores cada uno).",
+    "how": "Elegí el clima de la letra y volvé a tirar el dado; ANY mezcla todos."
+   },
+   "en": {
+    "what": "The theme of the words VOICE's dice puts together: LOVE, NIGHT, SEA, SKY, ANY, ROAD, DREAM or FIRE (16 values each).",
+    "how": "Pick the lyric's mood and roll the dice again; ANY mixes them all."
+   },
+   "learn": "voice-words"
+  },
+  "ARTIC": {
+   "es": {
+    "what": "La articulación de las consonantes de VOICE: de nítidas a arrastradas.",
+    "how": "Nítidas para que se entienda la letra; arrastradas para un canto borroso. El número que llega va al revés: 0 es 100 %, bien nítido."
+   },
+   "en": {
+    "what": "The articulation of VOICE's consonants: from crisp to slurred.",
+    "how": "Crisp so the lyric is understood; slurred for a blurred chant. The number sent runs backwards: 0 is 100 %, fully crisp."
+   },
+   "learn": "voice-words"
   },
   "BARS": {
    "es": {
@@ -1553,13 +1749,46 @@
    },
    "learn": "string"
   },
+  "MOVE": {
+   "es": {
+    "what": "En STRING con EXCITE en FDBK: cuánto se mece la guitarra frente al ampli (el lugar de POS).",
+    "how": "Un poco hace que el acople cambie solo, como al moverte delante del parlante."
+   },
+   "en": {
+    "what": "On STRING with EXCITE on FDBK: how much the guitar sways in front of the amp (POS's place).",
+    "how": "A little makes the feedback shift by itself, like moving in front of the speaker."
+   },
+   "learn": "string"
+  },
+  "SPEAKR": {
+   "es": {
+    "what": "En STRING con EXCITE en FDBK: en qué punto de la cuerda vuelve el sonido del parlante, o sea hacia qué armónico florece el acople.",
+    "how": "Movelo con una nota mantenida y escuchá cómo el acople salta de un armónico a otro."
+   },
+   "en": {
+    "what": "On STRING with EXCITE on FDBK: where along the string the speaker's sound comes back, that is, which harmonic the feedback blooms into.",
+    "how": "Move it on a held note and hear the feedback jump from one harmonic to another."
+   },
+   "learn": "string"
+  },
+  "BLOOM": {
+   "es": {
+    "what": "En STRING con EXCITE en FDBK: qué tan despacio crece el acople mientras mantenés la tecla (el lugar de BOW).",
+    "how": "Bajo, el acople entra enseguida; alto, tarda y aparece solo en las notas largas."
+   },
+   "en": {
+    "what": "On STRING with EXCITE on FDBK: how slowly the feedback grows while you hold the key (BOW's place).",
+    "how": "Low, the feedback comes in at once; high, it takes its time and shows only on long notes."
+   },
+   "learn": "string"
+  },
   "MORPH": {
    "es": {
-    "what": "Desliza el sonido entre dos estados, de manera continua.",
+    "what": "Desliza el sonido entre dos estados, de manera continua: en ANALOG y PHASE lleva la onda hacia las siguientes; en MATH FLOAT, de ALGO a ALGO B.",
     "how": "Movelo despacio o con un LFO para que el sonido se transforme vivo mientras toca."
    },
    "en": {
-    "what": "Slides the sound continuously between two states.",
+    "what": "Slides the sound continuously between two states: on ANALOG and PHASE it takes the wave on toward the next ones; on MATH FLOAT, from ALGO to ALGO B.",
     "how": "Move it slowly or with an LFO so the sound transforms live while it plays."
    }
   },
@@ -1571,6 +1800,17 @@
    "en": {
     "what": "The attack click of every hit in the DRUM-X kit.",
     "how": "Raise it so the kit cuts through the mix with a click on each hit; low for softer hits."
+   },
+   "learn": "drum-x"
+  },
+  "KEY MAP": {
+   "es": {
+    "what": "Cómo reparte DRUM el kit en las teclas: BASIC (clásico), EXTRA (extendido, con octavas de variantes) o un sonido (KICK … BELL) afinado en la octava −1.",
+    "how": "EXTRA es el mapa por defecto; elegí BELL o TOM para tocar melodías con ese sonido en la octava de abajo."
+   },
+   "en": {
+    "what": "How DRUM lays the kit on the keys: BASIC (classic), EXTRA (extended, with octaves of variations) or a sound (KICK … BELL) pitched in the −1 octave.",
+    "how": "EXTRA is the default map; pick BELL or TOM to play melodies with that sound in the lower octave."
    },
    "learn": "drum-x"
   },
@@ -1608,12 +1848,12 @@
   },
   "DUST": {
    "es": {
-    "what": "Polvo de impulsos dentro de la compuerta de WEST: crujidos, golpes fantasma y, arriba, soplido.",
-    "how": "Un poco suma vida tipo vinilo; hacia el máximo el núcleo se apaga y quedan impulsos y ruido, bueno para texturas."
+    "what": "Polvo: en WEST, ruido blanco que se pliega junto con el núcleo y, de 96 para arriba, un tono metálico (METAL); en WHEEL, el crujido y el soplido de un órgano viejo.",
+    "how": "En 0 no hay nada. Un poco suma aire y textura sin tapar la nota; en WEST probá la zona alta para timbres de metal."
    },
    "en": {
-    "what": "Dust of impulses inside WEST's gate: crackle, ghost hits and, at the top, hiss.",
-    "how": "A little adds vinyl-like life; toward the top the core fades and only impulses and noise remain, good for textures."
+    "what": "Dust: on WEST, white noise folded together with the core and, from 96 up, a metallic tone (METAL); on WHEEL, the crackle and hiss of an old organ.",
+    "how": "At 0 there is none. A little adds air and texture without hiding the note; on WEST try the top zone for metal timbres."
    },
    "learn": "west"
   },
@@ -1685,22 +1925,22 @@
   },
   "PRESS": {
    "es": {
-    "what": "La presión del aire que hace cantar al animal de ANIMAL.",
+    "what": "La presión del aire que hace cantar al pájaro de ANIMAL (modo WHSTL).",
     "how": "Bajo, un canto tímido que casi no arranca; alto, fuerte y lleno. La fuerza de la tecla también suma presión."
    },
    "en": {
-    "what": "The air pressure that makes ANIMAL's creature sing.",
+    "what": "The air pressure that makes ANIMAL's bird sing (WHSTL mode).",
     "how": "Low for a shy call that barely starts; high, loud and full. Key force adds pressure too."
    },
    "learn": "animal"
   },
   "CHAOS": {
    "es": {
-    "what": "Irregularidad en la presión y la altura del canto de ANIMAL: el animal se vuelve menos perfecto.",
+    "what": "Irregularidad en la presión y la altura del canto de ANIMAL (modo WHSTL), y su segundo armónico: el animal se vuelve menos perfecto.",
     "how": "En 0 canta prolijo, como una máquina; subilo para pájaros e insectos más vivos y rasposos."
    },
    "en": {
-    "what": "Irregularity in the pressure and pitch of ANIMAL's call: the creature becomes less perfect.",
+    "what": "Irregularity in the pressure and pitch of ANIMAL's call (WHSTL mode), and its second harmonic: the creature becomes less perfect.",
     "how": "At 0 it sings neatly, like a machine; raise it for livelier, raspier birds and insects."
    },
    "learn": "animal"
@@ -1718,23 +1958,111 @@
   },
   "GROUP": {
    "es": {
-    "what": "Cómo se agrupan las sílabas de ANIMAL: HOLD, TRILL sin pausas, o n+m (n sílabas y m silencios).",
+    "what": "Cómo se agrupan las sílabas de ANIMAL: HOLD, TRILL sin pausas, o n+m (n sílabas y m silencios). En CMOS, un tercer oscilador lento que arma frases (0 lo apaga).",
     "how": "HOLD para un canto largo por nota; 2+2 o 3+9 para pájaros que cantan y callan; TRILL para grillos."
    },
    "en": {
-    "what": "How ANIMAL's syllables are grouped: HOLD, TRILL with no gaps, or n+m (n syllables, m silent).",
+    "what": "How ANIMAL's syllables are grouped: HOLD, TRILL with no gaps, or n+m (n syllables, m silent). On CMOS, a third slow oscillator that makes phrases (0 turns it off).",
     "how": "HOLD for one long call per note; 2+2 or 3+9 for birds that sing and pause; TRILL for crickets."
    },
    "learn": "animal"
   },
   "TEMP": {
    "es": {
-    "what": "La temperatura en grados de ANIMAL: más calor acelera los cantos, como pasa con los grillos de verdad.",
+    "what": "La temperatura en grados de ANIMAL (modos PULSE, WHSTL y WING): más calor acelera los cantos, como pasa con los grillos de verdad.",
     "how": "22 °C es lo normal; bajala para cantos lentos de noche fría, subila para un enjambre apurado."
    },
    "en": {
-    "what": "ANIMAL's temperature in degrees: heat speeds up the calls, just like real crickets.",
+    "what": "ANIMAL's temperature in degrees (PULSE, WHSTL and WING modes): heat speeds up the calls, just like real crickets.",
     "how": "22 °C is normal; lower it for slow, cold-night calls, raise it for a hurried swarm."
+   },
+   "learn": "animal"
+  },
+  "TOUCH": {
+   "es": {
+    "what": "En ANIMAL CMOS: la mano sobre el circuito; acelera los chirridos y los vuelve menos regulares.",
+    "how": "Bajo, una máquina prolija; alto, un pájaro nervioso que nunca repite igual."
+   },
+   "en": {
+    "what": "On ANIMAL CMOS: the hand on the circuit; it speeds the chirps up and makes them less regular.",
+    "how": "Low, a tidy machine; high, a nervous bird that never repeats itself."
+   },
+   "learn": "animal"
+  },
+  "COUPLE": {
+   "es": {
+    "what": "En ANIMAL CMOS: acopla un segundo oscilador rápido con el primero, primero enganchados y después en caos.",
+    "how": "En 0 hay un solo oscilador; subilo de a poco y buscá el punto donde se rompe."
+   },
+   "en": {
+    "what": "On ANIMAL CMOS: couples a second fast oscillator with the first, locked at first and then in chaos.",
+    "how": "At 0 there is one oscillator; raise it gradually and find the point where it breaks."
+   },
+   "learn": "animal"
+  },
+  "STICKY": {
+   "es": {
+    "what": "En ANIMAL CMOS: la histéresis del oscilador lento, o sea cuánto barre la altura cada chirrido; el signo decide si sube o baja.",
+    "how": "Positivo, chirridos que suben hasta la nota; negativo, que caen hacia ella. Cerca de 0, casi sin gesto."
+   },
+   "en": {
+    "what": "On ANIMAL CMOS: the slow oscillator's hysteresis, that is, how far each chirp sweeps in pitch; the sign sets whether it rises or falls.",
+    "how": "Positive for chirps that rise to the note; negative for ones that fall to it. Near 0, hardly any gesture."
+   },
+   "learn": "animal"
+  },
+  "FM": {
+   "es": {
+    "what": "Modulación de frecuencia: en ANIMAL CMOS, cómo actúa el oscilador lento sobre el chirrido; en EXT SWARM, cuánto modula cada dispositivo su voz.",
+    "how": "En CMOS, alrededor de 20 está el pájaro clásico. En SWARM, subilo para golpes más metálicos."
+   },
+   "en": {
+    "what": "Frequency modulation: on ANIMAL CMOS, how the slow oscillator acts on the chirp; on EXT SWARM, how much each device modulates its voice.",
+    "how": "On CMOS the classic bird sits around 20. On SWARM raise it for more metallic hits."
+   },
+   "learn": "animal"
+  },
+  "DOPPLR": {
+   "es": {
+    "what": "En ANIMAL WING: el efecto Doppler de cada pasada, el corrimiento de altura del insecto al pasar volando.",
+    "how": "Cerca de 0 el vuelo queda quieto; hacia los extremos cada sílaba es una pasada que cambia de tono."
+   },
+   "en": {
+    "what": "On ANIMAL WING: the Doppler effect of each fly-by, the insect's pitch shift as it flies past.",
+    "how": "Near 0 the flight stays put; toward the ends each syllable is a pass that changes pitch."
+   },
+   "learn": "animal"
+  },
+  "MOUTH": {
+   "es": {
+    "what": "En ANIMAL GLOTT: la boca del animal, de cerrada a abierta.",
+    "how": "Cerrada, un gruñido oscuro; abierta, un aullido claro. Movela mientras suena para que el animal diga algo."
+   },
+   "en": {
+    "what": "On ANIMAL GLOTT: the creature's mouth, from closed to open.",
+    "how": "Closed, a dark growl; open, a clear howl. Move it while it sounds so the creature says something."
+   },
+   "learn": "animal"
+  },
+  "ROUGH": {
+   "es": {
+    "what": "En ANIMAL GLOTT: la aspereza de la voz; hasta la mitad dobla el período (una voz quebrada), después entra en caos.",
+    "how": "En 0, una voz limpia; un poco, un perro ronco; mucho, un rugido."
+   },
+   "en": {
+    "what": "On ANIMAL GLOTT: the voice's roughness; up to halfway it doubles the period (a broken voice), then it turns to chaos.",
+    "how": "At 0, a clean voice; a little, a hoarse dog; a lot, a roar."
+   },
+   "learn": "animal"
+  },
+  "AIR": {
+   "es": {
+    "what": "En ANIMAL GLOTT: el aire en la voz, el soplido de la respiración (0–40).",
+    "how": "Bajo, una voz llena; alto, un jadeo. Ocupa el lugar de TEMP: los mamíferos no cambian con el calor."
+   },
+   "en": {
+    "what": "On ANIMAL GLOTT: the air in the voice, the breath noise (0–40).",
+    "how": "Low, a full voice; high, a pant. It takes TEMP's place: mammals do not change with the heat."
    },
    "learn": "animal"
   },
@@ -1792,19 +2120,53 @@
     "how": "At 0 it's clean; raise it for broken old-video-game audio. Combine with RATE for more destruction."
    },
    "learn": "ext"
+  },
+  "PLUCK": {
+   "es": {
+    "what": "En EXT con SOURCE en SWARM: de un drone sostenido (0) a una nota pulsada en cada golpe de los dispositivos.",
+    "how": "Bajo para una nube que flota; alto para un polirritmo de gotas."
+   },
+   "en": {
+    "what": "On EXT with SOURCE on SWARM: from a sustained drone (0) to a note plucked on each hit of the devices.",
+    "how": "Low for a floating cloud; high for a polyrhythm of drops."
+   },
+   "learn": "swarm"
+  },
+  "OCTAVE": {
+   "es": {
+    "what": "En EXT con SOURCE en SWARM: en la primera mitad cada golpe sube de octava (hasta 4); en la segunda recorre los grados de la escala (ROOT y SCALE).",
+    "how": "En 0 cada voz se queda en su nota; subilo para que el enjambre arme arpegios solo."
+   },
+   "en": {
+    "what": "On EXT with SOURCE on SWARM: in the first half each hit climbs by octaves (up to 4); in the second it walks the degrees of the scale (ROOT and SCALE).",
+    "how": "At 0 each voice stays on its note; raise it so the swarm builds arpeggios by itself."
+   },
+   "learn": "swarm"
+  },
+  "-": {
+   "es": {
+    "what": "Un lugar sin función: en una pista EXT no hay IMAGE, y este valor no cambia nada.",
+    "how": "No hace falta tocarlo; en los otros motores este mismo lugar es IMAGE."
+   },
+   "en": {
+    "what": "A slot with no function: an EXT track has no IMAGE, and this value changes nothing.",
+    "how": "No need to touch it; on the other engines this same slot is IMAGE."
+   },
+   "learn": "ext"
   }
  },
  "engines": {
   "ANALOG": {
    "WAVE": {
     "es": {
-     "what": "La onda de los osciladores: SAW, SQR, TRI, SIN, PWM, SYNC, RING, SAW3 o PLS3 (tres sierras o tres pulsos).",
+     "what": "La onda de los osciladores: SAW, SQR, TRI, SIN, PWM, SYNC, RING, SAW3 o PLS3 (tres sierras o tres pulsos). En LFO y AUTO PAN, WAVE es la forma de su onda.",
      "how": "SAW para bajos y leads brillantes, SQR y PWM huecos, SIN y TRI suaves; SAW3 para pads enormes."
     },
     "en": {
-     "what": "The oscillators' wave: SAW, SQR, TRI, SIN, PWM, SYNC, RING, SAW3 or PLS3 (three saws or three pulses).",
+     "what": "The oscillators' wave: SAW, SQR, TRI, SIN, PWM, SYNC, RING, SAW3 or PLS3 (three saws or three pulses). On LFO and AUTO PAN, WAVE is the shape of their wave.",
      "how": "SAW for bright basses and leads, SQR and PWM hollow, SIN and TRI soft; SAW3 for huge pads."
-    }
+    },
+    "learn": "analog"
    },
    "MIX": {
     "es": {
@@ -1814,17 +2176,19 @@
     "en": {
      "what": "The balance between ANALOG's two oscillators.",
      "how": "In the middle they're even; toward one side one dominates. With INT on 7 or 12, set how much of the interval you hear."
-    }
+    },
+    "learn": "analog"
    },
    "NOISE": {
     "es": {
-     "what": "Un generador de ruido que se mezcla con los dos osciladores de ANALOG.",
+     "what": "Un generador de ruido que se mezcla con los dos osciladores de ANALOG. En SAW3 y PLS3 no hay ruido: esa perilla es INT 3.",
      "how": "Un poco da aire a un pad o soplo a una flauta; mucho sirve para hi-hats y efectos de viento."
     },
     "en": {
-     "what": "A noise generator mixed with ANALOG's two oscillators.",
+     "what": "A noise generator mixed with ANALOG's two oscillators. On SAW3 and PLS3 there is no noise: that knob is INT 3.",
      "how": "A little adds air to a pad or breath to a flute; a lot works for hi-hats and wind effects."
-    }
+    },
+    "learn": "analog"
    },
    "CUT": {
     "es": {
@@ -1834,7 +2198,8 @@
     "en": {
      "what": "The cutoff of ANALOG's own filter, per voice: each note is filtered on its own.",
      "how": "Lower it and open it with the ENV for the classic synth wow; with high RES it sings."
-    }
+    },
+    "learn": "analog"
    },
    "RES": {
     "es": {
@@ -1844,7 +2209,8 @@
     "en": {
      "what": "The resonance of ANALOG's per-voice filter.",
      "how": "Raise it for a peak that whistles as you sweep CUT; high with low CUT, the classic acid bass."
-    }
+    },
+    "learn": "analog"
    },
    "DRIVE": {
     "es": {
@@ -1854,19 +2220,21 @@
     "en": {
      "what": "The drive of ANALOG's filter: warms and dirties each voice.",
      "how": "A little gives analogue warmth; a lot, a growling bass. Compensate with LEVEL if needed."
-    }
+    },
+    "learn": "analog"
    }
   },
   "PHASE": {
    "WAVE": {
     "es": {
-     "what": "La primera onda de PHASE: SAW, SQR, PLS, DSIN, SPLS, RSAW, RTRI o RTRP.",
+     "what": "La primera onda de PHASE: SAW, SQR, PLS, DSIN, SPLS, RSAW, RTRI o RTRP. En LFO y AUTO PAN, WAVE es la forma de su onda.",
      "how": "Las R son ondas resonantes, buenas para timbres vocales; combinala con WAVE2 para que alternen."
     },
     "en": {
-     "what": "PHASE's first wave: SAW, SQR, PLS, DSIN, SPLS, RSAW, RTRI or RTRP.",
+     "what": "PHASE's first wave: SAW, SQR, PLS, DSIN, SPLS, RSAW, RTRI or RTRP. On LFO and AUTO PAN, WAVE is the shape of their wave.",
      "how": "The R waves are resonant, good for vocal timbres; pair it with WAVE2 so they alternate."
-    }
+    },
+    "learn": "phase"
    },
    "BRIGHT": {
     "es": {
@@ -1876,7 +2244,8 @@
     "en": {
      "what": "How far the wave's phase bends: from a soft sine to an edge full of harmonics.",
      "how": "It's PHASE's filter: lower it for round lows, raise it for cutting leads. ENV sets how it moves each note."
-    }
+    },
+    "learn": "phase"
    },
    "SUB": {
     "es": {
@@ -1886,7 +2255,8 @@
     "en": {
      "what": "Adds a low oscillator under PHASE's waves.",
      "how": "Raise it for basses with weight; lower it on leads so they don't get muddy."
-    }
+    },
+    "learn": "phase"
    },
    "FEEDBK": {
     "es": {
@@ -1896,39 +2266,65 @@
     "en": {
      "what": "Feeds PHASE's output back into its phase: from a hard edge to a growl.",
      "how": "A little adds roughness; a lot, an unstable roar. Good for dirty basses."
-    }
+    },
+    "learn": "phase"
    }
   },
   "MATH": {
    "WAVE": {
     "es": {
-     "what": "El tipo de fórmula: BYTE (bytebeat, en escalones) o FLOAT (floatbeat, hecho de senos).",
+     "what": "El tipo de fórmula: BYTE (bytebeat, en escalones) o FLOAT (floatbeat, hecho de senos). En LFO y AUTO PAN, WAVE es la forma de su onda.",
      "how": "BYTE suena crudo y de chip; FLOAT más suave y musical. Cada uno tiene sus propias fórmulas en ALGO."
     },
     "en": {
-     "what": "The formula type: BYTE (bytebeat, stepped) or FLOAT (floatbeat, made of sines).",
+     "what": "The formula type: BYTE (bytebeat, stepped) or FLOAT (floatbeat, made of sines). On LFO and AUTO PAN, WAVE is the shape of their wave.",
      "how": "BYTE sounds raw and chiptune-like; FLOAT smoother and more musical. Each has its own formulas in ALGO."
-    }
+    },
+    "learn": "math"
    },
    "LOOP": {
     "es": {
-     "what": "Encierra la fórmula en un tramo corto que se repite, hasta volverla una nota afinada.",
+     "what": "Encierra la fórmula en un tramo corto que se repite, hasta volverla una nota afinada. En ENV DEST, LOOP hace que la envolvente vuelva a empezar.",
      "how": "En 0 la fórmula evoluciona libre; subilo para que el ritmo se vuelva tono. Más alto, ciclos más cortos."
     },
     "en": {
-     "what": "Holds the formula in a short repeating window, until it becomes a pitched note.",
+     "what": "Holds the formula in a short repeating window, until it becomes a pitched note. On ENV DEST, LOOP makes the envelope start again.",
      "how": "At 0 the formula evolves freely; raise it so rhythm becomes tone. Higher means shorter cycles."
-    }
+    },
+    "learn": "math"
    },
    "MOTION": {
     "es": {
-     "what": "Acelera o frena el ritmo de la fórmula; en la parte alta de la perilla la sincroniza al compás.",
-     "how": "En 0 queda quieta; subila para que la fórmula evolucione. En SYNC cada nota toca la misma secuencia transpuesta, a tempo."
+     "what": "La velocidad con que avanza la fórmula (su ritmo y su melodía): de 1/16 a unas 15 veces, con 64 tal cual está escrita. De 128 a 255, SYNC: lo mismo, atado al compás.",
+     "how": "Bajo, la fórmula evoluciona despacio; alto, corre. En SYNC cada nota toca la misma secuencia transpuesta, a tempo."
     },
     "en": {
-     "what": "Speeds up or slows down the formula's rhythm; at the top of the knob it syncs to the bar.",
-     "how": "At 0 it stays still; raise it so the formula evolves. In SYNC every note plays the same sequence transposed, in time."
-    }
+     "what": "The speed the formula moves on at (its rhythm and melody): from 1/16 to about 15 times, with 64 as written. From 128 to 255, SYNC: the same, locked to the bar.",
+     "how": "Low, the formula evolves slowly; high, it races. In SYNC every note plays the same sequence transposed, in time."
+    },
+    "learn": "math"
+   },
+   "FEEDBK": {
+    "es": {
+     "what": "En FLOAT: realimenta la salida hacia el tiempo de la fórmula, de un brillo tembloroso al caos. En BYTE esta perilla es GRIT.",
+     "how": "Un poco le da vida al timbre; mucho lo desarma. En 0, la fórmula limpia."
+    },
+    "en": {
+     "what": "On FLOAT: feeds the output back into the formula's time, from a shimmer to chaos. On BYTE this knob is GRIT.",
+     "how": "A little brings the timbre to life; a lot takes it apart. At 0, the clean formula."
+    },
+    "learn": "math"
+   },
+   "MORPH": {
+    "es": {
+     "what": "En FLOAT: pasa de la fórmula de ALGO a la de ALGO B. En BYTE esta perilla es BEND.",
+     "how": "Movelo despacio o con un LFO para ir de una fórmula a la otra mientras suena."
+    },
+    "en": {
+     "what": "On FLOAT: moves from ALGO's formula to ALGO B's. On BYTE this knob is BEND.",
+     "how": "Move it slowly or with an LFO to travel from one formula to the other while it plays."
+    },
+    "learn": "math"
    }
   },
   "WHEEL": {
@@ -1940,7 +2336,8 @@
     "en": {
      "what": "Adds to or takes from the organ's low drawbars (16' and 5 1/3').",
      "how": "Positive for an organ with a bass foot; negative if another track already carries the low end."
-    }
+    },
+    "learn": "wheel"
    },
    "BODY": {
     "es": {
@@ -1950,7 +2347,8 @@
     "en": {
      "what": "Adds to or takes from the organ's middle drawbars (8' and 4'): its centre.",
      "how": "Negative thins it and leaves room for a voice; positive fills it and pushes it forward."
-    }
+    },
+    "learn": "wheel"
    },
    "DRIVE": {
     "es": {
@@ -1960,7 +2358,30 @@
     "en": {
      "what": "The organ's drive, like a pushed valve amp.",
      "how": "A little gives warmth; a lot, the roaring rock organ. Combine it with SPEED on FAST."
-    }
+    },
+    "learn": "wheel"
+   },
+   "DEPTH": {
+    "es": {
+     "what": "En MORE, la profundidad del parlante giratorio del órgano: cuánto remolino da SPEED. En AUTO PAN, DEPTH es cuánto se mueve el paneo.",
+     "how": "Al máximo, el rotor de siempre; bajalo para un giro más sutil que no maree la mezcla."
+    },
+    "en": {
+     "what": "On MORE, the depth of the organ's rotating speaker: how much swirl SPEED gives. On AUTO PAN, DEPTH is how far the pan swings.",
+     "how": "At maximum, the usual rotor; lower it for a subtler spin that does not make the mix seasick."
+    },
+    "learn": "wheel"
+   },
+   "DUST": {
+    "es": {
+     "what": "El polvo de un órgano viejo: crujidos y soplido sobre el sonido.",
+     "how": "Un poco lo envejece con encanto; mucho, un órgano de sótano. El número que llega va al revés: 127 es nada."
+    },
+    "en": {
+     "what": "An old organ's dust: crackle and hiss over the sound.",
+     "how": "A little ages it with charm; a lot, a basement organ. The number sent runs backwards: 127 is none."
+    },
+    "learn": "wheel"
    }
   },
   "STRING": {
@@ -1972,7 +2393,8 @@
     "en": {
      "what": "The resonant box under the string: how much of its low resonance is mixed in.",
      "how": "Low is a bare, dry string; high, a guitar or violin with a body. SIZE sets its size."
-    }
+    },
+    "learn": "string"
    },
    "BRIGHT": {
     "es": {
@@ -1982,7 +2404,8 @@
     "en": {
      "what": "The string's brightness: how much treble it keeps while vibrating.",
      "how": "Low sounds like nylon or a muted string; high, like freshly plucked steel."
-    }
+    },
+    "learn": "string"
    },
    "DECAY": {
     "es": {
@@ -1992,7 +2415,8 @@
     "en": {
      "what": "How long the string rings before dying, from 50 ms to 13 s.",
      "how": "Short sounds palm-muted; long, like a harp or piano ringing out."
-    }
+    },
+    "learn": "string"
    },
    "SIZE": {
     "es": {
@@ -2002,7 +2426,30 @@
     "en": {
      "what": "The size of the box under the string: from a small instrument to a big one.",
      "how": "Small for violins and ukuleles; large for cellos and deep guitars."
-    }
+    },
+    "learn": "string"
+   },
+   "GAIN": {
+    "es": {
+     "what": "Con EXCITE en FDBK: cuánto del sonido del ampli vuelve a la cuerda, la fuerza del acople (el lugar de STRETCH).",
+     "how": "Bajo, la cuerda apenas se sostiene; alto, el acople toma la nota y no la suelta."
+    },
+    "en": {
+     "what": "With EXCITE on FDBK: how much of the amp's sound comes back into the string, the strength of the feedback (STRETCH's place).",
+     "how": "Low, the string barely sustains; high, the feedback takes the note and will not let go."
+    },
+    "learn": "string"
+   },
+   "DIST": {
+    "es": {
+     "what": "Con EXCITE en FDBK, en EDIT: la saturación del ampli que realimenta la cuerda (el lugar de BODY). En SENDS y DIST, DIST es la distorsión de la pista.",
+     "how": "Poca, un acople limpio que canta; mucha, un ampli al rojo."
+    },
+    "en": {
+     "what": "With EXCITE on FDBK, on EDIT: the drive of the amp that feeds the string back (BODY's place). On SENDS and DIST, DIST is the track's distortion.",
+     "how": "A little, a clean singing feedback; a lot, an amp in the red."
+    },
+    "learn": "string"
    }
   },
   "DRUM": {
@@ -2014,7 +2461,8 @@
     "en": {
      "what": "Moves the whole kit from its A face to its B face, as if it breathed.",
      "how": "Move it live or with a slow LFO so the drums change without changing the rhythm."
-    }
+    },
+    "learn": "drum-x"
    },
    "TUNE": {
     "es": {
@@ -2024,17 +2472,19 @@
     "en": {
      "what": "The tuning of the whole kit at once, ±12 semitones.",
      "how": "Lower it for a deep, heavy kit, raise it for a small, tight one; tune it to the song's key."
-    }
+    },
+    "learn": "drum-x"
    },
    "TONE": {
     "es": {
-     "what": "El color de todo el kit a la vez: más oscuro o más brillante.",
+     "what": "El color de todo el kit a la vez: más oscuro o más brillante. En DIST, TONE es el color de la distorsión de la pista.",
      "how": "Oscuro para un kit cálido y lo-fi; brillante para que los platos y la caja corten."
     },
     "en": {
-     "what": "The colour of the whole kit at once: darker or brighter.",
+     "what": "The colour of the whole kit at once: darker or brighter. On DIST, TONE is the colour of the track's distortion.",
      "how": "Dark for a warm, lo-fi kit; bright so the cymbals and snare cut through."
-    }
+    },
+    "learn": "drum-x"
    },
    "DECAY": {
     "es": {
@@ -2044,7 +2494,8 @@
     "en": {
      "what": "The length of every hit in the kit at once.",
      "how": "Lower it for a dry, tight kit; raise it for long kicks and open cymbals."
-    }
+    },
+    "learn": "drum-x"
    },
    "NOISE": {
     "es": {
@@ -2054,7 +2505,8 @@
     "en": {
      "what": "The noise of every kit sound at once: more crack and hiss.",
      "how": "Raise it for rougher snares and cymbals; lower it for a cleaner, more tonal kit."
-    }
+    },
+    "learn": "drum-x"
    },
    "BODY": {
     "es": {
@@ -2064,7 +2516,8 @@
     "en": {
      "what": "The drumhead resonance across the whole kit: the drums sound with more body.",
      "how": "Low for dry, short hits; high for toms and kicks that ring like a real head."
-    }
+    },
+    "learn": "drum-x"
    },
    "DRIVE": {
     "es": {
@@ -2074,7 +2527,8 @@
     "en": {
      "what": "Drive across the whole kit.",
      "how": "A little glues the drums; a lot breaks them up, great for industrial techno or lo-fi."
-    }
+    },
+    "learn": "drum-x"
    }
   },
   "WEST": {
@@ -2086,7 +2540,8 @@
     "en": {
      "what": "The depth of FM from a second sine onto WEST's core.",
      "how": "Raise it for bells and metals; RATIO picks the interval. Past 100 it also modulates amplitude, like a ring."
-    }
+    },
+    "learn": "west"
    },
    "RATIO": {
     "es": {
@@ -2096,17 +2551,19 @@
     "en": {
      "what": "The modulating sine's interval, 0.5 to 8; values with T use a triangle core and fold, Serge style.",
      "how": "1 and 2 give harmonic timbres; 1.41, 2.76 or 5.40, bells and marimbas. The T values sound glassier."
-    }
+    },
+    "learn": "west"
    },
    "GATE": {
     "es": {
-     "what": "Qué hace la compuerta de vactrol: solo filtro (0), filtro y volumen juntos (64, el clásico) o solo volumen (127).",
+     "what": "Qué hace la compuerta de vactrol: solo filtro (0), filtro y volumen juntos (64, el clásico) o solo volumen (127). En ARP y PATTERN, GATE es el largo de cada nota.",
      "how": "Hacia 0 el golpe se oscurece más que bajar; hacia 127 solo baja el volumen. El medio da el pluck de la costa oeste."
     },
     "en": {
-     "what": "What the vactrol gate does: filter only (0), filter and volume together (64, the classic) or volume only (127).",
+     "what": "What the vactrol gate does: filter only (0), filter and volume together (64, the classic) or volume only (127). On ARP and PATTERN, GATE is each note's length.",
      "how": "Toward 0 the hit darkens more than it fades; toward 127 it only fades. The middle gives the west-coast pluck."
-    }
+    },
+    "learn": "west"
    },
    "DECAY": {
     "es": {
@@ -2116,17 +2573,30 @@
     "en": {
      "what": "The vactrol's memory: how long the gate takes to close after the hit.",
      "how": "Short for a bongo or marimba; long for bells that darken slowly. Past 80 a held note sustains."
-    }
+    },
+    "learn": "west"
    },
    "RES": {
     "es": {
-     "what": "La resonancia del filtro de la compuerta de WEST.",
+     "what": "La resonancia del filtro de la compuerta de WEST. En la página FILTER, RES es la del filtro de la pista.",
      "how": "Un poco le da el toc del bongó, un golpe que baja de tono; al máximo, plucks que suenan como gotas."
     },
     "en": {
-     "what": "The resonance of WEST's gate filter.",
+     "what": "The resonance of WEST's gate filter. On the FILTER page, RES is the track filter's.",
      "how": "A little gives the bongo's knock, a hit that falls in pitch; at maximum, plucks that sound like drops."
-    }
+    },
+    "learn": "west"
+   },
+   "DUST": {
+    "es": {
+     "what": "De 1 a 95, ruido blanco que se pliega y pasa por la compuerta junto con el núcleo. De 96 a 127, METAL: en su lugar, una secuencia corta afinada a la nota.",
+     "how": "En 0 no hay nada. Un poco funde textura en el timbre; desde 48 suma aire; pasado 96, tonos metálicos, uno distinto cada cuatro valores."
+    },
+    "en": {
+     "what": "From 1 to 95, white noise that folds and gates together with the core. From 96 to 127, METAL: in its place, a short sequence tuned to the note.",
+     "how": "At 0 there is none. A little fuses texture into the timbre; from 48 it adds air; past 96, metallic tones, a different one every four values."
+    },
+    "learn": "west"
    }
   },
   "FM6": {
@@ -2138,7 +2608,8 @@
     "en": {
      "what": "Added to the patch's feedback: an operator modulating itself.",
      "how": "Positive adds roughness, all the way to noise; useful for metals, noises and dirty basses."
-    }
+    },
+    "learn": "fm6"
    },
    "MOD": {
     "es": {
@@ -2148,7 +2619,8 @@
     "en": {
      "what": "The level of every modulator: the patch's brightness, from −36 to +36 dB.",
      "how": "Negative softens it toward a sine; positive makes it bright and aggressive. It works like FM6's filter."
-    }
+    },
+    "learn": "fm6"
    },
    "RATIO": {
     "es": {
@@ -2158,7 +2630,8 @@
     "en": {
      "what": "Added to the modulators' coarse ratio: changes the patch's harmonics.",
      "how": "Small steps change the character completely; try it on a bass or bell and keep the one that sings."
-    }
+    },
+    "learn": "fm6"
    },
    "SLOT": {
     "es": {
@@ -2168,19 +2641,21 @@
     "en": {
      "what": "Picks the patch: factory F1–F8, OWN the track's own, or B1–B32 from the bank sent from the editor.",
      "how": "Browse them to find a starting point; going back to OWN brings back your edited patch."
-    }
+    },
+    "learn": "fm6"
    }
   },
   "ADD": {
    "MODE": {
     "es": {
-     "what": "Elige el espectro: HARM, ODD, WIDE, BELL, BAR, DRUM, PRIME, FIFTH, SUB o PLATE.",
+     "what": "Elige el espectro: HARM, ODD, WIDE, BELL, BAR, DRUM, PRIME, FIFTH, SUB o PLATE. En ARP, MODE es el orden del arpegio.",
      "how": "HARM y ODD para tonos de órgano y clarinete; BELL, BAR y PLATE para campanas y metales."
     },
     "en": {
-     "what": "Picks the spectrum: HARM, ODD, WIDE, BELL, BAR, DRUM, PRIME, FIFTH, SUB or PLATE.",
+     "what": "Picks the spectrum: HARM, ODD, WIDE, BELL, BAR, DRUM, PRIME, FIFTH, SUB or PLATE. On ARP, MODE is the arpeggio's order.",
      "how": "HARM and ODD for organ and clarinet tones; BELL, BAR and PLATE for bells and metals."
-    }
+    },
+    "learn": "add"
    },
    "MORPH": {
     "es": {
@@ -2190,7 +2665,8 @@
     "en": {
      "what": "Slides from the spectrum chosen in MODE into the next one.",
      "how": "Move it with a slow LFO or the ENV for a sound that changes colour as it plays."
-    }
+    },
+    "learn": "add"
    },
    "BRIGHT": {
     "es": {
@@ -2200,37 +2676,41 @@
     "en": {
      "what": "How much weight the upper partials of the spectrum carry.",
      "how": "Lower it for round, flute-like sounds; raise it for a bright spectrum. PARTIAL limits how many sound."
-    }
+    },
+    "learn": "add"
    },
    "SHIFT": {
     "es": {
-     "what": "Estira los parciales: de armónicos prolijos a timbres inarmónicos de campana.",
-     "how": "En 0 suena armónico; movelo un poco para metales y campanas, mucho para sonidos raros."
+     "what": "Corre los parciales: hacia abajo estira sus proporciones; hacia arriba les suma los mismos Hz a todos, inarmónico como un ring o una radio.",
+     "how": "En 0 queda como lo da MODE; movelo un poco para metales y campanas, mucho para sonidos raros."
     },
     "en": {
-     "what": "Stretches the partials: from tidy harmonics to inharmonic, bell-like timbres.",
-     "how": "At 0 it's harmonic; move it a little for metals and bells, a lot for strange sounds."
-    }
+     "what": "Shifts the partials: downward it stretches their ratios; upward it adds the same Hz to every one, inharmonic like a ring modulator or a radio.",
+     "how": "At 0 it stays as MODE gives it; move it a little for metals and bells, a lot for strange sounds."
+    },
+    "learn": "add"
    },
    "DECAY": {
     "es": {
-     "what": "Hace que los parciales agudos se apaguen antes que los graves.",
-     "how": "En 127 todo dura igual; bajalo para golpes que se vuelven redondos al morir, como una campana o un piano."
+     "what": "Cuánto resuena cada parcial; los agudos se apagan antes que los graves. En 127 la nota se sostiene.",
+     "how": "Bajalo para golpes que se vuelven redondos al morir, como una campana o un piano; en 127 el sonido queda mientras mantengas la nota."
     },
     "en": {
-     "what": "Makes the upper partials die away before the lower ones.",
-     "how": "At 127 everything lasts the same; lower it for hits that turn round as they fade, like a bell or piano."
-    }
+     "what": "How long each partial rings; the upper ones die away before the lower ones. At 127 the note is held.",
+     "how": "Lower it for hits that turn round as they fade, like a bell or piano; at 127 the sound stays as long as you hold the note."
+    },
+    "learn": "add"
    },
    "MOTION": {
     "es": {
-     "what": "Barre el espectro solo: los parciales se mueven en el tiempo.",
-     "how": "En 0 queda quieto; hacia un lado o el otro el espectro se mueve, para pads que nunca suenan igual."
+     "what": "El movimiento propio del espectro: hacia abajo BLOOM (los parciales agudos entran más tarde), hacia arriba SHIMMER (cada parcial deriva lento por su cuenta).",
+     "how": "En 0 queda quieto; BLOOM para ataques que se abren, SHIMMER para pads que nunca suenan igual."
     },
     "en": {
-     "what": "Sweeps the spectrum by itself: the partials move over time.",
-     "how": "At 0 it stays still; either way the spectrum moves, for pads that never sound the same."
-    }
+     "what": "The spectrum's own motion: downward BLOOM (the upper partials come in later), upward SHIMMER (each partial wanders slowly on its own).",
+     "how": "At 0 it stays still; BLOOM for attacks that open up, SHIMMER for pads that never sound the same."
+    },
+    "learn": "add"
    }
   },
   "VOICE": {
@@ -2242,71 +2722,210 @@
     "en": {
      "what": "Moves all of VOICE's formants: a bigger or smaller voice, without changing the note.",
      "how": "Negative for a huge, deep voice; positive for a tiny cartoon voice."
-    }
+    },
+    "learn": "voice"
+   },
+   "POS": {
+    "es": {
+     "what": "Con un idioma en LANG: qué sílaba de la letra canta la próxima nota. En 0 (AUTO) cada nota canta la siguiente.",
+     "how": "Dejalo en AUTO para que la letra avance sola; lockealo en un paso para que ahí siempre caiga la misma sílaba."
+    },
+    "en": {
+     "what": "With a language in LANG: which syllable of the lyric the next note sings. At 0 (AUTO) each note sings the next one.",
+     "how": "Leave it on AUTO so the lyric moves on by itself; lock it on a step so the same syllable always lands there."
+    },
+    "learn": "voice-words"
+   },
+   "LOOP": {
+    "es": {
+     "what": "Con un idioma en LANG: cada cuántas vueltas del patrón la letra vuelve a empezar (FREE, 1, 2, 4, 8). En ENV DEST, LOOP reinicia la envolvente.",
+     "how": "1 para un estribillo igual en cada vuelta; FREE para que la letra siga de largo sobre el patrón."
+    },
+    "en": {
+     "what": "With a language in LANG: every how many pattern loops the lyric starts over (FREE, 1, 2, 4, 8). On ENV DEST, LOOP restarts the envelope.",
+     "how": "1 for a refrain that is the same every loop; FREE so the lyric runs on across the pattern."
+    },
+    "learn": "voice-words"
    }
   },
   "ANIMAL": {
    "MODE": {
     "es": {
-     "what": "Elige la fuente del animal: CMOS, PULSE (grillos, ranas), WHSTL (pájaros), WING (insectos) o GLOTT (lobos, perros).",
-     "how": "Empezá por la fuente y después ajustá SIZE: el mismo modo pasa de pájaro chico a bicho grande."
+     "what": "Elige la fuente del animal: CMOS (una máquina de pájaros), PULSE (grillos, ranas), WHSTL (pájaros), WING (insectos) o GLOTT (lobos, perros). En ARP, MODE es el orden del arpegio.",
+     "how": "Empezá por la fuente y después ajustá SIZE; cada modo les cambia el nombre y el sentido a varias perillas."
     },
     "en": {
-     "what": "Picks the creature's source: CMOS, PULSE (crickets, frogs), WHSTL (birds), WING (insects) or GLOTT (wolves, dogs).",
-     "how": "Start with the source, then adjust SIZE: the same mode goes from a small bird to a big beast."
-    }
+     "what": "Picks the creature's source: CMOS (a bird machine), PULSE (crickets, frogs), WHSTL (birds), WING (insects) or GLOTT (wolves, dogs). On ARP, MODE is the arpeggio's order.",
+     "how": "Start with the source, then adjust SIZE; each mode renames and repurposes several knobs."
+    },
+    "learn": "animal"
    },
    "SIZE": {
     "es": {
-     "what": "El tamaño del animal: más chico, más agudo y ágil; más grande, más grave.",
+     "what": "El tamaño del animal: más chico, más agudo; más grande, más grave (64, la nota tocada). En GLOTT, el largo del tracto vocal; en CMOS, el largo de cada chirrido.",
      "how": "Movelo para metamorfosear la criatura; con la secuencia, una bandada de tamaños distintos."
     },
     "en": {
-     "what": "The creature's size: smaller is higher and nimbler; bigger is deeper.",
+     "what": "The creature's size: smaller is higher; bigger is deeper (64, the note played). On GLOTT, the vocal tract's length; on CMOS, each chirp's length.",
      "how": "Move it to morph the creature; with the sequence, a flock of different sizes."
-    }
+    },
+    "learn": "animal"
    },
    "RATE": {
     "es": {
-     "what": "La tasa de sílabas del canto: cuántas por segundo.",
+     "what": "La tasa de sílabas del canto: cuántas por segundo (en CMOS, la velocidad del oscilador lento). En LFO, ARP y AUTO PAN, RATE es la velocidad de cada uno.",
      "how": "Lento para llamados espaciados; rápido para trinos e insectos. TEMP también la acelera."
     },
     "en": {
-     "what": "The call's syllable rate: how many per second.",
+     "what": "The call's syllable rate: how many per second (on CMOS, the slow oscillator's speed). On LFO, ARP and AUTO PAN, RATE is the speed of each.",
      "how": "Slow for spaced calls; fast for trills and insects. TEMP speeds it up too."
-    }
+    },
+    "learn": "animal"
+   },
+   "CLICK": {
+    "es": {
+     "what": "En PULSE: el ritmo de los pulsos contra la resonancia. Al máximo, un pulso por ciclo, un tono puro; hacia abajo, clics sueltos que la hacen sonar.",
+     "how": "Alto para grillos afinados, de relojería; bajo para chicharras y ranas que raspan."
+    },
+    "en": {
+     "what": "On PULSE: the pulse rate against the resonance. At maximum, one pulse a cycle, a pure tone; lower, separate clicks that ring it.",
+     "how": "High for pitched, clockwork crickets; low for rasping cicadas and frogs."
+    },
+    "learn": "animal"
+   },
+   "RESO": {
+    "es": {
+     "what": "En PULSE: la resonancia del cuerpo que vibra (ala, abdomen, saco vocal), de ancha a muy afinada.",
+     "how": "Baja, un insecto ruidoso de banda ancha; alta, el tono puro de un grillo."
+    },
+    "en": {
+     "what": "On PULSE: the resonance of the vibrating body (wing, abdomen, vocal sac), from broad to sharply tuned.",
+     "how": "Low, a noisy broadband insect; high, a cricket's pure tone."
+    },
+    "learn": "animal"
+   },
+   "DETUNE": {
+    "es": {
+     "what": "En PULSE: corre los pulsos respecto de la resonancia (batidos, un canto anómalo) y los vuelve irregulares.",
+     "how": "En 0 el canto queda limpio; hacia los extremos bate y se desordena."
+    },
+    "en": {
+     "what": "On PULSE: moves the pulses off the resonance (beats, an anomalous song) and makes them irregular.",
+     "how": "At 0 the call stays clean; toward the ends it beats and falls out of step."
+    },
+    "learn": "animal"
+   },
+   "BUZZ": {
+    "es": {
+     "what": "En WING: el ancho del pulso del aleteo, y con él su brillo.",
+     "how": "Bajo, un zumbido redondo de abejorro; alto, el filo de un mosquito."
+    },
+    "en": {
+     "what": "On WING: the width of the wingbeat's pulse, and its brightness with it.",
+     "how": "Low, a bumblebee's round hum; high, a mosquito's edge."
+    },
+    "learn": "animal"
+   },
+   "DRIFT": {
+    "es": {
+     "what": "En WING: una deriva lenta y al azar en la altura del aleteo.",
+     "how": "En 0 el vuelo es fijo como una máquina; subilo para un insecto que nunca vuela parejo."
+    },
+    "en": {
+     "what": "On WING: a slow random drift in the wingbeat's pitch.",
+     "how": "At 0 the flight is fixed like a machine; raise it for an insect that never flies steadily."
+    },
+    "learn": "animal"
+   },
+   "FM": {
+    "es": {
+     "what": "En CMOS (0–40): cómo actúa el oscilador lento sobre el chirrido. 0 solo lo corta, 20 lo corta y lo barre (el pájaro), 40 solo lo barre (una sirena).",
+     "how": "Alrededor de 20 está el pájaro clásico; hacia 40, sirenas y alarmas."
+    },
+    "en": {
+     "what": "On CMOS (0–40): how the slow oscillator acts on the chirp. 0 only gates it, 20 gates and sweeps it (the bird), 40 only sweeps it (a siren).",
+     "how": "The classic bird sits around 20; toward 40, sirens and alarms."
+    },
+    "learn": "animal"
    }
   },
   "EXT": {
    "MODE": {
     "es": {
-     "what": "THRU deja sonar la entrada todo el tiempo; KEYS solo mientras tocás teclas o pasos, con la envolvente de la nota.",
+     "what": "THRU deja sonar la entrada todo el tiempo; KEYS solo mientras tocás teclas o pasos, con la envolvente de la nota. En ARP, MODE es el orden del arpegio.",
      "how": "KEYS con la secuencia corta la señal a tempo, como un trance gate; THRU para procesar algo que suena siempre."
     },
     "en": {
-     "what": "THRU lets the input sound all the time; KEYS only while you play keys or steps, at the note's envelope.",
+     "what": "THRU lets the input sound all the time; KEYS only while you play keys or steps, at the note's envelope. On ARP, MODE is the arpeggio's order.",
      "how": "KEYS with the sequence chops the signal in time, like a trance gate; THRU to process something that always plays."
-    }
+    },
+    "learn": "ext"
    },
    "GATE": {
     "es": {
-     "what": "Una compuerta de ruido: por debajo de su nivel, la entrada se cierra.",
+     "what": "Una compuerta de ruido: por debajo de su nivel, la entrada se cierra. En ARP y PATTERN, GATE es el largo de cada nota.",
      "how": "Subilo hasta que el ruido de fondo desaparezca entre frases; demasiado alto corta las partes suaves."
     },
     "en": {
-     "what": "A noise gate: below its level, the input closes.",
+     "what": "A noise gate: below its level, the input closes. On ARP and PATTERN, GATE is each note's length.",
      "how": "Raise it until the background noise disappears between phrases; too high cuts the quiet parts."
-    }
+    },
+    "learn": "ext"
    },
    "RATE": {
     "es": {
-     "what": "Baja la frecuencia de muestreo de la entrada: retiene muestras y la vuelve lo-fi.",
+     "what": "Baja la frecuencia de muestreo de la entrada: retiene muestras y la vuelve lo-fi. En LFO, ARP y AUTO PAN, RATE es la velocidad de cada uno.",
      "how": "En 0 queda limpia; subilo para un aliasing áspero y metálico. Combinalo con BITS."
     },
     "en": {
-     "what": "Lowers the input's sample rate: holds samples and makes it lo-fi.",
+     "what": "Lowers the input's sample rate: holds samples and makes it lo-fi. On LFO, ARP and AUTO PAN, RATE is the speed of each.",
      "how": "At 0 it stays clean; raise it for harsh, metallic aliasing. Combine it with BITS."
-    }
+    },
+    "learn": "ext-lofi"
+   },
+   "FM": {
+    "es": {
+     "what": "Con SOURCE en SWARM: cuánto modula cada dispositivo su propia voz con sus bytes, con una envolvente en cada golpe (el lugar de GATE).",
+     "how": "En 0, senos puros; subilo para golpes más metálicos y distintos en cada dispositivo."
+    },
+    "en": {
+     "what": "With SOURCE on SWARM: how much each device modulates its own voice with its bytes, with an envelope on each hit (GATE's place).",
+     "how": "At 0, pure sines; raise it for more metallic hits, different on each device."
+    },
+    "learn": "swarm"
+   },
+   "IMAGE": {
+    "es": {
+     "what": "Con SOURCE en SWARM: en 0 cada dispositivo suena de su lado; al subirlo cada golpe se lanza a otro punto del estéreo (el lugar de WIDTH).",
+     "how": "Bajo para un enjambre ordenado; alto para que los golpes salten por toda la mezcla."
+    },
+    "en": {
+     "what": "With SOURCE on SWARM: at 0 each device sounds on its own side; raising it throws each hit to another point of the stereo field (WIDTH's place).",
+     "how": "Low for an orderly swarm; high so the hits jump all over the mix."
+    },
+    "learn": "swarm"
+   },
+   "DRIFT": {
+    "es": {
+     "what": "Con SOURCE en SWARM: cada golpe dobla la altura de su voz, que después vuelve deslizándose (el lugar de RING).",
+     "how": "En 0 las notas quedan firmes; subilo para un enjambre que se queja y resbala."
+    },
+    "en": {
+     "what": "With SOURCE on SWARM: each hit bends its voice's pitch, which then glides back (RING's place).",
+     "how": "At 0 the notes hold firm; raise it for a swarm that whines and slides."
+    },
+    "learn": "swarm"
+   },
+   "CHAOS": {
+    "es": {
+     "what": "Con SOURCE en SWARM: el techo de la modulación cruzada entre las voces: primero se encadenan, después la FM salta y se pliega y, pasado 100, un anillo.",
+     "how": "En 0 queda el timbre limpio; cuánto se oye depende también de cuántos dispositivos hay y de qué tan cerca están."
+    },
+    "en": {
+     "what": "With SOURCE on SWARM: the ceiling of the cross-modulation between voices: first they chain up, then the FM jumps and folds and, past 100, a ring.",
+     "how": "At 0 the timbre stays clean; how much of it you hear also depends on how many devices there are and how near."
+    },
+    "learn": "swarm"
    }
   }
  }
