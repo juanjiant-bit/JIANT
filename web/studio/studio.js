@@ -403,12 +403,12 @@ class Link {
 function parseInfo(a) {
   let i = 0;
   const str = () => { let s = ""; while (i < a.length && a[i]) s += String.fromCharCode(a[i++]); i++; return s; };
-  const version = str(), n = a[i]; i += 5;
+  const version = str(), n = a[i], pe0 = a[i + 4]; i += 5;
   const engines = [];
   for (let k = 0; k < n && i < a.length; k++) engines.push(str());
   /* JIANT BYTE names itself ("JIANT BYTE v0.16"); JIANT FM does not ("JIANT V10.8.24"). (Not by its engines: JIANT FM has
      MATH too since V10.8.21) */
-  return { version, engines, kind: /\bBYTE\b/i.test(version) ? "byte" : "fm", jiant: /^(JIANT|FELUCCA)\b/i.test(version) };
+  return { version, engines, pe0, kind: /\bBYTE\b/i.test(version) ? "byte" : "fm", jiant: /^(JIANT|FELUCCA)\b/i.test(version) };
 }
 const PORT_RE = /felucca|jiant|skiff|fm[ _-]*1|smk[ _-]*37|m[ _-]*vave|cuvave|composite|sinco|usb[ _-]*midi|usb audio/i;
 let access = null;
@@ -1493,7 +1493,8 @@ async function liveStart() {
   if (!S) { live.status = t("lvNoDev"); renderLive(); return; }
   live.on = true; live.link = S.link; live.desc.clear(); live.status = t("lvWaiting").replace("%s", S.name); renderLive();
   try {
-    live.engines = S.engines || parseInfo(await S.link.request(CMD.INFO, [], 900)).engines;
+    const info = parseInfo(await S.link.request(CMD.INFO, [], 900));
+    live.engines = S.engines || info.engines; live.pe0 = info.pe0;
     await S.link.request(22, [63], 900);                     // WATCH: every push this firmware has (bit 5: UI, 43)
     const d = await S.link.request(4, [], 1500);             // DUMP: the selected track's engine
     live.engine = d[0];
@@ -1545,13 +1546,17 @@ async function livePush(f, link) {
   }
 }
 /* the guide's element whose id or name matches a word (an engine, FILTER, DELAY…) */
-function lrFind(word) {
+function lrFind(word, sector) {
   if (!word) return null;
   const w = String(word).toLowerCase(), D = lr.data[state.fw];
   if (!D) return null;
-  for (const sec of D.sectors || []) for (const it of sec.items) if (it.id === w || it.name.toLowerCase() === w) return `${sec.id}/${it.id}`;
-  for (const sec of D.sectors || []) for (const it of sec.items) if (it.name.toLowerCase().split(/[^a-z0-9-]+/).includes(w)) return `${sec.id}/${it.id}`;
-  return null;
+  const secs = (D.sectors || []).filter((x) => !sector || x.id === sector), all = [];
+  for (const sec of secs) for (const it of sec.items) all.push([sec, it]);
+  const hit = (f) => { const r = all.find(([, it]) => f(it)); return r ? `${r[0].id}/${r[1].id}` : null; };
+  return hit((it) => it.id === w)                                 // an id first, in every sector (slicer: FX's, not audio in's)
+    || hit((it) => it.name.toLowerCase() === w)
+    || hit((it) => it.id.startsWith(w + "-"))                      // DRUM: drum-x
+    || hit((it) => it.name.toLowerCase().split(/[^a-z0-9-]+/).includes(w));
 }
 function lrItem(path) {
   const [sid, iid] = String(path).split("/"), D = lr.data[state.fw];
@@ -1562,16 +1567,17 @@ function lrItem(path) {
 function liveExplain(e) {
   const G = live.gloss[state.fw] || {}, eng = engName(live.engine), L2 = (o) => (o ? o[lang] || o.es || o.en : null);
   if (e.kind === "param") {
-    const d = e.d, g = (e.scope === 0 && e.track == null && G.engines && G.engines[eng] && G.engines[eng][d.label]) || (G.labels && G.labels[d.label]) || null;
+    const d = e.d, engParam = e.scope === 0 && e.track == null && (state.fw !== "fm" || !live.pe0 || d.id >= live.pe0);   // FM: an engine's own knob (INFO's pe0) (a common one with the same label keeps the general text)
+    const g = (engParam && G.engines && G.engines[eng] && G.engines[eng][d.label]) || (G.labels && G.labels[d.label]) || null;
     const span = d.max - d.min || 1, frac = Math.max(0, Math.min(1, (e.v - d.min) / span));
     const val = d.names && d.names.length ? d.names[e.v - d.min] || e.v : `${e.v}${d.unit ? " " + d.unit : ""}`;
     const where = e.track != null ? `${t("lvTrack")} ${e.track + 1}` : e.scope ? t("lvGlobal") : `${t("lvTrack")} ${live.track + 1}${eng ? " · " + eng : ""}`;
     const gx = g ? L2(g) : null;
     let learn = g && g.learn ? (lrFind(g.learn) || null) : null;
-    if (!learn) learn = lrFind(d.label) || lrFind(eng);
+    if (!learn) learn = lrFind(d.label) || lrFind(eng, "engines") || lrFind(eng);
     return { title: d.label, line: where, value: String(val), frac, what: gx ? gx.what : t("lvUnknown"), how: gx ? gx.how : "", learn };
   }
-  if (e.kind === "reload") { const en = engName(e.engine); return { title: en || t("lvSound"), line: `${t("lvTrack")} ${(e.track ?? live.track) + 1} · ${t("lvPreset")} ${e.preset + 1}`, what: t("lvReload"), how: "", learn: lrFind(en) }; }
+  if (e.kind === "reload") { const en = engName(e.engine); return { title: en || t("lvSound"), line: `${t("lvTrack")} ${(e.track ?? live.track) + 1} · ${t("lvPreset")} ${e.preset + 1}`, what: t("lvReload"), how: "", learn: lrFind(en, "engines") || lrFind(en) }; }
   if (e.kind === "step") return { title: `${t("lvStep")} ${e.index + 1}`, line: `${t("lvTrack")} ${live.track + 1}`, what: t("lvStepWhat"), how: "", learn: lrFind("seq") || lrFind("step") };
   if (e.kind === "transport") return { title: e.playing ? "PLAY" : "STOP", line: e.playing ? `${t("lvBar")} ${e.bar + 1} · ${e.beat + 1}` : "", what: t(e.playing ? "lvPlay" : "lvStop"), how: "", learn: lrFind("song") };
   if (e.kind === "punch") return { title: "FX PUNCH-IN", line: e.bits ? t("lvPunchOn") : t("lvPunchOff"), what: t("lvPunch"), how: "", learn: lrFind("punch") };
