@@ -10194,7 +10194,7 @@ static int test_click_menu(void)
         ui_rec_prefs |= 0x80u; frame();
         ok &= load_ui == 2 && sys_load == LOAD_FULL;    /* (0.6.30) KNOB 2 LOAD: FULL, the default */
         turn(EN_K2, -1); frame();
-        ok &= load_ui == 1 && sys_load == LOAD_LITE && ui_load == 1u && msg_is("LOAD LITE: LIGHTER FX");
+        ok &= load_ui == 1 && sys_load == LOAD_LITE && ui_load == 1u && msg_is("LITE: LIGHTER FX");
         turn(EN_K2, -1); frame();
         ok &= load_ui == 0 && sys_load == LOAD_ECO && ui_load == 2u && trk_live == NTRK;   /* (TRACKS its own) */
         load_put(2u); frame();

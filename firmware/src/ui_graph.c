@@ -1923,6 +1923,18 @@ static void graph_scope(uint16_t c)
 {
     scope_at(PANEL_X0, PANEL_W, (int32_t)cv_h / 2, cv_h == H_GRAPH ? 46 : (int32_t)cv_h / 2 - 6, c);   /* (LARGE: the strip) */
 }
+/* (V10.8.29, the owner) DRONE CLAY's four modulators under the scope: a thin bar each, from the middle to what it adds
+ * now (form_st's mv), the one the knobs edit in the track's colour, the others dim; a modulator without DEST: none */
+static __attribute__((noinline)) void clay_lanes(void)
+{
+    uint32_t k, tr = song.sel % NTRK;
+    for (k = 0; k < 4u; k++) {
+        int32_t v = form_st[tr].mv[k], w = clamp(v < 0 ? -v : v, 0, 128) * (PANEL_W / 2) >> 7;
+        if (clay[tr][CL_MF(k, 0u)])
+            cv_rect(PANEL_X0 + PANEL_W / 2 - (v < 0 ? w : 0), (int32_t)cv_h / 2 + 48 + 3 * (int32_t)k, w | 1, 2,
+                    k == (uint32_t)clay_km[tr] ? trk_col(tr) : T_MID);
+    }
+}
 /* (codex/anim) a stroke of the scope, as hot as it is loud (its end's height) */
 static __attribute__((noinline)) void scope_seg(int32_t xa, int32_t ya, int32_t xb, int32_t yb, int32_t cy, int32_t a)
 {
@@ -2107,6 +2119,7 @@ static void draw_graph(void)
     } else if (pg->graph == GR_CLAY) {               /* (V10.8.21) SEQ > DRONE CLAY: the output's scope (its telemetry out
                                                       * for the flash, the owner) */
         graph_scope(T_THEME);
+        clay_lanes();
     } else if (pg->graph == GR_HARM) {               /* (V10.7.70) SCL > HARMONY: the progression's chords */
         cv_oy = 0;
         graph_harm();

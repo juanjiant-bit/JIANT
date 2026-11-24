@@ -999,7 +999,7 @@ static __attribute__((noinline)) void step_edit(uint32_t slot, int32_t steps)
     uint32_t i;
     if (cur_page()->id[0] == 4u) {                      /* (0.6.81) SEQ > NOTE; (0.6.92) KNOB 4 MICRO, on a kit too */
         if (slot == 3u) micro_edit(steps);
-        else if (drum_track(TSEL)) { if (slot == 0u) cursor_set(ui.cursor + steps); else ui_message("A KIT: STEP + MICRO"); }
+        else if (drum_track(TSEL)) { if (slot == 0u) cursor_set(ui.cursor + steps); }
         else note_edit(slot, steps);
         if (slot < 3u) ui_preview();
         return;
@@ -1636,7 +1636,7 @@ sect:
     }
     if (vp == &load_ui) {                               /* (0.6.30) GLO > SYSTEM's LOAD: the same */
         load_put(v);
-        ui_message(v == 2 ? "LOAD FULL: ALL FX" : v ? "LOAD LITE: LIGHTER FX" : "LOAD ECO: NO SLICER/CHORUS");
+        ui_message(v == 2 ? "FULL: ALL FX" : v ? "LITE: LIGHTER FX" : "ECO: NO SLICER/CHORUS");
         settings_save();
         return;
     }
@@ -2905,7 +2905,7 @@ static void ui_input_frame(void)
                 break;
             if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_BROWSE) {   /* (V10.24) PRESETS: OCT+ keeps
                                                          * the sound, OCT- the one before the browse */
-                if (!br_armed) ui_message(b == B_OCTUP ? "KNOB 1 BROWSES" : "NOTHING BEFORE");
+                if (!br_armed) { if (b != B_OCTUP) ui_message("NOTHING BEFORE"); }
                 else if (b == B_OCTUP) ui_message("SOUND KEPT");
                 else ui_message(undo_sound(song.sel) ? "NOTHING BEFORE" : "SOUND BEFORE");
                 br_armed = 0;

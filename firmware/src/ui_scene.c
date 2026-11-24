@@ -90,7 +90,6 @@ static __attribute__((noinline)) void sc_put(uint32_t k, int32_t v)
         scn_frel = 1;                                    /* (V10.7.63: a led scene's notes let go) */
         if (scn_on == 8u) {                              /* (V10.7.64) PRESS: the key's note on every live track, its own
                                                          * sound each; no roles, no dice, the scale as it is */
-            ui_message("EVERY TRACK PLAYS THE KEYS");
             return;
         }
         if (scn_on >= 2u && !drum_track(&trk[scn_on - 2u]))
