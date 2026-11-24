@@ -228,6 +228,37 @@
   @media (max-width: 720px) { .bkrow { grid-template-columns: minmax(0, 1fr); } .bkrow .acts { justify-content: flex-start; } }
   .bkempty { color: var(--dim); font-size: 14px; padding: 6px 0; }
   .chk { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; color: var(--dim); }
+  /* rescue: numbered steps (done: ticked), the board's wiring drawn, the LED's colours */
+  .badge.warn { font-family: var(--mono, monospace); font-size: 12px; padding: 6px 10px; border-radius: 999px; border: var(--border) solid var(--accent); color: var(--accent); white-space: nowrap; }
+  .rsfirst { border-color: var(--accent); margin-bottom: 16px; }
+  .rsfirst p { margin: 6px 0 10px; color: var(--dim); }
+  .rsteps { list-style: none; padding: 0; margin: 0 0 16px; display: flex; flex-direction: column; gap: 14px; }
+  .rstep h2 { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; }
+  .rstep .num { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--bg); font-size: 15px; flex: none; }
+  .rstep.done .num { background: var(--field); color: var(--accent); border: var(--border) solid var(--accent); }
+  .rstep .need, .rstep .sub { margin: 0; padding-left: 20px; color: var(--fg); }
+  .rstep .need li, .rstep .sub li { margin: 5px 0; }
+  .rstep h3 { margin: 16px 0 8px; font-size: 15px; }
+  .seg { display: inline-flex; flex-wrap: wrap; border: var(--border) solid var(--line); border-radius: var(--radius-s); overflow: hidden; margin-bottom: 12px; }
+  .seg button { all: unset; cursor: pointer; padding: 9px 14px; font-size: 14px; color: var(--dim); }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--bg); }
+  .wiring { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 16px; align-items: center; }
+  @media (max-width: 760px) { .wiring { grid-template-columns: minmax(0, 1fr); } }
+  .wire svg { width: 100%; height: auto; display: block; }
+  .rsst { margin: 8px 0 0; font-family: var(--mono, monospace); font-size: 13px; color: var(--dim); }
+  .rsst.ok { color: var(--accent); }
+  .rsst.err { color: var(--fg); background: var(--field); border-left: 3px solid var(--accent); padding: 6px 10px; }
+  .leds { display: grid; gap: 8px; }
+  .led { display: grid; grid-template-columns: 22px minmax(0, 180px) minmax(0, 1fr); gap: 10px; align-items: center; font-size: 14px; }
+  @media (max-width: 600px) { .led { grid-template-columns: 22px minmax(0, 1fr); } .led span:last-child { grid-column: 2; color: var(--dim); } }
+  .led i { width: 16px; height: 16px; border-radius: 50%; display: block; box-shadow: 0 0 10px var(--c); background: var(--c); }
+  .led i.blink { animation: rsblink 1s steps(2, start) infinite; }
+  .led i.fast { animation: rsblink .3s steps(2, start) infinite; }
+  .led i.alt { animation: rsalt .8s steps(2, start) infinite; }
+  @keyframes rsblink { to { opacity: .15; } }
+  @keyframes rsalt { 50% { background: var(--c2); box-shadow: 0 0 10px var(--c2); } }
+  @media (prefers-reduced-motion: reduce) { .led i { animation: none !important; } }
+  .led b { font-weight: 600; }
   /* the manuals: a card each (the interactive manual first and wide), a cheat sheet's picture opens large */
   .docs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; }
   .doc { display: flex; flex-direction: column; gap: 10px; }
@@ -325,6 +356,7 @@
       <button data-go="rec" data-t="vRec"></button>
       <button data-go="proj" data-t="vProj"></button>
       <button data-go="docs" data-t="vDocs"></button>
+      <button data-go="rescue" data-t="vRescue"></button>
       <button data-go="ports" data-t="vPorts"></button>
     </nav>
     <div class="controls">
@@ -446,6 +478,39 @@
         <label class="chk"><input type="checkbox" id="bkdl" checked> <span data-t="bkAlsoFile"></span></label></div>
       <div class="bklist" id="bklist"></div>
     </div>
+  </section>
+
+  <!-- ======================================================================================= rescue (FM-1 Rescue) -->
+  <section class="view" id="v-rescue" hidden>
+    <div class="viewhead"><div><p class="eyebrow" data-t="vRescue"></p><h1 data-t="rsTitle"></h1></div>
+      <span class="badge warn" data-t="rsBeta"></span></div>
+    <p class="lead" data-t="rsLead"></p>
+    <div class="card rsfirst"><b data-t="rsFirstT"></b><p data-t="rsFirst"></p><button class="btn ghost" type="button" data-go="install" data-t="rsToInstall"></button></div>
+    <ol class="rsteps" id="rsteps">
+      <li class="card rstep" data-k="need"><h2><span class="num">1</span><span data-t="rs1"></span></h2>
+        <ul class="need"><li data-t="rsNeedBoard"></li><li data-t="rsNeedUsb"></li><li data-t="rsNeedWires"></li><li data-t="rsNeedBatt"></li><li data-t="rsNeedPc"></li></ul></li>
+      <li class="card rstep" data-k="board"><h2><span class="num">2</span><span data-t="rs2"></span></h2>
+        <div class="seg" id="rsboard" role="radiogroup">
+          <button type="button" data-board="zero">RP2040-Zero</button><button type="button" data-board="xiao">XIAO RP2040</button><button type="button" data-board="pico">Raspberry Pi Pico</button></div>
+        <div class="wiring"><div id="rswire" class="wire"></div><div><p id="rswiretext"></p><p class="dim" data-t="rsCable"></p></div></div></li>
+      <li class="card rstep" data-k="fw"><h2><span class="num">3</span><span data-t="rs3"></span></h2>
+        <div class="seg" id="rsfw" role="radiogroup">
+          <button type="button" data-fwsrc="fm">JIANT FM</button><button type="button" data-fwsrc="byte">JIANT BYTE</button><button type="button" data-fwsrc="file" data-t="rsFwFile"></button></div>
+        <input type="file" id="rsfile" accept=".fwsc" hidden>
+        <p class="dim" data-t="rsFwHelp"></p><p class="rsst" id="rsfwst"></p><p class="rsst" id="rsldst"></p></li>
+      <li class="card rstep" data-k="make"><h2><span class="num">4</span><span data-t="rs4"></span></h2>
+        <p class="dim" data-t="rsMakeHelp"></p><button class="btn" type="button" id="rsmake" data-t="rsMake"></button><p class="rsst" id="rsmakest"></p></li>
+      <li class="card rstep" data-k="flash"><h2><span class="num">5</span><span data-t="rs5"></span></h2><ol class="sub" id="rsflash"></ol></li>
+      <li class="card rstep" data-k="go"><h2><span class="num">6</span><span data-t="rs6"></span></h2><ol class="sub" id="rsgo"></ol>
+        <h3 data-t="rsLedT"></h3><div class="leds" id="rsleds"></div></li>
+      <li class="card rstep" data-k="after"><h2><span class="num">7</span><span data-t="rs7"></span></h2><p data-t="rsAfter"></p>
+        <button class="btn ghost" type="button" data-go="install" data-t="rsToInstall"></button></li>
+    </ol>
+    <div class="card"><h2 data-t="rsAndroidT"></h2><p data-t="rsAndroid"></p>
+      <div class="row"><a class="btn ghost" target="_blank" rel="noopener" href="https://github.com/juanjiant-bit/JIANT/blob/main/android/rescue/LEEME.md" data-t="rsAndroidHow"></a>
+        <a class="btn ghost" target="_blank" rel="noopener" href="https://github.com/juanjiant-bit/JIANT/actions/workflows/android.yml" data-t="rsAndroidApk"></a>
+        <a class="btn ghost" target="_blank" rel="noopener" href="https://github.com/juanjiant-bit/JIANT/blob/main/rescue/README.md" data-t="rsMore"></a></div></div>
+    <p class="dim small" data-t="rsSafe"></p>
   </section>
 
   <!-- ======================================================================================= manuals -->

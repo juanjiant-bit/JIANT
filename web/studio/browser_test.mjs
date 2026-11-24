@@ -115,6 +115,19 @@ try {
     ok(before[0] !== before[1] && afterB === before[0] && rows.length === 1 && /2 (songs|canciones)/.test(rows[0]) && /(restored|restaurado)/i.test(stat),
       `projects: slots read (${before.join(", ")}), B saved; a backup kept (${rows[0]}), restored: "${stat}"`);
   }
+  /* rescue: the published JIANT FM and JieLi's loader fetched and checked, a board's fm1-rescue.uf2 made */
+  {
+    const ctx = await b.newContext({ viewport: { width: 1280, height: 900 }, acceptDownloads: true });
+    const r = await ctx.newPage(); r.on("pageerror", (e) => errs.push(e.message));
+    await r.goto(URL0 + "#rescue"); await r.waitForTimeout(800);
+    await r.click('nav.views [data-go="rescue"]'); await r.waitForTimeout(8000);
+    const fw = await r.textContent("#rsfwst"), ld = await r.textContent("#rsldst");
+    await r.click('#rsboard [data-board="pico"]');
+    const [dl] = await Promise.all([r.waitForEvent("download", { timeout: 20000 }).catch(() => null), r.click("#rsmake")]);
+    const size = dl ? (await import("node:fs")).statSync(await dl.path()).size : 0;
+    ok(/V10|JIANT/.test(fw) && /(checked|comprobado)/i.test(ld) && dl && dl.suggestedFilename() === "fm1-rescue.uf2" && size > 600000 && size % 512 === 0,
+      `rescue: "${fw.trim()}", the loader checked, fm1-rescue.uf2 for the Pico made (${Math.round(size / 1024)} KB)`);
+  }
   /* the manuals: JIANT FM's (the interactive manual opens here), JIANT BYTE's (what its site lacks says so) */
   {
     const m = await page("#docs", { width: 1280, height: 900 });

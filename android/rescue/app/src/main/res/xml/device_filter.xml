@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Any Raspberry Pi RP2040 (VID 0x2E8A): the boot ROM (BOOTSEL), the FM-1 Rescue / Transporter firmware, or
+     another program (MicroPython, a demo) that the app sends to BOOTSEL by itself. -->
+<resources>
+    <usb-device vendor-id="11914" />
+</resources>
