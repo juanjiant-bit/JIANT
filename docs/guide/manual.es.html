@@ -160,7 +160,8 @@ footer a{color:var(--dim)}
 <li><a href="#7-arrange-canciones-secciones-y-escenas">7. ARRANGE: canciones, secciones y escenas</a><ul>
 <li><a href="#las-piezas">Las piezas</a></li>
 <li><a href="#tu-primer-tema-paso-a-paso">Tu primer tema, paso a paso</a></li>
-<li><a href="#la-pagina-arrange-save-arrange">La página ARRANGE (SAVE &gt; ARRANGE)</a></li>
+<li><a href="#la-pagina-arrange-home-arrange">La página ARRANGE (HOME › ARRANGE)</a></li>
+<li><a href="#jam-y-take-home-song">JAM y TAKE (HOME › SONG)</a></li>
 <li><a href="#timeline-parts-y-clips-save-song">TIMELINE, PARTS y CLIPS (SAVE › SONG)</a></li>
 <li><a href="#save-song-as-save-project">SAVE SONG AS (SAVE › PROJECT)</a></li>
 <li><a href="#escenas">Escenas</a></li>
@@ -170,20 +171,20 @@ footer a{color:var(--dim)}
 <li><a href="#8-dados-y-undo">8. Dados y UNDO</a><ul>
 <li><a href="#gen-el-generador-de-temas-home-select">GEN — el generador de temas (HOME + SELECT)</a></li>
 <li><a href="#dados-de-sonido-edit-select">Dados de sonido (EDIT + SELECT)</a></li>
-<li><a href="#dados-de-secuencia-lfo-y-fx-seq-lfo-fx-select">Dados de secuencia, LFO y FX (SEQ / LFO / FX + SELECT)</a></li>
+<li><a href="#dados-de-secuencia-lfo-y-fx-ya-no-estan">Dados de secuencia, LFO y FX (ya no están)</a></li>
 <li><a href="#dados-de-macros">Dados de macros</a></li>
 <li><a href="#undo-glo-mantenido-g4">UNDO (GLO mantenido + G4)</a></li>
 </ul>
 </li>
 <li><a href="#9-efectos-y-master">9. Efectos y master</a><ul>
-<li><a href="#la-cadena-de-fx-track-buses-delay-reverb-chorus-slicer-punch-master">La cadena de FX: TRACK · BUSES · DELAY · REVERB · CHORUS · SLICER · PUNCH · MASTER</a></li>
+<li><a href="#la-cadena-de-fx-track-buses-delay-reverb-chorus-slicer-punch-in-master">La cadena de FX: TRACK · BUSES · DELAY · REVERB · CHORUS · SLICER · PUNCH IN · MASTER</a></li>
 <li><a href="#por-pista">Por pista</a></li>
 <li><a href="#slicer-uno-solo-en-un-bus">SLICER (uno solo, en un bus)</a></li>
 <li><a href="#delay">Delay</a></li>
 <li><a href="#reverb-cinco-modelos">Reverb (cinco modelos)</a></li>
 <li><a href="#chorus">Chorus</a></li>
 <li><a href="#master">MASTER</a></li>
-<li><a href="#dj-filter-091-glo-live-mano-knob-4-en-mixer-hasta-v1036">DJ FILTER (0.9.1, GLO › LIVE › MANO KNOB 4; en MIXER hasta V10.36)</a></li>
+<li><a href="#dj-filter-091-sin-perilla-en-el-equipo-desde-v1083">DJ FILTER (0.9.1; sin perilla en el equipo desde V10.8.3)</a></li>
 </ul>
 </li>
 <li><a href="#10-modulacion-y-macros">10. Modulación y macros</a><ul>
@@ -201,7 +202,7 @@ footer a{color:var(--dim)}
 <li><a href="#el-panorama-general">El panorama general</a></li>
 <li><a href="#que-se-guarda-donde">Qué se guarda dónde</a></li>
 <li><a href="#como-funciona-realmente-el-autoguardado">Cómo funciona realmente el autoguardado</a></li>
-<li><a href="#la-cadena-de-save-song-project-sound">La cadena de SAVE: SONG · PROJECT · SOUND</a></li>
+<li><a href="#la-cadena-de-save-tools-project-sound">La cadena de SAVE: TOOLS · PROJECT · SOUND</a></li>
 <li><a href="#para-guardar-una-seccion-de-un-proyecto">Para guardar una sección de un proyecto</a></li>
 <li><a href="#para-borrar-una-seccion-v1017">Para borrar una sección (V10.17)</a></li>
 <li><a href="#para-cargar-una-seccion">Para cargar una sección</a></li>
@@ -568,19 +569,19 @@ Guardá tus archivos WAV.</p>
 <tbody>
 <tr>
 <td><strong>SELECT</strong> (encoder)</td>
-<td>Solo (0.9.2): <strong>recorre las páginas de la sección</strong>, una página por paso, en una sola cadena, frenando en la primera y en la última (sin niveles, sin zoom; ver <a href="#cómo-funciona-la-navegación-seis-reglas-092">Cómo funciona la navegación</a>). En el MENU: sus filas, las cuatro pestañas en una cadena. Con un botón mantenido: <strong>HOME</strong> + SELECT <strong>GEN</strong>, <strong>EDIT / SEQ / LFO / FX</strong> + SELECT los <strong>dados</strong> de esa parte, <strong>GLO</strong> + SELECT el <strong>tempo</strong>, <strong>ENV / SCL / ARP / SAVE</strong> + SELECT recorren la cadena de esa sección desde donde estés.</td>
+<td>Solo (0.9.2): <strong>recorre las páginas de la sección</strong>, una página por paso, en una sola cadena, frenando en la primera y en la última (sin niveles, sin zoom; ver <a href="#cómo-funciona-la-navegación-seis-reglas-092">Cómo funciona la navegación</a>). En el MENU: sus filas, las cuatro pestañas en una cadena. Con un botón mantenido: <strong>HOME</strong> + SELECT el <strong>generador</strong>, <strong>EDIT</strong> + SELECT el <strong>dado de sonido</strong>, <strong>GLO</strong> + SELECT el <strong>tempo</strong>, <strong>SEQ / FX / ENV / LFO / SCL / ARP / SAVE</strong> + SELECT recorren la cadena de esa sección desde donde estés (V10.7.66: los dados de LFO y de FX se fueron; V10.8.21: el de secuencia). Con teclas de paso mantenidas en SEQ: <strong>COPY</strong>.</td>
 </tr>
 <tr>
 <td><strong>ALGORITHM</strong> (encoder)</td>
-<td>Elige la pista desde cualquier página: T1–T6 (T1–T4 con TRACKS 4). La pista es siempre de ALGORITHM (0.9.2: PRESETS ya no la elige en ENV, LFO, CHORD, ARP). En el MENU: la pestaña siguiente / anterior. Con una capa mantenida: su vista, MAP ↔ KNOBS ↔ STATE.</td>
+<td>Elige la pista desde cualquier página: T1–T6 (T1–T4 con TRACKS 4). La pista es siempre de ALGORITHM (0.9.2: PRESETS ya no la elige en ENV, LFO, CHORD, ARP). En el MENU: la pestaña siguiente / anterior. Con una capa mantenida no hace nada (V10.7.66: la capa muestra solo su MAP).</td>
 </tr>
 <tr>
 <td><strong>PRESETS</strong> (encoder)</td>
-<td><strong>Siempre presets</strong> (0.9.2): los sonidos de la pista seleccionada (los presets de fábrica de cada motor y después tus presets de usuario) en todas las páginas; en las páginas <strong>SEQ</strong> los <strong>patrones</strong> (abre el cargador PHRASES con el patrón siguiente elegido: OCT+ lo carga, OCT− vuelve a la página SEQ); en <strong>GEN</strong> el GENRE. En el MENU y con un botón mantenido no hace nada, salvo con <strong>EDIT mantenido</strong> (V10.7): salta al primer sonido del motor siguiente / anterior, con el nombre del motor en pantalla. Nunca cambia de página, de pista, de módulo ni de fila.</td>
+<td><strong>Siempre presets</strong> (0.9.2): los sonidos de la pista seleccionada (los presets de fábrica de cada motor y después tus presets de usuario) en todas las páginas, también en las del generador. En las páginas <strong>SEQ</strong> mueve el <strong>cursor de pasos</strong> (V10.7.60: girada despacio un paso, rápido un compás entero; el encabezado dice el compás y el paso). El GENRE del generador es el KNOB 1 de GENERATOR 1. En el MENU y con un botón mantenido no hace nada, salvo con <strong>EDIT mantenido</strong> (V10.7): salta al primer sonido del motor siguiente / anterior, con el nombre del motor en pantalla. Con MENU › DISPLAY › PRESETS en MENU abre SAVE › PRESETS en vez de cargar de una.</td>
 </tr>
 <tr>
 <td><strong>KNOB 1–4</strong></td>
-<td>Las cuatro tarjetas (columnas) de la pantalla. Una página que elige algo lo elige con <strong>KNOB 1</strong> (el paso, el compás, el slot, la etapa, el operador, el sonido del kit, la fila). Con una capa mantenida, las perillas propias de la capa. Girar rápido recorre todo el rango, despacio ajusta fino (MENU › CONTROL › KNOB ACCEL lo desactiva). En el MENU: KNOB n el ajuste de la tarjeta n.</td>
+<td>Las cuatro tarjetas (columnas) de la pantalla. Una página que elige algo lo elige con <strong>KNOB 1</strong> (el slot, el operador, el sonido del kit, la fila, un modulador, una macro; en SEQ › STEP es SEQ, la secuencia A–D de la pista). Con una capa mantenida, las perillas propias de la capa. Girar rápido recorre todo el rango, despacio ajusta fino (MENU › CONTROL › KNOB ACCEL lo desactiva). En el MENU: KNOB n el ajuste de la tarjeta n.</td>
 </tr>
 <tr>
 <td><strong>MASTER</strong></td>
@@ -714,11 +715,11 @@ atajos de esa capa; en la grilla DRUM son pasos y carriles; en la pantalla NAME 
 <td><strong>GEN</strong>, el generador de temas (las últimas páginas de HOME; ver <a href="#8-dados-y-undo">8</a>).</td>
 </tr>
 <tr>
-<td><strong>EDIT / SEQ / LFO / FX</strong> mantenido + <strong>SELECT</strong></td>
-<td>Los dados: el sonido / la secuencia / el LFO / los efectos (ver <a href="#8-dados-y-undo">8</a>).</td>
+<td><strong>EDIT</strong> mantenido + <strong>SELECT</strong></td>
+<td>El <strong>dado de sonido</strong> (ver <a href="#8-dados-y-undo">8</a>).</td>
 </tr>
 <tr>
-<td><strong>ENV / SCL / ARP / SAVE</strong> mantenido + <strong>SELECT</strong></td>
+<td><strong>SEQ / FX / ENV / LFO / SCL / ARP / SAVE</strong> mantenido + <strong>SELECT</strong></td>
 <td>Entra a esa sección y recorre su cadena, como SELECT adentro. (0.9.2: botón mantenido + <strong>PRESETS</strong> ya no recorre páginas.)</td>
 </tr>
 <tr>
@@ -727,11 +728,11 @@ atajos de esa capa; en la grilla DRUM son pasos y carriles; en la pantalla NAME 
 </tr>
 <tr>
 <td><strong>SEQ</strong> mantenido + <strong>G5</strong></td>
-<td><strong>CLR STEP</strong>: borra el paso del cursor y sus locks (NOTE con una nota en foco: esa nota; AUTO LIST: borra el registro).</td>
+<td><strong>CLR STEP</strong>: borra el paso del cursor y sus locks (AUTO LIST: borra el registro).</td>
 </tr>
 <tr>
 <td><strong>SAVE</strong> mantenido + <strong>C5</strong></td>
-<td><strong>NAME</strong>: renombra el slot en SAVE &gt; USER, la sección o el proyecto en SECTIONS / PROJECTS.</td>
+<td><strong>NAME</strong>: renombra el slot en SAVE › USER, la parte o el proyecto en PART SLOTS / PROJECTS.</td>
 </tr>
 <tr>
 <td>Un paso mantenido (SEQ &gt; STEP) + <strong>KNOB 1–4</strong></td>
@@ -849,10 +850,10 @@ las pestañas), así LARGE se lee igual en cualquiera.</p>
   grilla de pasos, una lista...</li>
 <li><strong>Pie</strong>: las barras de pasos del compás que editás (de a cuatro debajo de cada tarjeta) o ayudas de teclas, y debajo
   una <strong>miga de pan</strong> chica y gris: <strong>SECCIÓN · GRUPO · página</strong> y a la derecha el lugar de la página en la cadena de
-  la sección (0.9.2; p. ej. <strong>FX · DELAY · DLY 2  6/16</strong>, <strong>ENV · TRACKS · TRACKS DEST  2/5</strong>).</li>
+  la sección (0.9.2; p. ej. <strong>FX · DELAY · DLY 2  6/19</strong>, <strong>ENV · ENV · ENV DEST  2/3</strong>).</li>
 <li>
 <p><strong>Las pestañas</strong> (0.9.2): debajo del encabezado, los <strong>grupos</strong> de la sección (FX: TRK · BUS · DLY · REV · CHO · SLC ·
-  PCH · MST; SEQ: PATT · TRACK · BAR · STEP · AUTO), encendido el del grupo en el que estás (COLORS: relleno violeta;
+  PCH · MST; SEQ: STEP · PAT · EUCL · HEAD · SFX · AUTO · GEN · CLAY), encendido el del grupo en el que estás (COLORS: relleno violeta;
   BOTTOM: una pastillita; HUD y AIR: una rayita), y <strong>un punto por página</strong> debajo de cada uno, encendido el de la página que
   se ve. Las tarjetas debajo, un panel más alto, y el pie es solo la miga de pan.</p>
 </li>
@@ -871,8 +872,7 @@ la boca con su nivel. La pista seleccionada se dibuja más grande, su número en
 contorno apagado, los ojos cerrados), una pista dormida (TRACKS 4) se dibuja como muteada. En el <strong>MIXER</strong>, las pistas dormidas aparecen en gris y dicen OFF.</p>
 <p>Los <strong>diálogos</strong> preguntan antes de cualquier cosa destructiva: <strong>OCT− NO</strong>, <strong>OCT+ YES</strong>. (0.8.5, como la maqueta)
 Llevan las pestañas <strong>NOTICE · DICE · NAME</strong>: una pregunta es una tarjeta bajo una regla violeta con sus dos botones
-(YES en el acento); el dado de una parte (EDIT, SEQ, LFO, FX + SELECT) muestra <strong>BEFORE</strong> y <strong>NOW</strong> lado a lado (el
-ser del sonido antes y ahora, los pasos, los valores del LFO o de los efectos) sobre una franja <strong>KEEP DICED …? ·
+(YES en el acento); el dado de sonido (EDIT + SELECT) muestra <strong>BEFORE</strong> y <strong>NOW</strong> lado a lado (el ser del sonido antes y ahora) sobre una franja <strong>KEEP DICED …? ·
 SELECT: DICE AGAIN · OCT− CANCEL · OCT+ OK</strong>; NAME tiene sus tarjetas CURSOR, CHAR, LEN y OCT+ SAVE / WRITE sobre el
 nombre, las letras de las teclas y las funciones de las teclas negras. (0.9.5) La tarjeta de una pregunta solo tapa su
 propio recuadro, sus pestañas y su ruta: la página sigue a la vista alrededor, en movimiento.</p>
@@ -1918,15 +1918,13 @@ recorre página por página, un toque de <strong>SEQ</strong> salta al grupo sig
 <p>PRESETS en cualquier página SEQ mueve el cursor de pasos (V10.7.60: girada despacio un paso, rápido un compás entero;
 el encabezado dice el compás y el paso).</p>
 <h3 id="las-capas-mantene-el-boton">Las capas (mantené el botón)</h3>
-<p>(0.8.5) Una capa mantenida también es una lente, como la maqueta: <strong>girá ALGORITHM mientras mantenés el botón</strong> para
-ir <strong>MAP · KNOBS · STATE</strong> (recuerda el nivel; SELECT conserva sus combinaciones: GLO + SELECT el tempo, los dados).
-(0.8.9, en las pieles) <strong>MAP</strong> es el teclado mismo, de F3 a G5: cada tecla que hace algo lleva su nombre parado encima
-(clara en las blancas, teñida en las negras), la mantenida encendida en naranja, el valor actual en violeta, una pista
-muteada pálida, lo que ahora no se puede apagado, y la nota de cada blanca debajo; <strong>KNOBS</strong>: las cuatro como medidores
-en el color de su perilla (JIANT: el calor de su valor), con las palabras de las teclas de la capa debajo (p. ej. <strong>PLAY RESTART · GLO DONE</strong>);
-<strong>STATE</strong>: lo que está activo, como fichas (FX: el bloqueo, las pistas, el latch, los efectos mantenidos; GLO: cada
-pista ON / MUTE, los grupos de batería, UNDO, MUTATE; LFO: el latch y las rutas de cada macro; REC, SAVE, SCL, EDIT y
-SEQ las suyas). El encabezado nombra la capa en palabras, <strong>[GLO] SET</strong>. El pie es la miga de pan, <strong>FX · MAP</strong>. Las teclas y las perillas hacen exactamente lo mismo que antes.</p>
+<p>Una capa mantenida muestra su <strong>MAP</strong> sobre la página (0.8.9): el teclado mismo, de F3 a G5, con el nombre de cada tecla
+que hace algo escrito en vertical (claro en las blancas, teñido en las negras), la mantenida en naranja, el valor actual
+en violeta, una pista muteada pálida, lo que ahora no se puede apretar atenuado, y la nota de cada tecla blanca debajo.
+La capa FX muestra sus efectos como celdas con nombre (V10.7.77), y el punch-in mantenido en letras grandes. El
+encabezado nombra la capa con palabras, <strong>[GLO] SET</strong>. Desde V10.7.66 el MAP es la única vista: KNOBS y STATE, y
+ALGORITHM para pasar de una a otra, ya no están. Las capas son FX, GLO, SCL, EDIT, SEQ (en las páginas SEQ), REC y
+SAVE; ENV, ARP y, desde V10.7.66, LFO no tienen.</p>
 <p><strong>FX — efectos punch-in</strong> (detalles en <a href="#11-tocar-en-vivo">11</a>)</p>
 <div class="tw"><table>
 <thead>
@@ -2049,8 +2047,9 @@ SEQ las suyas). El encabezado nombra la capa en palabras, <strong>[GLO] SET</str
 </tr>
 </tbody>
 </table></div>
-<p><strong>SCL</strong> — cualquier tecla fija la ROOT (tónica) en el nombre de su nota. Perillas: ROOT, SCALE, ROTATE, PITCH (las dos
-últimas son el ROTATE de SEQ &gt; STRETCH y el PITCH de SEQ &gt; TRACK).</p>
+<p><strong>SCL</strong> — cualquier tecla fija la ROOT (tónica) en el nombre de su nota. Perillas: ROOT, SCALE, ROTATE (la secuencia de
+la pista tocada esa cantidad de pasos más tarde, −32 … +32; esta capa es su única perilla desde que se fue SEQ ›
+STRETCH) y PITCH (el de SEQ › TRACK).</p>
 <p><strong>EDIT</strong> — F3 <strong>INIT</strong> (el sonido de la pista vuelve a los valores por defecto de su motor (un INIT limpio, no un preset), seco: todos los envíos a efectos
 en 0; en FM6 la voz init, solo OP1 a nivel máximo; en DRUM, también el kit
 DRUM-X de fábrica), G3 <strong>RECALL</strong> (el sonido tal como lo guardó la sección actual; en DRUM, con su kit). Los dos
@@ -2074,18 +2073,18 @@ en PRESETS (KNOB 2) y FAV se marca ahí (KNOB 3). Las perillas son <strong>MOMEN
    EDIT mantenido es siempre los dados de sonido, nunca MOMENTARY (una tirada durante MOMENTARY se queda, y los valores
    de esa pista no se devuelven).</li>
 </ol>
-<p><strong>SEQ TOOLS</strong> (en todas las páginas SEQ) — F3 CLEAR, G3 REVERSE, A3 / B3 SHIFT a la izquierda /
-derecha, F4 CLR AUTO (la automatización y los locks de la pista; los pasos quedan).
-En una pista DRUM, las herramientas de carril: G4 CLR, A4 REV, B4 FILL sobre el carril elegido con las teclas
-negras 1–8. (V10.6: C4 RANDOM, D4 COOK, E4 BEAT y C5, el RANDOM del carril, ya no están; los patrones los escribe SEQ ›
-EUCLID, y SEQ + SELECT sigue tirando los dados.) <strong>G5 CLR STEP</strong> (0.9.2; antes el toque de EDIT): borra el paso del cursor y sus locks, y el cursor pasa al
-siguiente (en NOTE con una nota en foco: solo esa nota; en AUTO LIST, <strong>DEL REC</strong>: borra el registro de la fila).
-<strong>REC</strong> (con SEQ mantenido): CLEAR ALL. Perillas: LEN, DIV, SWING, GATE. Estas herramientas no tienen
-UNDO.</p>
+<p><strong>SEQ TOOLS</strong> (en todas las páginas SEQ) — F3 CLEAR, G3 REVERSE, A3 / B3 SHIFT a la izquierda / a la derecha, F4 CLR
+AUTO (la automatización y los locks de la pista; los pasos quedan). En una pista DRUM, las herramientas del carril: G4
+CLR, A4 REV, B4 FILL sobre el carril elegido con las negras 1–8. (V10.6: C4 RANDOM, D4 COOK, E4 BEAT y C5, el RANDOM del
+carril, ya no están; SEQ › EUCLID escribe patrones.) <strong>E5 COPY SEQ</strong> copia toda la secuencia de la pista (los pasos
+1–LEN), <strong>F5 PASTE SEQ</strong> pega lo copiado desde su primer paso. <strong>G5 CLR STEP</strong> (0.9.2; antes el toque de EDIT): borra el
+paso del cursor y sus locks (en AUTO LIST, <strong>DEL REC</strong>: borra el registro de la fila). <strong>REC</strong> (con SEQ mantenido):
+CLEAR ALL. Perillas: LEN, DIV, SWING, GATE.</p>
 <p><strong>REC</strong> — F3 <strong>CLEAR</strong> borra los pasos y la automatización de la pista seleccionada (sin diálogo; UNDO lo puede
-recuperar), G3 <strong>CLICK</strong> (OFF / REC / ON). KNOB 1: CLICK. (V10.7) REC mantenido más que HOLD y soltado <strong>sin tocar
-nada más</strong> es <strong>UNDO</strong> (solo otra vez: rehacer); si mientras lo mantenés usás una tecla, perilla, botón u OCT, es la
-capa REC como siempre.</p>
+traer de vuelta), G3 <strong>CLICK</strong> (OFF / REC / ON), A3 <strong>UNDO</strong> (otra vez: rehacer), B3 <strong>Q ON / Q OFF</strong> (REC GRID en 100 %
+o en 0 %). KNOB 1: CLICK; KNOB 2: <strong>REC GRID</strong>, cuánto se lleva a la grilla lo que grabás. (V10.7) REC mantenido más
+que HOLD y soltado <strong>sin tocar nada más</strong> es <strong>UNDO</strong> (solo otra vez: rehacer); si usás una tecla, una perilla, un botón
+u OCT mientras lo mantenés, es la capa REC de siempre.</p>
 <p><strong>SAVE — capa de tema</strong> (detalles en <a href="#7-arrange-canciones-secciones-y-escenas">7</a>)</p>
 <div class="tw"><table>
 <thead>
@@ -2109,7 +2108,7 @@ capa REC como siempre.</p>
 </tr>
 <tr>
 <td>E5</td>
-<td>SONG REC</td>
+<td>SONG REC en el mapa: graba la toma de JAM (V10.8; ver <a href="#7-arrange-canciones-secciones-y-escenas">7</a>)</td>
 </tr>
 <tr>
 <td>G5</td>
@@ -2117,7 +2116,7 @@ capa REC como siempre.</p>
 </tr>
 <tr>
 <td>C5</td>
-<td><strong>NAME</strong> (0.9.2; antes el toque de EDIT): renombra el slot en USER, la sección en SECTIONS, el proyecto en PROJECTS (en otras páginas, apagada)</td>
+<td><strong>NAME</strong> (0.9.2; antes el toque de EDIT): renombra el slot en USER, la parte en PART SLOTS, el proyecto en PROJECTS (en otras páginas: NAME: ON USER OR PROJECT)</td>
 </tr>
 <tr>
 <td>OCT+ / OCT−</td>
@@ -2129,9 +2128,8 @@ capa REC como siempre.</p>
 </tr>
 </tbody>
 </table></div>
-<p><strong>LFO — macros</strong>: KNOB 1–4 son M1–M4. Soltá y quedan <strong>enganchadas</strong> (el encabezado dice [LFO] LATCH, y KNOB 1–4
-siguen controlando las macros en todas las páginas) hasta que apretás LFO de nuevo. F3 tira rutas nuevas, G3 las
-borra. (LFO + SELECT tira el LFO de la pista, con KEEP / CANCEL: ver los dados.)</p>
+<p><strong>LFO</strong> — sin capa desde V10.7.66: mantener LFO y girar SELECT recorre las páginas de LFO. Las macros M1–M4 son las
+perillas de la capa FX y las tarjetas de FX › PUNCH IN; sus rutas están en FX › PUNCH IN › MACROS.</p>
 <hr />
 <h2 id="4-motores">4. Motores</h2>
 <p>Doce motores, todos de síntesis, sin samples: ANALOG, FM6, PHASE, <strong>MATH</strong> (LOFI hasta la V10.6e), VOICE, WHEEL,
@@ -3509,158 +3507,223 @@ para todas las pistas.</p>
 <h2 id="7-arrange-canciones-secciones-y-escenas">7. ARRANGE: canciones, secciones y escenas</h2>
 <h3 id="las-piezas">Las piezas</h3>
 <ul>
-<li>Un <strong>proyecto</strong> es un tema. Hay <strong>6 proyectos</strong> (V10.6p: antes 8; las canciones 7 y 8 ya no están, su flash
-  queda para un banco de samples de batería: pasalas a 1–6 o guardalas en un backup antes de actualizar).</li>
-<li>Cada proyecto tiene <strong>4 secciones, A–D</strong>. Una sección es una foto completa de la música: el sonido, los pasos y la
-  automatización de cada pista, el kit DRUM-X y sus mutes, el carril de punch-in, el SLICER, las macros, más el tempo
+<li>Un <strong>proyecto</strong> es un tema. Hay <strong>6 proyectos</strong> (V10.6p: antes 8; los temas 7 y 8 ya no están, su flash queda
+  reservada para un banco de samples de batería: pasalos a 1–6 o guardalos en un backup antes de actualizar).</li>
+<li>Cada proyecto tiene <strong>4 secciones (partes), A–D</strong>. Una sección es una foto completa de la música: el sonido, los pasos y
+  la automatización de cada pista, el kit DRUM-X y sus mutes, el carril de punch-in, el SLICER, las macros, más el tempo
   y los efectos globales.</li>
-<li>Cada proyecto tiene un <strong>arreglo</strong>: hasta <strong>16 filas</strong>, cada una una sección que suena durante <strong>1–64 compases</strong>,
-  opcionalmente con una <strong>escena</strong>, y una regla de <strong>END</strong> (final).</li>
-<li>(V10) En una fila, cada <strong>pista</strong> puede tocar la parte de otra sección (<strong>FROM</strong>) y una <strong>variación</strong> (<strong>VAR</strong>):
-  ver <a href="#timeline-parts-y-clips-save--song">La página TIMELINE</a>.</li>
+<li>Cada proyecto tiene un <strong>arreglo</strong>: hasta <strong>16 filas</strong>, cada una una sección tocada durante <strong>1–64 compases</strong>, con una
+  <strong>escena</strong> opcional, y una regla de <strong>END</strong>.</li>
+<li>(V10.8) Cada proyecto tiene además una <strong>toma de JAM</strong>: cada pista tocando su propia secuencia A–D, con cada cambio
+  escrito donde sonó.</li>
+<li>Las páginas del tema son el grupo <strong>SONG</strong> de HOME desde V10.7.63: <strong>JAM · TAKE · ARRANGE</strong> (HOME, tocado hasta la
+  pestaña SONG; SAVE + G5 va directo a ARRANGE). SAVE se queda con lo que guarda y carga: TOOLS, PART SLOTS, PROJECTS,
+  USER, PRESETS (<a href="#12-guardar-y-cargar">12</a>).</li>
 </ul>
 <p>Son 24 secciones en total (6 × 4).</p>
 <h3 id="tu-primer-tema-paso-a-paso">Tu primer tema, paso a paso</h3>
 <ol>
-<li><strong>Hacé un loop</strong>: grabalo (REC), escribí pasos, usá <a href="#euclid-y-modes-v106">EUCLID</a> o GEN
+<li><strong>Armá un loop</strong>: grabalo (REC), escribí pasos, usá <a href="#euclid-y-modes-v106">EUCLID</a> o el generador
    (<a href="#tu-primer-tema-5-minutos">Tu primer tema (5 minutos)</a>).</li>
-<li><strong>Guardalo como sección A</strong>: mantené <strong>SAVE</strong> y apretá <strong>C4</strong>. La pantalla dice <strong>STORED A</strong>. Funciona sonando; lo
-   guardado llega a la flash cuando parás (pará antes de apagar). Para ponerle nombre, guardalo en SAVE › SECTIONS
-   (<a href="#para-guardar-una-sección-de-un-proyecto">12</a>).</li>
-<li><strong>Hacé B, C, D</strong>: cambiá la música (pasos, sonidos, una pista muteada…) y mantené SAVE + <strong>D4</strong> (STORED B), después
-   <strong>E4</strong> (C) y <strong>F4</strong> (D). SAVE + F3–B3 vuelve a tocar una sección para chequearla (sonando: en el compás siguiente).</li>
-<li><strong>Abrí el tema</strong>: pará (PLAY) y apretá <strong>SAVE</strong>. Al encender abre en <strong>TIMELINE</strong>, la primera página; si vuelve a
-   otra página de SAVE, girá <strong>SELECT</strong> a la izquierda hasta TIMELINE. Sin filas dice <strong>NO ROWS: OCT+ ADDS ONE</strong>.</li>
-<li><strong>Agregá las filas</strong>: <strong>OCT+</strong> agrega una fila (ROW ADDED): la primera es A, 4 compases; cada una nueva es una copia
-   de la fila elegida, después de ella (V10.6o). <strong>KNOB 1</strong> la fila, <strong>KNOB 2</strong> su sección A–D, <strong>KNOB 3</strong> sus compases
-   (1–64). Por ejemplo A 8 · B 8 · A 8 · C 4 · D 8.</li>
-<li><strong>Por pista (opcional)</strong>: elegí la pista con <strong>ALGORITHM</strong>. <strong>F4–B4</strong> hacen que toque la parte A–D en esta fila
-   (<strong>FROM</strong>; la letra de su fila otra vez: vuelve), <strong>KNOB 4</strong> su <strong>VAR</strong> (MUTE, THIN, FILL, HALF, REV, SHIFT, OCT+ /
-   OCT−, VAR 1–4, solo en esta fila); <strong>F3–D4</strong> mutean T1–T6 en la fila (<a href="#timeline-parts-y-clips-save--song">La página TIMELINE</a>).</li>
-<li><strong>END y escenas en ARRANGE</strong>: girá <strong>SELECT</strong> a la derecha pasando PARTS, CLIPS, SECTIONS y PROJECTS hasta <strong>ARRANGE</strong> (o SAVE +
-   <strong>G5</strong>). <strong>KNOB 1</strong> más allá de la última fila es <strong>+ ADD</strong>, y después <strong>END</strong>: ahí <strong>KNOB 2</strong> elige <strong>STOP</strong> (una
-   vez), <strong>x2–x8</strong> o <strong>LOOP</strong>. Una escena: dejá los mutes (GLO mantenido + negras 1–6) y las macros como los querés,
-   <strong>KNOB 1</strong> a la fila, <strong>KNOB 4</strong> a la derecha: <strong>SCENE STORED</strong> (a la izquierda la borra).</li>
-<li><strong>Tocalo</strong>: parado, apretá <strong>PLAY</strong> en ARRANGE. El tema suena desde el principio (una línea blanca marca
-   por dónde va; en TIMELINE, PLAY pone en loop la fila elegida y PLAY otra vez deja seguir el tema desde ahí, V10.6o); PLAY otra vez lo para y vuelve la música que tenías antes. Desde cualquier otra página: mantené SAVE
-   + <strong>D5</strong> (<strong>PLAY: THE SONG</strong>) y PLAY toca el tema; SAVE + D5 otra vez vuelve a <strong>PLAY: THE LOOP</strong>. Una fila sobre
-   una sección vacía: el tema no arranca (<strong>PATTERN A EMPTY</strong>).</li>
-<li><strong>Borrá una fila</strong>: parado, en ARRANGE o TIMELINE, <strong>KNOB 1</strong> a la fila, <strong>OCT−</strong>: <strong>DELETE SONG ROW?</strong>. <strong>OCT+</strong> la
-   borra, OCT− la deja. No se puede deshacer.</li>
-<li><strong>O grabalo en vivo: SONG REC.</strong> Tocá una sección (SAVE + F3), mantené SAVE + <strong>E5</strong> (<strong>SONG REC NEXT BAR</strong>;
-    parado: <strong>SONG REC: PLAY</strong>) y tocá las secciones por turno con SAVE + F3–B3: cada una queda como una fila con los
-    compases que sonó y una escena. SAVE + E5 otra vez (o parar) termina. Reemplaza las filas que había.</li>
+<li><strong>Guardalo como sección A</strong>: mantené <strong>SAVE</strong> y apretá <strong>C4</strong>. La pantalla dice <strong>STORED A</strong>. Funciona mientras
+   suena. Para ponerle nombre, guardalo en SAVE › PART SLOTS (<a href="#para-guardar-una-sección-de-un-proyecto">12</a>).</li>
+<li><strong>Armá B, C, D</strong>: cambiá la música (pasos, sonidos, una pista muteada…) y mantené SAVE + <strong>D4</strong> (STORED B), después
+   <strong>E4</strong> (C) y <strong>F4</strong> (D). SAVE + F3–B3 toca una sección para chequearla (sonando: en el compás siguiente).</li>
+<li><strong>Abrí el tema</strong>: pará (PLAY), tocá <strong>HOME</strong> hasta la pestaña <strong>SONG</strong> y girá <strong>SELECT</strong> hasta <strong>ARRANGE</strong> (o mantené
+   SAVE y apretá <strong>G5</strong>). Sin filas dice <strong>NO ROWS</strong>.</li>
+<li><strong>Agregá las filas</strong>: <strong>OCT+</strong> agrega una fila (ROW ADDED): la primera es A, 4 compases; cada una de las siguientes
+   es una copia de la fila elegida, después de ella (V10.6o). <strong>KNOB 1</strong> la fila, <strong>KNOB 2</strong> su PART A–D, <strong>KNOB 3</strong> sus
+   BARS (1–64). Por ejemplo A 8 · B 8 · A 8 · C 4 · D 8.</li>
+<li><strong>END y escenas</strong>: <strong>KNOB 1</strong> más allá de la última fila es <strong>+ ADD</strong>, y después <strong>END</strong>: ahí <strong>KNOB 2</strong> elige
+   <strong>STOP</strong> (una vez), <strong>x2–x8</strong> o <strong>LOOP</strong>. Una escena: dejá los mutes (GLO mantenido + negras 1–6) y las macros como
+   los querés, <strong>KNOB 1</strong> a la fila, <strong>KNOB 4</strong> a la derecha: <strong>SCENE STORED</strong> (a la izquierda: SCENE CLEARED).</li>
+<li><strong>Tocalo</strong>: parado, apretá <strong>PLAY</strong> en ARRANGE. El tema suena desde el principio; PLAY otra vez lo para y vuelve la
+   música que tenías antes (<strong>SONG END</strong>). Desde cualquier otra página: mantené SAVE + <strong>D5</strong> (<strong>PLAY: THE SONG</strong>) y PLAY
+   toca el tema; SAVE + D5 otra vez vuelve a <strong>PLAY: THE LOOP</strong>. Sin filas dice <strong>ADD A SONG ROW</strong>; con una fila sobre
+   una sección vacía el tema no arranca (<strong>PART EMPTY</strong>).</li>
+<li><strong>Borrar una fila</strong>: parado, en ARRANGE, <strong>KNOB 1</strong> a la fila, <strong>OCT−</strong>: <strong>DELETE SONG ROW?</strong>. <strong>OCT+</strong> la borra,
+   OCT− la deja. No se puede deshacer.</li>
+<li><strong>O tocalo en vez de escribir filas</strong>: <a href="#jam-y-take-home--song">JAM y TAKE</a>.</li>
 </ol>
-<h3 id="la-pagina-arrange-save-arrange">La página ARRANGE (SAVE &gt; ARRANGE)</h3>
-<p>ARRANGE es la segunda página del grupo PROJECT de SAVE (V10.2: la cadena de SAVE es TIMELINE → SECTIONS → PROJECTS →
-ARRANGE → TOOLS → USER → PRESETS; SELECT desde PROJECTS, o SAVE + G5 desde cualquier lado): arriba las cuatro secciones del proyecto en grande
-(guardadas: en su color, la que suena dice <strong>NOW</strong>), después <strong>ARRANGE</strong>: las filas del tema como fichas (<strong>A16</strong>: la
-sección y sus compases, en el color de la sección; una escena: un punto blanco; la fila en la que estás encendida y
-enmarcada), y debajo todo el tema como una sola tira (sus filas según su largo, una línea blanca donde suena) con su
-largo y su END (<strong>120 BARS · LOOP</strong>).</p>
+<h3 id="la-pagina-arrange-home-arrange">La página ARRANGE (HOME › ARRANGE)</h3>
+<p>ARRANGE es la tercera página del grupo SONG de HOME (JAM · TAKE · ARRANGE; hasta V10.7.63 era una página de SAVE; SAVE
++ G5 desde cualquier lado). (V10.8.14) Su panel es el tema como una partitura: las filas como bloques tan anchos como
+sus compases, un carril por pista; sin filas dice <strong>NO ROWS</strong>.</p>
 <div class="tw"><table>
 <thead>
 <tr>
 <th>Perilla</th>
-<th>Sobre una fila</th>
-<th>Sobre + ADD</th>
-<th>Sobre END</th>
+<th>En una fila</th>
+<th>En + ADD</th>
+<th>En END</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>KNOB 1</td>
+<td>KNOB 1 (ROW)</td>
 <td>elige la fila</td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>KNOB 2</td>
-<td>su sección A–D; girada a la izquierda más allá de A: <strong>DELETE SONG ROW?</strong></td>
-<td>agrega una fila (misma sección que la fila de arriba, 1 compás)</td>
+<td>KNOB 2 (PART)</td>
+<td>su sección A–D; a la izquierda más allá de A: <strong>DELETE SONG ROW?</strong></td>
+<td>agrega una fila (la misma sección que la fila de arriba, 1 compás)</td>
 <td><strong>STOP</strong>, <strong>x2 … x8</strong>, <strong>LOOP</strong></td>
 </tr>
 <tr>
 <td>OCT+</td>
-<td>agrega una fila después de la última (su sección y sus compases) y la elige (0.8.5)</td>
+<td>agrega una fila después de la elegida, copia de ella, y la selecciona (V10.6o; 16 como mucho: <strong>16 ROWS</strong>)</td>
 <td></td>
 <td></td>
 </tr>
 <tr>
 <td>OCT−</td>
-<td>(V10.4) <strong>DELETE SONG ROW?</strong> para la fila elegida: OCT+ la borra, OCT− la deja (parado; también en TIMELINE)</td>
+<td>(V10.4) <strong>DELETE SONG ROW?</strong> para la fila elegida: OCT+ la borra, OCT− la deja (parado)</td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>KNOB 3</td>
+<td>KNOB 3 (BARS)</td>
 <td>sus compases (1–64)</td>
 <td>agrega una fila</td>
 <td></td>
 </tr>
 <tr>
-<td>KNOB 4</td>
-<td>derecha: guarda una <strong>escena</strong> (SCENE STORED); izquierda: la borra</td>
+<td>KNOB 4 (SCENE)</td>
+<td>a la derecha: guarda una <strong>escena</strong> (SCENE STORED); a la izquierda: la borra (SCENE CLEARED)</td>
 <td></td>
 <td></td>
 </tr>
 </tbody>
 </table></div>
 <ul>
-<li><strong>PLAY</strong> en ARRANGE reproduce el tema desde el principio; otra vez: para. (Hasta la 0.8.4 OCT+ también; ahora agrega una fila.)</li>
+<li><strong>PLAY</strong> en ARRANGE toca el tema desde el principio; otra vez: para. (Hasta la 0.8.4 OCT+ también; ahora agrega una
+  fila.)</li>
 <li>Cuando el tema termina (o lo parás), vuelve la música que tenías antes de apretar PLAY (SONG END).</li>
 <li>(V10.6z8) <strong>Un sonido que cambiás mientras suena un tema se queda.</strong> Cambiá el preset de una pista, su motor, una
-  perilla de sonido (EDIT, ENV, LFO, FX, MOD… todo lo que fija un preset), un parche FM6 o el kit de DRUM-X mientras
-  suena un tema (o un tema de GENE, o una cadena rápida) y esa pista conserva tu sonido en todas las secciones que
-  siguen: las secciones siguen trayendo sus pasos, el patrón (LEN, DIV, swing, gate), el arpegio, la escala, la mezcla
-  (nivel, paneo) y los mutes. Al parar vuelve la música de antes de PLAY (SONG END, también lo no guardado) con
-  tus sonidos encima (V10.7.6), y PLAY de nuevo los sigue manteniendo. Vuelven a seguir las secciones con una nueva tirada de GENE, al cargar un proyecto o una sección, con un
-  salto de sección en vivo o un lanzamiento de CLIPS, o, para una pista, con <strong>RECALL</strong> de la capa EDIT (G3; ahora
-  funciona con el tema sonando): el sonido guardado de la sección, y después el de las secciones siguientes.</li>
-<li>END: <strong>STOP</strong> reproduce el tema una vez, <strong>x2–x8</strong> esa cantidad de veces, <strong>LOOP</strong> para siempre.</li>
-<li>Si una fila apunta a una sección vacía, el tema no arranca: la pantalla dice <strong>PATTERN A EMPTY</strong> (o B, C, D).</li>
-<li>Mientras suena un tema, la edición de pasos, GEN y EUCLID están bloqueados (<strong>SONG PLAYS: STOP IT TO EDIT</strong>).</li>
-<li>Para borrar una fila también podés usar SAVE &gt; TOOLS &gt; DELETE ROW (la fila que tiene seleccionada ARRANGE). Para
-  borrar todo el arreglo: TOOLS &gt; CLEAR SONG (<strong>CLEAR SONG ORDER?</strong>). Ninguna de las dos cosas se puede deshacer.</li>
-<li>El arreglo se guarda automáticamente (unos 2 segundos después de un cambio, con el transporte parado). Ver
-  <a href="#12-guardar-y-cargar">12</a>.</li>
+  perilla de sonido (EDIT, ENV, LFO, FX, MOD… todo lo que fija un preset), un patch de FM6 o el kit DRUM-X mientras suena
+  un tema (o un tema generado, o una cadena rápida), y esa pista conserva tu sonido en todas las secciones que siguen:
+  las secciones siguen trayendo sus pasos, su patrón (LEN, DIV, swing, gate), su arpegio, su escala, su mezcla (nivel,
+  paneo) y sus mutes. Al parar vuelve la música que tenías antes de PLAY (SONG END, también lo que no habías guardado)
+  con tus sonidos encima (V10.7.6), y PLAY otra vez los sigue sosteniendo. Vuelven a seguir a las secciones después de
+  una tirada nueva del generador, de cargar un proyecto o una sección, de un salto de sección en vivo o, para una sola
+  pista, del <strong>RECALL</strong> de la capa EDIT (G3; ahora funciona mientras suena un tema): vuelve el sonido guardado de la
+  sección, y los de las siguientes después.</li>
+<li>END: <strong>STOP</strong> toca el tema una vez, <strong>x2–x8</strong> esa cantidad de veces, <strong>LOOP</strong> para siempre.</li>
+<li>Si una fila apunta a una sección vacía el tema no arranca: la pantalla dice <strong>PART EMPTY</strong>.</li>
+<li>Mientras suena un tema, editar pasos, el generador y EUCLID están bloqueados (<strong>SONG PLAYS: STOP IT TO EDIT</strong>).</li>
+<li>Para borrar una fila también podés usar SAVE › TOOLS (TARGET SONG, ACTION DEL ROW: la fila que ARRANGE tiene
+  elegida). Para borrar todo el arreglo: TARGET SONG, ACTION CLEAR (<strong>CLEAR SONG ORDER?</strong>). Ninguna de las dos se puede
+  deshacer.</li>
+<li>El arreglo se guarda solo (unos 2 segundos después de un cambio, parado). Ver <a href="#12-guardar-y-cargar">12</a>.</li>
+<li>El <strong>FROM</strong> y el <strong>VAR</strong> por pista de una fila (la página TIMELINE, de V10 a V10.7) ya no tienen página; un tema que
+  los tiene los sigue tocando.</li>
+</ul>
+<h3 id="jam-y-take-home-song">JAM y TAKE (HOME › SONG)</h3>
+<p>(V10.8) <strong>JAM</strong> es el tema tocado a mano. Cada pista tiene su secuencia en cada una de las partes A–D; en JAM elegís,
+pista por pista, cuál suena, mientras suena. El panel son seis pistas × cuatro partes: la celda que toca cada pista
+enmarcada, una pedida que todavía no entró punteada, la celda a la que apuntan KNOB 1 y KNOB 2 con un marco blanco.</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th></th>
+<th>JAM</th>
+<th>TAKE</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>KNOB 1</td>
+<td>TRACK</td>
+<td>CHANGE: el cambio de la toma que editás (n/N)</td>
+</tr>
+<tr>
+<td>KNOB 2</td>
+<td>SEQ: la parte A–D (la celda)</td>
+<td>WHEN: lo corre (compás.tiempo.semicorchea)</td>
+</tr>
+<tr>
+<td>KNOB 3</td>
+<td>CAMBIO: cuándo entra un cambio (AT ONCE, 1/16, 1/8, 1/4, 1/2, BAR)</td>
+<td>SEQ: su secuencia A–D</td>
+</tr>
+<tr>
+<td>KNOB 4</td>
+<td>TAKE: FREE o <strong>LOCK</strong></td>
+<td>BARS: el largo de la toma</td>
+</tr>
+<tr>
+<td>OCT+</td>
+<td>GO: la pista elegida a la secuencia elegida, en el paso de CAMBIO (parado: de una)</td>
+<td>un cambio nuevo (TAKE FULL si no hay lugar)</td>
+</tr>
+<tr>
+<td>OCT−</td>
+<td>esa pista para en el compás siguiente; después de una vuelta en LOCK: deshace la vuelta (ROUND UNDONE)</td>
+<td>borra el cambio</td>
+</tr>
+<tr>
+<td>F3–B3</td>
+<td>la parte A–D en todas las pistas (sonando: en el compás siguiente; <strong>PART EMPTY</strong> si no hay nada guardado ahí)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>REC</td>
+<td>graba la toma</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>La toma</strong>: apretá <strong>REC</strong> en JAM (<strong>JAM REC NEXT BAR</strong>; parado: <strong>JAM REC: PLAY</strong>). Desde la próxima barra de
+  compás escribe las secuencias de las pistas como están y después cada cambio donde suena, exacto a la semicorchea.
+  REC otra vez o parar la termina en una barra de compás. Reemplaza la toma que había; parado, queda guardada con el
+  proyecto (<strong>JAM TAKE KEPT</strong>). Mantener SAVE y apretar <strong>E5</strong> hace lo mismo desde cualquier página (el mapa sigue
+  diciendo SONG REC).</li>
+<li><strong>LOCK</strong> (KNOB 4 a la derecha, con una toma): la toma suena en ronda y vos tocás encima; una pista que moviste vos
+  se dibuja en blanco y dice <strong>YOU</strong> hasta el próximo cambio de la toma en esa pista.</li>
+<li><strong>Una pista de nuevo</strong>: en LOCK, elegí una pista y apretá <strong>REC</strong> (<strong>REC TRACK</strong>): desde el compás siguiente se graban
+  los cambios de esa pista durante una vuelta de la toma y reemplazan los que tenía (<strong>TRACK DONE</strong>). <strong>OCT−</strong> después
+  trae la toma como estaba (ROUND UNDONE).</li>
+<li><strong>TAKE</strong> muestra la toma entera, el cambio elegido con un marco y su pista encendida; sin toma las tarjetas dicen
+  <strong>--</strong> y las perillas dicen NO TAKE.</li>
+<li>Elegir una secuencia en JAM (o con el KNOB 1 de SEQ › STEP, que es el mismo cambio para la pista seleccionada) termina
+  el tema o la cadena rápida que estuviera sonando y deja PLAY en THE LOOP.</li>
 </ul>
 <h3 id="timeline-parts-y-clips-save-song">TIMELINE, PARTS y CLIPS (SAVE › SONG)</h3>
-<p><em>Reemplazado en V10.8 por el modo canción: <strong>HOME › JAM · TAKE · ARRANGE</strong> (ver "Lo nuevo en V10.8.21" al principio).</em></p>
+<p><em>Se fueron en V10.8: el modo canción de arriba, <strong>HOME › JAM · TAKE · ARRANGE</strong>, ocupó su lugar.</em></p>
 <h3 id="save-song-as-save-project">SAVE SONG AS (SAVE › PROJECT)</h3>
-<p>Copia el <strong>tema entero</strong> a otro proyecto: las secciones A–D (con los cambios sin guardar de la que suena), el tempo y
-los globales, las filas, compases, END, escenas, FROM y VAR, y LOOP / SONG. <strong>KNOB 1</strong> el destino (1–6, no se abre),
-<strong>KNOB 4</strong> arma SAVE, <strong>OCT+</strong>; un destino usado pregunta <strong>REPLACE WHOLE SONG n?</strong>: OCT+, escribí un nombre, OCT+
-guarda. OCT− cancela. Pará antes. El tema de origen queda abierto y sin cambios; la copia se abre en PROJECTS.</p>
+<p><em>La página se fue en V10.7.20; lo hace <strong>SAVE › PROJECTS</strong>.</em> <strong>KNOB 1</strong> elige el proyecto de destino (1–6; no se abre),
+<strong>KNOB 4</strong> a la derecha arma SAVE, <strong>OCT+</strong>. Un destino usado pregunta <strong>OVERWRITE PROJECT n?</strong>; después la pantalla
+NAME, donde <strong>KNOB 3</strong> dice si se escribe el <strong>SONG</strong> entero o solo el <strong>LOOP</strong>. Copia el tema entero: las secciones A–D
+(con lo que no guardaste de la que suena), el tempo y los globales, las filas, los compases, END y las escenas, y LOOP
+/ SONG. Pará antes (<strong>STOP TO SAVE</strong>). El proyecto del que copiaste queda abierto y sin cambios; abrí la copia con el
+LOAD de PROJECTS.</p>
 <h3 id="escenas">Escenas</h3>
-<p>Una escena se guarda por fila y, cuando esa fila arranca, recupera: los mutes de pista (T1–T6), los mutes de grupo de
-DRUM-X, las macros M1–M4 y los efectos de nota punch-in que estén mantenidos. Sigue vigente durante las filas
-siguientes que no tengan escena. Las escenas se aplican cuando suena un tema, no en una cadena rápida. SONG REC también
-guarda una por fila a medida que empieza cada una.</p>
+<p>Una escena se guarda por fila y recupera, cuando empieza esa fila: los mutes de pista (T1–T6), los mutes de grupo de
+DRUM-X, las macros M1–M4 y los efectos de nota de punch-in que estén mantenidos. Sigue vigente en las filas siguientes
+que no tengan una. Las escenas se aplican cuando suena un tema, no en una cadena rápida.</p>
 <h3 id="tocar-secciones-en-vivo-capa-save">Tocar secciones en vivo (capa SAVE)</h3>
 <p>Mantené <strong>SAVE</strong>:</p>
 <ul>
-<li><strong>F3–B3</strong>: tocar la sección A–D. Si está sonando, entra en el <strong>compás siguiente</strong>; si está parado, se carga al
-  instante.</li>
-<li>Tocá <strong>dos o más</strong> de F3–B3 en una misma mantenida: una <strong>cadena rápida</strong> — suenan por turno, cada una durante el
-  largo de su patrón más largo, una y otra vez, empezando en el compás siguiente (parado: al instante).</li>
-<li><strong>C4–F4</strong>: <strong>guardar</strong> la música actual en A–D (funciona mientras suena; ver <a href="#12-guardar-y-cargar">12</a> para saber
-  cuándo llega a la flash).</li>
-<li><strong>OCT+</strong>: guardar en la sección que está sonando (PLAY A SECTION FIRST si no hay ninguna). <strong>OCT−</strong>: recuperarla tal
-  como quedó guardada.</li>
-<li><strong>D5</strong>: <strong>LOOP / SONG</strong> — en modo SONG, PLAY desde cualquier página reproduce el arreglo.</li>
-<li><strong>E5</strong>: <strong>SONG REC</strong> — las secciones que tocás en vivo (y sus compases) se escriben en las filas del arreglo, con
-  una escena cada una. Reemplaza las filas actuales.</li>
+<li><strong>F3–B3</strong>: tocar la sección A–D. Sonando, entra en el <strong>compás siguiente</strong>; parado, carga de una.</li>
+<li>Tocá <strong>dos o más</strong> de F3–B3 en una misma mantenida: una <strong>cadena rápida</strong> — suenan por turno, cada una el largo de su
+  patrón más largo, en ronda, desde el compás siguiente (parado: de una).</li>
+<li><strong>C4–F4</strong>: <strong>guardar</strong> la música de ahora en A–D (funciona sonando; ver en <a href="#12-guardar-y-cargar">12</a> cuándo llega
+  a la flash).</li>
+<li><strong>OCT+</strong>: guardar en la sección que suena (PLAY A PART FIRST si no hay). <strong>OCT−</strong>: recuperarla como estaba guardada.</li>
+<li><strong>D5</strong>: <strong>LOOP / SONG</strong> — en modo SONG, PLAY desde cualquier página toca el arreglo.</li>
+<li><strong>E5</strong>: graba la <strong>toma de JAM</strong> (V10.8; la tecla sigue diciendo SONG REC), como REC en JAM: ver
+  <a href="#jam-y-take-home--song">JAM y TAKE</a>. Antes de V10.8 escribía en las filas del arreglo las secciones que tocabas.</li>
 <li><strong>G5</strong>: saltar a ARRANGE.</li>
+<li><strong>C5</strong>: NAME, en SAVE › USER, PART SLOTS o PROJECTS.</li>
 <li><strong>KNOB 1</strong>: elegir otro proyecto; cambia al soltar SAVE (solo parado) y <strong>carga su sección A</strong>.</li>
 </ul>
 <hr />
 <h2 id="8-dados-y-undo">8. Dados y UNDO</h2>
 <h3 id="gen-el-generador-de-temas-home-select">GEN — el generador de temas (HOME + SELECT)</h3>
-<p>Mantené <strong>HOME</strong> y girá <strong>SELECT</strong>, desde cualquier página, o en HOME recorré la cadena con <strong>SELECT</strong> (ECO · MACROS ·
-BEING · ROUTES · <strong>GEN 1 · GEN 2 · GEN 3</strong>) o tocá HOME hasta su grupo siguiente (ECO → BEING → GEN). (0.9.2) El
-<strong>GENERATOR</strong> es el último grupo de HOME, tres páginas comunes, ya no una pantalla aparte: <strong>SELECT</strong> cambia de página,
-<strong>KNOB 1–4</strong> fijan los cuatro valores que se ven (<strong>PRESETS</strong>: el GENRE, el preset del generador), <strong>OCT+</strong> arma la
+<p>Mantené <strong>HOME</strong> y girá <strong>SELECT</strong>, desde cualquier página, o en HOME recorré la cadena con <strong>SELECT</strong> (ECOSYSTEM · LIFE · BEING · JAM · TAKE · ARRANGE · <strong>GENERATOR 1 · 2 · 3 · 4</strong>) o tocá HOME hasta su grupo siguiente (ECOSYSTEM → BEING → SONG → GENERATOR). (0.9.2) El <strong>GENERATOR</strong> es el último grupo de HOME, cuatro páginas comunes, ya no una pantalla aparte: <strong>SELECT</strong> cambia de página, <strong>KNOB 1–4</strong> fijan los cuatro valores que se ven (el <strong>KNOB 1</strong> de GENERATOR 1: el GENRE; PRESETS carga ahí los sonidos de la pista, como en todos lados), <strong>OCT+</strong> arma la
 pieza y <strong>OCT−</strong> vuelve a ECO (la pieza queda; <strong>UNDO</strong>, GLO + G4, devuelve lo que había antes); todos los botones de
 sección funcionan desde ahí. El panel muestra las cinco partes como filas
 (las que pesan las perillas de la página, encendidas) con un adelanto de su densidad y su calor, las secciones de la
@@ -4024,11 +4087,14 @@ parámetro del motor se mueve hasta un cuarto de su rango. En DRUM, los dos lado
 alrededor del kit de fábrica. Lo escuchás al instante bajo <strong>KEEP DICED SOUND?</strong> (DRUM: <strong>KEEP DICED KIT?</strong>): girá
 SELECT otra vez para otra tirada, <strong>OCT+ OK</strong> la deja, <strong>OCT− CANCEL</strong> devuelve el sonido que tenías antes de la
 primera tirada (solo el sonido de esa pista: la música sigue). Después de OK, <strong>GLO mantenido + G4</strong> también lo deshace.</p>
-<h3 id="dados-de-secuencia-lfo-y-fx-seq-lfo-fx-select">Dados de secuencia, LFO y FX (SEQ / LFO / FX + SELECT)</h3>
-<p>Estos dados ya no están: los de LFO y FX (LFO + SELECT, FX + SELECT) se sacaron en V10.7.66 y el de secuencia (SEQ + SELECT) en V10.8.21. Queda el dado de sonido (EDIT + SELECT).</p>
+<h3 id="dados-de-secuencia-lfo-y-fx-ya-no-estan">Dados de secuencia, LFO y FX (ya no están)</h3>
+<p>Estos dados se fueron: los del LFO y de los FX (LFO + SELECT, FX + SELECT) en V10.7.66 y el de secuencia (SEQ + SELECT)
+en V10.8.21. El dado de sonido (EDIT + SELECT) sigue; SEQ, LFO y FX mantenidos + SELECT ahora recorren las páginas de
+su sección.</p>
 <h3 id="dados-de-macros">Dados de macros</h3>
-<p>Con las macros abiertas (LFO mantenido) o enganchadas: <strong>F3</strong> tira rutas de macro nuevas en las pistas que están
-sonando; G3 las borra. Ver <a href="#10-modulación-y-macros">10</a>.</p>
+<p>La capa LFO se fue en V10.7.66, y con ella <strong>F3</strong> (rutas nuevas) y <strong>G3</strong> (borrarlas). Las rutas de macro al azar se
+siguen tirando al encender en cada pista que no tiene ninguna (dos por pista, nunca a PITCH), y las tira el generador en
+cada pista que no esté muteada. Ver <a href="#10-modulación-y-macros">10</a>.</p>
 <h3 id="undo-glo-mantenido-g4">UNDO (GLO mantenido + G4)</h3>
 <p>Un paso atrás sobre el <strong>último cambio grande</strong>. Apretarlo otra vez va hacia adelante (rehacer). El transporte sigue
 sonando. G4 "respira" en el mapa de GLO cuando hay algo para deshacer; si no hay nada, dice <strong>NOTHING TO UNDO</strong>.
@@ -4037,7 +4103,7 @@ tecla, ni perilla, ni botón, ni OCT): UNDO; mantenelo solo otra vez: rehacer. U
 siendo la capa REC (CLICK, REC Q, A3 …), y un toque de REC sigue armando la grabación. GLO + G4 sigue andando.</p>
 <p><strong>UNDO cubre</strong>: DICE ALL, un sonido tirado a los dados, una pista borrada (REC F3, TOOLS CLEAR SEQ), CLEAR ALL
 SEQUENCES (SEQ + REC), NEW PROJECT, INIT y RECALL (capa EDIT o TOOLS), borrar la automatización
-(SEQ &gt; AUTOMATION) y una sección cargada con <strong>SAVE &gt; SECTIONS &gt; LOAD</strong>. Restaura la música tal como estaba: sonidos,
+(SEQ &gt; AUTOMATION) y una sección cargada con <strong>SAVE › PART SLOTS › LOAD</strong>. Restaura la música tal como estaba: sonidos,
 pasos, automatización, el kit, el carril de punch-in, las macros, el tempo y los efectos globales.</p>
 <p><strong>UNDO no cubre</strong>: saltos de sección, cadenas rápidas y RECALL desde la capa SAVE, cambiar de proyecto con KNOB 1 de
 la capa SAVE, CLEAR SONG, borrar una fila, SONG REC, nada de lo guardado (secciones, presets de usuario), cargas de
@@ -4045,14 +4111,13 @@ presets de usuario, sonidos elegidos con PRESETS, acciones de SEQ TOOLS, ni giro
 disponible mientras suena un tema (<strong>SONG PLAYS: STOP IT TO EDIT</strong>). Guarda un solo paso, en RAM: se pierde al apagar.</p>
 <hr />
 <h2 id="9-efectos-y-master">9. Efectos y master</h2>
-<h3 id="la-cadena-de-fx-track-buses-delay-reverb-chorus-slicer-punch-master">La cadena de FX: TRACK · BUSES · DELAY · REVERB · CHORUS · SLICER · PUNCH · MASTER</h3>
-<p>(0.9.9-snd2) MASTER pasó al final de la cadena, después de PUNCH.</p>
-<p>(0.9.2) FX es una sola cadena plana de 16 páginas en ocho grupos, con las pestañas <strong>TRK · BUS · DLY · REV · CHO · SLC ·
-MST · PCH</strong>: <strong>SELECT</strong> recorre todas las páginas (SENDS → DIST → AUTO PAN → BUSES → DLY → DLY 2 → DLY 3 → REVERB →
-REVERB 2 → CHORUS → SLICER → SL BUS → SL BUS 2 → SL PITCH → PUNCH → MASTER), un toque de <strong>FX</strong> salta al módulo
-siguiente (en ronda), y ya no hay selector de módulo (hasta la 0.9.1 SELECT hacía zoom TRACK ↔ BUSES ↔ EFFECT, PRESETS
-elegía el módulo y el toque de FX su página). PRESETS carga los sonidos de la pista, como en todos lados. Las páginas,
-sus perillas y sus dibujos son los mismos.</p>
+<h3 id="la-cadena-de-fx-track-buses-delay-reverb-chorus-slicer-punch-in-master">La cadena de FX: TRACK · BUSES · DELAY · REVERB · CHORUS · SLICER · PUNCH IN · MASTER</h3>
+<p>(0.9.2; 0.9.9-snd2: MASTER al final de la cadena) FX es una sola cadena plana de 19 páginas en ocho grupos, con las
+pestañas <strong>TRK · BUS · DLY · REV · CHO · SLC · PCH · MST</strong>: <strong>SELECT</strong> recorre todas las páginas (SENDS → DIST → AUTO PAN
+→ BUSES → DLY → DLY 2 → DLY 3 → REVERB → REVERB 2 → CHORUS → SLICER → SL BUS → SL BUS 2 → SL PITCH → PUNCH IN → MACROS →
+MASTER → TAPE → EQ), un toque de <strong>FX</strong> salta al módulo siguiente (en ronda), y ya no hay selector de módulo (hasta la
+0.9.1 SELECT hacía zoom TRACK ↔ BUSES ↔ EFFECT, PRESETS elegía el módulo y el toque de FX su página). PRESETS carga los
+sonidos de la pista, como en todos lados.</p>
 <div class="tw"><table>
 <thead>
 <tr>
@@ -4064,28 +4129,28 @@ sus perillas y sus dibujos son los mismos.</p>
 <tbody>
 <tr>
 <td><strong>TRACK</strong></td>
-<td>SENDS (la página FX: DIST CHORUS DLY REV) · DIST · AUTO PAN</td>
-<td>El juego de la pista: su dibujo (los cuatro envíos como barras, la curva de DIST con TYPE y TONE, el vaivén de AUTO PAN con WAVE y RATE) y la curva de DIST en chiquito debajo.</td>
+<td>SENDS (CHORUS DLY REV DIST) · DIST · AUTO PAN</td>
+<td>Lo de la pista: su dibujo (los cuatro envíos como columnas, la curva de DIST con TYPE y TONE, el vaivén de AUTO PAN con WAVE y RATE).</td>
 </tr>
 <tr>
 <td><strong>BUSES</strong></td>
 <td>BUSES</td>
-<td>Los seis módulos como fichas, cada uno con su dibujo en chiquito: <strong>DELAY</strong> (sus ecos), <strong>REVERB</strong> (su caída), <strong>CHORUS</strong> (tres ondas), <strong>SLICER</strong> (sus 16 pasos, el que suena enmarcado), <strong>MASTER</strong> (la salida ahora, la curva del duck), <strong>PUNCH</strong> (el carril); con LOAD ECO CHORUS y SLICER quedan oscuros ("ECO"). Perillas: <strong>DLY MIX, REV SIZE, CHORUS DEPTH, SLICER DEPTH</strong>.</td>
+<td>Los módulos como mosaicos, cada uno con su dibujo chico; con LOAD ECO, CHORUS y SLICER quedan oscuros ("ECO"). Perillas: <strong>DLY</strong> (el MIX del delay), <strong>REV</strong> (el SIZE de la reverb), <strong>CHO</strong> (el DEPTH del chorus), <strong>SLC</strong> (el DEPTH del SLICER).</td>
 </tr>
 <tr>
-<td><strong>DELAY · REVERB · CHORUS · SLICER · PUNCH · MASTER</strong></td>
-<td>DLY · DLY 2 · DLY 3 — REVERB · REVERB 2 — CHORUS — SLICER · SL BUS · SL BUS 2 · SL PITCH — PUNCH — MASTER</td>
-<td>El módulo en grande: su dibujo, "DELAY 2/3" (su página) en el título. Con LOAD ECO la cadena saltea CHORUS y SLICER.</td>
+<td><strong>DELAY · REVERB · CHORUS · SLICER · PUNCH IN · MASTER</strong></td>
+<td>DLY · DLY 2 · DLY 3 — REVERB · REVERB 2 — CHORUS — SLICER · SL BUS · SL BUS 2 · SL PITCH — PUNCH IN · MACROS — MASTER · TAPE · EQ</td>
+<td>El módulo en grande. PUNCH IN: las macros M1–M4 en sus cuatro tarjetas, OCT+ el editor de punch-in (V10.8.33: el dibujo del carril ya no está); MACROS: las rutas de las macros. Con LOAD ECO la cadena saltea CHORUS y SLICER.</td>
 </tr>
 </tbody>
 </table></div>
 <ul>
 <li><strong>FX desde otra página</strong> vuelve a la página FX que dejaste.</li>
-<li>El pie dice <strong>FX · DELAY · DLY 2  6/16</strong>; el encabezado muestra la pista, <strong>T1</strong>, en naranja.</li>
+<li>El pie dice <strong>FX · DELAY · DLY 2  6/19</strong>; el encabezado muestra la pista, <strong>T1</strong>, en naranja.</li>
 <li>Los dibujos siguen a los valores (un giro los redibuja) y, mientras suena o reproduce, al sonido (0.8.5, FX en
   vivo): los ecos se inflan con el nivel y un pulso corre por ellos, la cola de la reverb se infla y una línea la
   recorre, las ondas del chorus corren a RATE, el slicer enmarca el paso que suena, el medidor de MASTER sigue la
-  salida, el cabezal de PUNCH recorre el carril, el nivel de DIST es un punto en su curva, el punto de AUTO PAN oscila.
+  salida, el nivel de DIST es un punto en su curva, el punto de AUTO PAN oscila.
   Detenido y en silencio quedan quietos (los dibuja solo la pantalla; nada del tiempo del audio).</li>
 </ul>
 <h3 id="por-pista">Por pista</h3>
@@ -4237,7 +4302,11 @@ Se oculta con LOAD ECO (la tarjeta de envío de chorus de una pista dice entonce
 <li><strong>PUNCH</strong>: engorda las pistas DRUM.</li>
 <li><strong>DUCK</strong>: el bombo baja todo lo demás; <strong>REL</strong> es su release.</li>
 </ul>
-<h3 id="dj-filter-091-glo-live-mano-knob-4-en-mixer-hasta-v1036">DJ FILTER (0.9.1, GLO › LIVE › MANO KNOB 4; en MIXER hasta V10.36)</h3>
+<h3 id="dj-filter-091-sin-perilla-en-el-equipo-desde-v1083">DJ FILTER (0.9.1; sin perilla en el equipo desde V10.8.3)</h3>
+<p><strong>Hoy no tiene perilla en el equipo.</strong> Fue el KNOB 4 de GLO › MIXER hasta V10.36 y el de GLO › LIVE después; GLO › LIVE
+se fue en V10.8.3 y el KNOB 4 de MIXER es el tempo. El filtro sigue en el firmware: se llega por MIDI, desde el editor
+web y con la automatización que ya tenga un proyecto, y el proyecto conserva su valor. Lo que sigue describe cómo suena
+y cómo se portaba su perilla.</p>
 <p>Una perilla sobre toda la mezcla, justo antes de CLIP y del nivelador. <strong>En el medio (OFF) queda fuera de la cadena</strong>:
 no se procesa nada y el sonido es exactamente el de sin él. Hacia la izquierda es un <strong>pasa-bajos</strong> que baja (más
 oscuro: de ~15 kHz a un paso del medio hasta ~70 Hz al final); hacia la derecha un <strong>pasa-altos</strong> que sube (más fino:
@@ -4416,7 +4485,7 @@ todo (FX ALL OFF). Los efectos trabados no se graban en el carril.</p>
 <li><strong>FX mantenido</strong>: las teclas negras 1–6 mutean mientras las mantenés.</li>
 </ul>
 <h3 id="capas-en-vivo-y-el-tema">Capas en vivo y el tema</h3>
-<p>La capa SAVE (saltos de sección en el compás, cadenas rápidas, guardar, recuperar, SONG REC) está descripta en
+<p>La capa SAVE (saltos de sección en el compás, cadenas rápidas, guardar, recuperar, el REC de la toma de JAM) está descripta en
 <a href="#7-arrange-canciones-secciones-y-escenas">7</a>. GLO + PLAY reinicia desde el principio sin parar.</p>
 <hr />
 <h2 id="12-guardar-y-cargar">12. Guardar y cargar</h2>
@@ -4454,7 +4523,7 @@ distintas.</p>
 <tr>
 <td>Una <strong>sección</strong> (A–D de un proyecto)</td>
 <td>Flash</td>
-<td><strong>SAVE &gt; SECTIONS &gt; SAVE</strong> (parado), o <strong>capa SAVE C4–F4 / OCT+</strong></td>
+<td><strong>SAVE › PART SLOTS › SAVE</strong> (parado), o <strong>capa SAVE C4–F4 / OCT+</strong></td>
 <td>Sí (guardados desde la capa: una vez que parás)</td>
 </tr>
 <tr>
@@ -4507,12 +4576,11 @@ distintas.</p>
 <li>Después de un crash, un cuelgue o un arranque fallido, el autoguardado no se restaura (la música que estaba sonando
   podría ser lo que causó el crash).</li>
 </ul>
-<h3 id="la-cadena-de-save-song-project-sound">La cadena de SAVE: SONG · PROJECT · SOUND</h3>
-<p>(0.9.2; V10.2: primero componer) SAVE es una cadena de diez páginas en tres grupos, como todas las secciones:
-<strong>SELECT</strong> recorre TIMELINE → PARTS → CLIPS → SECTIONS → PROJECTS → ARRANGE → TOOLS → SAVE SONG AS → USER → PRESETS, un toque de <strong>SAVE</strong> salta al
-grupo siguiente (en ronda). Al encender, SAVE abre <strong>TIMELINE</strong>. Las páginas, sus
-perillas, OCT+, los diálogos y la pantalla NAME son los de siempre (hasta la 0.9.1 SELECT hacía zoom LIBRARY ↔ PROJECT
-↔ SOUND y el toque cambiaba los dos juegos de cada nivel).</p>
+<h3 id="la-cadena-de-save-tools-project-sound">La cadena de SAVE: TOOLS · PROJECT · SOUND</h3>
+<p>SAVE es una cadena de cinco páginas en tres grupos, como todas las secciones: <strong>SELECT</strong> recorre TOOLS → PART SLOTS →
+PROJECTS → USER → PRESETS, un toque de <strong>SAVE</strong> salta al grupo siguiente (en ronda). Al encender SAVE abre en
+<strong>PROJECTS</strong>. (Las páginas del tema, JAM · TAKE · ARRANGE, son de HOME desde V10.7.63; hasta la 0.9.1 SELECT hacía zoom
+LIBRARY ↔ PROJECT ↔ SOUND.)</p>
 <div class="tw"><table>
 <thead>
 <tr>
@@ -4524,85 +4592,78 @@ perillas, OCT+, los diálogos y la pantalla NAME son los de siempre (hasta la 0.
 </thead>
 <tbody>
 <tr>
-<td><strong>SONG</strong></td>
-<td>TIMELINE · SECTIONS</td>
-<td>TIMELINE: el tema en carriles (ver <a href="#7-arrange-canciones-secciones-y-escenas">7</a>). / Las cuatro secciones del proyecto en grande, el tema como una tira.</td>
-<td>ROW, LANE, SECT o FROM, BARS o VAR / SECT, ERASE (V10.17), LOAD, SAVE</td>
+<td><strong>TOOLS</strong></td>
+<td>TOOLS</td>
+<td>Las herramientas como lista.</td>
+<td>TARGET, ACTION, —, DO (OCT+ mantenido)</td>
 </tr>
 <tr>
 <td><strong>PROJECT</strong></td>
-<td>PROJECTS · ARRANGE · TOOLS · SAVE SONG AS</td>
-<td>Los seis proyectos como fichas: el número, el nombre (el de su sección A), sus cuatro secciones A–D como chips (guardadas: en el color de la sección; vacías: oscuras); el proyecto abierto teñido y enmarcado en violeta, su sección elegida enmarcada en blanco. / Las filas de ARRANGE como fichas. / Las seis herramientas en lista.</td>
-<td>PROJECT, SECT, LOAD, SAVE / ROW, SECT, BARS, SCENE (OCT+ agrega una fila, OCT− borra la elegida) / la herramienta</td>
+<td>PART SLOTS · PROJECTS</td>
+<td>PART SLOTS: las cuatro partes del proyecto abierto en grande, cada una con su nombre (o USED / EMPTY). / PROJECTS: los seis proyectos como mosaicos: el número, el nombre (el de su parte A), las cuatro partes A–D como fichas (guardada: en el color de la parte; vacía: oscura); el proyecto abierto teñido y enmarcado en violeta.</td>
+<td>PART, LOAD, ERASE (V10.17), SAVE / PROJECT, LOAD, ERASE, SAVE</td>
 </tr>
 <tr>
 <td><strong>SOUND</strong></td>
 <td>USER · PRESETS</td>
-<td>El ser de la pista (la criatura de su motor, viva con su sonido), la pista y su sonido debajo; a la derecha los 32 lugares de usuario (uno guardado: la criatura de su motor en chiquito y su nombre) o los sonidos de fábrica.</td>
+<td>El ser de la pista (la criatura de su motor, viva con su sonido), la pista y su sonido debajo; a la derecha los 32 slots de usuario (uno guardado: la criatura de su motor en chico y su nombre) o los sonidos de fábrica.</td>
 <td>SLOT, LOAD, ERASE, SAVE / No., ENG, FAV, LIST</td>
 </tr>
 </tbody>
 </table></div>
 <ul>
-<li><strong>SAVE desde otra página</strong> vuelve a la página de SAVE que dejaste; <strong>USER</strong> y <strong>SECTIONS</strong> llegan con su SAVE ya
-  elegido: SAVE, OCT+, OCT+ guarda el sonido (o la sección), como antes. Si dejaste SAVE en otra página, volvé a USER
-  con SELECT (o con un toque de SAVE desde el grupo PROJECT); llegando desde adentro, SAVE no queda elegido (KNOB 4
-  a la derecha).</li>
-<li>Las fichas de los otros proyectos se leen de la flash de a un proyecto por cuadro (solo los encabezados: no se carga
-  nada, el audio no lo nota) y se guardan hasta que se guarda, carga o renombra un proyecto.</li>
-<li>El pie dice <strong>SAVE · PROJECT · PROJECTS  5/10</strong>. Las ayudas OCT+ / OCT− no se dibujan en estas páginas: la tarjeta
+<li><strong>SAVE desde otra página</strong> vuelve a la página de SAVE que dejaste; <strong>USER</strong> y <strong>PART SLOTS</strong> llegan con su SAVE ya
+  elegido: SAVE, OCT+, OCT+ guarda el sonido (o la parte), como antes. Si llegás desde adentro, SAVE no queda elegido
+  (KNOB 4 a la derecha).</li>
+<li>Los mosaicos de los otros proyectos se leen de la flash de a un proyecto por cuadro (solo los encabezados: no carga
+  nada, el audio no lo nota) y quedan hasta que se guarda, se carga o se renombra un proyecto.</li>
+<li>El pie dice <strong>SAVE · PROJECT · PROJECTS  3/5</strong>. Las ayudas OCT+ / OCT− no se dibujan en estas páginas: la tarjeta
   armada dice OCT+.</li>
 </ul>
 <h3 id="para-guardar-una-seccion-de-un-proyecto">Para guardar una sección de un proyecto</h3>
 <ol>
-<li><strong>Pará</strong> el transporte (guardar necesita el transporte parado: si no, <strong>STOP TO SAVE</strong>).</li>
-<li>Apretá <strong>SAVE</strong> y girá <strong>SELECT</strong> hasta <strong>SECTIONS</strong> (el grupo SONG, cuarta página), o tocá <strong>SAVE</strong> otra vez
-   para <strong>PROJECTS</strong> (el grupo PROJECT).</li>
-<li>En <strong>PROJECTS</strong>, <strong>KNOB 1</strong>: el proyecto (1–6), su ficha enmarcada; <strong>KNOB 2</strong> su sección. Girar KNOB 1
-   <strong>no</strong> cambia la música que estás tocando — solo elige dónde guardar. (Cambia de proyecto, así que hacelo con el
-   transporte parado.)</li>
-<li>En <strong>SECTIONS</strong>, <strong>KNOB 1</strong>: la sección A–D, dibujada en grande con su nombre (o USED / EMPTY) y <strong>NOW</strong>
-   en la sección de la que vino la música (su nombre en la tarjeta grande).</li>
-<li><strong>KNOB 4</strong> a la derecha: SAVE queda elegido ([OCT+]). Apretá <strong>OCT+</strong>.</li>
-<li>Si la sección ya tiene algo: <strong>OVERWRITE PROJECT A?</strong> (con su nombre). OCT+ YES.</li>
-<li>Se abre la pantalla <strong>NAME</strong> con un nombre listo. Editalo o no, y después <strong>OCT+</strong> escribe. <strong>OCT−</strong> cancela y no
-   escribe nada.</li>
+<li><strong>Pará</strong> el transporte (para guardar tiene que estar parado: si no, <strong>STOP TO SAVE</strong>).</li>
+<li>Apretá <strong>SAVE</strong> y girá <strong>SELECT</strong> hasta <strong>PART SLOTS</strong> (la primera página del grupo PROJECT).</li>
+<li><strong>KNOB 1</strong>: la parte A–D, dibujada en grande con su nombre (o USED / EMPTY).</li>
+<li><strong>KNOB 4</strong> a la derecha: queda elegido SAVE ([OCT+]). Apretá <strong>OCT+</strong>.</li>
+<li>Si la parte ya tiene algo: <strong>OVERWRITE PROJECT A?</strong> (con su nombre). OCT+ YES.</li>
+<li>Se abre la pantalla <strong>NAME</strong> con un nombre listo. Editalo o no, y <strong>OCT+</strong> escribe. <strong>OCT−</strong> cancela y no escribe
+   nada.</li>
 <li>La pantalla dice <strong>SAVED</strong>.</li>
 </ol>
-<p>Una sección guarda la música <strong>incluyendo el tempo y los efectos globales</strong>. El <strong>nombre del proyecto</strong> es el nombre
-de su sección A.</p>
+<p>Una sección guarda la música <strong>con el tempo y los efectos globales</strong>. El <strong>nombre del proyecto</strong> es el de su sección A.
+PART SLOTS trabaja siempre sobre el proyecto abierto. Para escribir en otro proyecto, ver <a href="#copiar">Copiar</a>.</p>
 <h3 id="para-borrar-una-seccion-v1017">Para borrar una sección (V10.17)</h3>
 <ol>
-<li>Pará la música. <strong>SAVE › SECTIONS</strong>, <strong>KNOB 1</strong> en la sección.</li>
-<li><strong>KNOB 2</strong> a la derecha: queda elegido <strong>ERASE</strong>. Apretá <strong>OCT+</strong>: <strong>ERASE SECT B?</strong> (con su nombre).</li>
-<li><strong>OCT+</strong> la borra (<strong>OCT−</strong> cancela): la sección vuelve a estar <strong>EMPTY</strong>, también en el flash (su ficha se apaga
-   en PROJECTS). La música que estás escuchando queda como está; las filas de ARRANGE / TIMELINE que tocan esa
-   sección siguen con la música como está hasta que guardes algo ahí de nuevo.</li>
+<li>Pará la música. <strong>SAVE › PART SLOTS</strong>, <strong>KNOB 1</strong> a la parte.</li>
+<li><strong>KNOB 3</strong> a la derecha: queda elegido <strong>ERASE</strong>. Apretá <strong>OCT+</strong>: <strong>ERASE PART B?</strong> (con su nombre).</li>
+<li><strong>OCT+</strong> la borra (<strong>OCT−</strong> cancela): la parte vuelve a estar <strong>EMPTY</strong>, también en la flash (su ficha se apaga en
+   PROJECTS). La música que estás escuchando queda como está.</li>
 </ol>
+<p>Un proyecto entero: SAVE › PROJECTS, <strong>KNOB 1</strong> el proyecto, <strong>KNOB 3</strong> ERASE, OCT+: <strong>ERASE PROJECT n?</strong>.</p>
 <h3 id="para-cargar-una-seccion">Para cargar una sección</h3>
 <ol>
-<li>En SAVE &gt; PROJECTS: <strong>KNOB 1</strong> el proyecto, <strong>KNOB 2</strong> la sección (o en SECTIONS: <strong>KNOB 1</strong> la sección).</li>
-<li><strong>KNOB 3</strong> a la derecha (LOAD), apretá <strong>OCT+</strong>. La pantalla dice <strong>LOADED</strong>.</li>
+<li><strong>SAVE › PART SLOTS</strong>, <strong>KNOB 1</strong> la parte.</li>
+<li><strong>KNOB 2</strong> a la derecha (LOAD), apretá <strong>OCT+</strong>.</li>
 </ol>
-<p>LOAD <strong>detiene la reproducción</strong> y reemplaza la música: sonidos, pasos, automatización, el kit, el carril de punch-in,
-las macros, y el <strong>tempo, los efectos, el ruteo MIDI y la configuración de clock</strong> guardados con ella. El arreglo se
-queda. Si no era lo que querías, <strong>GLO + G4</strong> (UNDO) trae de vuelta lo que tenías.</p>
+<p>LOAD <strong>para la reproducción</strong> y reemplaza la música: los sonidos, los pasos, la automatización, el kit, el carril de
+punch-in, las macros, y el <strong>tempo, los efectos, el ruteo MIDI y los ajustes de clock</strong> guardados con ella. El arreglo
+queda. Si no era lo que querías, <strong>GLO + G4</strong> (UNDO) te devuelve lo que tenías.</p>
 <h3 id="guardado-rapido-mientras-suena-capa-save">Guardado rápido mientras suena (capa SAVE)</h3>
 <p>Mantené SAVE y apretá <strong>C4–F4</strong> para guardar la música en la sección A–D del proyecto actual, u <strong>OCT+</strong> para guardar
 en la sección que está sonando. Esto funciona <strong>mientras suena</strong>, sin poner nombre. El guardado queda en <strong>RAM al
 instante y pasa a la flash cuando parás</strong>. Si apagás antes de parar, se pierde — así que pará antes de apagar.</p>
 <h3 id="copiar">Copiar</h3>
 <ul>
-<li><strong>Una sección a otra letra</strong>: cargala (LOAD) y después guardala (SAVE) en la otra letra.</li>
-<li><strong>Una sección a otro proyecto</strong>: cargala, girá KNOB 1 hasta el otro proyecto (la música se queda) y guardá en una
-  letra.</li>
-<li><strong>"Guardar como" un proyecto nuevo</strong>: con tu música sonando, pará, andá a SAVE &gt; PROJECTS, girá KNOB 1 hasta un
-  proyecto vacío y guardá en A.</li>
+<li><strong>Una sección a otra letra</strong>: cargala (LOAD) y guardala (SAVE) en la otra letra (SAVE › PART SLOTS).</li>
+<li><strong>El tema entero a otro proyecto</strong> ("guardar como"): parado, SAVE › PROJECTS, <strong>KNOB 1</strong> al otro proyecto (no se
+  abre), <strong>KNOB 4</strong> SAVE, <strong>OCT+</strong> (ver <a href="#save-song-as-save--project">SAVE SONG AS</a>). En la pantalla NAME, <strong>KNOB 3</strong>
+  elige SONG (todo) o LOOP (solo la música de ahora).</li>
 </ul>
 <h3 id="cambiar-de-proyecto">Cambiar de proyecto</h3>
 <ul>
-<li>En <strong>SAVE &gt; PROJECTS, KNOB 1</strong> cambia de proyecto pero <strong>conserva la música</strong> (para guardarla ahí o cargar una de
-  sus secciones).</li>
+<li>En <strong>SAVE › PROJECTS, KNOB 1</strong> solo elige un proyecto (V10.7.20): no se abre nada. <strong>KNOB 2</strong> LOAD + OCT+ lo abre,
+  <strong>KNOB 4</strong> SAVE + OCT+ escribe ahí el tema que tenés, <strong>KNOB 3</strong> ERASE + OCT+ lo vacía.</li>
 <li>Con <strong>KNOB 1 de la capa SAVE</strong> (mantené SAVE, girá, soltá) cambia el proyecto <strong>y su sección A pasa a ser la
   música</strong> (si tiene una). La música anterior se reemplaza y <strong>UNDO no la puede traer de vuelta</strong> — guardala antes.</li>
 <li>Las dos cosas necesitan el transporte parado (<strong>STOP TO CHANGE PROJECT</strong> / <strong>STOP TO CHANGE SONG</strong>). Las secciones
@@ -4610,7 +4671,7 @@ instante y pasa a la flash cuando parás</strong>. Si apagás antes de parar, se
 </ul>
 <h3 id="poner-nombres-la-pantalla-name">Poner nombres (la pantalla NAME)</h3>
 <p>Se abre cuando guardás una sección o un preset de usuario, y con <strong>SAVE mantenido + C5</strong> (NAME, 0.9.2; hasta la 0.9.1
-un toque de EDIT) en SAVE &gt; USER, SECTIONS o PROJECTS (renombra el slot, la sección o el proyecto elegido; solo se
+un toque de EDIT) en SAVE › USER, PART SLOTS o PROJECTS (renombra el slot, la parte o el proyecto elegido; solo se
 escribe el nombre). Hasta 12 caracteres, en mayúsculas.</p>
 <div class="tw"><table>
 <thead>

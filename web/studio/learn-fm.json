@@ -1144,13 +1144,13 @@
        "KNOB 1 SEQ elige la secuencia A–D de la pista, KNOB 2 la nota, KNOB 3 TIME (de REST a TIE, NOTE y hasta 16 pasos de largo), KNOB 4 VEL (1–127, después ACC, SLD, A+S); la perilla PRESETS recorre los 64 pasos.",
        "Un paso guarda hasta cuatro notas: un acorde.",
        "Grabación por pasos: parado, apretá REC y tocá; el cursor avanza al soltar. KNOB 1 con las teclas apretadas fija la duración.",
-       "SEQ + G5 borra el paso del cursor; mantené teclas de paso + OCT+ para copiar, un paso + OCT− para pegar."
+       "SEQ + G5 borra el paso del cursor; mantené teclas de paso y girá SELECT para copiar; mantené un paso y apretá REC para pegar."
       ],
       "en": [
        "KNOB 1 SEQ picks the track's sequence A–D, KNOB 2 the note, KNOB 3 TIME (from REST to TIE, NOTE and up to 16 steps long), KNOB 4 VEL (1–127, then ACC, SLD, A+S); the PRESETS knob walks the 64 steps.",
        "A step holds up to four notes: a chord.",
        "Step recording: stopped, press REC and play; the cursor moves on as you let go. KNOB 1 with keys held sets the length.",
-       "SEQ + G5 clears the cursor's step; hold step keys + OCT+ to copy, a step + OCT− to paste."
+       "SEQ + G5 clears the cursor's step; hold step keys and turn SELECT to copy; hold a step and press REC to paste."
       ]
      },
      "where": {

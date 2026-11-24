@@ -160,7 +160,8 @@ footer a{color:var(--dim)}
 <li><a href="#7-arrange-songs-sections-and-scenes">7. ARRANGE: songs, sections and scenes</a><ul>
 <li><a href="#the-pieces">The pieces</a></li>
 <li><a href="#your-first-song-step-by-step">Your first song, step by step</a></li>
-<li><a href="#the-arrange-page-save-arrange">The ARRANGE page (SAVE &gt; ARRANGE)</a></li>
+<li><a href="#the-arrange-page-home-arrange">The ARRANGE page (HOME › ARRANGE)</a></li>
+<li><a href="#jam-and-take-home-song">JAM and TAKE (HOME › SONG)</a></li>
 <li><a href="#timeline-parts-and-clips-save-song">TIMELINE, PARTS and CLIPS (SAVE › SONG)</a></li>
 <li><a href="#save-song-as-save-project">SAVE SONG AS (SAVE › PROJECT)</a></li>
 <li><a href="#scenes">Scenes</a></li>
@@ -170,20 +171,20 @@ footer a{color:var(--dim)}
 <li><a href="#8-dice-and-undo">8. Dice and UNDO</a><ul>
 <li><a href="#gen-the-song-generator-home-select">GEN — the song generator (HOME + SELECT)</a></li>
 <li><a href="#sound-dice-edit-select">Sound dice (EDIT + SELECT)</a></li>
-<li><a href="#sequence-lfo-and-fx-dice-seq-lfo-fx-select">Sequence, LFO and FX dice (SEQ / LFO / FX + SELECT)</a></li>
+<li><a href="#sequence-lfo-and-fx-dice-gone">Sequence, LFO and FX dice (gone)</a></li>
 <li><a href="#macro-dice">Macro dice</a></li>
 <li><a href="#undo-glo-held-g4">UNDO (GLO held + G4)</a></li>
 </ul>
 </li>
 <li><a href="#9-effects-and-master">9. Effects and master</a><ul>
-<li><a href="#fxs-chain-track-buses-delay-reverb-chorus-slicer-punch-master">FX's chain: TRACK · BUSES · DELAY · REVERB · CHORUS · SLICER · PUNCH · MASTER</a></li>
+<li><a href="#fxs-chain-track-buses-delay-reverb-chorus-slicer-punch-in-master">FX's chain: TRACK · BUSES · DELAY · REVERB · CHORUS · SLICER · PUNCH IN · MASTER</a></li>
 <li><a href="#per-track">Per track</a></li>
 <li><a href="#slicer-one-on-a-bus">SLICER (one, on a bus)</a></li>
 <li><a href="#delay">Delay</a></li>
 <li><a href="#reverb-five-models">Reverb (five models)</a></li>
 <li><a href="#chorus">Chorus</a></li>
 <li><a href="#master">MASTER</a></li>
-<li><a href="#dj-filter-091-glo-live-mano-knob-4-on-mixer-until-v1036">DJ FILTER (0.9.1, GLO › LIVE › MANO KNOB 4; on MIXER until V10.36)</a></li>
+<li><a href="#dj-filter-091-no-knob-on-the-device-since-v1083">DJ FILTER (0.9.1; no knob on the device since V10.8.3)</a></li>
 </ul>
 </li>
 <li><a href="#10-modulation-and-macros">10. Modulation and macros</a><ul>
@@ -201,7 +202,7 @@ footer a{color:var(--dim)}
 <li><a href="#the-big-picture">The big picture</a></li>
 <li><a href="#what-is-saved-where">What is saved where</a></li>
 <li><a href="#how-the-autosave-really-works">How the autosave really works</a></li>
-<li><a href="#saves-chain-song-project-sound">SAVE's chain: SONG · PROJECT · SOUND</a></li>
+<li><a href="#saves-chain-tools-project-sound">SAVE's chain: TOOLS · PROJECT · SOUND</a></li>
 <li><a href="#to-save-a-project-section">To save a project section</a></li>
 <li><a href="#to-erase-a-section-v1017">To erase a section (V10.17)</a></li>
 <li><a href="#to-load-a-section">To load a section</a></li>
@@ -555,19 +556,19 @@ files.</p>
 <tbody>
 <tr>
 <td><strong>SELECT</strong> (encoder)</td>
-<td>Alone (0.9.2): <strong>walks the section's pages</strong>, one page a detent, as one chain, stopping at its first and last page (no levels, no zoom; see <a href="#how-navigation-works-six-rules-092">How navigation works</a>). In the MENU: its rows, all four tabs in one chain. With a button held: <strong>HOME</strong> + SELECT <strong>GEN</strong>, <strong>EDIT / SEQ / LFO / FX</strong> + SELECT that part's <strong>dice</strong>, <strong>GLO</strong> + SELECT the <strong>tempo</strong>, <strong>ENV / SCL / ARP / SAVE</strong> + SELECT walk that section's chain from wherever you are.</td>
+<td>Alone (0.9.2): <strong>walks the section's pages</strong>, one page a detent, as one chain, stopping at its first and last page (no levels, no zoom; see <a href="#how-navigation-works-six-rules-092">How navigation works</a>). In the MENU: its rows, all four tabs in one chain. With a button held: <strong>HOME</strong> + SELECT the <strong>generator</strong>, <strong>EDIT</strong> + SELECT the <strong>sound dice</strong>, <strong>GLO</strong> + SELECT the <strong>tempo</strong>, <strong>SEQ / FX / ENV / LFO / SCL / ARP / SAVE</strong> + SELECT walk that section's chain from wherever you are (V10.7.66: LFO's and FX's dice went; V10.8.21: the sequence's). With step keys held on SEQ: <strong>COPY</strong>.</td>
 </tr>
 <tr>
 <td><strong>ALGORITHM</strong> (encoder)</td>
-<td>Selects the track from any page: T1–T6 (T1–T4 with TRACKS 4). The track is always ALGORITHM's (0.9.2: PRESETS no longer picks it on ENV, LFO, CHORD, ARP). In the MENU: the next / previous tab. With a layer held: its view, MAP ↔ KNOBS ↔ STATE.</td>
+<td>Selects the track from any page: T1–T6 (T1–T4 with TRACKS 4). The track is always ALGORITHM's (0.9.2: PRESETS no longer picks it on ENV, LFO, CHORD, ARP). In the MENU: the next / previous tab. With a layer held it does nothing (V10.7.66: the layer shows its MAP alone).</td>
 </tr>
 <tr>
 <td><strong>PRESETS</strong> (encoder)</td>
-<td><strong>Always presets</strong> (0.9.2): the selected track's sounds (every engine's factory presets, then your user presets) on every page; on the <strong>SEQ</strong> pages the <strong>patterns</strong> (it opens the PHRASES loader with the next pattern picked: OCT+ loads it, OCT− back to the SEQ page); on <strong>GEN</strong> the GENRE. In the MENU and with a button held it does nothing, except <strong>EDIT held</strong> (V10.7): it jumps to the first sound of the next / previous engine, the engine's name on screen. It never changes page, track, module or row.</td>
+<td><strong>Always presets</strong> (0.9.2): the selected track's sounds (every engine's factory presets, then your user presets) on every page, the generator's too. On the <strong>SEQ</strong> pages it moves the <strong>step cursor</strong> instead (V10.7.60: turned slowly a step, fast a whole bar; the header says the bar and the step). The generator's GENRE is GENERATOR 1's KNOB 1. In the MENU and with a button held it does nothing, except <strong>EDIT held</strong> (V10.7): it jumps to the first sound of the next / previous engine, the engine's name on screen. With MENU › DISPLAY › PRESETS on MENU it opens SAVE › PRESETS instead of loading at once.</td>
 </tr>
 <tr>
 <td><strong>KNOB 1–4</strong></td>
-<td>The four cards (columns) on screen. A page that picks something picks it with <strong>KNOB 1</strong> (the step, the bar, the slot, the stage, the operator, the kit's sound, the row). With a layer held, the layer's own knobs. Turning fast sweeps the whole range, slowly fine-tunes (MENU › CONTROL › KNOB ACCEL turns this off). In the MENU: KNOB n the setting on card n.</td>
+<td>The four cards (columns) on screen. A page that picks something picks it with <strong>KNOB 1</strong> (the slot, the operator, the kit's sound, the row, a modulator, a macro; on SEQ › STEP it is SEQ, the track's sequence A–D). With a layer held, the layer's own knobs. Turning fast sweeps the whole range, slowly fine-tunes (MENU › CONTROL › KNOB ACCEL turns this off). In the MENU: KNOB n the setting on card n.</td>
 </tr>
 <tr>
 <td><strong>MASTER</strong></td>
@@ -698,14 +699,14 @@ layer's shortcuts; on the DRUM grid they are steps and lanes; on the NAME screen
 </tr>
 <tr>
 <td><strong>HOME</strong> held + <strong>SELECT</strong></td>
-<td><strong>GEN</strong>, the song generator (HOME's last pages; see <a href="#8-dice-and-undo">8</a>).</td>
+<td>The <strong>generator</strong> (HOME's last pages, GENERATOR 1–4; see <a href="#8-dice-and-undo">8</a>).</td>
 </tr>
 <tr>
-<td><strong>EDIT / SEQ / LFO / FX</strong> held + <strong>SELECT</strong></td>
-<td>The dice: the sound / the sequence / the LFO / the effects (see <a href="#8-dice-and-undo">8</a>).</td>
+<td><strong>EDIT</strong> held + <strong>SELECT</strong></td>
+<td>The <strong>sound dice</strong> (see <a href="#8-dice-and-undo">8</a>).</td>
 </tr>
 <tr>
-<td><strong>ENV / SCL / ARP / SAVE</strong> held + <strong>SELECT</strong></td>
+<td><strong>SEQ / FX / ENV / LFO / SCL / ARP / SAVE</strong> held + <strong>SELECT</strong></td>
 <td>Into that section and along its chain, as SELECT inside it. (0.9.2: a button held + <strong>PRESETS</strong> no longer walks pages.)</td>
 </tr>
 <tr>
@@ -714,11 +715,11 @@ layer's shortcuts; on the DRUM grid they are steps and lanes; on the NAME screen
 </tr>
 <tr>
 <td><strong>SEQ</strong> held + <strong>G5</strong></td>
-<td><strong>CLR STEP</strong>: clears the cursor step and its locks (NOTE with a note in focus: that note; AUTO LIST: deletes the record).</td>
+<td><strong>CLR STEP</strong>: clears the cursor step and its locks (AUTO LIST: deletes the record).</td>
 </tr>
 <tr>
 <td><strong>SAVE</strong> held + <strong>C5</strong></td>
-<td><strong>NAME</strong>: renames the slot on SAVE &gt; USER, the section or project on SECTIONS / PROJECTS.</td>
+<td><strong>NAME</strong>: renames the slot on SAVE › USER, the part or the project on PART SLOTS / PROJECTS.</td>
 </tr>
 <tr>
 <td>A step held (SEQ &gt; STEP) + <strong>KNOB 1–4</strong></td>
@@ -832,10 +833,10 @@ skin.</p>
 <li><strong>Panel (middle)</strong>: the page's graph — the engine's creature, an envelope, the LFO running, the step grid, a list...</li>
 <li><strong>Footer</strong>: the step bars of the bar you edit (four under each card) or key hints, and under them a small grey
   <strong>breadcrumb</strong>: <strong>SECTION · GROUP · page</strong> and the page's place in the section's chain at the right (0.9.2; e.g.
-  <strong>FX · DELAY · DLY 2  6/16</strong>, <strong>ENV · TRACKS · TRACKS DEST  2/5</strong>).</li>
+  <strong>FX · DELAY · DLY 2  6/19</strong>, <strong>ENV · ENV · ENV DEST  2/3</strong>).</li>
 <li>
 <p><strong>The tabs</strong> (0.9.2): under the header, the section's <strong>groups</strong> (FX: TRK · BUS · DLY · REV · CHO · SLC · PCH · MST;
-  SEQ: PATT · TRACK · BAR · STEP · AUTO), the one you are on lit (COLORS: filled violet; BOTTOM: a small pill; HUD and AIR:
+  SEQ: STEP · PAT · EUCL · HEAD · SFX · AUTO · GEN · CLAY), the one you are on lit (COLORS: filled violet; BOTTOM: a small pill; HUD and AIR:
   a dash), and <strong>a dot a page</strong> under each, the page shown lit. The cards under them, a taller panel, and the footer is
   the breadcrumb alone.</p>
 </li>
@@ -853,15 +854,13 @@ and heating up with its own audio (0.8.8: swimming free over the whole screen by
 mouth opens with its level. The selected track is drawn bigger, its number in violet, a muted one falls <strong>asleep</strong> (a dim
 outline, its eyes shut), a track asleep (TRACKS 4) is drawn as muted. On the <strong>MIXER</strong>, asleep tracks are greyed and say OFF.</p>
 <p><strong>Dialogs</strong> ask before anything destructive: <strong>OCT− NO</strong>, <strong>OCT+ YES</strong>. (0.8.5, as the mock-up) They carry the
-tabs <strong>NOTICE · DICE · NAME</strong>: a question is a card under a violet rule with its two buttons (YES in the accent); a
-part's dice (EDIT, SEQ, LFO, FX + SELECT) shows <strong>BEFORE</strong> and <strong>NOW</strong> side by side (the sound's being then and now,
-the steps, the LFO's or the effects' values) over a strip <strong>KEEP DICED …? · SELECT: DICE AGAIN · OCT− CANCEL ·
+tabs <strong>NOTICE · DICE · NAME</strong>: a question is a card under a violet rule with its two buttons (YES in the accent); the sound dice (EDIT + SELECT) shows <strong>BEFORE</strong> and <strong>NOW</strong> side by side (the sound's being then and now) over a strip <strong>KEEP DICED …? · SELECT: DICE AGAIN · OCT− CANCEL ·
 OCT+ OK</strong>; NAME has its cards CURSOR, CHAR, LEN and OCT+ SAVE / WRITE over the name, the keys' letters and the black
 keys' functions. (0.9.5) A question's card covers only itself, its tabs and its breadcrumb: the page stays in sight
 around it, still moving.</p>
 <p><strong>Messages</strong> (0.9.5): a message on a lens page shows as a small pill near the foot of the panel, over the page, which
 keeps drawing and moving behind it (the header says it as well; not over HOME's beings or a layer's map); nothing goes
-dark. The pill keeps clear of the page's own words: where the foot is written (AUTO LIST's rows, MUTATE's lines) it
+dark. The pill keeps clear of the page's own words: where the foot is written (AUTO LIST's rows) it
 sits in the nearest free rows, and on a page with no free rows it is left out and the header alone says it. A page's
 <strong>hint</strong> (V10.6: EUCLID's "TURN A KNOB: A PATTERN", MOTION's and PUNCH's "REC + PLAY ...") comes only once you stay on the
 page for about 0.8 s, never while SELECT walks past it, and each one at most twice in all (counted with the settings,
@@ -1893,15 +1892,12 @@ them page by page, a <strong>SEQ</strong> tap jumps to the next group.</p>
 <p>PRESETS on any SEQ page moves the step cursor (V10.7.60: turned slowly a step, fast a whole bar; the header says the
 bar and the step).</p>
 <h3 id="the-layers-hold-the-button">The layers (hold the button)</h3>
-<p>(0.8.5) A held layer is a lens too, as the mock-up: <strong>turn ALGORITHM while you hold the button</strong> to go <strong>MAP ·
-KNOBS · STATE</strong> (it remembers the level; SELECT keeps its combos: GLO + SELECT the tempo, the dice). (0.8.9, in the
-skins) <strong>MAP</strong> is the keyboard itself, F3 to G5: every key that does something is named upright on it (light on the
-white keys, tinted on the black ones), the one held lit orange, the value now violet, a muted track pale, what cannot be
-pressed now dim, and each white key's note under it; <strong>KNOBS</strong>: the four as gauges in their knobs' colours (JIANT: their values' heat), the layer's
-key words under them (e.g. <strong>PLAY RESTART · GLO DONE</strong>); <strong>STATE</strong>: what is on, as chips (FX: the lock, the tracks, the
-latch, the effects held; GLO: each track ON / MUTE, the drum groups, UNDO, MUTATE; LFO: the latch and each macro's
-routes; REC, SAVE, SCL, EDIT, SEQ theirs). The header names the layer in words, <strong>[GLO] SET</strong>. The footer is the
-breadcrumb, <strong>FX · MAP</strong>. The keys and knobs do exactly what they did.</p>
+<p>A held layer shows its <strong>MAP</strong> over the page (0.8.9): the keyboard itself, F3 to G5, every key that does something
+named upright on it (light on the white keys, tinted on the black ones), the one held lit orange, the value now violet,
+a muted track pale, what cannot be pressed now dim, and each white key's note under it. The FX layer shows its effects
+as named cells instead (V10.7.77), and the punch-in held in large letters. The header names the layer in words,
+<strong>[GLO] SET</strong>. Since V10.7.66 the MAP is the only view: KNOBS and STATE, and ALGORITHM switching between them, are gone.
+The layers are FX, GLO, SCL, EDIT, SEQ (on the SEQ pages), REC and SAVE; ENV, ARP and, since V10.7.66, LFO have none.</p>
 <p><strong>FX — punch-in effects</strong> (details in <a href="#11-performance">11</a>)</p>
 <div class="tw"><table>
 <thead>
@@ -2024,7 +2020,8 @@ breadcrumb, <strong>FX · MAP</strong>. The keys and knobs do exactly what they 
 </tr>
 </tbody>
 </table></div>
-<p><strong>SCL</strong> — any key sets the ROOT to its note name. Knobs: ROOT, SCALE, ROTATE, PITCH (the last two are SEQ &gt; STRETCH's ROTATE and SEQ &gt; TRACK's PITCH).</p>
+<p><strong>SCL</strong> — any key sets the ROOT to its note name. Knobs: ROOT, SCALE, ROTATE (the track's sequence played that many
+steps later, −32 … +32; this layer is its only knob since SEQ › STRETCH went) and PITCH (SEQ › TRACK's).</p>
 <p><strong>EDIT</strong> — F3 <strong>INIT</strong> (the track's sound back to its engine's own defaults (a plain INIT, not a preset), dry: every effect send at 0; FM6 the init
 voice, OP1 alone at full level; on DRUM the factory DRUM-X kit too), G3 <strong>RECALL</strong> (the sound as the current section stored it; on DRUM with its kit). Both ask first and leave the
 steps alone. On a DRUM track, black keys 1–8 mute each DRUM-X sound (BD SD CP CH OH TM RS CB). <strong>SELECT</strong> (while EDIT is
@@ -2049,13 +2046,15 @@ The knobs are <strong>MOMENTARY</strong> (below).</p>
 <p><strong>SEQ TOOLS</strong> (on every SEQ page) — F3 CLEAR, G3 REVERSE, A3 / B3 SHIFT left / right,
 F4 CLR AUTO (the track's automation and locks; the steps stay). On a DRUM track the
 lane tools: G4 CLR, A4 REV, B4 FILL on the lane picked with black keys 1–8. (V10.6: C4 RANDOM, D4 COOK, E4 BEAT and
-C5, the lane's RANDOM, are gone; SEQ › EUCLID writes patterns, SEQ + SELECT still dices.) <strong>G5 CLR STEP</strong> (0.9.2; was
-the EDIT tap): clears the cursor step and its locks, the cursor on to the next (on NOTE with a note in focus: that note
-alone; on AUTO LIST, <strong>DEL REC</strong>: deletes the row's record). <strong>REC</strong> (while SEQ is held): CLEAR
-ALL. Knobs: LEN, DIV, SWING, GATE. These tools have no undo.</p>
+C5, the lane's RANDOM, are gone; SEQ › EUCLID writes patterns.) <strong>E5 COPY SEQ</strong> copies the track's whole sequence
+(steps 1–LEN), <strong>F5 PASTE SEQ</strong> pastes what was copied from its first step. <strong>G5 CLR STEP</strong> (0.9.2; was the EDIT tap):
+clears the cursor step and its locks (on AUTO LIST, <strong>DEL REC</strong>: deletes the row's record). <strong>REC</strong> (while SEQ is
+held): CLEAR ALL. Knobs: LEN, DIV, SWING, GATE.</p>
 <p><strong>REC</strong> — F3 <strong>CLEAR</strong> the selected track's steps and automation (no dialog; UNDO can bring it back), G3 <strong>CLICK</strong>
-(OFF / REC / ON). KNOB 1: CLICK. (V10.7) REC held past HOLD and let go with <strong>nothing else touched</strong> is <strong>UNDO</strong> (held
-alone again: redo); once a key, knob, button or OCT is used while it is held, it is the REC layer as before.</p>
+(OFF / REC / ON), A3 <strong>UNDO</strong> (again: redo), B3 <strong>Q ON / Q OFF</strong> (REC GRID at 100 % or 0 %). KNOB 1: CLICK; KNOB 2:
+<strong>REC GRID</strong>, how far what you record is pulled to the grid. (V10.7) REC held past HOLD and let go with <strong>nothing
+else touched</strong> is <strong>UNDO</strong> (held alone again: redo); once a key, knob, button or OCT is used while it is held, it is
+the REC layer as before.</p>
 <p><strong>SAVE — song layer</strong> (details in <a href="#7-arrange-songs-sections-and-scenes">7</a>)</p>
 <div class="tw"><table>
 <thead>
@@ -2079,7 +2078,7 @@ alone again: redo); once a key, knob, button or OCT is used while it is held, it
 </tr>
 <tr>
 <td>E5</td>
-<td>SONG REC</td>
+<td>SONG REC on the map: records the JAM take (V10.8; see <a href="#7-arrange-songs-sections-and-scenes">7</a>)</td>
 </tr>
 <tr>
 <td>G5</td>
@@ -2087,7 +2086,7 @@ alone again: redo); once a key, knob, button or OCT is used while it is held, it
 </tr>
 <tr>
 <td>C5</td>
-<td><strong>NAME</strong> (0.9.2; was the EDIT tap): rename the slot on USER, the section on SECTIONS, the project on PROJECTS (elsewhere dim)</td>
+<td><strong>NAME</strong> (0.9.2; was the EDIT tap): rename the slot on USER, the part on PART SLOTS, the project on PROJECTS (elsewhere: NAME: ON USER OR PROJECT)</td>
 </tr>
 <tr>
 <td>OCT+ / OCT−</td>
@@ -2099,9 +2098,8 @@ alone again: redo); once a key, knob, button or OCT is used while it is held, it
 </tr>
 </tbody>
 </table></div>
-<p><strong>LFO — macros</strong>: KNOB 1–4 are M1–M4. Let go and they stay <strong>latched</strong> (the header says [LFO] LATCH, and KNOB 1–4
-keep controlling the macros on every page) until you press LFO again. F3 rolls new routes, G3 clears them.
-(LFO + SELECT rolls the track's LFO, with KEEP / CANCEL: see the dice.)</p>
+<p><strong>LFO</strong> — no layer since V10.7.66: holding LFO and turning SELECT walks LFO's pages. The macros M1–M4 are the FX
+layer's knobs and FX › PUNCH IN's cards; their routes are on FX › PUNCH IN › MACROS.</p>
 <hr />
 <h2 id="4-engines">4. Engines</h2>
 <p>Twelve engines, all synthesis, no samples: ANALOG, FM6, PHASE, <strong>MATH</strong> (LOFI until V10.6e), VOICE, WHEEL, <strong>WEST</strong>
@@ -3433,52 +3431,45 @@ sounding after you let go; the next chord replaces them.</p>
 <ul>
 <li>A <strong>project</strong> is a song. There are <strong>6 projects</strong> (V10.6p: 8 before; songs 7 and 8 are gone, their flash
   is kept for a drum sample bank: move them into 1–6 or keep them in a backup before updating).</li>
-<li>Each project has <strong>4 sections, A–D</strong>. A section is a full snapshot of the music: every track's sound, steps and
+<li>Each project has <strong>4 sections (parts), A–D</strong>. A section is a full snapshot of the music: every track's sound, steps and
   automation, the DRUM-X kit and its mutes, the punch-in lane, the SLICER, the macros, plus the tempo and global effects.</li>
 <li>Each project has one <strong>arrangement</strong>: up to <strong>16 rows</strong>, each a section played for <strong>1–64 bars</strong>, optionally with a
   <strong>scene</strong>, and an <strong>END</strong> rule.</li>
-<li>(V10) In a row, each <strong>track</strong> can play another section's part (<strong>FROM</strong>) and a <strong>variation</strong> of it (<strong>VAR</strong>):
-  see <a href="#timeline-parts-and-clips-save--song">The TIMELINE page</a>.</li>
+<li>(V10.8) Each project also has one <strong>JAM take</strong>: every track playing its own sequence A–D, each change written where
+  it sounded.</li>
+<li>The song's pages are HOME's <strong>SONG</strong> group since V10.7.63: <strong>JAM · TAKE · ARRANGE</strong> (HOME, tapped to the SONG tab;
+  SAVE + G5 goes straight to ARRANGE). SAVE keeps what stores and loads: TOOLS, PART SLOTS, PROJECTS, USER, PRESETS
+  (<a href="#12-saving-and-loading">12</a>).</li>
 </ul>
 <p>That's 24 sections in total (6 × 4).</p>
 <h3 id="your-first-song-step-by-step">Your first song, step by step</h3>
 <ol>
-<li><strong>Make a loop</strong>: record it (REC), write steps, use <a href="#euclid-and-modes-v106">EUCLID</a> or GEN
+<li><strong>Make a loop</strong>: record it (REC), write steps, use <a href="#euclid-and-modes-v106">EUCLID</a> or the generator
    (<a href="#your-first-song-5-minutes">Your first song (5 minutes)</a>).</li>
-<li><strong>Store it as section A</strong>: hold <strong>SAVE</strong> and press <strong>C4</strong>. The screen says <strong>STORED A</strong>. It works while playing; the
-   store goes to flash when you stop (stop before switching off). To give it a name, save it on SAVE › SECTIONS
-   instead (<a href="#to-save-a-project-section">12</a>).</li>
+<li><strong>Store it as section A</strong>: hold <strong>SAVE</strong> and press <strong>C4</strong>. The screen says <strong>STORED A</strong>. It works while playing. To
+   give it a name, save it on SAVE › PART SLOTS instead (<a href="#to-save-a-project-section">12</a>).</li>
 <li><strong>Make B, C, D</strong>: change the music (steps, sounds, a track muted…) and hold SAVE + <strong>D4</strong> (STORED B), then
    <strong>E4</strong> (C) and <strong>F4</strong> (D). SAVE + F3–B3 plays a section back to check it (playing: on the next bar).</li>
-<li><strong>Open the song</strong>: stop (PLAY), press <strong>SAVE</strong>. At power-on it opens on <strong>TIMELINE</strong>, the first page; if it comes
-   back to another SAVE page, turn <strong>SELECT</strong> left to TIMELINE. With no rows it says <strong>NO ROWS: OCT+ ADDS ONE</strong>.</li>
+<li><strong>Open the song</strong>: stop (PLAY), tap <strong>HOME</strong> until the <strong>SONG</strong> tab and turn <strong>SELECT</strong> to <strong>ARRANGE</strong> (or hold SAVE
+   and press <strong>G5</strong>). With no rows it says <strong>NO ROWS</strong>.</li>
 <li><strong>Add the rows</strong>: <strong>OCT+</strong> adds a row (ROW ADDED): the first is A, 4 bars; each next one is a copy of the row
-   picked, after it (V10.6o). <strong>KNOB 1</strong> the row, <strong>KNOB 2</strong> its section A–D, <strong>KNOB 3</strong> its bars (1–64). For example
+   picked, after it (V10.6o). <strong>KNOB 1</strong> the row, <strong>KNOB 2</strong> its PART A–D, <strong>KNOB 3</strong> its BARS (1–64). For example
    A 8 · B 8 · A 8 · C 4 · D 8.</li>
-<li><strong>Per track (optional)</strong>: pick the track with <strong>ALGORITHM</strong>. <strong>F4–B4</strong> make it play part A–D in this row (<strong>FROM</strong>;
-   its row's letter again: back), <strong>KNOB 4</strong> its <strong>VAR</strong> (MUTE, THIN, FILL, HALF, REV, SHIFT, OCT+ / OCT−, VAR 1–4, in
-   this row only); <strong>F3–D4</strong> mute T1–T6 in the row (<a href="#timeline-parts-and-clips-save--song">The TIMELINE page</a>).</li>
-<li><strong>END and scenes on ARRANGE</strong>: turn <strong>SELECT</strong> right past PARTS, CLIPS, SECTIONS and PROJECTS to <strong>ARRANGE</strong> (or SAVE + <strong>G5</strong>).
-   <strong>KNOB 1</strong> past the last row is <strong>+ ADD</strong>, then <strong>END</strong>: there <strong>KNOB 2</strong> picks <strong>STOP</strong> (once), <strong>x2–x8</strong> or
-   <strong>LOOP</strong>. A scene: set the mutes (GLO held + black keys 1–6) and macros you want, <strong>KNOB 1</strong> to the row, <strong>KNOB 4</strong>
-   right: <strong>SCENE STORED</strong> (left clears it).</li>
-<li><strong>Play it</strong>: stopped, press <strong>PLAY</strong> on ARRANGE. The song plays from the top (a white line shows where); on
-   TIMELINE, PLAY loops the row picked and PLAY again lets the song go on from there (V10.6o);
-   PLAY again stops it and the music you had before comes back. From any other page: hold SAVE + <strong>D5</strong> (<strong>PLAY: THE
-   SONG</strong>) and PLAY plays the song; SAVE + D5 again goes back to <strong>PLAY: THE LOOP</strong>. A row on an empty section: the
-   song won't start (<strong>PATTERN A EMPTY</strong>).</li>
-<li><strong>Delete a row</strong>: stopped, on ARRANGE or TIMELINE, <strong>KNOB 1</strong> to the row, <strong>OCT−</strong>: <strong>DELETE SONG ROW?</strong>. <strong>OCT+</strong>
+<li><strong>END and scenes</strong>: <strong>KNOB 1</strong> past the last row is <strong>+ ADD</strong>, then <strong>END</strong>: there <strong>KNOB 2</strong> picks <strong>STOP</strong> (once),
+   <strong>x2–x8</strong> or <strong>LOOP</strong>. A scene: set the mutes (GLO held + black keys 1–6) and macros you want, <strong>KNOB 1</strong> to the
+   row, <strong>KNOB 4</strong> right: <strong>SCENE STORED</strong> (left: SCENE CLEARED).</li>
+<li><strong>Play it</strong>: stopped, press <strong>PLAY</strong> on ARRANGE. The song plays from the top; PLAY again stops it and the music you
+   had before comes back (<strong>SONG END</strong>). From any other page: hold SAVE + <strong>D5</strong> (<strong>PLAY: THE SONG</strong>) and PLAY plays the
+   song; SAVE + D5 again goes back to <strong>PLAY: THE LOOP</strong>. With no rows it says <strong>ADD A SONG ROW</strong>; a row on an empty
+   section: the song won't start (<strong>PART EMPTY</strong>).</li>
+<li><strong>Delete a row</strong>: stopped, on ARRANGE, <strong>KNOB 1</strong> to the row, <strong>OCT−</strong>: <strong>DELETE SONG ROW?</strong>. <strong>OCT+</strong>
    deletes it, OCT− keeps it. It cannot be undone.</li>
-<li><strong>Or record it live: SONG REC.</strong> Play a section (SAVE + F3), hold SAVE + <strong>E5</strong> (<strong>SONG REC NEXT BAR</strong>; stopped:
-    <strong>SONG REC: PLAY</strong>), then play the sections in turn with SAVE + F3–B3: each becomes a row with the bars it played
-    and a scene. SAVE + E5 again (or stopping) ends it. It replaces the rows there were.</li>
+<li><strong>Or play it instead of writing rows</strong>: <a href="#jam-and-take-home--song">JAM and TAKE</a>.</li>
 </ol>
-<h3 id="the-arrange-page-save-arrange">The ARRANGE page (SAVE &gt; ARRANGE)</h3>
-<p>ARRANGE is the second page of SAVE's PROJECT group (V10.2: SAVE's chain is TIMELINE → SECTIONS → PROJECTS → ARRANGE →
-TOOLS → USER → PRESETS; SELECT from PROJECTS, or SAVE + G5 from anywhere): on top the project's four sections large (stored: in their
-colour, the one playing says <strong>NOW</strong>), then <strong>ARRANGE</strong>: the song's rows as chips (<strong>A16</strong>: the section and its bars, in
-the section's colour; a scene: a white dot; the row you are on lit and framed), and under them the whole song as one
-strip (its rows by their length, a white line where it plays) with its length and its END (<strong>120 BARS · LOOP</strong>).</p>
+<h3 id="the-arrange-page-home-arrange">The ARRANGE page (HOME › ARRANGE)</h3>
+<p>ARRANGE is the third page of HOME's SONG group (JAM · TAKE · ARRANGE; until V10.7.63 it was a SAVE page; SAVE + G5
+from anywhere). (V10.8.14) Its panel is the song as a score: the rows as blocks as wide as their bars, one lane per
+track; with no rows it says <strong>NO ROWS</strong>.</p>
 <div class="tw"><table>
 <thead>
 <tr>
@@ -3490,38 +3481,38 @@ strip (its rows by their length, a white line where it plays) with its length an
 </thead>
 <tbody>
 <tr>
-<td>KNOB 1</td>
+<td>KNOB 1 (ROW)</td>
 <td>choose the row</td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>KNOB 2</td>
+<td>KNOB 2 (PART)</td>
 <td>its section A–D; turned left past A: <strong>DELETE SONG ROW?</strong></td>
 <td>adds a row (same section as the row above, 1 bar)</td>
 <td><strong>STOP</strong>, <strong>x2 … x8</strong>, <strong>LOOP</strong></td>
 </tr>
 <tr>
 <td>OCT+</td>
-<td>adds a row after the last (its section and bars), and selects it (0.8.5)</td>
+<td>adds a row after the one picked, a copy of it, and selects it (V10.6o; 16 at most: <strong>16 ROWS</strong>)</td>
 <td></td>
 <td></td>
 </tr>
 <tr>
 <td>OCT−</td>
-<td>(V10.4) <strong>DELETE SONG ROW?</strong> for the row picked: OCT+ deletes it, OCT− keeps it (stopped; also on TIMELINE)</td>
+<td>(V10.4) <strong>DELETE SONG ROW?</strong> for the row picked: OCT+ deletes it, OCT− keeps it (stopped)</td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>KNOB 3</td>
+<td>KNOB 3 (BARS)</td>
 <td>its bars (1–64)</td>
 <td>adds a row</td>
 <td></td>
 </tr>
 <tr>
-<td>KNOB 4</td>
-<td>right: store a <strong>scene</strong> (SCENE STORED); left: clear it</td>
+<td>KNOB 4 (SCENE)</td>
+<td>right: store a <strong>scene</strong> (SCENE STORED); left: clear it (SCENE CLEARED)</td>
 <td></td>
 <td></td>
 </tr>
@@ -3531,30 +3522,105 @@ strip (its rows by their length, a white line where it plays) with its length an
 <li><strong>PLAY</strong> on ARRANGE plays the song from the top; again: stop. (Until 0.8.4 OCT+ did too; now it adds a row.)</li>
 <li>When the song ends (or you stop it), the music you had before pressing PLAY comes back (SONG END).</li>
 <li>(V10.6z8) <strong>A sound you change while a song plays stays.</strong> Change a track's preset, its engine, a sound knob (EDIT,
-  ENV, LFO, FX, MOD… anything a preset sets), an FM6 patch or the DRUM-X kit while a song (or a GENE song, or a quick
-  chain) plays, and that track keeps your sound over every section after it: the sections still bring their steps,
+  ENV, LFO, FX, MOD… anything a preset sets), an FM6 patch or the DRUM-X kit while a song (or a generated song, or a
+  quick chain) plays, and that track keeps your sound over every section after it: the sections still bring their steps,
   pattern (LEN, DIV, swing, gate), arpeggio, scale, mix (level, pan) and mutes. Stopping brings the music you had before PLAY
-  back (SONG END, your unsaved edits too) with your sounds over it (V10.7.6), and PLAY again keeps holding them. They follow the sections again after a new GENE throw,
-  a project or section loaded, a live section jump or a CLIPS launch, or, for one track, EDIT layer <strong>RECALL</strong> (G3; it
-  works while a song plays now): the section's stored sound back, and the next sections' after it.</li>
+  back (SONG END, your unsaved edits too) with your sounds over it (V10.7.6), and PLAY again keeps holding them. They
+  follow the sections again after a new throw of the generator, a project or section loaded, a live section jump, or,
+  for one track, EDIT layer <strong>RECALL</strong> (G3; it works while a song plays now): the section's stored sound back, and the
+  next sections' after it.</li>
 <li>END: <strong>STOP</strong> plays the song once, <strong>x2–x8</strong> that many times, <strong>LOOP</strong> forever.</li>
-<li>If a row points to an empty section the song won't start: the screen says <strong>PATTERN A EMPTY</strong> (or B, C, D).</li>
-<li>While a song plays, step editing, GEN and EUCLID are blocked (<strong>SONG PLAYS: STOP IT TO EDIT</strong>).</li>
-<li>To delete a row you can also use SAVE &gt; TOOLS &gt; DELETE ROW (the row ARRANGE has selected). To delete the whole
-  arrangement: TOOLS &gt; CLEAR SONG (<strong>CLEAR SONG ORDER?</strong>). Neither can be undone.</li>
+<li>If a row points to an empty section the song won't start: the screen says <strong>PART EMPTY</strong>.</li>
+<li>While a song plays, step editing, the generator and EUCLID are blocked (<strong>SONG PLAYS: STOP IT TO EDIT</strong>).</li>
+<li>To delete a row you can also use SAVE › TOOLS (TARGET SONG, ACTION DEL ROW: the row ARRANGE has selected). To delete
+  the whole arrangement: TARGET SONG, ACTION CLEAR (<strong>CLEAR SONG ORDER?</strong>). Neither can be undone.</li>
 <li>The arrangement is saved automatically (about 2 seconds after a change, while stopped). See <a href="#12-saving-and-loading">12</a>.</li>
+<li>The per-track <strong>FROM</strong> and <strong>VAR</strong> of a row (the TIMELINE page, V10 to V10.7) have no page now; a song that has them
+  still plays them.</li>
+</ul>
+<h3 id="jam-and-take-home-song">JAM and TAKE (HOME › SONG)</h3>
+<p>(V10.8) <strong>JAM</strong> is the song played by hand. Every track has its sequence in each of the parts A–D; on JAM you choose,
+track by track, which one plays, while it plays. The panel is six tracks × four parts: the cell each track plays framed,
+one asked for and not in yet dashed, the cell KNOB 1 and KNOB 2 point at ringed white.</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th></th>
+<th>JAM</th>
+<th>TAKE</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>KNOB 1</td>
+<td>TRACK</td>
+<td>CHANGE: the take's change you edit (n/N)</td>
+</tr>
+<tr>
+<td>KNOB 2</td>
+<td>SEQ: the part A–D (the cell)</td>
+<td>WHEN: moves it (bar.beat.16th)</td>
+</tr>
+<tr>
+<td>KNOB 3</td>
+<td>CAMBIO: when a change lands (AT ONCE, 1/16, 1/8, 1/4, 1/2, BAR)</td>
+<td>SEQ: its sequence A–D</td>
+</tr>
+<tr>
+<td>KNOB 4</td>
+<td>TAKE: FREE or <strong>LOCK</strong></td>
+<td>BARS: the take's length</td>
+</tr>
+<tr>
+<td>OCT+</td>
+<td>GO: the picked track to the picked sequence, on CAMBIO's step (stopped: at once)</td>
+<td>a new change (TAKE FULL when there is no room)</td>
+</tr>
+<tr>
+<td>OCT−</td>
+<td>that track stops on the next bar; after a LOCK round: undoes the round (ROUND UNDONE)</td>
+<td>deletes the change</td>
+</tr>
+<tr>
+<td>F3–B3</td>
+<td>part A–D on every track (playing: on the next bar; <strong>PART EMPTY</strong> if nothing is stored there)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>REC</td>
+<td>records the take</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>The take</strong>: press <strong>REC</strong> on JAM (<strong>JAM REC NEXT BAR</strong>; stopped: <strong>JAM REC: PLAY</strong>). From the next bar line it
+  writes the tracks' sequences as they are and then every change where it sounds, a 16th exact. REC again or stopping
+  ends it on a bar line. It replaces the take there was; stopped, it is kept with the project (<strong>JAM TAKE KEPT</strong>).
+  Holding SAVE and pressing <strong>E5</strong> does the same from any page (the map still reads SONG REC).</li>
+<li><strong>LOCK</strong> (KNOB 4 to the right, with a take): the take plays round and round and you jam over it; a track you moved
+  yourself is drawn white and says <strong>YOU</strong> until the take's next change of it.</li>
+<li><strong>One track again</strong>: in LOCK, pick a track and press <strong>REC</strong> (<strong>REC TRACK</strong>): from the next bar that track's changes
+  are recorded for one round of the take and replace the ones it had (<strong>TRACK DONE</strong>). <strong>OCT−</strong> then brings the take
+  back as it was (ROUND UNDONE).</li>
+<li><strong>TAKE</strong> shows the take whole, the change picked ringed and its track lit; with no take the cards say <strong>--</strong> and the
+  knobs say NO TAKE.</li>
+<li>Choosing a sequence on JAM (or SEQ › STEP's KNOB 1, which is the same switch for the selected track) ends a song or
+  quick chain that was playing and puts PLAY back to THE LOOP.</li>
 </ul>
 <h3 id="timeline-parts-and-clips-save-song">TIMELINE, PARTS and CLIPS (SAVE › SONG)</h3>
-<p><em>Replaced in V10.8 by the song mode: <strong>HOME › JAM · TAKE · ARRANGE</strong> (see "What's new in V10.8.21" at the top).</em></p>
+<p><em>Gone in V10.8: the song mode above, <strong>HOME › JAM · TAKE · ARRANGE</strong>, took their place.</em></p>
 <h3 id="save-song-as-save-project">SAVE SONG AS (SAVE › PROJECT)</h3>
-<p>Copies the <strong>whole song</strong> into another project: sections A–D (with the unsaved edits of the one playing), the tempo
-and globals, the rows, bars, END, scenes, FROM and VAR, and LOOP / SONG. <strong>KNOB 1</strong> the destination (1–6, it is not
-opened), <strong>KNOB 4</strong> arms SAVE, <strong>OCT+</strong>; a used destination asks <strong>REPLACE WHOLE SONG n?</strong>: OCT+, type a name, OCT+
-saves. OCT− cancels. Stop first. The song you copied from stays open and unchanged; open the copy on PROJECTS.</p>
+<p><em>The page went in V10.7.20; <strong>SAVE › PROJECTS</strong> does it.</em> <strong>KNOB 1</strong> picks the destination project (1–6; it is not
+opened), <strong>KNOB 4</strong> to the right arms SAVE, <strong>OCT+</strong>. A used destination asks <strong>OVERWRITE PROJECT n?</strong>; then the NAME
+screen, where <strong>KNOB 3</strong> says whether the whole <strong>SONG</strong> or only the <strong>LOOP</strong> is written. It copies the whole song:
+sections A–D (with the unsaved edits of the one playing), the tempo and globals, the rows, bars, END and scenes, and
+LOOP / SONG. Stop first (<strong>STOP TO SAVE</strong>). The project you copied from stays open and unchanged; open the copy with
+PROJECTS' LOAD.</p>
 <h3 id="scenes">Scenes</h3>
 <p>A scene is stored per row and recalls, when that row starts: the track mutes (T1–T6), the DRUM-X group mutes, the
 macros M1–M4 and the punch-in note effects being held. It stays in effect through the following rows that have none.
-Scenes apply when a song plays, not in a quick chain. SONG REC also stores one per row as it begins.</p>
+Scenes apply when a song plays, not in a quick chain.</p>
 <h3 id="playing-sections-live-save-layer">Playing sections live (SAVE layer)</h3>
 <p>Hold <strong>SAVE</strong>:</p>
 <ul>
@@ -3563,20 +3629,18 @@ Scenes apply when a song plays, not in a quick chain. SONG REC also stores one p
   length, round and round, starting on the next bar (stopped: at once).</li>
 <li><strong>C4–F4</strong>: <strong>store</strong> the music now into A–D (works while playing; see <a href="#12-saving-and-loading">12</a> for when it
   reaches flash).</li>
-<li><strong>OCT+</strong>: store into the section playing (PLAY A SECTION FIRST if none). <strong>OCT−</strong>: recall it as stored.</li>
+<li><strong>OCT+</strong>: store into the section playing (PLAY A PART FIRST if none). <strong>OCT−</strong>: recall it as stored.</li>
 <li><strong>D5</strong>: <strong>LOOP / SONG</strong> — in SONG mode, PLAY from any page plays the arrangement.</li>
-<li><strong>E5</strong>: <strong>SONG REC</strong> — the sections you play live (and their bars) are written into the arrangement's rows, with a
-  scene each. It replaces the current rows.</li>
+<li><strong>E5</strong>: records the <strong>JAM take</strong> (V10.8; the key still reads SONG REC), as REC on JAM: see
+  <a href="#jam-and-take-home--song">JAM and TAKE</a>. Before V10.8 it wrote the sections you played into the arrangement's rows.</li>
 <li><strong>G5</strong>: jump to ARRANGE.</li>
+<li><strong>C5</strong>: NAME, on SAVE › USER, PART SLOTS or PROJECTS.</li>
 <li><strong>KNOB 1</strong>: pick another project; it switches when you let go of SAVE (stopped only) and <strong>loads its section A</strong>.</li>
 </ul>
 <hr />
 <h2 id="8-dice-and-undo">8. Dice and UNDO</h2>
 <h3 id="gen-the-song-generator-home-select">GEN — the song generator (HOME + SELECT)</h3>
-<p>Hold <strong>HOME</strong> and turn <strong>SELECT</strong>, from any page, or on HOME walk the chain with <strong>SELECT</strong> (ECO · MACROS · BEING ·
-ROUTES · <strong>GEN 1 · GEN 2 · GEN 3</strong>) or tap HOME to its next group (ECO → BEING → GEN). (0.9.2) The <strong>GENERATOR</strong> is
-HOME's last group, three ordinary pages, no longer a screen of its own: <strong>SELECT</strong> turns the page, <strong>KNOB 1–4</strong> set the
-four values shown (<strong>PRESETS</strong>: the GENRE, the generator's preset), <strong>OCT+</strong> makes the piece and <strong>OCT−</strong> goes back to
+<p>Hold <strong>HOME</strong> and turn <strong>SELECT</strong>, from any page, or on HOME walk the chain with <strong>SELECT</strong> (ECOSYSTEM · LIFE · BEING · JAM · TAKE · ARRANGE · <strong>GENERATOR 1 · 2 · 3 · 4</strong>) or tap HOME to its next group (ECOSYSTEM → BEING → SONG → GENERATOR). (0.9.2) The <strong>GENERATOR</strong> is HOME's last group, four ordinary pages, no longer a screen of its own: <strong>SELECT</strong> turns the page, <strong>KNOB 1–4</strong> set the four values shown (GENERATOR 1's <strong>KNOB 1</strong>: the GENRE; PRESETS loads the track's sounds there, as everywhere), <strong>OCT+</strong> makes the piece and <strong>OCT−</strong> goes back to
 ECO (the piece stays; <strong>UNDO</strong>, GLO + G4, brings back what was there before); every section button works from there. The panel shows the five parts as rows (the ones the page's knobs weigh lit) with a preview of
 their density and heat, the FORM's sections as coloured chips, the last piece and <strong>OCT+ MAKE</strong>. <strong>PLAY</strong> runs and stops
 the transport without leaving the screen (0.6.97).</p>
@@ -3913,11 +3977,12 @@ parameter moves up to a quarter of its range. On DRUM, both sides of every kit s
 You hear it at once under <strong>KEEP DICED SOUND?</strong> (DRUM: <strong>KEEP DICED KIT?</strong>): turn SELECT again for another roll,
 <strong>OCT+ OK</strong> keeps it, <strong>OCT− CANCEL</strong> brings back the sound you had before the first roll (only that track's sound:
 the music plays on). After OK, <strong>GLO held + G4</strong> still undoes it.</p>
-<h3 id="sequence-lfo-and-fx-dice-seq-lfo-fx-select">Sequence, LFO and FX dice (SEQ / LFO / FX + SELECT)</h3>
-<p>These dice are gone: the LFO's and the FX's (LFO + SELECT, FX + SELECT) were removed in V10.7.66 and the sequence's (SEQ + SELECT) in V10.8.21. The sound dice (EDIT + SELECT) stays.</p>
+<h3 id="sequence-lfo-and-fx-dice-gone">Sequence, LFO and FX dice (gone)</h3>
+<p>These dice are gone: the LFO's and the FX's (LFO + SELECT, FX + SELECT) were removed in V10.7.66 and the sequence's (SEQ + SELECT) in V10.8.21. The sound dice (EDIT + SELECT) stays; SEQ, LFO and FX held + SELECT now walk their section's pages.</p>
 <h3 id="macro-dice">Macro dice</h3>
-<p>With the macros open (LFO held) or latched: <strong>F3</strong> rolls new macro routes on the tracks that are sounding;
-G3 clears them. See <a href="#10-modulation-and-macros">10</a>.</p>
+<p>The LFO layer went in V10.7.66, and with it <strong>F3</strong> (new routes) and <strong>G3</strong> (clear them). Random macro routes are
+still thrown at power-on for every track that has none (two a track, never on PITCH), and by the generator on every
+track that is not muted. See <a href="#10-modulation-and-macros">10</a>.</p>
 <h3 id="undo-glo-held-g4">UNDO (GLO held + G4)</h3>
 <p>One step back over the <strong>last big change</strong>. Pressing it again goes forward (redo). The transport keeps playing.
 (V10.7) <strong>REC held alone</strong> does the same: hold REC past HOLD (~0.5 s) and let go without touching anything else (no
@@ -3926,7 +3991,7 @@ REC Q, A3 …), and a REC tap still arms recording. GLO + G4 still works.
 G4 breathes on the GLO map when there is something to undo; with nothing, it says <strong>NOTHING TO UNDO</strong>.</p>
 <p><strong>UNDO covers</strong>: DICE ALL, a sound diced, a track cleared (REC F3, TOOLS CLEAR SEQ), CLEAR ALL SEQUENCES (SEQ + REC),
 NEW PROJECT, INIT and RECALL (EDIT layer or TOOLS), clearing the automation (SEQ &gt; AUTOMATION),
-and a section loaded with <strong>SAVE &gt; SECTIONS &gt; LOAD</strong>. It restores the music as it was: sounds, steps, automation, the
+and a section loaded with <strong>SAVE › PART SLOTS › LOAD</strong>. It restores the music as it was: sounds, steps, automation, the
 kit, the punch-in lane, the macros, the tempo and global effects.</p>
 <p><strong>UNDO does not cover</strong>: section jumps, quick chains and RECALL from the SAVE layer, switching project with the SAVE
 layer's KNOB 1, CLEAR SONG, deleting a row, SONG REC, anything saved (sections, user presets), user preset loads,
@@ -3934,12 +3999,12 @@ sounds picked with PRESETS, SEQ TOOLS actions, or ordinary knob turns. It is not
 (<strong>SONG PLAYS: STOP IT TO EDIT</strong>). It keeps only one step, in RAM: it's gone after power-off.</p>
 <hr />
 <h2 id="9-effects-and-master">9. Effects and master</h2>
-<h3 id="fxs-chain-track-buses-delay-reverb-chorus-slicer-punch-master">FX's chain: TRACK · BUSES · DELAY · REVERB · CHORUS · SLICER · PUNCH · MASTER</h3>
-<p>(0.9.2; 0.9.9-snd2: MASTER last, the end of the chain) FX is one flat chain of 16 pages in eight groups, its tabs <strong>TRK · BUS · DLY · REV · CHO · SLC · PCH · MST</strong>:
+<h3 id="fxs-chain-track-buses-delay-reverb-chorus-slicer-punch-in-master">FX's chain: TRACK · BUSES · DELAY · REVERB · CHORUS · SLICER · PUNCH IN · MASTER</h3>
+<p>(0.9.2; 0.9.9-snd2: MASTER last, the end of the chain) FX is one flat chain of 19 pages in eight groups, its tabs <strong>TRK · BUS · DLY · REV · CHO · SLC · PCH · MST</strong>:
 <strong>SELECT</strong> walks every page (SENDS → DIST → AUTO PAN → BUSES → DLY → DLY 2 → DLY 3 → REVERB → REVERB 2 → CHORUS →
-SLICER → SL BUS → SL BUS 2 → SL PITCH → PUNCH → MASTER), an <strong>FX</strong> tap jumps to the next module (round), and there is
-no module picker any more (until 0.9.1 SELECT zoomed TRACK ↔ BUSES ↔ EFFECT, PRESETS picked the module and the FX tap
-its page). PRESETS loads the track's sounds, as everywhere. The pages, their knobs and their pictures are the same.</p>
+SLICER → SL BUS → SL BUS 2 → SL PITCH → PUNCH IN → MACROS → MASTER → TAPE → EQ), an <strong>FX</strong> tap jumps to the next
+module (round), and there is no module picker any more (until 0.9.1 SELECT zoomed TRACK ↔ BUSES ↔ EFFECT, PRESETS
+picked the module and the FX tap its page). PRESETS loads the track's sounds, as everywhere.</p>
 <div class="tw"><table>
 <thead>
 <tr>
@@ -3951,28 +4016,27 @@ its page). PRESETS loads the track's sounds, as everywhere. The pages, their kno
 <tbody>
 <tr>
 <td><strong>TRACK</strong></td>
-<td>SENDS (the FX page: DIST CHORUS DLY REV) · DIST · AUTO PAN</td>
-<td>The track's set: its picture (the four sends as bars, DIST's curve with TYPE and TONE, AUTO PAN's swing with WAVE and RATE) and DIST's curve small under it.</td>
+<td>SENDS (CHORUS DLY REV DIST) · DIST · AUTO PAN</td>
+<td>The track's set: its picture (the four sends as columns, DIST's curve with TYPE and TONE, AUTO PAN's swing with WAVE and RATE).</td>
 </tr>
 <tr>
 <td><strong>BUSES</strong></td>
 <td>BUSES</td>
-<td>The six modules as tiles, each its picture small: <strong>DELAY</strong> (its echoes), <strong>REVERB</strong> (its decay), <strong>CHORUS</strong> (three waves), <strong>SLICER</strong> (its 16 steps, the one playing framed), <strong>MASTER</strong> (the output now, the duck's curve), <strong>PUNCH</strong> (the lane); with LOAD ECO CHORUS and SLICER are dark ("ECO"). Knobs: <strong>DLY MIX, REV SIZE, CHORUS DEPTH, SLICER DEPTH</strong>.</td>
+<td>The modules as tiles, each its picture small; with LOAD ECO CHORUS and SLICER are dark ("ECO"). Knobs: <strong>DLY</strong> (the delay's MIX), <strong>REV</strong> (the reverb's SIZE), <strong>CHO</strong> (the chorus' DEPTH), <strong>SLC</strong> (the SLICER's DEPTH).</td>
 </tr>
 <tr>
-<td><strong>DELAY · REVERB · CHORUS · SLICER · PUNCH · MASTER</strong></td>
-<td>DLY · DLY 2 · DLY 3 — REVERB · REVERB 2 — CHORUS — SLICER · SL BUS · SL BUS 2 · SL PITCH — PUNCH — MASTER</td>
-<td>The module large: its picture, "DELAY 2/3" (its page) in the title. With LOAD ECO the chain skips CHORUS and SLICER.</td>
+<td><strong>DELAY · REVERB · CHORUS · SLICER · PUNCH IN · MASTER</strong></td>
+<td>DLY · DLY 2 · DLY 3 — REVERB · REVERB 2 — CHORUS — SLICER · SL BUS · SL BUS 2 · SL PITCH — PUNCH IN · MACROS — MASTER · TAPE · EQ</td>
+<td>The module large. PUNCH IN: the macros M1–M4 on its four cards, OCT+ the punch-in editor (V10.8.33: the lane's picture is gone); MACROS: the macros' routes. With LOAD ECO the chain skips CHORUS and SLICER.</td>
 </tr>
 </tbody>
 </table></div>
 <ul>
 <li><strong>FX from another page</strong> comes back to the FX page you left.</li>
-<li>The footer says <strong>FX · DELAY · DLY 2  6/16</strong>; the header shows the track, <strong>T1</strong>, in orange.</li>
+<li>The footer says <strong>FX · DELAY · DLY 2  6/19</strong>; the header shows the track, <strong>T1</strong>, in orange.</li>
 <li>The pictures follow the values (a turn redraws them) and, while it plays or sounds, the sound (0.8.5, FX live): the
   echoes swell with the level and a pulse runs along them, the reverb's tail swells and a line sweeps it, the chorus
-  waves run at RATE, the slicer frames the step playing, MASTER's meter follows the output, PUNCH's playhead walks the
-  lane, DIST's level is a dot on its curve, AUTO PAN's dot swings. Stopped and silent they hold still (drawn by the
+  waves run at RATE, the slicer frames the step playing, MASTER's meter follows the output, DIST's level is a dot on its curve, AUTO PAN's dot swings. Stopped and silent they hold still (drawn by the
   screen alone; nothing of the audio's time).</li>
 </ul>
 <h3 id="per-track">Per track</h3>
@@ -4118,7 +4182,11 @@ voices become one, in the middle: MIX 100 and the send whole, a vibrato. Hidden 
 <li><strong>PUNCH</strong>: fattens the DRUM tracks.</li>
 <li><strong>DUCK</strong>: the kick pulls the rest down; <strong>REL</strong> is its release.</li>
 </ul>
-<h3 id="dj-filter-091-glo-live-mano-knob-4-on-mixer-until-v1036">DJ FILTER (0.9.1, GLO › LIVE › MANO KNOB 4; on MIXER until V10.36)</h3>
+<h3 id="dj-filter-091-no-knob-on-the-device-since-v1083">DJ FILTER (0.9.1; no knob on the device since V10.8.3)</h3>
+<p><strong>Today it has no knob on the device.</strong> It was GLO › MIXER's KNOB 4 until V10.36 and GLO › LIVE's after; GLO › LIVE
+went in V10.8.3 and MIXER's KNOB 4 is the tempo. The filter itself is still in the firmware: it is reached by MIDI,
+from the web editor and by the automation a project already holds, and a project keeps its value. What follows
+describes how it sounds and how its knob behaved.</p>
 <p>One knob on the whole mix, just before CLIP and the leveler. <strong>In the middle (OFF) it is out of the chain</strong>: nothing
 is processed and the sound is exactly as without it. Turned left it is a <strong>low-pass</strong> sweeping down (darker: from
 ~15 kHz a detent off the middle to ~70 Hz at the end); turned right a <strong>high-pass</strong> sweeping up (thinner: from ~30 Hz
@@ -4289,7 +4357,7 @@ OFF). Latched effects are not recorded into the lane.</p>
 <li><strong>FX held</strong>: black keys 1–6 mute while held.</li>
 </ul>
 <h3 id="live-layers-and-the-song">Live layers and the song</h3>
-<p>The SAVE layer (section jumps on the bar, quick chains, store, recall, SONG REC) is described in
+<p>The SAVE layer (section jumps on the bar, quick chains, store, recall, the JAM take's REC) is described in
 <a href="#7-arrange-songs-sections-and-scenes">7</a>. GLO + PLAY restarts from the top without stopping.</p>
 <hr />
 <h2 id="12-saving-and-loading">12. Saving and loading</h2>
@@ -4324,7 +4392,7 @@ OFF). Latched effects are not recorded into the lane.</p>
 <tr>
 <td>A <strong>section</strong> (A–D of a project)</td>
 <td>Flash</td>
-<td><strong>SAVE &gt; SECTIONS &gt; SAVE</strong> (stopped), or <strong>SAVE layer C4–F4 / OCT+</strong></td>
+<td><strong>SAVE › PART SLOTS › SAVE</strong> (stopped), or <strong>SAVE layer C4–F4 / OCT+</strong></td>
 <td>Yes (layer stores: once you stop)</td>
 </tr>
 <tr>
@@ -4378,12 +4446,10 @@ OFF). Latched effects are not recorded into the lane.</p>
 <li>After a crash, a hang or a failed start, the autosave is not restored (the music that was playing could be what
   crashed).</li>
 </ul>
-<h3 id="saves-chain-song-project-sound">SAVE's chain: SONG · PROJECT · SOUND</h3>
-<p>(0.9.2; V10.2: composing first) SAVE is a chain of ten pages in three groups, as every section: <strong>SELECT</strong> walks
-TIMELINE → PARTS → CLIPS → SECTIONS → PROJECTS → ARRANGE → TOOLS → SAVE SONG AS → USER → PRESETS, a <strong>SAVE</strong> tap jumps to the next group (round). At
-power-on SAVE opens <strong>TIMELINE</strong>. The pages, their knobs, OCT+, the dialogs
-and the NAME screen are the ones they always were (until 0.9.1 SELECT zoomed LIBRARY ↔ PROJECT ↔ SOUND and the tap
-switched each level's two sets).</p>
+<h3 id="saves-chain-tools-project-sound">SAVE's chain: TOOLS · PROJECT · SOUND</h3>
+<p>SAVE is a chain of five pages in three groups, as every section: <strong>SELECT</strong> walks TOOLS → PART SLOTS → PROJECTS →
+USER → PRESETS, a <strong>SAVE</strong> tap jumps to the next group (round). At power-on SAVE opens <strong>PROJECTS</strong>. (The song's pages,
+JAM · TAKE · ARRANGE, are HOME's since V10.7.63; until 0.9.1 SELECT zoomed LIBRARY ↔ PROJECT ↔ SOUND.)</p>
 <div class="tw"><table>
 <thead>
 <tr>
@@ -4395,16 +4461,16 @@ switched each level's two sets).</p>
 </thead>
 <tbody>
 <tr>
-<td><strong>SONG</strong></td>
-<td>TIMELINE · PARTS · CLIPS · SECTIONS</td>
-<td>TIMELINE: the song as blocks, the row picked opened track by track; PARTS: the four parts as cards; CLIPS: six tracks × four parts (see <a href="#timeline-parts-and-clips-save--song">TIMELINE, PARTS and CLIPS</a>). / The project's four sections large, the song as a strip.</td>
-<td>ROW, SECT, BARS, VAR / PART, ROW, —, LOOP·SONG / TRACK, PART / SECT, ERASE (V10.17), LOAD, SAVE</td>
+<td><strong>TOOLS</strong></td>
+<td>TOOLS</td>
+<td>The tools as a list.</td>
+<td>TARGET, ACTION, —, DO (OCT+ held)</td>
 </tr>
 <tr>
 <td><strong>PROJECT</strong></td>
-<td>PROJECTS · ARRANGE · TOOLS · SAVE SONG AS</td>
-<td>The six projects as tiles: the number, the name (its section A's), the four sections A–D as chips (stored: in the section's colour; empty: dark); the project open tinted and framed violet, its section picked framed white. / ARRANGE's rows as chips. / The six tools as a list.</td>
-<td>PROJECT, SECT, LOAD, SAVE / ROW, SECT, BARS, SCENE (OCT+ adds a row, OCT− deletes the one picked) / the tool</td>
+<td>PART SLOTS · PROJECTS</td>
+<td>PART SLOTS: the open project's four parts large, each with its name (or USED / EMPTY). / PROJECTS: the six projects as tiles: the number, the name (its part A's), the four parts A–D as chips (stored: in the part's colour; empty: dark); the project open tinted and framed violet.</td>
+<td>PART, LOAD, ERASE (V10.17), SAVE / PROJECT, LOAD, ERASE, SAVE</td>
 </tr>
 <tr>
 <td><strong>SOUND</strong></td>
@@ -4415,44 +4481,39 @@ switched each level's two sets).</p>
 </tbody>
 </table></div>
 <ul>
-<li><strong>SAVE from another page</strong> comes back to the SAVE page you left; <strong>USER</strong> and <strong>SECTIONS</strong> come with their SAVE
-  already picked: SAVE, OCT+, OCT+ stores the sound (or the section), as before. Left on another SAVE page, go back
-  to USER with SELECT (or a SAVE tap from the PROJECT group); reached from inside, SAVE is not picked for you
-  (KNOB 4 to the right).</li>
+<li><strong>SAVE from another page</strong> comes back to the SAVE page you left; <strong>USER</strong> and <strong>PART SLOTS</strong> come with their SAVE
+  already picked: SAVE, OCT+, OCT+ stores the sound (or the part), as before. Reached from inside, SAVE is not picked
+  for you (KNOB 4 to the right).</li>
 <li>The other projects' tiles are read from the flash a project a frame (the headers only: no loading, nothing the
   audio notices) and kept until a project is saved, loaded or renamed.</li>
-<li>The footer says <strong>SAVE · PROJECT · PROJECTS  5/10</strong>. The OCT+ / OCT− hints are not drawn on these pages: the armed
+<li>The footer says <strong>SAVE · PROJECT · PROJECTS  3/5</strong>. The OCT+ / OCT− hints are not drawn on these pages: the armed
   card says OCT+.</li>
 </ul>
 <h3 id="to-save-a-project-section">To save a project section</h3>
 <ol>
 <li><strong>Stop</strong> the transport (saving needs it stopped: otherwise <strong>STOP TO SAVE</strong>).</li>
-<li>Press <strong>SAVE</strong> and turn <strong>SELECT</strong> to <strong>SECTIONS</strong> (the SONG group, fourth page), or tap <strong>SAVE</strong> again for
-   <strong>PROJECTS</strong> (the PROJECT group).</li>
-<li>On <strong>PROJECTS</strong>, <strong>KNOB 1</strong>: the project (1–6), its tile framed; <strong>KNOB 2</strong> its section. Turning KNOB 1
-   does <strong>not</strong> change the music you're playing — it only chooses where to save. (It switches projects, so do this
-   stopped.)</li>
-<li>On <strong>SECTIONS</strong>, <strong>KNOB 1</strong>: the section A–D, drawn large with its name (or USED / EMPTY) and <strong>NOW</strong> on
-   the one the music came from (its name on the big card).</li>
+<li>Press <strong>SAVE</strong> and turn <strong>SELECT</strong> to <strong>PART SLOTS</strong> (the PROJECT group's first page).</li>
+<li><strong>KNOB 1</strong>: the part A–D, drawn large with its name (or USED / EMPTY).</li>
 <li><strong>KNOB 4</strong> to the right: SAVE is picked ([OCT+]). Press <strong>OCT+</strong>.</li>
-<li>If the section already holds something: <strong>OVERWRITE PROJECT A?</strong> (with its name). OCT+ YES.</li>
+<li>If the part already holds something: <strong>OVERWRITE PROJECT A?</strong> (with its name). OCT+ YES.</li>
 <li>The <strong>NAME</strong> screen opens with a name ready. Edit it or not, then <strong>OCT+</strong> writes. <strong>OCT−</strong> cancels and writes
    nothing.</li>
 <li>The screen says <strong>SAVED</strong>.</li>
 </ol>
-<p>A section stores the music <strong>including the tempo and global effects</strong>. The <strong>project's name</strong> is its section A's name.</p>
+<p>A section stores the music <strong>including the tempo and global effects</strong>. The <strong>project's name</strong> is its section A's name.
+PART SLOTS always works on the project that is open. To write into another project, see <a href="#copying">Copying</a>.</p>
 <h3 id="to-erase-a-section-v1017">To erase a section (V10.17)</h3>
 <ol>
-<li>Stop the music. <strong>SAVE › SECTIONS</strong>, <strong>KNOB 1</strong> to the section.</li>
-<li><strong>KNOB 2</strong> to the right: <strong>ERASE</strong> is picked. Press <strong>OCT+</strong>: <strong>ERASE SECT B?</strong> (with its name).</li>
-<li><strong>OCT+</strong> erases it (<strong>OCT−</strong> cancels): the section is <strong>EMPTY</strong> again, in flash too (its chip goes dark on
-   PROJECTS). The music you are hearing stays as it is; ARRANGE / TIMELINE rows that play that section keep playing
-   the music as it is until you store something there again.</li>
+<li>Stop the music. <strong>SAVE › PART SLOTS</strong>, <strong>KNOB 1</strong> to the part.</li>
+<li><strong>KNOB 3</strong> to the right: <strong>ERASE</strong> is picked. Press <strong>OCT+</strong>: <strong>ERASE PART B?</strong> (with its name).</li>
+<li><strong>OCT+</strong> erases it (<strong>OCT−</strong> cancels): the part is <strong>EMPTY</strong> again, in flash too (its chip goes dark on
+   PROJECTS). The music you are hearing stays as it is.</li>
 </ol>
+<p>A whole project: SAVE › PROJECTS, <strong>KNOB 1</strong> the project, <strong>KNOB 3</strong> ERASE, OCT+: <strong>ERASE PROJECT n?</strong>.</p>
 <h3 id="to-load-a-section">To load a section</h3>
 <ol>
-<li>SAVE's PROJECTS: <strong>KNOB 1</strong> the project, <strong>KNOB 2</strong> the section (or SECTIONS: <strong>KNOB 1</strong> the section).</li>
-<li><strong>KNOB 3</strong> to the right (LOAD), press <strong>OCT+</strong>. The screen says <strong>LOADED</strong>.</li>
+<li><strong>SAVE › PART SLOTS</strong>, <strong>KNOB 1</strong> the part.</li>
+<li><strong>KNOB 2</strong> to the right (LOAD), press <strong>OCT+</strong>.</li>
 </ol>
 <p>LOAD <strong>stops playback</strong> and replaces the music: sounds, steps, automation, the kit, the punch-in lane, the macros,
 and the <strong>tempo, effects, MIDI routing and clock settings</strong> stored with it. The arrangement stays. If you didn't mean
@@ -4463,14 +4524,15 @@ the section playing. This works <strong>while playing</strong>, without naming. 
 when you stop</strong>. If you power off before stopping, it's lost — so stop before switching off.</p>
 <h3 id="copying">Copying</h3>
 <ul>
-<li><strong>A section to another letter</strong>: LOAD it, then SAVE it into the other letter.</li>
-<li><strong>A section to another project</strong>: LOAD it, turn KNOB 1 to the other project (the music stays), SAVE into a letter.</li>
-<li><strong>"Save as" a new project</strong>: with your music playing, stop, go to SAVE's PROJECTS, turn KNOB 1 to an empty project
-  and SAVE into A (SAVE &gt; PROJECTS).</li>
+<li><strong>A section to another letter</strong>: LOAD it, then SAVE it into the other letter (SAVE › PART SLOTS).</li>
+<li><strong>The whole song to another project</strong> ("save as"): stopped, SAVE › PROJECTS, <strong>KNOB 1</strong> to the other project (it is
+  not opened), <strong>KNOB 4</strong> SAVE, <strong>OCT+</strong> (see <a href="#save-song-as-save--project">SAVE SONG AS</a>). On the NAME screen
+  <strong>KNOB 3</strong> picks SONG (everything) or LOOP (the music now, alone).</li>
 </ul>
 <h3 id="switching-projects">Switching projects</h3>
 <ul>
-<li>On <strong>SAVE &gt; PROJECTS, KNOB 1</strong> changes project but <strong>keeps the music</strong> (to store it there or load one of its sections).</li>
+<li>On <strong>SAVE › PROJECTS, KNOB 1</strong> only picks a project (V10.7.20): nothing is opened. <strong>KNOB 2</strong> LOAD + OCT+ opens it,
+  <strong>KNOB 4</strong> SAVE + OCT+ writes the song you have into it, <strong>KNOB 3</strong> ERASE + OCT+ empties it.</li>
 <li>With the <strong>SAVE layer's KNOB 1</strong> (hold SAVE, turn, let go) the project changes <strong>and its section A becomes the
   music</strong> (if it has one). The previous music is replaced and <strong>UNDO cannot bring it back</strong> — save it first.</li>
 <li>Both need the transport stopped (<strong>STOP TO CHANGE PROJECT</strong> / <strong>STOP TO CHANGE SONG</strong>). Sections stored with the
@@ -4478,7 +4540,7 @@ when you stop</strong>. If you power off before stopping, it's lost — so stop 
 </ul>
 <h3 id="naming-the-name-screen">Naming (the NAME screen)</h3>
 <p>Opens when you save a section or a user preset, and with <strong>SAVE held + C5</strong> (NAME, 0.9.2; until 0.9.1 an EDIT tap)
-on SAVE &gt; USER, SECTIONS or PROJECTS (renames the selected slot, section or project; only the name is written). Up to 12 characters, upper case.</p>
+on SAVE › USER, PART SLOTS or PROJECTS (renames the selected slot, part or project; only the name is written). Up to 12 characters, upper case.</p>
 <div class="tw"><table>
 <thead>
 <tr>
