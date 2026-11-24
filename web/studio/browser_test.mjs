@@ -5,6 +5,7 @@
 // - the screen: SCREEN on, frames decoded and painted, full screen square in portrait and landscape;
 // - install safety: an installer's "busy" on jiant-midi (from another tab): Studio answers "released", lets the FM-1 go,
 //   stops the screen and refuses to find it again until the installer says it has finished;
+// - the emulator's panel whole in its frame, and full screen; the other devices' shots and their manuals;
 // - target Emulator (when build/emu holds an emulator with the editor, web/emu/build.sh): the emulator switched on in its
 //   frame, the editor beside it connects to it and a preset picked there changes the emulator's screen; its output recorded.
 import { spawn } from "node:child_process";
@@ -70,6 +71,31 @@ try {
     ok(lanes.length === 10 && lanes[0] === "T1 · DRUM" && lanes[8] === "VOX" && lanes[9] === "DRY" &&
        ["T1", "T6", "FX", "VOX", "DRY"].every((l) => files.some((f) => f.startsWith(l))) && files.length >= 11 && !lanes.some((l) => / · -$/.test(l)),
       `record, STEMS+IN: 10 lanes (${lanes[0]} … ${lanes[9]}), a WAV a stem, the ZIP and the mix`);
+  }
+  /* the emulator's whole panel in its frame, and full screen (the panel refitted to it) */
+  {
+    const e = await page("?target=emu#emu", { width: 1280, height: 800 });
+    await e.waitForTimeout(1500);
+    const fit = () => e.evaluate(() => { const f = document.getElementById("f-emu"), d = f.contentDocument.getElementById("device");
+      return d ? { bottom: d.getBoundingClientRect().bottom, frame: f.clientHeight, w: d.getBoundingClientRect().width } : null; });
+    const a = await fit();
+    await e.click("#emufull"); await e.waitForTimeout(900);
+    const fsOn = await e.evaluate(() => (document.fullscreenElement && document.fullscreenElement.id) || (document.getElementById("emubox").classList.contains("max") ? "emubox" : ""));
+    const z = await fit();
+    ok(a && a.bottom <= a.frame + 1 && fsOn === "emubox" && z.bottom <= z.frame + 1 && z.w > a.w,
+      `the emulator whole in its frame (${a && Math.round(a.bottom)} of ${a && a.frame} px), full screen larger (${z && Math.round(z.w)} px wide)`);
+  }
+  /* other devices: each port's shots (a tap: the dialog), its manual in HTML */
+  {
+    const d = await page("#ports", { width: 1280, height: 900 });
+    await d.click('nav.views [data-go="ports"]'); await d.waitForTimeout(1500);
+    const r = await d.evaluate(() => ({ imgs: [...document.querySelectorAll("#portlist .pic img")].map((i) => i.naturalWidth),
+      thumbs: document.querySelectorAll("#portlist .thumbs button").length,
+      manuals: [...document.querySelectorAll("#portlist a")].filter((a) => a.href.includes("/docs/guide/")).length }));
+    await d.click("#portlist .picopen"); await d.waitForTimeout(400);
+    const open = await d.evaluate(() => document.getElementById("shotdlg").open && document.getElementById("shotimg").naturalWidth > 0);
+    ok(r.imgs.length === 3 && r.imgs.every((w) => w > 0) && r.thumbs === 3 && r.manuals === 5 && open,
+      `other devices: ${r.imgs.length} ports with their shots, the plugin's 3, ${r.manuals} manuals in HTML, a shot opens large`);
   }
   /* install safety */
   const other = await p.context().newPage();               // (the same browser profile: BroadcastChannel reaches it)

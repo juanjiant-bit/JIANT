@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>JIANT FM on the MPC Sample · Manual</title>
+<meta name="description" content="JIANT as the MPC Sample&#x27;s whole instrument, started from the microSD card: its screen, pads, buttons and knobs as the FM-1&#x27;s panel, with the SAMPLE and GRAIN engines, DRUM-X with samples and 16 sample slots. Preview: testers wanted.">
+<meta name="theme-color" content="#050409">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#050409;--surf:#0b0912;--raise:#100e18;--line:rgba(239,230,200,.14);--fg:#efe6c8;--mid:#c9c1d8;--dim:#a39bb6;
+--accent:#ff7a1a;--vio:#b870ff;--cyan:#3fe0e6;--heat:linear-gradient(90deg,#6b5cff,#b870ff 35%,#ff4bb0 60%,#ff7a1a 85%,#ffd34d);
+--display:"Michroma","Segoe UI",system-ui,sans-serif;--body:"Instrument Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.65;
+ background-image:radial-gradient(900px 420px at 85% -120px,rgba(184,112,255,.16),transparent 70%),radial-gradient(700px 360px at -10% 0,rgba(255,122,26,.08),transparent 70%);background-repeat:no-repeat}
+.top{position:sticky;top:0;z-index:5;background:rgba(5,4,9,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .in{max-width:1240px;margin:0 auto;padding:12px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:14px 22px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-size:17px;letter-spacing:.04em;color:var(--fg);text-decoration:none;white-space:nowrap}
+.brand b{font-weight:400;background:var(--heat);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand small{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--dim);margin-left:8px;text-transform:uppercase}
+.docs{display:flex;gap:4px;flex-wrap:wrap}
+.docs a{font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--dim);text-decoration:none;padding:6px 10px;border:1px solid transparent;border-radius:8px}
+.docs a:hover{color:var(--fg)}
+.docs a[aria-current="page"]{color:var(--fg);border-color:var(--line);background:var(--surf)}
+.layout{max-width:1240px;margin:0 auto;padding-block:28px 72px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;grid-template-columns:270px minmax(0,1fr);gap:44px}
+@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr);gap:16px}}
+nav.toc{position:sticky;top:76px;align-self:start;max-height:calc(100vh - 96px);overflow:auto;font-size:14px;padding-right:12px}
+@media (max-width:900px){nav.toc{position:static;max-height:none;padding-right:0}}
+nav.toc details{border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--surf)}
+nav.toc summary{cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan)}
+nav.toc ul{list-style:none;margin:8px 0 0;padding-left:0}
+nav.toc ul ul{padding-left:12px;border-left:1px solid var(--line);margin:2px 0 6px 2px}
+nav.toc a{color:var(--dim);text-decoration:none;display:block;padding:3px 0;line-height:1.35}
+nav.toc a:hover,nav.toc a:focus-visible,nav.toc a.here{color:var(--fg)}
+nav.toc a.here{box-shadow:inset 2px 0 0 var(--accent);padding-left:8px}
+main{min-width:0;max-width:840px}
+.hero{position:relative;padding:26px 26px 22px;margin:0 0 26px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,rgba(184,112,255,.07),transparent 70%),var(--surf);overflow:hidden}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--heat);opacity:.8}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);margin:0 0 10px}
+.hero h1{margin:0 0 10px}
+.hero .lead{color:var(--mid);margin:0 0 16px;max-width:64ch}
+.hero img.shot{display:block;width:100%;margin:6px 0 16px;border:1px solid var(--line);border-radius:10px}
+.bar{display:flex;flex-wrap:wrap;gap:8px}
+.btn{font-family:var(--body);font-weight:600;font-size:14px;text-decoration:none;color:var(--fg);border:1px solid var(--line);background:var(--raise);border-radius:10px;padding:8px 14px}
+.btn.go{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn:hover,.btn:focus-visible{border-color:var(--accent);outline:none}
+h1,h2,h3,h4{font-family:var(--display);font-weight:400;line-height:1.2;text-wrap:balance;scroll-margin-top:84px;letter-spacing:.01em}
+h1{font-size:clamp(26px,4.6vw,42px)}
+h1 .fm{background:var(--heat);-webkit-background-clip:text;background-clip:text;color:transparent}
+main>h1:first-of-type{display:none}
+h2{font-size:clamp(19px,2.6vw,25px);margin:56px 0 14px;padding-top:18px;border-top:1px solid var(--line);position:relative}
+h2::before{content:"";position:absolute;top:-1px;left:0;width:56px;height:2px;background:var(--heat)}
+h3{font-size:17px;margin:34px 0 8px;color:var(--fg)}
+h4{font-size:14px;margin:24px 0 6px;color:var(--mid);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase}
+p,li{max-width:74ch}
+li{margin:3px 0}
+strong{color:#fff3ce;font-weight:600}
+a{color:var(--vio);text-underline-offset:3px}
+a:hover{color:var(--accent)}
+code,kbd{font-family:var(--mono);font-size:.86em}
+code{background:var(--raise);border:1px solid var(--line);border-radius:5px;padding:1px 5px;color:#fff3ce}
+kbd{background:#16131f;border:1px solid rgba(255,122,26,.45);border-bottom-width:2px;border-radius:6px;padding:0 6px;white-space:nowrap;color:#ffd9b8}
+.tw{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:12px;background:var(--surf)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);font-weight:500;background:rgba(63,224,230,.04)}
+tbody tr:hover td{background:rgba(184,112,255,.05)}
+img{max-width:100%;height:auto;border-radius:10px}
+pre{overflow-x:auto;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+pre code{background:none;border:0;padding:0;color:var(--mid)}
+blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--vio);background:rgba(184,112,255,.06);border-radius:0 10px 10px 0;color:var(--mid)}
+blockquote p{margin:4px 0}
+hr{border:0;border-top:1px solid var(--line);margin:36px 0}
+.ess{position:relative;background:var(--surf);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin:8px 0 26px}
+.ess h2{margin:0 0 8px;border:0;padding:0}
+.ess h2::before{display:none}
+.ess h3{font-size:12px;margin:18px 0 8px;color:var(--cyan);font-family:var(--mono);letter-spacing:.16em;text-transform:uppercase}
+.ess dl{display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:8px 18px;margin:0}
+.ess dt{min-width:0}
+.ess dd{margin:0;min-width:0;color:var(--mid)}
+@media (max-width:600px){.ess dl{grid-template-columns:minmax(0,1fr)}.ess dd{margin-bottom:8px}}
+footer{max-width:1240px;margin:0 auto;padding:24px 16px 40px;color:var(--dim);font-size:13px;border-top:1px solid var(--line)}
+footer a{color:var(--dim)}
+@media print{.top,nav.toc,.bar{display:none}.layout{display:block}body{background:#fff;color:#000}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in"><a class="brand" href="https://juanjiant-bit.github.io/JIANT/studio/">JIANT <b>FM</b><small>Manuals</small></a><nav class="docs" aria-label="Manuals"><a href="manual.html">JIANT FM · FM-1</a><a href="smk37.html">SMK-37</a><a href="mpc-sample.html" aria-current="page">MPC Sample</a><a href="ports.html">MPC plugin · ports</a><a href="plugin.html">VST3 · AU · LV2</a></nav></div></header>
+<div class="layout">
+<nav class="toc" aria-label="Contents"><details open><summary>Contents</summary>
+<ul>
+<li><a href="#build">Build</a></li>
+<li><a href="#samples-sample-grain-and-drum-xs-sample-layer">Samples: SAMPLE, GRAIN and DRUM-X's sample layer</a><ul>
+<li><a href="#the-card">The card</a></li>
+<li><a href="#the-sample-browser">The SAMPLE BROWSER</a></li>
+<li><a href="#sample-one-shot-experimental">SAMPLE (one shot, experimental)</a></li>
+<li><a href="#grain-granular">GRAIN (granular)</a></li>
+<li><a href="#drum-xs-sample-layer">DRUM-X's sample layer</a></li>
+</ul>
+</li>
+<li><a href="#the-web-editor-not-yet">The web editor: not yet</a></li>
+<li><a href="#release">Release</a></li>
+<li><a href="#licences">Licences</a></li>
+</ul>
+
+</details></nav>
+<main>
+<section class="hero"><p class="eyebrow">Manual · Akai MPC Sample</p><h1>JIANT <span class="fm">FM</span> on the MPC Sample</h1>
+<p class="lead">JIANT as the MPC Sample&#x27;s whole instrument, started from the microSD card: its screen, pads, buttons and knobs as the FM-1&#x27;s panel, with the SAMPLE and GRAIN engines, DRUM-X with samples and 16 sample slots. Preview: testers wanted.</p><div class="bar"><a class="btn go" href="https://github.com/juanjiant-bit/JIANT/releases">Download</a><a class="btn" href="https://juanjiant-bit.github.io/JIANT/emu/devices.html#mpc">Try it in the browser</a><a class="btn" href="https://juanjiant-bit.github.io/JIANT/studio/#ports">JIANT Studio</a><a class="btn" href="https://github.com/juanjiant-bit/JIANT/blob/main/ports/mpc-sample/README.md">GitHub</a></div></section>
+<h1 id="jiant-fm-on-the-akai-mpc-sample">JIANT FM on the Akai MPC Sample</h1>
+<p>JIANT FM as the MPC Sample's whole instrument, independent of any other app: the firmware's core
+(<a href="https://github.com/juanjiant-bit/JIANT/blob/main/ports/core"><code>ports/core</code></a>) at the MPC's 44.1 kHz in 128-frame blocks (the FM-1's own block), JIANT's 240 x 240 screen in
+the middle of the MPC's 320 x 240, the MPC's pads, buttons and knobs as the FM-1's panel, MIDI in from the DIN and USB
+ports, and the device's flash kept on the card. It runs in place of the stock app, started from the microSD card, on
+<a href="https://github.com/keremimo/sample-base">sample-base</a> by keremimo (the runtime Melodee uses: the hardware, the
+threads, the SD boot and the way back to the stock app).</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/juanjiant-bit/JIANT/blob/main/ports/mpc-sample/src/jiant/jiant_app.cpp"><code>src/jiant/jiant_app.cpp</code></a></td>
+<td>the app: audio, screen, lights, MIDI, the flash on the card</td>
+</tr>
+<tr>
+<td><a href="https://github.com/juanjiant-bit/JIANT/blob/main/ports/mpc-sample/src/jiant/panel_map.h"><code>src/jiant/panel_map.h</code></a></td>
+<td>the MPC's surface as the FM-1's panel (the table is at its top)</td>
+</tr>
+<tr>
+<td><a href="https://github.com/juanjiant-bit/JIANT/blob/main/ports/mpc-sample/src/jiant/sample_browser.h"><code>src/jiant/sample_browser.h</code></a></td>
+<td>the SAMPLE BROWSER's controls (the table is at its top)</td>
+</tr>
+<tr>
+<td><a href="https://github.com/juanjiant-bit/JIANT/blob/main/ports/mpc-sample/src/jiant/sample_files.cpp"><code>src/jiant/sample_files.cpp</code></a></td>
+<td>the slots' files: WAV in and out, <code>slots.json</code></td>
+</tr>
+<tr>
+<td><a href="https://github.com/juanjiant-bit/JIANT/blob/main/ports/mpc-sample/src/main.cpp"><code>src/main.cpp</code></a></td>
+<td>the runtime, and the tools: <code>--self-test</code>, <code>--preview</code>, <code>--persist-write</code> / <code>--persist-read</code>, <code>--samples-write</code> / <code>--samples-read</code></td>
+</tr>
+<tr>
+<td><a href="https://github.com/juanjiant-bit/JIANT/blob/main/ports/mpc-sample/release/README.txt"><code>release/README.txt</code></a></td>
+<td>what the user reads: install, the controls, where the music is kept</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="build">Build</h2>
+<pre><code class="language-sh">ports/mpc-sample/build.sh test      # here (Linux): the app, its tests, build/preview.png
+ports/mpc-sample/build.sh docker    # the MPC's ARM64 build in sample-base's image (Docker or Podman)
+</code></pre>
+<p><code>build.sh</code> fetches sample-base at a pinned commit into <code>build/sample-base</code> and JUCE into <code>build/deps</code>. On an ARM64
+Linux (or an ARM64 chroot under qemu-user) <code>build.sh</code> alone makes the MPC's binary; it must run on glibc 2.36 or older
+(Debian bookworm, Ubuntu 22.04).</p>
+<p>The tests: the control map and the SAMPLE BROWSER's (<code>tests/panel_map_test.cpp</code>), a note through the whole firmware
+(<code>--self-test</code>, which the SD boot also runs before it starts JIANT), the screen (<code>--preview</code>), the music saved on the
+card coming back in a new process (<code>--persist-write</code>, <code>--persist-read</code>), and the samples (<code>--samples-write</code>,
+<code>--samples-read</code>: slots loaded from a 24-bit 48 kHz stereo and a float 22.05 kHz mono WAV through <code>slots.json</code>, a bar of
+JIANT's output recorded into slot 5 and written as <code>slot05.wav</code>, found again sample for sample by a new process; the
+browser drawn, <code>build/samples/browser.png</code>). The engines themselves are tested in the core (<code>ports/core/build.sh test</code>).</p>
+<h2 id="samples-sample-grain-and-drum-xs-sample-layer">Samples: SAMPLE, GRAIN and DRUM-X's sample layer</h2>
+<p>On the big CPUs (this app, the MPC plugin, the desktop plugins: <code>FELUCCA_HOST_POWER</code>, <a href="https://github.com/juanjiant-bit/JIANT/blob/main/ports/core"><code>ports/core</code></a>) JIANT has
+16 sample slots of up to 60 s each (mono or stereo, 44.1 kHz) and plays them three ways: the <strong>SAMPLE</strong> engine (one shot,
+experimental), the <strong>GRAIN</strong> engine (granular) and a sample layer on every sound of <strong>DRUM-X</strong>. On the FM-1 none of this
+exists: a project made here opens there with SAMPLE and GRAIN tracks as ANALOG and DRUM-X as its synthesized kit.</p>
+<h3 id="the-card">The card</h3>
+<p><code>JIANT/Samples</code> holds the WAVs (16 or 24-bit PCM, 32-bit float; mono or stereo; any rate: resampled to 44.1 kHz when
+loaded) and <code>slots.json</code>, which names the file of each slot (<code>{"1": "kick.wav", "5": "slot05.wav"}</code>). The app loads them
+at start. A slot JIANT changed itself (a recording, DESTROY) is written back as <code>Samples/slotNN.wav</code> a second after it
+stops changing, and <code>slots.json</code> then names it.</p>
+<h3 id="the-sample-browser">The SAMPLE BROWSER</h3>
+<p><strong>SAMPLE</strong> opens it over the screen (the app owns the pads and these buttons while it is open):</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Control</th>
+<th>In the browser</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pads 1..16</td>
+<td>pick the slot (dim: it holds a sample; bright: the one picked)</td>
+</tr>
+<tr>
+<td>wheel</td>
+<td>scroll the files of <code>JIANT/Samples</code></td>
+</tr>
+<tr>
+<td>left button above the screen</td>
+<td>CLOSE (or SAMPLE again)</td>
+</tr>
+<tr>
+<td>middle button above the screen</td>
+<td>AUDITION the file (again: stop)</td>
+</tr>
+<tr>
+<td>right button above the screen</td>
+<td>LOAD the file into the slot</td>
+</tr>
+<tr>
+<td>ERASE</td>
+<td>CLEAR the slot</td>
+</tr>
+<tr>
+<td>SAMPLE SELECT</td>
+<td>the source to record: LINE, MIC, USB, RESAMPLE (JIANT's own output)</td>
+</tr>
+<tr>
+<td>SAMPLE REC</td>
+<td>record the source into the slot from now (again: stop; 60 s at most)</td>
+</tr>
+</tbody>
+</table></div>
+<p>The screen shows the slot (its name, length, mono / stereo, or EMPTY), the files, the source and RECORDING with its
+seconds. LINE and MIC set the MPC's input route; USB records what the input gives without a route of its own (USB-C
+audio in is not wired yet).</p>
+<h3 id="sample-one-shot-experimental">SAMPLE (one shot, experimental)</h3>
+<p>Pages: SAMPLE and WARP (EDIT 1 and 2), then TRIG and REC (EDIT's SAMPLE group). The picture shows the slot's name, its
+waveform with START..END lit, the slices, the playheads, and RECORDING.</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Page</th>
+<th>Control</th>
+<th>Range (default)</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SAMPLE</td>
+<td>SLOT</td>
+<td>1..16 (1)</td>
+<td>the slot played; its label reads EMPTY when the slot is empty (silent)</td>
+</tr>
+<tr>
+<td></td>
+<td>START</td>
+<td>0..100 % (0)</td>
+<td>where it starts</td>
+</tr>
+<tr>
+<td></td>
+<td>LENGTH</td>
+<td>0..100 % of what follows START (100)</td>
+<td>where it ends</td>
+</tr>
+<tr>
+<td></td>
+<td>MODE</td>
+<td>ONE GATE LOOP PING REV SLICE SCRUB TAPE (ONE)</td>
+<td>see below</td>
+</tr>
+<tr>
+<td>WARP</td>
+<td>TUNE</td>
+<td>-24..+24 st (0)</td>
+<td>on the key's pitch: C4 plays the original speed</td>
+</tr>
+<tr>
+<td></td>
+<td>FEEDBK</td>
+<td>0..100 % (0)</td>
+<td>a comb tuned to the note inside the voice; near the top it rings by itself, soft-limited</td>
+</tr>
+<tr>
+<td></td>
+<td>TONE</td>
+<td>0..100 % (50)</td>
+<td>the comb's damping: dark .. bright</td>
+</tr>
+<tr>
+<td></td>
+<td>DSTROY</td>
+<td>0..100 % (0)</td>
+<td>the voice's output written back into the slot's working copy where it reads: each hit wears it. The loaded original is never touched; reloading the file brings it back</td>
+</tr>
+<tr>
+<td>TRIG</td>
+<td>TRIG</td>
+<td>NORM CHOKE RATCH RAND ROUND VEL LEGAT CHNCE (NORM)</td>
+<td>see below</td>
+</tr>
+<tr>
+<td></td>
+<td>AMOUNT</td>
+<td>0..100 % (50); its label by TRIG</td>
+<td>COUNT (RATCH: 2..16 hits), RANGE (RAND, VEL), SLOTS (ROUND: 1..16), CHANCE</td>
+</tr>
+<tr>
+<td></td>
+<td>RATE</td>
+<td>1/4 1/8 1/8T 1/16 16T 1/32 (1/16)</td>
+<td>RATCH: the hits' distance at the tempo</td>
+</tr>
+<tr>
+<td></td>
+<td>SLICES</td>
+<td>2..64 (16)</td>
+<td>SLICE: the region in so many equal slices</td>
+</tr>
+<tr>
+<td>REC</td>
+<td>REC</td>
+<td>OFF, then IN / MST / T1..T6 x 1 2 4 8 bars or H (OFF)</td>
+<td>arms a recording into SLOT: the device's input, JIANT's master or a track, from the next bar (at once when stopped), for so many bars (H: until set to OFF); it shows ARMED, then REC, and goes back to OFF when done</td>
+</tr>
+<tr>
+<td></td>
+<td>WOW</td>
+<td>0..100 % (31)</td>
+<td>TAPE: wow and flutter; SCRUB: SMOOTH, how slowly the playhead slides</td>
+</tr>
+<tr>
+<td></td>
+<td>STOP</td>
+<td>0..100 % (50)</td>
+<td>TAPE: the slow stop's time after the release (50 ms .. 4 s)</td>
+</tr>
+<tr>
+<td></td>
+<td>DECAY</td>
+<td>0..100 % (50)</td>
+<td>RATCH: how much each hit falls</td>
+</tr>
+</tbody>
+</table></div>
+<p>MODE: <strong>ONE</strong> plays START..END once, the release ignored. <strong>GATE</strong> stops on the release (the ADSR's). <strong>LOOP</strong> loops
+the region while held, <strong>PING</strong> forth and back. <strong>REV</strong> plays it backwards once. <strong>SLICE</strong> cuts the region into SLICES:
+C4 plays slice 1, C#4 slice 2 and so on, each at its own speed (TUNE on it). <strong>SCRUB</strong>: the velocity (and the part's
+SHAPE: the LFO, the envelope, the matrix) sends the playhead; it plays a short loop where it stands and slides, as a
+scratch, to where it is sent. <strong>TAPE</strong>: wow and flutter, and on the release a slow stop down to silence.</p>
+<p>TRIG: <strong>NORM</strong> polyphonic. <strong>CHOKE</strong> one voice, each hit restarts. <strong>RATCH</strong> repeats the hit at RATE, COUNT times,
+each DECAY lower. <strong>RAND</strong> a random start (SLICE: a random slice) within AMOUNT of the region. <strong>ROUND</strong> the next of
+AMOUNT slots from SLOT at each hit (round robin). <strong>VEL</strong> the velocity picks the start (SLICE: the slice). <strong>LEGAT</strong> a new
+note goes on from where the last one was. <strong>CHNCE</strong> each hit plays with AMOUNT's probability.</p>
+<p>Presets: ONE SHOT, GATE, LOOP, PING PONG, REVERSE, SLICE 16, SLICE 8, RANDOM SLC, VEL SLICE, SCRUB, TAPE STOP, RATCHET,
+CHOKE, ROUND ROBIN, LEGATO, CHANCE, FEEDBACK, METAL COMB, DESTROY, RESAMPLE.</p>
+<h3 id="grain-granular">GRAIN (granular)</h3>
+<p>Each voice runs its own cloud of up to 48 grains; the key sets their pitch (C4 the original), WIDTH spreads them in
+stereo. Pages: GRAIN and CLOUD, then TRAVEL, SOURCE and PITCH. The picture shows the waveform (or the last seconds of the
+LIVE input), the region, the playheads and the grains.</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Page</th>
+<th>Control</th>
+<th>Range (default)</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GRAIN</td>
+<td>SLOT</td>
+<td>1..16 (1)</td>
+<td>the slot (EMPTY: silent); LIVE sources ignore it</td>
+</tr>
+<tr>
+<td></td>
+<td>POS</td>
+<td>0..100 % (0)</td>
+<td>where the playhead's region starts (the part's SHAPE moves it); LIVE: AGO, how far back (50 ms .. 5.5 s)</td>
+</tr>
+<tr>
+<td></td>
+<td>SCAN</td>
+<td>-64..+63 (0)</td>
+<td>the playhead's speed, 0 frozen; STRETCH: the factor (0.1x .. 1x .. 4x); RAND: JUMPS, how often</td>
+</tr>
+<tr>
+<td></td>
+<td>SIZE</td>
+<td>0..100 % (50)</td>
+<td>a grain's length, 5 ms .. 500 ms</td>
+</tr>
+<tr>
+<td>CLOUD</td>
+<td>DENSE</td>
+<td>0..100 % (55)</td>
+<td>grains a second, 1 .. 200, overlapping</td>
+</tr>
+<tr>
+<td></td>
+<td>SPRAY</td>
+<td>0..100 % (8)</td>
+<td>random position jitter, up to +-0.5 s</td>
+</tr>
+<tr>
+<td></td>
+<td>SPREAD</td>
+<td>0..100 % (0)</td>
+<td>random detune of each grain, up to +-12 st (QUANT: octaves or fifths)</td>
+</tr>
+<tr>
+<td></td>
+<td>REVRS</td>
+<td>0..100 % (0)</td>
+<td>the share of grains played backwards</td>
+</tr>
+<tr>
+<td>TRAVEL</td>
+<td>TRAVEL</td>
+<td>FWD REV PING RAND STRCH FREEZ KEY (FWD)</td>
+<td>the playhead in its region: forward or backward at SCAN, forth and back, random jumps, time-stretch (real time x SCAN's factor, the pitch the key's), frozen at POS, or the note picks the place (C2 .. C6 across the region)</td>
+</tr>
+<tr>
+<td></td>
+<td>REGION</td>
+<td>0..100 % of what follows POS (100)</td>
+<td>the region's length</td>
+</tr>
+<tr>
+<td></td>
+<td>FEEDBK</td>
+<td>0..100 % (0)</td>
+<td>the cloud's output fed back as the grains' input with the slot (1 s, soft-limited)</td>
+</tr>
+<tr>
+<td></td>
+<td>SHIMMR</td>
+<td>OFF +OCT +5TH -OCT +2OCT (OFF)</td>
+<td>the fed-back grains shifted: shimmer</td>
+</tr>
+<tr>
+<td>SOURCE</td>
+<td>WINDOW</td>
+<td>HANN TRI FLAT PERC SWELL (HANN)</td>
+<td>the grain's shape</td>
+</tr>
+<tr>
+<td></td>
+<td>WIDTH</td>
+<td>0..100 % (50)</td>
+<td>the stereo spread</td>
+</tr>
+<tr>
+<td></td>
+<td>SOURCE</td>
+<td>SLOT IN MST (SLOT)</td>
+<td>the slot, or LIVE: the device's input or JIANT's master as it plays (a granular delay; FREEZ holds it)</td>
+</tr>
+<tr>
+<td></td>
+<td>REC</td>
+<td>as SAMPLE's</td>
+<td>records into SLOT</td>
+</tr>
+<tr>
+<td>PITCH</td>
+<td>QUANT</td>
+<td>FREE OCT 5TH (FREE)</td>
+<td>SPREAD's detune free, in octaves, or in fifths and octaves</td>
+</tr>
+<tr>
+<td></td>
+<td>DAMP</td>
+<td>0..100 % (100)</td>
+<td>the feedback's tone</td>
+</tr>
+</tbody>
+</table></div>
+<p>Presets: CLOUD, FROZEN CLOUD, SCAN, STRETCH 0.5X, STRETCH 2X, SHIMMER, SPRAY, OCTAVES, REVERSE, GLITCH, KEY POSITION,
+LIVE DELAY, LIVE FREEZE, FEEDBACK.</p>
+<h3 id="drum-xs-sample-layer">DRUM-X's sample layer</h3>
+<p>On a DRUM track, EDIT's SAMPLE group (pages SAMPLES and SAMPLES 2). With SMORPH at 0 (every preset) DRUM-X is exactly
+the FM-1's.</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Control</th>
+<th>Range (default)</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SMORPH</td>
+<td>0..100 % (0)</td>
+<td>each hit from its synthesized sound (0) to its sample (100)</td>
+</tr>
+<tr>
+<td>BLEND</td>
+<td>XFADE S&gt;B B&gt;S FOLW RING (XFADE)</td>
+<td>a crossfade; the synth's transient on the sample's body; the sample's transient on the synth's body; the sample following the synth's amplitude; one ringing the other</td>
+</tr>
+<tr>
+<td>SLOT</td>
+<td>1..16 (1)</td>
+<td>the first slot</td>
+</tr>
+<tr>
+<td>MAP</td>
+<td>SLOTS LANES KEYS (SLOTS)</td>
+<td>SLOTS: each sound its slot (kick SLOT, snare SLOT + 1 .. bell SLOT + 7; a hit at velocity 100 or more plays SLOT + 8 + its lane when that holds a sample: the velocity layer). LANES: SLOT cut in 8, each sound its slice. KEYS: SLOT cut in 16, GM note 36 + n its slice n (a sliced kit)</td>
+</tr>
+<tr>
+<td>SLEVEL</td>
+<td>0..100 % (100)</td>
+<td>the sample's level</td>
+</tr>
+</tbody>
+</table></div>
+<p>The kit's TUNE and each sound's GM pitch tune its sample, DECAY below its middle shortens it, DRIVE and the drum bus shape
+the sum as ever, and a closed hat chokes the open one's sample as its synth. CHANCE, the lanes' ratchets and TOUCH are the
+sequencer's, as for the synth.</p>
+<h2 id="the-web-editor-not-yet">The web editor: not yet</h2>
+<p>The MPC Sample is a USB MIDI device to a computer (its USB-C gadget, <code>f_midi</code>, shown as "MPC Sample"), both ways, and
+sample-base hands the app every packet from it, SysEx included (<code>App::midi</code>), and lets it send (<code>App::midi_output</code>).
+But this app drops SysEx and sends nothing, so <a href="https://github.com/juanjiant-bit/JIANT/blob/main/web/editor.html">the web editor</a> gets no answer from it (the editor
+says so in its MIDI ports' help). The firmware's side is ready: the core answers the editor (<code>jiant_sysex</code>,
+<code>jiant_sysex_out</code>, <code>jiant_editor_host(4)</code> so it shows as "MPC Sample"; <code>ports/core/core_test.c</code>), and the JUCE standalone
+app uses it. What the app still needs, untested without a unit: the requests from the MIDI thread to the audio thread
+(where the core runs) through a lock-free byte ring, the replies back the same way and out to the port the request came
+from; and a reply longer than sample-base's 256-byte <code>MidiPacket</code> (DUMP is about 400 bytes) sent as consecutive
+packets, which needs checking that its output queue keeps a SysEx split that way in one piece.</p>
+<h2 id="release">Release</h2>
+<pre><code class="language-sh">python3 ports/mpc-sample/tools/make_release.py v10.7.64-mpc1 --binary &lt;the ARM64 build&gt;
+</code></pre>
+<p>writes <code>ports/mpc-sample/dist/JIANT-FM-MPC-Sample-&lt;version&gt;.zip</code>: an <code>autorun</code> folder for the top of the card (signed as
+the MPC wants it), the README and the licences.</p>
+<h2 id="licences">Licences</h2>
+<p>JIANT is GPL-3.0-only; sample-base and JUCE are AGPL-3.0. The MPC Sample program combines them, as GPLv3 section 13
+allows, and is conveyed as a whole under the AGPLv3; JIANT's own files keep the GPL.</p>
+</main>
+</div>
+<footer>JIANT FM, by Juan Jiant · GPL-3.0 · <a href="https://juanjiant-bit.github.io/JIANT/studio/">JIANT Studio</a> · <a href="https://github.com/juanjiant-bit/JIANT">GitHub</a>.
+M-VAVE, FM-1, SMK-37, Akai and MPC are trademarks of their owners; JIANT is not affiliated with or endorsed by them.</footer>
+<script>
+(function(){var d=document.querySelector('nav.toc details');if(d&&matchMedia('(max-width:900px)').matches)d.open=false;
+var as=[].slice.call(document.querySelectorAll('nav.toc a[href^="#"]')),hs=as.map(function(a){return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)))});
+function spy(){var y=innerHeight*.25,k=-1;hs.forEach(function(h,i){if(h&&h.getBoundingClientRect().top<y)k=i});as.forEach(function(a,i){a.classList.toggle('here',i===k)})}
+addEventListener('scroll',spy,{passive:true});spy();})();
+</script>
+</body>
+</html>

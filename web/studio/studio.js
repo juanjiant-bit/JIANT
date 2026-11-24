@@ -83,6 +83,9 @@ const TEXT = {
     recChannels: " canales", recNotes: " notas",
     portsTitle: "JIANT FM en otros aparatos",
     portsLead: "El mismo firmware, de las mismas fuentes, en otras máquinas: una canción suena igual en todas. En las CPU grandes suma los motores SAMPLE y GRAIN, DRUM-X con samples y 8 voces por pista. Todos gratis y GPL-3.0; algunos todavía buscan quién los pruebe.",
+    shotSmk: "el panel del SMK-37 con JIANT en el emulador", shotMpc: "la MPC Sample con JIANT en el emulador",
+    shotDaw: "el editor del plugin: pantalla en vivo y pistas", shotDawSound: "el editor del plugin: el sonido",
+    shotDawSamples: "el editor del plugin: el explorador de samples", portsManuals: "Manuales",
     portsHow: "Cómo funcionan", portTry: "Probar en el navegador", portDownload: "Descargar", portManual: "Manual", portInstall: "Cómo instalar",
     portSource: "Código", portBuild: "Compilar", portSoon: "Instalador: próximamente",
     stOk: "funciona", stPreview: "preview: buscamos testers", stDev: "en desarrollo", stCi: "compilado en CI",
@@ -163,6 +166,9 @@ const TEXT = {
     recChannels: " channels", recNotes: " notes",
     portsTitle: "JIANT FM on other devices",
     portsLead: "The same firmware from the same sources on other machines: a song sounds the same on every one. On the bigger CPUs it adds the SAMPLE and GRAIN engines, DRUM-X with samples and 8 voices a track. All free and GPL-3.0; some are still looking for testers.",
+    shotSmk: "the SMK-37's panel running JIANT in the emulator", shotMpc: "the MPC Sample running JIANT in the emulator",
+    shotDaw: "the plugin's editor: the live screen and tracks", shotDawSound: "the plugin's editor: the sound",
+    shotDawSamples: "the plugin's editor: the sample browser", portsManuals: "Manuals",
     portsHow: "How they work", portTry: "Try it in the browser", portDownload: "Download", portManual: "Manual", portInstall: "How to install",
     portSource: "Source", portBuild: "Build", portSoon: "Installer: coming",
     stOk: "works", stPreview: "preview: testers wanted", stDev: "in development", stCi: "built by CI",
@@ -818,6 +824,7 @@ function renderTakes() {
 /* JIANT FM's ports (ports/README.md): each one's state, what it is, and its links: the emulator (emu/devices.html, the
  * same origin: shown here in a frame), the download (the releases), its manual. The words are TEXT's (p<Name>...) */
 const GH = "https://github.com/juanjiant-bit/JIANT/blob/main/", RELEASES = "https://github.com/juanjiant-bit/JIANT/releases";
+const MAN = "../docs/guide/";            // the manuals in HTML (tools/gen_manual_html.py), this site's
 const OUTLINE = {   // a device's outline where there is no picture (the pads, the keys)
   smk: '<svg viewBox="0 0 320 120" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="312" height="112" rx="10"/><rect x="16" y="14" width="44" height="34" rx="3"/>' +
        Array.from({ length: 8 }, (_, i) => `<rect x="${72 + i * 26}" y="16" width="20" height="13" rx="2"/><rect x="${72 + i * 26}" y="34" width="20" height="13" rx="2"/>`).join("") +
@@ -829,22 +836,44 @@ const OUTLINE = {   // a device's outline where there is no picture (the pads, t
        '<rect x="18" y="40" width="60" height="92" rx="3"/><rect x="88" y="40" width="64" height="64" rx="3"/><circle cx="178" cy="54" r="12"/><circle cx="210" cy="54" r="12"/><rect x="164" y="80" width="60" height="52" rx="3"/></svg>',
 };
 const PORTS = [
+  // shots: the port running (its emulator's panel in the browser, the plugin's editor), the first one on the card
   { id: "smk37", name: "pSmkTitle", text: "pSmkText", points: ["pSmk1", "pSmk2"], state: ["stDev", "soon"], pic: OUTLINE.smk,
-    links: [["portTry", "#try:smk37"], ["portManual", GH + "docs/SMK37.md"], ["portBuild", GH + "docs/SMK37.md"], ["portSoon", null]] },
+    shots: [["img/smk37.webp", "shotSmk"]],
+    links: [["portTry", "#try:smk37"], ["portManual", MAN + "smk37.html"], ["portBuild", GH + "docs/SMK37.md"], ["portSoon", null]] },
   { id: "mpc", name: "pMpcTitle", text: "pMpcText", points: ["pMpc1", "pMpc2"], state: ["stPreview", "soon"], pic: OUTLINE.mpc,
-    links: [["portTry", "#try:mpc"], ["portDownload", RELEASES], ["portInstall", GH + "ports/mpc-sample/README.md"]] },
+    shots: [["img/mpc.webp", "shotMpc"]], whole: true,           // (the unit stands upright: all of it shown)
+    links: [["portTry", "#try:mpc"], ["portManual", MAN + "mpc-sample.html"], ["portDownload", RELEASES], ["portInstall", MAN + "mpc-sample.html#release"]] },
   { id: "mpcplug", name: "pPlugMpcTitle", text: "pPlugMpcText", points: ["pPlugMpc1", "pPlugMpc2"], state: ["stPreview", "soon"], pic: OUTLINE.mpc,
-    links: [["portDownload", RELEASES], ["portManual", GH + "ports/README.md#the-mpc-plugin"], ["portSource", "https://github.com/juanjiant-bit/JIANT/tree/main/ports/mpc-plugin"]] },
-  { id: "daw", name: "pDawTitle", text: "pDawText", points: ["pDaw1", "pDaw2", "pDaw3"], state: ["stCi", "ok"], img: "img/plugin.webp",
-    links: [["portDownload", RELEASES], ["portManual", GH + "ports/juce-plugin/README.md"], ["portSource", "https://github.com/juanjiant-bit/JIANT/tree/main/ports/juce-plugin"]] },
+    links: [["portDownload", RELEASES], ["portManual", MAN + "ports.html#the-mpc-plugin"], ["portSource", "https://github.com/juanjiant-bit/JIANT/tree/main/ports/mpc-plugin"]] },
+  { id: "daw", name: "pDawTitle", text: "pDawText", points: ["pDaw1", "pDaw2", "pDaw3"], state: ["stCi", "ok"],
+    shots: [["img/plugin.webp", "shotDaw"], ["img/plugin-sound.webp", "shotDawSound"], ["img/plugin-samples.webp", "shotDawSamples"]],
+    links: [["portDownload", RELEASES], ["portManual", MAN + "plugin.html"], ["portSource", "https://github.com/juanjiant-bit/JIANT/tree/main/ports/juce-plugin"]] },
 ];
 function renderPorts() {
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   $("portlist").replaceChildren(...PORTS.map((p) => {
     const card = el("article", "card port");
     const pic = el("div", "pic");
-    if (p.img) { const im = new Image(); im.src = p.img; im.alt = t(p.name); im.loading = "lazy"; pic.append(im); }
-    else { pic.innerHTML = p.pic; pic.setAttribute("aria-hidden", "true"); }
+    let thumbs = null;
+    if (p.shots) {
+      // the shot (a tap: larger), and under it a thumbnail each when there are more
+      const im = new Image(); im.loading = "lazy"; if (p.whole) im.style.objectFit = "contain";
+      const show = (k) => { im.src = p.shots[k][0]; im.alt = t(p.shots[k][1]); pic.dataset.k = k;
+        if (thumbs) [...thumbs.children].forEach((b, i) => b.setAttribute("aria-pressed", String(i === k))); };
+      const open = el("button", "picopen"); open.type = "button"; open.append(im);
+      open.addEventListener("click", () => openShot(p, +pic.dataset.k || 0));
+      pic.append(open);
+      if (p.shots.length > 1) {
+        thumbs = el("div", "thumbs");
+        thumbs.append(...p.shots.map(([src, cap], k) => {
+          const b = el("button"); b.type = "button"; b.title = t(cap);
+          const ti = new Image(); ti.src = src; ti.alt = ""; ti.loading = "lazy"; b.append(ti);
+          b.addEventListener("click", () => show(k));
+          return b;
+        }));
+      }
+      show(0);
+    } else { pic.innerHTML = p.pic; pic.setAttribute("aria-hidden", "true"); }
     const meta = el("div", "meta"); meta.append(el("span", "state " + p.state[1], t(p.state[0])));
     const ul = el("ul"); ul.append(...p.points.map((k) => el("li", null, t(k))));
     const links = el("div", "links");
@@ -855,10 +884,24 @@ function renderPorts() {
       else { a.target = "_blank"; a.rel = "noopener"; }
       return a;
     }));
-    card.append(pic, el("h2", null, t(p.name)), meta, el("p", null, t(p.text)), ul, links);
+    card.append(pic, ...(thumbs ? [thumbs] : []), el("h2", null, t(p.name)), meta, el("p", null, t(p.text)), ul, links);
     return card;
   }));
 }
+/* a port's shots, large: a dialog, its caption, ← → between them */
+function openShot(p, k) {
+  const dlg = $("shotdlg"), img = $("shotimg"), cap = $("shotcap");
+  const show = () => { img.src = p.shots[k][0]; img.alt = t(p.shots[k][1]); cap.textContent = `${t(p.name)} · ${t(p.shots[k][1])}`;
+    $("shotprev").hidden = $("shotnext").hidden = p.shots.length < 2; };
+  dlg._step = (d) => { k = (k + d + p.shots.length) % p.shots.length; show(); };
+  show();
+  dlg.showModal();
+}
+$("shotprev").addEventListener("click", () => $("shotdlg")._step(-1));
+$("shotnext").addEventListener("click", () => $("shotdlg")._step(1));
+$("shotclose").addEventListener("click", () => $("shotdlg").close());
+$("shotdlg").addEventListener("click", (e) => { if (e.target === $("shotdlg")) $("shotdlg").close(); });
+$("shotdlg").addEventListener("keydown", (e) => { if (e.key === "ArrowLeft") $("shotdlg")._step(-1); else if (e.key === "ArrowRight") $("shotdlg")._step(1); });
 /* the device's emulator (the JIANT FM site's emu/devices.html, its panel picked by the hash) in the frame below */
 function tryDevice(dev, name) {
   const f = $("f-devices"), url = `${TOOLS.fm.base}emu/devices.html#${dev}`;
@@ -873,6 +916,9 @@ $("f-devices").addEventListener("load", () => {
     const d = f.contentDocument, st = d.createElement("style");
     st.textContent = "main>header.top,main>section:first-of-type,section.plugins,main>footer,body>footer{display:none!important}";
     d.head.append(st);
+    // the frame as tall as the page in it: the whole device and its screen larger, no scrolling inside
+    const fit = () => { f.style.height = `${Math.max(480, Math.ceil(d.body.getBoundingClientRect().bottom + f.contentWindow.scrollY) + 16)}px`; };
+    new f.contentWindow.ResizeObserver(fit).observe(d.body); fit();
   } catch (_) {}
 });
 $("devtryclose").addEventListener("click", () => { $("devtry").hidden = true; $("f-devices").src = "about:blank"; });
@@ -963,6 +1009,48 @@ function renderEmuMidi() {
 $("emumidi").addEventListener("change", () => { try { frames.emu.el.contentWindow.jiantEmu.midiInput($("emumidi").value); } catch (_) {} });
 $("emumidi").addEventListener("pointerdown", renderEmuMidi);
 setInterval(() => { if (state.view === "emu" && document.activeElement !== $("emumidi")) renderEmuMidi(); }, 1500);
+/* the emulator's whole panel in its frame: the device as wide as the frame lets it be with all of it in sight (its own
+ * page makes it as wide as the page, taller than the frame); refitted on any resize, in or out of full screen */
+function fitEmu() {
+  try {
+    const w = frames.emu.el.contentWindow, d = w.document, dev = d.getElementById("device");
+    if (!dev) return;
+    const ar = (dev.style.aspectRatio || "1000 / 624").split("/").map(Number), r = ar[0] / ar[1];
+    const main = dev.parentElement, cs = w.getComputedStyle(main);
+    const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    const top = dev.getBoundingClientRect().top + w.scrollY;
+    const h = Math.max(240, w.innerHeight - top - 12), wid = Math.min(main.clientWidth - padX, h * r);
+    main.style.maxWidth = "none";
+    Object.assign(dev.style, { width: `${Math.floor(wid)}px`, marginLeft: "auto", marginRight: "auto" });
+  } catch (_) {}
+}
+frames.emu.el.addEventListener("load", () => {
+  fitEmu();
+  try {
+    const w = frames.emu.el.contentWindow;
+    w.addEventListener("resize", fitEmu);
+    // (its layout, wide or tall, rebuilt: the aspect changes)
+    new w.MutationObserver(fitEmu).observe(w.document.getElementById("device"), { attributes: true, attributeFilter: ["style"] });
+  } catch (_) {}
+});
+/* full screen: the browser's own (the frame's box) where it has it; else (iPhone) the box over the whole page */
+const emuFullOn = () => $("emubox").classList.contains("max") || document.fullscreenElement === $("emubox") || document.webkitFullscreenElement === $("emubox");
+function emuFull(on) {
+  const b = $("emubox");
+  if (on) {
+    loadFrame("emu");
+    const req = b.requestFullscreen || b.webkitRequestFullscreen;
+    const p = req ? req.call(b) : null;
+    if (p && p.catch) p.catch(() => b.classList.add("max")); else if (!req) b.classList.add("max");
+  } else {
+    b.classList.remove("max");
+    if (document.fullscreenElement || document.webkitFullscreenElement) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  }
+  setTimeout(fitEmu, 300);
+}
+$("emufull").addEventListener("click", () => emuFull(!emuFullOn()));
+$("emuexit").addEventListener("click", () => emuFull(false));
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("emubox").classList.contains("max")) emuFull(false); });
 const emuOn = () => { try { const e = frames.emu.el.contentWindow.jiantEmu; return !!(e && e.on()); } catch (_) { return false; } };
 
 /* ?mock=1: STEMS+IN's 10 channels made up (each its own pitch and pulse), in the recorder's own context: a node */

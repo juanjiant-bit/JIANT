@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>JIANT FM on the SMK-37 · Manual</title>
+<meta name="description" content="JIANT bare metal on the SMK-37&#x27;s own chip (the FM-1&#x27;s AC791N): 37 keys, 16 RGB pads, 8 encoders and 4 faders as its panel, the same web editor and the same sounds. In development.">
+<meta name="theme-color" content="#050409">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#050409;--surf:#0b0912;--raise:#100e18;--line:rgba(239,230,200,.14);--fg:#efe6c8;--mid:#c9c1d8;--dim:#a39bb6;
+--accent:#ff7a1a;--vio:#b870ff;--cyan:#3fe0e6;--heat:linear-gradient(90deg,#6b5cff,#b870ff 35%,#ff4bb0 60%,#ff7a1a 85%,#ffd34d);
+--display:"Michroma","Segoe UI",system-ui,sans-serif;--body:"Instrument Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.65;
+ background-image:radial-gradient(900px 420px at 85% -120px,rgba(184,112,255,.16),transparent 70%),radial-gradient(700px 360px at -10% 0,rgba(255,122,26,.08),transparent 70%);background-repeat:no-repeat}
+.top{position:sticky;top:0;z-index:5;background:rgba(5,4,9,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .in{max-width:1240px;margin:0 auto;padding:12px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:14px 22px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-size:17px;letter-spacing:.04em;color:var(--fg);text-decoration:none;white-space:nowrap}
+.brand b{font-weight:400;background:var(--heat);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand small{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--dim);margin-left:8px;text-transform:uppercase}
+.docs{display:flex;gap:4px;flex-wrap:wrap}
+.docs a{font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--dim);text-decoration:none;padding:6px 10px;border:1px solid transparent;border-radius:8px}
+.docs a:hover{color:var(--fg)}
+.docs a[aria-current="page"]{color:var(--fg);border-color:var(--line);background:var(--surf)}
+.layout{max-width:1240px;margin:0 auto;padding-block:28px 72px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;grid-template-columns:270px minmax(0,1fr);gap:44px}
+@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr);gap:16px}}
+nav.toc{position:sticky;top:76px;align-self:start;max-height:calc(100vh - 96px);overflow:auto;font-size:14px;padding-right:12px}
+@media (max-width:900px){nav.toc{position:static;max-height:none;padding-right:0}}
+nav.toc details{border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--surf)}
+nav.toc summary{cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan)}
+nav.toc ul{list-style:none;margin:8px 0 0;padding-left:0}
+nav.toc ul ul{padding-left:12px;border-left:1px solid var(--line);margin:2px 0 6px 2px}
+nav.toc a{color:var(--dim);text-decoration:none;display:block;padding:3px 0;line-height:1.35}
+nav.toc a:hover,nav.toc a:focus-visible,nav.toc a.here{color:var(--fg)}
+nav.toc a.here{box-shadow:inset 2px 0 0 var(--accent);padding-left:8px}
+main{min-width:0;max-width:840px}
+.hero{position:relative;padding:26px 26px 22px;margin:0 0 26px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,rgba(184,112,255,.07),transparent 70%),var(--surf);overflow:hidden}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--heat);opacity:.8}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);margin:0 0 10px}
+.hero h1{margin:0 0 10px}
+.hero .lead{color:var(--mid);margin:0 0 16px;max-width:64ch}
+.hero img.shot{display:block;width:100%;margin:6px 0 16px;border:1px solid var(--line);border-radius:10px}
+.bar{display:flex;flex-wrap:wrap;gap:8px}
+.btn{font-family:var(--body);font-weight:600;font-size:14px;text-decoration:none;color:var(--fg);border:1px solid var(--line);background:var(--raise);border-radius:10px;padding:8px 14px}
+.btn.go{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn:hover,.btn:focus-visible{border-color:var(--accent);outline:none}
+h1,h2,h3,h4{font-family:var(--display);font-weight:400;line-height:1.2;text-wrap:balance;scroll-margin-top:84px;letter-spacing:.01em}
+h1{font-size:clamp(26px,4.6vw,42px)}
+h1 .fm{background:var(--heat);-webkit-background-clip:text;background-clip:text;color:transparent}
+main>h1:first-of-type{display:none}
+h2{font-size:clamp(19px,2.6vw,25px);margin:56px 0 14px;padding-top:18px;border-top:1px solid var(--line);position:relative}
+h2::before{content:"";position:absolute;top:-1px;left:0;width:56px;height:2px;background:var(--heat)}
+h3{font-size:17px;margin:34px 0 8px;color:var(--fg)}
+h4{font-size:14px;margin:24px 0 6px;color:var(--mid);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase}
+p,li{max-width:74ch}
+li{margin:3px 0}
+strong{color:#fff3ce;font-weight:600}
+a{color:var(--vio);text-underline-offset:3px}
+a:hover{color:var(--accent)}
+code,kbd{font-family:var(--mono);font-size:.86em}
+code{background:var(--raise);border:1px solid var(--line);border-radius:5px;padding:1px 5px;color:#fff3ce}
+kbd{background:#16131f;border:1px solid rgba(255,122,26,.45);border-bottom-width:2px;border-radius:6px;padding:0 6px;white-space:nowrap;color:#ffd9b8}
+.tw{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:12px;background:var(--surf)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);font-weight:500;background:rgba(63,224,230,.04)}
+tbody tr:hover td{background:rgba(184,112,255,.05)}
+img{max-width:100%;height:auto;border-radius:10px}
+pre{overflow-x:auto;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+pre code{background:none;border:0;padding:0;color:var(--mid)}
+blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--vio);background:rgba(184,112,255,.06);border-radius:0 10px 10px 0;color:var(--mid)}
+blockquote p{margin:4px 0}
+hr{border:0;border-top:1px solid var(--line);margin:36px 0}
+.ess{position:relative;background:var(--surf);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin:8px 0 26px}
+.ess h2{margin:0 0 8px;border:0;padding:0}
+.ess h2::before{display:none}
+.ess h3{font-size:12px;margin:18px 0 8px;color:var(--cyan);font-family:var(--mono);letter-spacing:.16em;text-transform:uppercase}
+.ess dl{display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:8px 18px;margin:0}
+.ess dt{min-width:0}
+.ess dd{margin:0;min-width:0;color:var(--mid)}
+@media (max-width:600px){.ess dl{grid-template-columns:minmax(0,1fr)}.ess dd{margin-bottom:8px}}
+footer{max-width:1240px;margin:0 auto;padding:24px 16px 40px;color:var(--dim);font-size:13px;border-top:1px solid var(--line)}
+footer a{color:var(--dim)}
+@media print{.top,nav.toc,.bar{display:none}.layout{display:block}body{background:#fff;color:#000}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in"><a class="brand" href="https://juanjiant-bit.github.io/JIANT/studio/">JIANT <b>FM</b><small>Manuals</small></a><nav class="docs" aria-label="Manuals"><a href="manual.html">JIANT FM · FM-1</a><a href="smk37.html" aria-current="page">SMK-37</a><a href="mpc-sample.html">MPC Sample</a><a href="ports.html">MPC plugin · ports</a><a href="plugin.html">VST3 · AU · LV2</a></nav></div></header>
+<div class="layout">
+<nav class="toc" aria-label="Contents"><details open><summary>Contents</summary>
+<ul>
+<li><a href="#build">Build</a></li>
+<li><a href="#the-control-mapping">The control mapping</a></li>
+<li><a href="#flash-ram-only-by-default">Flash: RAM-only by default</a></li>
+<li><a href="#host-tests">Host tests</a></li>
+<li><a href="#untested-on-hardware">Untested on hardware</a></li>
+<li><a href="#not-done-yet">Not done yet</a></li>
+</ul>
+
+</details></nav>
+<main>
+<section class="hero"><p class="eyebrow">Manual · M-VAVE SMK-37 Pro / Elite</p><h1>JIANT <span class="fm">FM</span> on the SMK-37</h1>
+<p class="lead">JIANT bare metal on the SMK-37&#x27;s own chip (the FM-1&#x27;s AC791N): 37 keys, 16 RGB pads, 8 encoders and 4 faders as its panel, the same web editor and the same sounds. In development.</p><div class="bar"><a class="btn go" href="https://juanjiant-bit.github.io/JIANT/emu/devices.html#smk37">Try it in the browser</a><a class="btn" href="https://juanjiant-bit.github.io/JIANT/studio/#ports">JIANT Studio</a><a class="btn" href="https://github.com/juanjiant-bit/JIANT/blob/main/docs/SMK37.md">GitHub</a></div></section>
+<h1 id="jiant-fm-on-the-m-vave-smk-37-pro-elite">JIANT FM on the M-VAVE SMK-37 Pro / Elite</h1>
+<p><strong>Status: experimental. Nothing in this port has run on an SMK-37.</strong> Everything in it was built and checked
+on the host only. Every item marked <em>untested on hardware</em> below must be checked on a unit before anyone
+installs this build for real use.</p>
+<p>The SMK-37 has the same JieLi AC791N chip as the FM-1. It also has the same SPL and the same chip key (0x980F)
+in the stock v016 packages. Its board differs: the keybed, buttons, knobs, LEDs, LCD pins, flash layout and
+factory data. The port is a build-time board option. The FM-1 build gets no new flag and is byte for byte what it
+was.</p>
+<p>The port follows Melodee's <code>BOARD_SMK37</code> (GPL-3.0-only; its SMK-37 port is by M. Geisler (genkigenki/makkuro),
+with hardware notes at https://github.com/genkigenki/fm1-to-smk37). <code>hal/smk_input.h</code> and
+<code>tests/smk_keys_test.c</code> are Melodee's files, unchanged. The flash map, the store owner tag, the LCD wiring, the pad
+LEDs and the panel table are adapted from Melodee and keep its attribution lines. M-VAVE's open SMK firmware was
+used for hardware facts only. No M-VAVE SDK binary is linked or copied.</p>
+<h2 id="build">Build</h2>
+<pre><code class="language-sh">./build.sh                                  # FM-1: build/felucca.fwsc (unchanged)
+./build.sh --board smk37                    # SMK-37 Pro:   build/smk37-pro/felucca-smk37-pro.fwsc
+./build.sh --board smk37 --model elite      # SMK-37 Elite: build/smk37-elite/felucca-smk37-elite.fwsc
+FELUCCA_SMK_FLASH=1 ./build.sh --board smk37    # the same, with the flash store on (see below)
+</code></pre>
+<p><code>BOARD=smk37</code> and <code>MODEL=elite</code> in the environment work too. <code>--release X.Y</code> gives the identity
+<code>SMK-37 Pro_9XY</code> or <code>SMK-37 Elite_9XY</code>.</p>
+<p>What the SMK build changes:</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th></th>
+<th>FM-1</th>
+<th>SMK-37</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>define</td>
+<td>none</td>
+<td><code>-DBOARD_SMK37=1 -DSMK_MODEL="SMK-37 Pro"</code> (or <code>"SMK-37 Elite"</code>)</td>
+</tr>
+<tr>
+<td>package identity</td>
+<td><code>FM-1_900</code></td>
+<td><code>SMK-37 Pro_900</code> / <code>SMK-37 Elite_900</code></td>
+</tr>
+<tr>
+<td>update loader's identity</td>
+<td><code>ota-FM-1_900</code></td>
+<td><code>ota-SMK-37 Pro_900</code> / <code>ota-SMK-37 Elite_900</code></td>
+</tr>
+<tr>
+<td>update record's identity</td>
+<td><code>ota-FM-1_015</code></td>
+<td><code>ota-SMK-37 Pro_016</code> / <code>ota-SMK-37 Elite_016</code></td>
+</tr>
+<tr>
+<td>USB product</td>
+<td><code>JIANT</code> / <code>JIANT Update</code></td>
+<td><code>JIANT SMK-37</code> / <code>JIANT SMK Update</code></td>
+</tr>
+<tr>
+<td>flash.bin (PRCT)</td>
+<td>0x93000</td>
+<td>0x9D000, with the stock v016 region table</td>
+</tr>
+<tr>
+<td>TRS MIDI IN (UART1, PH8)</td>
+<td>on</td>
+<td>off: PH8 is a key-matrix row on the SMK (<code>#error</code> if turned on)</td>
+</tr>
+<tr>
+<td>LCD</td>
+<td>SPI1 group B, PC7 CS, backlight PA2</td>
+<td>SPI1 group A: PB6 CLK, PB7 DO, PC8 CS, PB5 D/C, no backlight control</td>
+</tr>
+<tr>
+<td>input HAL</td>
+<td><code>hal/fm1_input.h</code>, <code>hal/fm1_adc.h</code></td>
+<td><code>hal/smk_input.h</code> (it stands in for <code>fm1_adc.h</code>: PB6 is the LCD clock)</td>
+</tr>
+</tbody>
+</table></div>
+<p>The app slot (0x8EA90 bytes) is the FM-1's. The encrypted region still ends at 0x92FFE inside the SMK's
+0x9D000 app area.</p>
+<h2 id="the-control-mapping">The control mapping</h2>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>SMK-37 (printed)</th>
+<th>JIANT (the FM-1's control)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FX</td>
+<td>FX</td>
+</tr>
+<tr>
+<td>SCALE</td>
+<td>SCL</td>
+</tr>
+<tr>
+<td>CHORD</td>
+<td>ENV</td>
+</tr>
+<tr>
+<td>NOTE REPEAT</td>
+<td>LFO</td>
+</tr>
+<tr>
+<td>PARA</td>
+<td>EDIT</td>
+</tr>
+<tr>
+<td>GLOBE</td>
+<td>GLO</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td>HOME</td>
+</tr>
+<tr>
+<td>BT</td>
+<td>SAVE</td>
+</tr>
+<tr>
+<td>ARP</td>
+<td>ARP</td>
+</tr>
+<tr>
+<td>SEQ</td>
+<td>SEQ</td>
+</tr>
+<tr>
+<td>SEQ PLAY</td>
+<td>PLAY</td>
+</tr>
+<tr>
+<td>SEQ REC</td>
+<td>REC</td>
+</tr>
+<tr>
+<td>OCTAVE- / OCTAVE+</td>
+<td>OCT- / OCT+</td>
+</tr>
+<tr>
+<td>K1..K4</td>
+<td>KNOB 1..4</td>
+</tr>
+<tr>
+<td>K5</td>
+<td>MASTER (a virtual pot: 24 steps a detent, 724 at power-on)</td>
+</tr>
+<tr>
+<td>K6 / K7 / K8</td>
+<td>SELECT / ALGORITHM / PRESETS</td>
+</tr>
+<tr>
+<td><code>&lt;</code> / <code>&gt;</code></td>
+<td>one SELECT step each, as one detent of K6</td>
+</tr>
+<tr>
+<td>the 27 middle keys F3..G5</td>
+<td>the FM-1's 27 keys</td>
+</tr>
+<tr>
+<td>the 16 pads</td>
+<td>the FM-1's 16 white keys F3..G5. Bottom row, left to right: F3 G3 A3 B3 C4 D4 E4 F4. Top row: G4 A4 B4 C5 D5 E5 F5 G5</td>
+</tr>
+<tr>
+<td>the outer 10 keys (C3..E3, G#5..C6)</td>
+<td>nothing yet (their events are drained)</td>
+</tr>
+<tr>
+<td>KNOB BANK, FADER BANK</td>
+<td>nothing yet</td>
+</tr>
+<tr>
+<td>faders 1..4, pitch / mod wheel, sustain pedal</td>
+<td>nothing yet (the HAL reads them; JIANT does not use them)</td>
+</tr>
+</tbody>
+</table></div>
+<p>Other behaviour:
+- OCTAVE- + OCTAVE+ held at power-on opens HARDWARE CALIBRATION. It asks for each FM-1 function by its printed SMK
+  name, and for the knobs by K6, K7, K8 and K1..K4. The table's magic is <code>PNS5</code>, so an FM-1 table is never taken.
+- OCTAVE- + OCTAVE+ held for 5 s enters UBOOT, as on the FM-1.
+- Keys and pads play at the velocity the HAL measures (the keybed's two-contact time, a pad's peak); notes sent to MIDI OUT carry it. The FM-1 still plays at 100. <em>Untested on hardware.</em>
+- A key struck again before a full lift sounds again (<code>notes_retrig</code>).
+- Button LEDs are on or off. What breathes on the FM-1 blinks at about 1 Hz here. The FM-1's dim idle glow has no
+  level on the SMK, so idle buttons are dark, as with MENU &gt; LEDS OFF. MENU &gt; LEDS INV lights the idle buttons, as
+  on the FM-1. SEQ PLAY shows its green LED while playing.
+- The pads show their key's LED from the FM-1 picture:
+  - white when lit;
+  - blinking when it breathes;
+  - dim for the DRUM grid's glow and beats and for SCALE LEDS.
+- The screen texts still name the FM-1's controls (for example HOME, SCL, KNOB 1).</p>
+<h2 id="flash-ram-only-by-default">Flash: RAM-only by default</h2>
+<p>The SMK's flash holds factory data that cannot be recreated: the per-unit key and pad calibration (USRTRIM) and the
+Bluetooth pairing (BTIF). So the default SMK build is <strong>RAM-only</strong>. It never erases or writes the flash. Settings,
+projects and presets are lost at power-off. An update from JIANT's own M-UPGRADE entry is off too, because it needs
+the flash. As on the FM-1, any unknown flash chip also gives RAM-only.</p>
+<p><code>FELUCCA_SMK_FLASH=1</code> turns the store on. It does so only on the SMK's own flash part (JEDEC 0xEB6014) and only in
+the SMK's map. <em>Untested on hardware.</em></p>
+<p>The SMK's flash map (<code>firmware/hal/fm1_flash_map.h</code>):</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>range</th>
+<th>what</th>
+<th>JIANT</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0x00000-0x03FFF</td>
+<td>head (SPL, isd_config)</td>
+<td>never written</td>
+</tr>
+<tr>
+<td>0x04000-0x9CFFF</td>
+<td>app area (stock PRCT)</td>
+<td>the update loader only</td>
+</tr>
+<tr>
+<td>0x9D000-0xBAFFF</td>
+<td>VM</td>
+<td>store A: settings, 4 projects (song 1), FM6 patches, autosave, voice bank, song index, presets, song 2; the owner tag <code>SMK37DATAJIANT</code> at 0xAF000</td>
+</tr>
+<tr>
+<td>0xBB000-0xBFFFF</td>
+<td>VM</td>
+<td>OTA staging; the update record at 0xBFF00</td>
+</tr>
+<tr>
+<td>0xC0000-0xC0FFF</td>
+<td>BTIF (Bluetooth pairing)</td>
+<td><strong>never</strong></td>
+</tr>
+<tr>
+<td>0xC1000-0xC1FFF</td>
+<td>USRTRIM (factory calibration)</td>
+<td><strong>never</strong></td>
+</tr>
+<tr>
+<td>0xC2000-0xE9FFF</td>
+<td>USRFLASH (the stock key mapping)</td>
+<td>store B: songs 3..7, only after the marker release</td>
+</tr>
+<tr>
+<td>0xEA000-0xEAFFF</td>
+<td>USRFLASH's end marker <code>usrdata</code> at 0xEAFF8</td>
+<td>erased once, as a whole sector, before the first write into store B, so that stock rebuilds its mapping</td>
+</tr>
+<tr>
+<td>0xEB000-0xF3FFF</td>
+<td>unlisted</td>
+<td>store C: song 8; 0xF3000 spare</td>
+</tr>
+<tr>
+<td>0xF4000-0xFDFFF</td>
+<td>USR (stock resources, for a return to stock)</td>
+<td><strong>never</strong></td>
+</tr>
+<tr>
+<td>0xFE000-0xFEFFF</td>
+<td>free</td>
+<td><strong>never</strong></td>
+</tr>
+<tr>
+<td>0xFF000-0xFFFFF</td>
+<td>key_mac</td>
+<td><strong>never</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>The guards:
+1. The RAM flash driver (<code>fl_erase4k_ram</code>, <code>fl_prog_ram</code>) refuses any range that <code>FL_GUARD</code> refuses.
+   <code>FL_GUARD = FL_RANGE_OK &amp;&amp; !FL_PROTECTED</code>. <code>FL_PROTECTED</code> is an independent net over the head, BTIF, USRTRIM, USR
+   with 0xFE000, and key_mac. It holds under the update loader's own allow-list too. Wrapping and straddling ranges
+   are refused.
+2. <code>storage_hw.c</code> allows erases and writes only in stores A, B and C. The marker sector is allowed only as one
+   whole-sector erase.
+3. On the first boot over another firmware's store, JIANT clears stores A, B and C and tags the store. It keeps an
+   intact stock mapping in store B until JIANT first writes there.
+4. The app's M-UPGRADE entry stages only in 0xBB000-0xBFFFF. Before anything is erased, it refuses:
+   - an FM-1 package (-15);
+   - a package whose region table differs from the device's (-16);
+   - an official package with USR anywhere other than 0xF4000 (-17).
+5. JIANT's update loader writes only the app area 0x4000-0x9CFFF. It erases update records only in the OTA area. It
+   refuses an FM-1 package (-3) and a package whose region table differs from the device's (-14).
+6. The package carries the stock v016 region table byte for byte. This was checked against M-VAVE's stock Pro and
+   Elite v016 packages.</p>
+<p>Do <strong>not</strong> install the FM-1 package on an SMK. The FM-1's loader cannot be changed (its build must stay
+byte-identical), and it does not know the SMK's map.</p>
+<h2 id="host-tests">Host tests</h2>
+<p><code>tests/run_tests.sh</code> runs these. The package checks run once the SMK packages are built. Set <code>SMK_STOCK=dir</code>
+(holding <code>SMK37-Pro-V16.fwsc</code> and <code>SMK37-Elite-V16.fwsc</code>) to compare the region table with the stock packages too.</p>
+<ul>
+<li><code>tests/smk_flash_test.c</code> checks the map and its guards:</li>
+<li>every protected sector, page and byte against every allow-list and the driver's net;</li>
+<li>straddling and wrapping ranges;</li>
+<li>the store table;</li>
+<li>a simulated SMK with patterns in every protected range: first boot, every object saved and loaded, the marker
+    released exactly once, erases and writes aimed at each forbidden range refused, then every protected byte
+    compared.</li>
+<li>A check that the RAM driver uses <code>FL_GUARD</code>.</li>
+<li><code>tests/smk_ldr_test.c</code> checks the SMK update loader on a simulated SMK.</li>
+<li><code>tests/ota_test.c</code>, SMK build: staging at 0xBB000, the model's record, the board check.</li>
+<li><code>tests/smk_pkg_test.py</code> checks the package: identity, size, region table and app.bin.</li>
+<li><code>tests/smk_map_test.c</code> checks the control mapping.</li>
+<li><code>tests/smk_keys_test.c</code> is Melodee's keybed test, run on <code>hal/smk_input.h</code>.</li>
+</ul>
+<h2 id="untested-on-hardware">Untested on hardware</h2>
+<p>Everything that touches the SMK. In particular:
+- The SMK SPL boots this app (app_area_head ends at 0x92FFE inside a 0x9D000 PRCT).
+- The stock SMK firmware's updater accepts this package. M-VAVE's Pro v016 file interleaves 36 identity blocks;
+  JIANT's packages use 20, as on the FM-1.
+- Chip key 0x980F on every SMK unit.
+- <code>fm1_enter_uboot</code> (UBOOT) and the SPL honouring the update record at 0xBFF00 with <code>ota-SMK-37 Pro_016</code>.
+- LCD orientation, colours and SPI speed. No glitches when SPI1 switches to the pad LEDs.
+- The pad LED chain order, colours and timing (the 250-byte latch).
+- Button ids, LED positions and encoder directions (Melodee confirmed these on an Elite only).
+- The ADC timing (console: <code>adc_miss</code> near 0), the pads' thresholds, and the K5 MASTER pot's feel.
+- The audio codec and output path (PC0/1/2/6, the same lines as the FM-1's).
+- The battery reading (mux C address 7).
+- With <code>FELUCCA_SMK_FLASH=1</code>:
+  - flash ID 0xEB6014;
+  - the marker release, and stock rebuilding its mapping after a return to stock;
+  - BTIF and USRTRIM byte-identical before and after an install and a first boot (dump 0xC0000-0xC1FFF);
+  - the stock VM's contents being cleared on JIANT's first boot.
+- The Pro, and every Elite other than the one Melodee ran on.</p>
+<h2 id="not-done-yet">Not done yet</h2>
+<ul>
+<li>TRS MIDI out on PC7, the faders, the wheels and the sustain pedal.</li>
+<li>KNOB BANK and FADER BANK, and the outer 10 keys.</li>
+<li>The factory velocity curves from USRTRIM (read-only).</li>
+<li>A boot-stub rescue (OCTAVE- at power-on).</li>
+<li>SMK models in <code>tools/fm1_install.py</code>, including refusing cross-model installs.</li>
+<li>An SMK mode for the browser emulator.</li>
+</ul>
+</main>
+</div>
+<footer>JIANT FM, by Juan Jiant · GPL-3.0 · <a href="https://juanjiant-bit.github.io/JIANT/studio/">JIANT Studio</a> · <a href="https://github.com/juanjiant-bit/JIANT">GitHub</a>.
+M-VAVE, FM-1, SMK-37, Akai and MPC are trademarks of their owners; JIANT is not affiliated with or endorsed by them.</footer>
+<script>
+(function(){var d=document.querySelector('nav.toc details');if(d&&matchMedia('(max-width:900px)').matches)d.open=false;
+var as=[].slice.call(document.querySelectorAll('nav.toc a[href^="#"]')),hs=as.map(function(a){return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)))});
+function spy(){var y=innerHeight*.25,k=-1;hs.forEach(function(h,i){if(h&&h.getBoundingClientRect().top<y)k=i});as.forEach(function(a,i){a.classList.toggle('here',i===k)})}
+addEventListener('scroll',spy,{passive:true});spy();})();
+</script>
+</body>
+</html>
