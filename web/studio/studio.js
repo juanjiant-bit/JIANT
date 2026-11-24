@@ -96,6 +96,9 @@ const TEXT = {
     recSaved: "Toma guardada: está abajo, en Tomas.",
     recSrcFm1: "La FM-1 por USB es una entrada de audio: estéreo (USB > AUDIO), u 8 canales en USB > STEMS (las 6 pistas y los efectos por separado). Elegila acá.",
     recSrcEmu: "Graba la salida del emulador (prendelo en la pestaña Emulador).",
+    recEmuStems: "Emulador JIANT · stems (8 canales)", recEmuMaster: "Emulador JIANT · master (estéreo)", recEmuMidi: "Emulador JIANT · MIDI OUT",
+    recEmuOff: "Prendé el emulador en la pestaña Emulador (Prender) y volvé.", recEmuOld: "El emulador publicado todavía no entrega stems ni MIDI: llegan con su próxima versión. Mientras tanto: «master (estéreo)».", recEmuStemsHelp: "Del emulador, como USB STEMS: cada pista sola (T1–T6) y la vuelta de efectos (FX L R), antes del master; se graban juntas y se exportan como WAV por pista, el ZIP y la mezcla.",
+    recEmuMidiHelp: "Las notas que manda MIDI OUT del emulador (MENU › CONTROL › MIDI OUT: KEYS las teclas, ALL también el secuenciador y el arpegiador).",
     recNoDev: "No hay entradas de audio (dale permiso al micrófono para verlas).", recAsk: "Pedir permiso de audio",
     recMidi: "MIDI", recMidiHelp: "Mientras grabás, también se guarda lo que entra por MIDI: lo que tocás en la FM-1 (MENU > MIDI OUT) o en un teclado.",
     recMidiIn: "Entrada MIDI", recMidiNone: "(ninguna)",
@@ -200,6 +203,9 @@ const TEXT = {
     recSaved: "Take saved: it is below, under Takes.",
     recSrcFm1: "The FM-1 over USB is an audio input: stereo (USB > AUDIO), or 8 channels in USB > STEMS (the 6 tracks and the effects apart). Pick it here.",
     recSrcEmu: "Records the emulator's output (switch it on in the Emulator tab).",
+    recEmuStems: "JIANT emulator · stems (8 channels)", recEmuMaster: "JIANT emulator · master (stereo)", recEmuMidi: "JIANT emulator · MIDI OUT",
+    recEmuOff: "Switch the emulator on in the Emulator tab (Switch on) and come back.", recEmuOld: "The published emulator does not give stems or MIDI yet: they come with its next version. Meanwhile: “master (stereo)”.", recEmuStemsHelp: "From the emulator, as USB STEMS: each track alone (T1–T6) and the effects' return (FX L R), before the master; recorded together, exported as a WAV per track, the ZIP and the mix.",
+    recEmuMidiHelp: "The notes the emulator's MIDI OUT sends (MENU › CONTROL › MIDI OUT: KEYS the keys, ALL the sequencer and the arpeggiator too).",
     recNoDev: "No audio inputs (allow the microphone to list them).", recAsk: "Ask for audio permission",
     recMidi: "MIDI", recMidiHelp: "While recording, what comes in over MIDI is kept too: what you play on the FM-1 (MENU > MIDI OUT) or on a keyboard.",
     recMidiIn: "MIDI input", recMidiNone: "(none)",
@@ -607,12 +613,13 @@ const daw = new Daw($("daw"), { get mute() { return t("recMute"); }, get solo() 
 const profileOf = (ch) => { const p = $("recprof").value; return p !== "auto" ? p : ch >= 10 ? "stemsin" : ch >= 8 ? "stems" : "master"; };
 /* the six tracks' engines, for the lanes' names (27 TRACK: selected, NTRK, then per track engine, preset, level v14,
    mute, armed) */
-async function trackNames() {
-  const d = state.dev;
-  if (!d || state.target !== "fm1") return [];
+async function trackNames(emu = false) {
+  const d = state.dev, L = emu ? projLink() : d && state.target === "fm1" ? { link: d.link } : null;
+  if (!L) return [];
   try {
-    const a = await d.link.request(27, [], 600), n = a[1] | 0;
-    return Array.from({ length: n }, (_, k) => d.engines[a[2 + k * 6]] || "");
+    const engines = emu ? parseInfo(await L.link.request(CMD.INFO, [], 900)).engines : d.engines;
+    const a = await L.link.request(27, [], 600), n = a[1] | 0;
+    return Array.from({ length: n }, (_, k) => engines[a[2 + k * 6]] || "");
   } catch (_) { return []; }
 }
 function lanesFor(profile, ch) {
@@ -625,17 +632,48 @@ function lanesFor(profile, ch) {
   return lanes;
 }
 function profileHelp() {
-  const p = $("recprof").value;
-  $("profhelp").textContent = state.target === "emu" ? t("recSrcEmu") : t("profHelp_" + p);
+  const p = $("recprof").value, d = $("recdev").value;
+  $("profhelp").textContent = d === "emu-stems" ? t("recEmuStemsHelp") + ($("midisrc").value === "emu-midi" ? " " + t("recEmuMidiHelp") : "") :
+    d === "emu" ? t("recSrcEmu") : t("profHelp_" + p);
 }
 $("recprof").addEventListener("change", () => { profileHelp(); if (rec.mon && !rec.on) monitorStop(); });
 /* the input open and shown in the lanes (levels only) until Record, which keeps what comes in */
+/* the emulator's tap (emu/index.html jiantEmu.tap): its stems as the input (8 channels, STEMS' lanes) and/or its MIDI
+   OUT, each at its sample (rec.at0: the take's first sample) */
+const emuApi = () => { try { const e = frames.emu.el.contentWindow.jiantEmu; return e && e.on() && e.tap ? e : null; } catch (_) { return null; } };
+const emuWhyNot = () => t(emuOn() ? "recEmuOld" : "recEmuOff");
+function onTap(m) {
+  if (rec.src === "emu-stems") {
+    if (rec.on) { if (rec.at0 == null) rec.at0 = m.at; rec.chunks.push(m.planes); daw.live(m.planes, rec.rate); }
+    else daw.meters(m.planes.map((p) => { let v = 0; for (let i = 0; i < p.length; i += 8) { const a = Math.abs(p[i]); if (a > v) v = a; } return v; }));
+  }
+  if (rec.on && rec.emuMidi) for (const e of m.midi) {
+    if (e.data[0] < 0x80 || e.data[0] >= 0xF0) continue;
+    const t0 = rec.at0 != null ? (e.at - rec.at0) / 44.1 : performance.now() - rec.t0;
+    if (t0 >= 0) rec.midi.push({ t: t0, data: e.data });
+  }
+}
 async function monitorStart() {
   if (rec.mon || state.busy) return true;
   let stream;
+  if ($("recdev").value === "emu-stems") {
+    loadFrame("emu");
+    const e = emuApi();
+    if (!e) { $("recstat").textContent = emuWhyNot(); return false; }
+    rec.tapStop = e.tap(onTap);
+    rec.engines = state.target === "emu" ? await trackNames(true) : [];
+    Object.assign(rec, { mon: true, src: "emu-stems", stream: null, ac: null, node: null, ch: 8, rate: 44100, profile: "stems" });
+    daw.setLanes(lanesFor("stems", 8));
+    $("recstat").textContent = `8${t("recChannels")} · 44100 Hz`;
+    $("recwarn").hidden = true;
+    render();
+    return true;
+  }
+  rec.src = $("recdev").value;
   const want = PROFILES[$("recprof").value === "auto" ? "stemsin" : $("recprof").value].ch;
   try {
-    if (state.target === "emu") {
+    if (rec.src === "emu") {
+      loadFrame("emu");
       const w = frames.emu.el.contentWindow;
       stream = w && w.jiantEmu && w.jiantEmu.stream && w.jiantEmu.stream();
       if (!stream) { $("recstat").textContent = t("recSrcEmu"); return false; }
@@ -657,7 +695,7 @@ async function monitorStart() {
   const node = new AudioWorkletNode(ac, "studio-recorder", { numberOfInputs: 1, numberOfOutputs: 0, channelCount: ch, channelCountMode: "explicit", channelInterpretation: "discrete" });
   src.connect(node);
   rec.engines = await trackNames();
-  const profile = state.target === "emu" ? "master" : profileOf(ch);
+  const profile = rec.src === "emu" ? "master" : profileOf(ch);
   Object.assign(rec, { mon: true, stream, ac, node, ch, rate: ac.sampleRate, profile });
   daw.setLanes(lanesFor(profile, ch));
   node.port.onmessage = (e) => {
@@ -669,7 +707,7 @@ async function monitorStart() {
   const need = PROFILES[profile].ch, got = ch;
   $("recstat").textContent = `${got}${t("recChannels")} · ${rec.rate} Hz`;
   const warn = $("recwarn");
-  warn.hidden = !(state.target !== "emu" && (got < need || ($("recprof").value !== "auto" && got < PROFILES[$("recprof").value].ch)));
+  warn.hidden = !(rec.src !== "emu" && (got < need || ($("recprof").value !== "auto" && got < PROFILES[$("recprof").value].ch)));
   warn.textContent = t("recFewerLong").replace("%got", got).replace("%need", PROFILES[$("recprof").value === "auto" ? profile : $("recprof").value].ch);
   render();
   return true;
@@ -678,8 +716,9 @@ function monitorStop() {
   if (!rec.mon) return;
   if (rec.on) recStop();
   rec.mon = false;
-  if (state.target !== "emu" && rec.stream !== "mock") rec.stream.getTracks().forEach((x) => x.stop());
-  rec.ac.close().catch(() => {});
+  if (rec.tapStop) { rec.tapStop(); rec.tapStop = null; }
+  if (rec.stream && rec.src !== "emu" && rec.stream !== "mock") rec.stream.getTracks().forEach((x) => x.stop());
+  if (rec.ac) rec.ac.close().catch(() => {});
   render();
 }
 $("recmon").addEventListener("click", () => (rec.mon ? monitorStop() : monitorStart()));
@@ -688,9 +727,12 @@ async function recStart() {
   if (!rec.mon && !(await monitorStart())) return;
   daw.stop();
   daw.setLanes(lanesFor(rec.profile, rec.ch));
-  Object.assign(rec, { on: true, chunks: [], t0: performance.now(), midi: [] });
+  Object.assign(rec, { on: true, chunks: [], t0: performance.now(), midi: [], at0: null, emuMidi: false });
   const mid = $("midisrc").value;
-  if (mid && access) {
+  if (mid === "emu-midi") {                                // the emulator's MIDI OUT: by its tap (the stems' own, or one of its own)
+    rec.emuMidi = true;
+    if (!rec.tapStop) { const e = emuApi(); if (e) rec.tapStop = e.tap(onTap); else $("recstat").textContent = emuWhyNot(); }
+  } else if (mid && access) {
     const inp = access.inputs.get(mid);
     if (inp) {
       midiTapInput = inp;
@@ -711,6 +753,7 @@ function recStop() {
   try { rec.node.port.postMessage("flush"); } catch (_) {}
   setTimeout(() => {
     if (midiTapInput) { midiTapInput.removeEventListener("midimessage", midiTap); midiTapInput = null; }
+    if (rec.tapStop && rec.src !== "emu-stems") { rec.tapStop(); rec.tapStop = null; }   // (a tap for its MIDI only)
     const take = makeTake();
     if (take) daw.show(take.planes, rec.rate);
     $("recclock").textContent = "00:00";
@@ -826,27 +869,33 @@ function midiTap(e) {
 }
 async function renderAudioInputs(ask = false) {
   const sel = $("recdev"), was = sel.value;
-  if (state.target === "emu") { sel.replaceChildren(new Option(t("tEmu"), "emu")); sel.disabled = true; return; }
   if (rec.mon) return;                                     // (the input in use stays as it is)
   sel.disabled = false;
+  const emuOpts = () => [new Option(t("recEmuStems"), "emu-stems"), new Option(t("recEmuMaster"), "emu")];
+  if (state.target === "emu") {
+    sel.replaceChildren(...emuOpts());
+    sel.value = was === "emu" ? "emu" : "emu-stems";
+    return;
+  }
   try {
     if (ask) (await navigator.mediaDevices.getUserMedia({ audio: true })).getTracks().forEach((x) => x.stop());
     const ins = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "audioinput");
     const opts = ins.map((d, i) => new Option(d.label || `${t("recInput")} ${i + 1}`, d.deviceId));
     if (!opts.length || !ins.some((d) => d.label)) opts.push(new Option(t("recAsk"), "ask"));
     if (MOCK) opts.unshift(new Option("JIANT FM (simulated: STEMS+IN, 10 ch)", "mock-stems"));
-    sel.replaceChildren(...opts);
+    sel.replaceChildren(...opts, ...emuOpts());
     const fm1 = MOCK ? { deviceId: "mock-stems" } : ins.find((d) => /fm-?1|jiant|felucca|m-?vave/i.test(d.label));
     sel.value = [...sel.options].some((o) => o.value === was) ? was : fm1 ? fm1.deviceId : sel.options[0].value;
   } catch (_) { sel.replaceChildren(new Option(t("recNoDev"), "")); }
 }
-$("recdev").addEventListener("change", () => { if ($("recdev").value === "ask") renderAudioInputs(true); });
+$("recdev").addEventListener("change", () => { if ($("recdev").value === "ask") renderAudioInputs(true); profileHelp(); });
+$("midisrc").addEventListener("change", profileHelp);
 function renderMidiInputs() {
   const sel = $("midisrc"), was = sel.value;
   const ins = access ? [...access.inputs.values()].filter((p) => p.state !== "disconnected") : [];
-  sel.replaceChildren(new Option(t("recMidiNone"), ""), ...ins.map((p) => new Option(p.name || p.id, p.id)));
+  sel.replaceChildren(new Option(t("recMidiNone"), ""), new Option(t("recEmuMidi"), "emu-midi"), ...ins.map((p) => new Option(p.name || p.id, p.id)));
   const fm1 = ins.find((p) => PORT_RE.test(p.name || ""));
-  sel.value = [...sel.options].some((o) => o.value === was) ? was : fm1 ? fm1.id : "";
+  sel.value = was && [...sel.options].some((o) => o.value === was) ? was : state.target === "emu" ? "emu-midi" : fm1 ? fm1.id : "";
 }
 $("midisrc").addEventListener("focus", async () => { if (!access && !MOCK) { try { await midiAccess(); } catch (_) {} renderMidiInputs(); } });
 function renderTakes() {
@@ -1254,7 +1303,7 @@ function render() {
   $("recmon").disabled = rec.on || state.busy;
   $("recplay").textContent = t(daw.playing ? "recPlayStop" : "recPlay");
   $("recplay").disabled = rec.on || !daw.planes;
-  $("recprof").disabled = rec.mon || state.target === "emu";
+  $("recprof").disabled = rec.mon || /^emu/.test($("recdev").value);
   if (state.view === "rec") profileHelp();
   if (state.view === "rec" && !rec.on) { renderAudioInputs(); renderMidiInputs(); }
   renderTakes();

@@ -34,6 +34,9 @@
 #endif
 
 static uint8_t nor[0x100000];            /* the SPI NOR (erased: 0xFF) */
+/* (studio) JIANT Studio records the emulator's MIDI OUT (usb.c midi_out_event queues it without a USB host) */
+static unsigned char web_mo_tap;
+#define USB_MIDI_TAP web_mo_tap
 #define main hostsim_main
 #include "../../tests/hostsim.c"
 #undef main
@@ -71,6 +74,27 @@ static void fm1_audio_init(int32_t *buf, uint32_t words, void (*isr)(void), uint
 { (void)buf; (void)words; (void)isr; (void)prio; }
 static void fm1_audio_stop(void) {}
 void isr_alnk0(void) {}
+/* (studio) the stems live, as MENU > USB STEMS sends them (fx.c stem_buf: the six parts mono, before the master;
+ * stem_fx: the FX return L R), each sample at its place in the output (stem_ring by the sample's number), for JIANT
+ * Studio's recorder: web_stems(1) on, web_render puts them in web_stem_out() beside the stereo */
+#define STEM_CH 8u
+#define STEM_RING 4096u
+static float stem_ring[STEM_RING][STEM_CH], stem_out[STEM_CH][1024];
+static uint32_t stem_w, stem_from;
+static uint8_t web_stems_on;
+static void web_stem_tap(uint32_t n)
+{
+    uint32_t i, k;
+    for (i = 0; i < n; i++) {
+        float *s = stem_ring[(stem_w + i) % STEM_RING];
+        for (k = 0; k < 6u; k++)
+            s[k] = (float)stem_buf[k][i] / 32768.0f;
+        s[6] = (float)stem_fx[0][i] / 32768.0f;
+        s[7] = (float)stem_fx[1][i] / 32768.0f;
+    }
+    stem_w += n;
+}
+#define WEB_STEM_TAP(n) web_stem_tap(n)
 #include "../../firmware/src/audio.c"
 
 /* ------------------------------------------------------------ the panel --- */
@@ -321,6 +345,8 @@ static void web_ms(void)
     web_real_at = jiant_host_us();
 #endif
     web_samples_due += FS;
+    if (web_stems_on && !fx_stems)                        /* (studio) the stems on while Studio records them (the menu's */
+        fx_stems = 1;                                     /* USB setting sets it back each frame) */
     while (web_samples_due >= 1000u * HALF_FRAMES) {      /* an I2S half: the audio ISR renders it */
         uint32_t k;
         const int32_t *o = &abuf[web_half * HALF_WORDS];
@@ -366,10 +392,36 @@ EXPORT void web_render(uint32_t n)
     while (ring_w - ring_r < n)
         web_ms();
     for (k = 0; k < n; k++) {
-        uint32_t i = (ring_r++ % RING) * 2u;
+        uint32_t c, at = ring_r, i = (ring_r++ % RING) * 2u;
         out_l[k] = ring[i];
         out_r[k] = ring[i + 1];
+        if (web_stems_on)                                 /* (studio) its stems: silent before they were on */
+            for (c = 0; c < STEM_CH; c++)
+                stem_out[c][k] = (int32_t)(at - stem_from) >= 0 ? stem_ring[at % STEM_RING][c] : 0.0f;
     }
+}
+/* (studio) the stems: on (their samples from the next one rendered) or off; web_stem_out(c) a channel's n samples */
+EXPORT void web_stems(uint32_t on)
+{
+    web_stems_on = (uint8_t)(on != 0u);
+    if (web_stems_on) {
+        stem_w = stem_from = ring_w;                      /* (between halves: the next half's first sample) */
+        if (!fx_stems)
+            fx_stems = 1;
+    }
+}
+EXPORT float *web_stem_out(uint32_t c) { return stem_out[c < STEM_CH ? c : 0]; }
+/* (studio) MIDI OUT as the FM-1 sends it over USB (MENU > CONTROL > MIDI OUT: KEYS, CLOCK, ALL), read by Studio:
+ * web_midi_tap(1) on; web_midi_take() the next USB-MIDI packet (0: none) */
+EXPORT void web_midi_tap(uint32_t on) { web_mo_tap = (unsigned char)(on != 0u); mo_r = mo_w; }
+EXPORT uint32_t web_midi_take(void)
+{
+    uint32_t p;
+    if (mo_r == mo_w)
+        return 0;
+    p = midi_out_q[mo_r % MQ];
+    mo_r++;
+    return p;
 }
 
 /* the flash: erased, then the page's saved sectors (web_nor), then boot */

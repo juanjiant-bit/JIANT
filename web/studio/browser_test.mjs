@@ -164,6 +164,19 @@ try {
     await e.click('nav.views [data-go="rec"]'); await e.click("#recgo"); await e.waitForTimeout(2000); await e.click("#recgo"); await e.waitForTimeout(800);
     const takes = await e.evaluate(() => jiantStudio.rec.takes.map((t) => ({ s: t.secs, f: t.files.map((x) => x.blob.size) })));
     ok(takes.length === 1 && takes[0].s > 1.5 && takes[0].f[0] > 44 + 44100 * 4, `the emulator's output recorded: ${takes[0] ? takes[0].s.toFixed(2) : 0} s, a stereo WAV`);
+    /* the emulator as an input: its stems (8 channels, as USB STEMS) and its MIDI OUT, keys played on it */
+    if (readFileSync(wasm).includes(Buffer.from("web_stems"))) {
+      await e.selectOption("#recdev", "emu-stems"); await e.selectOption("#midisrc", "emu-midi");
+      await e.click("#recgo"); await e.waitForTimeout(500);
+      await e.evaluate(() => document.getElementById("f-emu").contentWindow.focus());
+      for (const k of ["KeyZ", "KeyC", "KeyB"]) { await e.keyboard.down(k); await e.waitForTimeout(300); await e.keyboard.up(k); await e.waitForTimeout(150); }
+      await e.waitForTimeout(800); await e.click("#recgo"); await e.waitForTimeout(1000);
+      const st = await e.evaluate(() => { const tk = jiantStudio.rec.takes[0];
+        return { ch: tk.planes.length, peak: tk.planes.map((p) => { let m = 0; for (const v of p) m = Math.max(m, Math.abs(v)); return m; }),
+          files: tk.files.map((f) => f.label), notes: jiantStudio.rec.midi.filter((m) => (m.data[0] & 0xF0) === 0x90 && m.data[2]).length }; });
+      ok(st.ch === 8 && st.peak.some((v) => v > 0.05) && st.files.length >= 9 && st.notes === 3,
+        `the emulator as an input: ${st.ch} stems (${st.peak.filter((v) => v > 0.05).length} with sound), ${st.files.length} files, ${st.notes} notes from its MIDI OUT`);
+    }
   } else console.log("studio browser: (no emulator with the editor in build/emu: web/emu/build.sh; the target Emulator checks skipped)");
   ok(!errs.length, `no page errors${errs.length ? ": " + errs.slice(0, 3).join(" | ") : ""}`);
 } finally {
