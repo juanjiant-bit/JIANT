@@ -228,6 +228,10 @@ jobs:
           mkdir -p build/pages/studio
           cp web/studio/index.html web/studio/studio.js web/studio/studio-lib.js web/studio/daw.js web/studio/recorder-worklet.js web/fm1backup.js build/pages/studio/
           cp -r web/studio/img build/pages/studio/img
+          # (studio) FM-1 Rescue's builder and base firmware for Studio's Rescue tab; its own page at rescue/
+          mkdir -p build/pages/studio/rescue/base build/pages/rescue
+          cp rescue/builder.js build/pages/studio/rescue/ && cp rescue/base/*.uf2 build/pages/studio/rescue/base/
+          cp rescue/fm1-rescue.html build/pages/rescue/index.html
           # (0.9.11) old and mistyped links (/installer/, /webapp/, a link with ":1:1" stuck to it) to the page they meant
           cp web/404.html build/pages/404.html
           mkdir -p build/pages/docs && cp docs/cheatsheet-controls.pdf docs/cheatsheet-sound.pdf docs/cheatsheet-controls.png docs/cheatsheet-sound.png build/pages/docs/

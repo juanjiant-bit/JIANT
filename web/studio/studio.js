@@ -19,6 +19,25 @@ const MOCK = QS.get("mock") === "1";
 /* ------------------------------------------------------------------------------------------------- the words */
 const TEXT = {
   es: {
+    vRescue: "Rescate", rsTitle: "Rescatar un FM-1", rsBeta: "experimental · sin probar en hardware",
+    rsLead: "Para un FM-1 que no enciende o que la computadora no ve por USB (hard brick). Una placa RP2040 de pocos dólares hace todo sola: se conecta al USB-C del FM-1 con tres cables y le vuelve a escribir el firmware. Sin Python ni terminal: Studio arma el archivo para la placa.",
+    rsFirstT: "Antes de empezar", rsFirst: "Si el FM-1 enciende y la computadora lo ve (aunque esté trabado o suene raro), no hace falta esto: usá Instalar, que lo actualiza por USB.", rsToInstall: "Ir a Instalar",
+    rs1: "Lo que necesitás", rsNeedBoard: "Una placa RP2040: Waveshare RP2040-Zero, Seeed XIAO RP2040 o Raspberry Pi Pico (o una parecida).",
+    rsNeedUsb: "Un cable USB-C que puedas cortar (o un conector USB-C macho con cables), para llegar a sus hilos: verde (D+), blanco (D−), negro (GND) y rojo (5 V, que no se usa).",
+    rsNeedWires: "Soldador o cables dupont para unir esos tres hilos a la placa.", rsNeedBatt: "El FM-1 con la batería cargada.", rsNeedPc: "Una computadora con Chrome, Edge o Firefox (o un cargador USB para el paso 6).",
+    rs2: "Tu placa y los cables", rsCable: "Cable cortado: verde = D+, blanco = D−, negro = GND, rojo = 5 V. El rojo queda sin conectar (aislalo con cinta). Si la placa no logra hablar con el FM-1, probá cambiar verde y blanco entre sí.",
+    rsWireZero: "RP2040-Zero: verde → pin 0, blanco → pin 1, negro → GND. Su LED es de colores (la tabla del paso 6).",
+    rsWireXiao: "XIAO RP2040: verde → D6, blanco → D7, negro → GND. Su LED es de colores (la tabla del paso 6).",
+    rsWirePico: "Raspberry Pi Pico (y las tipo Pico): verde → GP0 (pin 1), blanco → GP1 (pin 2), negro → GND (pin 3). Su LED es de un solo color: parpadeo lento = esperando, rápido = error, fijo = listo.",
+    rs3: "El firmware que va a recibir", rsFwFile: "Otro archivo…", rsFwHelp: "Lo más simple: JIANT FM o JIANT BYTE, el paquete publicado, que Studio baja solo. También sirve el FM-1.fwsc de la V15 oficial de M-VAVE (no la V16: no entra). Si tu FM-1 venía con la V16, usá JIANT. Nada sale de tu navegador.",
+    rsFwGet: "Bajando el paquete publicado de %s…", rsFwOk: "Comprobado: %s", rsFwBad: "No sirve: %s", rsLdGet: "Bajando el loader de JieLi (jl-uboot-tool, MIT)…", rsLdOk: "Loader de JieLi comprobado", rsLdBad: "No se pudo bajar el loader de JieLi: %s. Reintentá en un rato.",
+    rs4: "Crear el archivo para la placa", rsMakeHelp: "Junta el firmware de rescate de tu placa, el firmware elegido y el loader en un solo fm1-rescue.uf2, y lo descarga.", rsMake: "Crear fm1-rescue.uf2", rsMade: "Listo: fm1-rescue.uf2 descargado (%s, %n KB)", rsNeedFw: "Falta el firmware (paso 3).",
+    rs5: "Grabar la placa", rs6: "Conectar y rescatar", rs7: "Después",
+    rsAfter: "Apagá el FM-1, sacá los cables y encendelo: arranca con el firmware elegido. Desde ahí lo podés actualizar o cambiar como siempre, con Instalar. Tus ajustes, sonidos y canciones no se tocan.",
+    rsLedT: "Qué dice el LED",
+    rsAndroidT: "Sin computadora: la app FM-1 Rescue", rsAndroid: "Hace lo mismo desde un teléfono Android: graba la placa por OTG y muestra el avance del rescate. Todavía es una versión de prueba: se baja de GitHub (Actions › android › Artifacts › fm1-rescue) con una cuenta iniciada.",
+    rsAndroidHow: "Cómo se usa", rsAndroidApk: "Bajar el APK", rsMore: "Cómo funciona",
+    rsSafe: "Solo se escribe la zona del firmware (0x4000–0x92FFF), sector por sector, cada uno releído y comparado; la cabecera de arranque y tus datos no se tocan. Sin firmware dentro, la placa queda como un FM-1 Transporter común. Basado en FM-1 Transporter (Hügelton Instruments), MvaveFM1Unbricker (Quixotic7), jl-uboot-tool (kagaimiq) y la guía de GoodPerson42. Usalo con la batería cargada y bajo tu responsabilidad: todavía no se probó en un FM-1 real.",
     vProj: "Proyectos", projTitle: "Proyectos y backups",
     projLead: "Tus proyectos y backups. Un backup guarda todo (la música actual, las canciones con sus secciones, los sonidos de usuario y los ajustes) en este navegador y, si querés, en un archivo. Restaurarlo lo devuelve al aparato tal cual. Funciona con la FM-1 conectada o con el emulador.",
     bkNow: "Hacer backup ahora", bkImport: "Importar archivo…", bkAlsoFile: "Descargar también el archivo", bkLibTitle: "Backups", bkLibHelp: "Guardados en este navegador (no se suben a ningún lado). Descargá los importantes: si se borran los datos del navegador, se pierden.",
@@ -126,6 +145,25 @@ const TEXT = {
     foot: "JIANT Studio, de Juan Jiant",
   },
   en: {
+    vRescue: "Rescue", rsTitle: "Rescue an FM-1", rsBeta: "experimental · not tried on hardware yet",
+    rsLead: "For an FM-1 that does not turn on, or that the computer does not see over USB (hard brick). A few-dollar RP2040 board does it all by itself: wired to the FM-1's USB-C with three wires, it writes the firmware again. No Python, no terminal: Studio makes the board's file.",
+    rsFirstT: "Before you start", rsFirst: "If the FM-1 turns on and the computer sees it (even stuck or sounding wrong), you do not need this: use Install, which updates it over USB.", rsToInstall: "Go to Install",
+    rs1: "What you need", rsNeedBoard: "An RP2040 board: Waveshare RP2040-Zero, Seeed XIAO RP2040 or Raspberry Pi Pico (or a similar one).",
+    rsNeedUsb: "A USB-C cable you can cut (or a USB-C plug with wires), to reach its wires: green (D+), white (D−), black (GND) and red (5 V, unused).",
+    rsNeedWires: "A soldering iron or dupont wires to join those three wires to the board.", rsNeedBatt: "The FM-1 with its battery charged.", rsNeedPc: "A computer with Chrome, Edge or Firefox (or a USB charger for step 6).",
+    rs2: "Your board and the wires", rsCable: "A cut cable: green = D+, white = D−, black = GND, red = 5 V. The red one stays unconnected (tape it). If the board cannot talk to the FM-1, try swapping green and white.",
+    rsWireZero: "RP2040-Zero: green → pin 0, white → pin 1, black → GND. Its LED is in colours (the table in step 6).",
+    rsWireXiao: "XIAO RP2040: green → D6, white → D7, black → GND. Its LED is in colours (the table in step 6).",
+    rsWirePico: "Raspberry Pi Pico (and Pico-style boards): green → GP0 (pin 1), white → GP1 (pin 2), black → GND (pin 3). Its LED has one colour: slow blink = waiting, fast = error, steady = done.",
+    rs3: "The firmware it will get", rsFwFile: "Another file…", rsFwHelp: "Simplest: JIANT FM or JIANT BYTE, the published package, which Studio downloads by itself. M-VAVE's official V15 FM-1.fwsc works too (not V16: it does not fit). If your FM-1 came with V16, use JIANT. Nothing leaves your browser.",
+    rsFwGet: "Downloading the published %s package…", rsFwOk: "Checked: %s", rsFwBad: "Not usable: %s", rsLdGet: "Downloading JieLi's loader (jl-uboot-tool, MIT)…", rsLdOk: "JieLi's loader checked", rsLdBad: "JieLi's loader could not be downloaded: %s. Try again in a while.",
+    rs4: "Make the board's file", rsMakeHelp: "Puts your board's rescue firmware, the chosen firmware and the loader into one fm1-rescue.uf2, and downloads it.", rsMake: "Make fm1-rescue.uf2", rsMade: "Done: fm1-rescue.uf2 downloaded (%s, %n KB)", rsNeedFw: "The firmware is missing (step 3).",
+    rs5: "Flash the board", rs6: "Connect and rescue", rs7: "Afterwards",
+    rsAfter: "Switch the FM-1 off, remove the wires and switch it on: it boots the chosen firmware. From there you can update or change it as always, with Install. Your settings, sounds and songs are not touched.",
+    rsLedT: "What the LED says",
+    rsAndroidT: "No computer: the FM-1 Rescue app", rsAndroid: "Does the same from an Android phone: flashes the board over OTG and shows the rescue's progress. Still a test version: it downloads from GitHub (Actions › android › Artifacts › fm1-rescue) while signed in.",
+    rsAndroidHow: "How to use it", rsAndroidApk: "Get the APK", rsMore: "How it works",
+    rsSafe: "Only the firmware area (0x4000–0x92FFF) is written, sector by sector, each read back and compared; the boot head and your data are not touched. Without a firmware inside, the board is a plain FM-1 Transporter. Built on FM-1 Transporter (Hügelton Instruments), MvaveFM1Unbricker (Quixotic7), jl-uboot-tool (kagaimiq) and GoodPerson42's guide. Use it with a charged battery and at your own risk: it has not been tried on a real FM-1 yet.",
     vProj: "Projects", projTitle: "Projects and backups",
     projLead: "Your projects and backups. A backup keeps everything (the current music, the songs and their sections, the user sounds and the settings) in this browser and, if you want, in a file. Restoring it puts it back on the device as it was. Works with the FM-1 connected or with the emulator.",
     bkNow: "Back up now", bkImport: "Import a file…", bkAlsoFile: "Also download the file", bkLibTitle: "Backups", bkLibHelp: "Kept in this browser (nothing is uploaded). Download the ones that matter: clearing the browser's data loses them.",
@@ -391,7 +429,7 @@ try {
 } catch (_) {}
 
 /* ------------------------------------------------------------------------------------- views, firmware, target */
-const VIEWS = ["home", "install", "editor", "screen", "emu", "rec", "proj", "docs", "ports"];
+const VIEWS = ["home", "install", "editor", "screen", "emu", "rec", "proj", "docs", "rescue", "ports"];
 function go(view, push = true) {
   if (!VIEWS.includes(view)) view = "home";
   state.view = view;
@@ -1188,6 +1226,141 @@ function renderProj() {
   }) : [el("p", "bkempty", t("bkEmpty"))]));
 }
 
+/* ------------------------------------------------------------------------------------------------- rescue */
+/* FM-1 Rescue (rescue/, android/rescue): an RP2040 wired to the FM-1's USB-C puts it in the JieLi ROM's boot mode
+ * and writes the firmware area again. Here: the tutorial, the board's wiring drawn, and its .uf2 made in the browser
+ * (rescue/builder.js: the board's base firmware + the chosen package + JieLi's loader, each checked) */
+const RS_STEPS = {
+  es: { flash: ["Mantené apretado <b>BOOT</b> en la placa y conectala a la computadora. Aparece una unidad <code>RPI-RP2</code>.",
+                "Arrastrá <code>fm1-rescue.uf2</code> a esa unidad. Se cierra sola cuando termina.",
+                "Desconectá la placa de la computadora."],
+        go: ["Con el FM-1 <b>apagado</b>, conectá los tres cables a la placa (como en el paso 2) y el USB-C al FM-1.",
+             "Conectá la placa a la computadora o a un cargador USB. El LED parpadea en <b>amarillo</b>: espera.",
+             "<b>Encendé el FM-1.</b> El LED pasa a azul mientras trabaja: entre 1 y 3 minutos. No desconectes nada.",
+             "<b>Verde fijo</b> = listo y verificado. Si parpadea en rojo: apagá el FM-1, reconectá la placa y volvé a encenderlo."] },
+  en: { flash: ["Hold <b>BOOT</b> on the board and plug it into the computer. An <code>RPI-RP2</code> drive appears.",
+                "Drag <code>fm1-rescue.uf2</code> onto that drive. It closes by itself when done.",
+                "Unplug the board from the computer."],
+        go: ["With the FM-1 <b>off</b>, connect the three wires to the board (as in step 2) and the USB-C to the FM-1.",
+             "Plug the board into the computer or a USB charger. The LED blinks <b>yellow</b>: waiting.",
+             "<b>Switch the FM-1 on.</b> The LED turns blue while it works: 1 to 3 minutes. Do not unplug anything.",
+             "<b>Steady green</b> = done and verified. Blinking red: switch the FM-1 off, re-plug the board, switch it on again."] },
+};
+const RS_LEDS = {   // [colour, second colour, blink, es, en]
+  list: [["#e5c100", "", "blink", ["Amarillo, parpadea", "Esperando: encendé el FM-1 (tiene que estar apagado antes)."], ["Yellow, blinking", "Waiting: switch the FM-1 on (it must be off before)."]],
+         ["#e5c100", "", "", ["Amarillo, fijo", "El FM-1 respondió: entrando en modo de arranque."], ["Yellow, steady", "The FM-1 answered: entering boot mode."]],
+         ["#2f6fe0", "", "blink", ["Azul, parpadea", "Leyendo y escribiendo. No desconectes nada."], ["Blue, blinking", "Reading and writing. Do not unplug anything."]],
+         ["#2e8b57", "", "", ["Verde, fijo", "Terminado y verificado."], ["Green, steady", "Done and verified."]],
+         ["#e0443a", "", "fast", ["Rojo, parpadea rápido", "Error: apagá el FM-1, reconectá la placa y encendelo. Si sigue: revisá los cables (probá cambiar verde y blanco) y la batería."], ["Red, fast blinking", "Error: switch the FM-1 off, re-plug the board, switch it on. If it stays: check the wires (try swapping green and white) and the battery."]],
+         ["#9b4dca", "", "", ["Violeta, fijo", "El FM-1 está encendido con un firmware que no acepta el modo de arranque: apagalo, reconectá la placa y encendelo."], ["Purple, steady", "The FM-1 runs a firmware that refuses boot mode: switch it off, re-plug the board, switch it on."]],
+         ["#e0443a", "#2f6fe0", "alt", ["Rojo y azul, alternando", "El .uf2 está dañado: crealo otra vez."], ["Red and blue, alternating", "The .uf2 is damaged: make it again."]]],
+};
+/* a board and its three wires to the FM-1's USB-C plug, drawn (SVG): the pads named as printed on the board */
+const RS_BOARDS = {
+  zero: { name: "RP2040-Zero", pads: ["0", "1", "GND"], text: "rsWireZero" },
+  xiao: { name: "XIAO RP2040", pads: ["D6", "D7", "GND"], text: "rsWireXiao" },
+  pico: { name: "Raspberry Pi Pico", pads: ["GP0 · 1", "GP1 · 2", "GND · 3"], text: "rsWirePico" },
+};
+function rsWiring(b) {
+  const B = RS_BOARDS[b], W = [["#3fbf5f", "D+"], ["#f2f0ea", "D−"], ["#111", "GND"]];
+  const pad = (i) => 104 + i * 46;
+  let g = `<svg viewBox="0 0 560 260" role="img" aria-label="${B.name}: ${B.pads.join(", ")}" font-family="IBM Plex Mono, monospace">`;
+  g += `<rect x="20" y="40" width="200" height="180" rx="14" fill="#16131f" stroke="currentColor" stroke-opacity=".35"/>`;
+  g += `<rect x="6" y="110" width="28" height="40" rx="6" fill="#2a2633" stroke="currentColor" stroke-opacity=".35"/><text x="20" y="100" font-size="11" text-anchor="middle" fill="currentColor" opacity=".6">USB</text>`;
+  g += `<text x="120" y="68" font-size="15" text-anchor="middle" fill="currentColor">${B.name}</text>`;
+  g += `<rect x="60" y="86" width="40" height="40" rx="5" fill="#2a2633"/><text x="80" y="111" font-size="10" text-anchor="middle" fill="currentColor" opacity=".6">RP2040</text>`;
+  B.pads.forEach((n, i) => {
+    g += `<circle cx="200" cy="${pad(i)}" r="9" fill="#c9a74a" stroke="#000" stroke-opacity=".4"/>`;
+    g += `<text x="186" y="${pad(i) + 4}" font-size="12" text-anchor="end" fill="currentColor">${n}</text>`;
+    const d = `M200 ${pad(i)} C 300 ${pad(i)}, 330 ${100 + i * 30}, 420 ${100 + i * 30}`;
+    g += `<path d="${d}" fill="none" stroke="currentColor" stroke-opacity=".45" stroke-width="9" stroke-linecap="round"/>`;   // (an edge: black shows on dark)
+    g += `<path d="${d}" fill="none" stroke="${W[i][0]}" stroke-width="6" stroke-linecap="round"/>`;
+    g += `<text x="300" y="${(pad(i) + 100 + i * 30) / 2 - 8}" font-size="11" fill="currentColor" opacity=".8">${W[i][1]}</text>`;
+  });
+  g += `<path d="M420 190 C 395 190, 380 205, 350 215" fill="none" stroke="#d13a3a" stroke-width="6" stroke-linecap="round" stroke-dasharray="2 9"/>`;
+  g += `<text x="356" y="238" font-size="11" fill="currentColor" opacity=".7">5 V ✕</text>`;
+  g += `<rect x="420" y="80" width="60" height="124" rx="10" fill="#2a2633" stroke="currentColor" stroke-opacity=".35"/>`;
+  g += `<rect x="480" y="122" width="40" height="40" rx="10" fill="#3a3544" stroke="currentColor" stroke-opacity=".5"/>`;
+  g += `<text x="450" y="70" font-size="12" text-anchor="middle" fill="currentColor">USB-C</text><text x="500" y="186" font-size="12" text-anchor="middle" fill="currentColor">FM-1</text>`;
+  return g + "</svg>";
+}
+const rs = { board: "zero", fw: null, fwName: "", loader: null, lib: null, src: "fm", busy: false };
+const rsLib = () => rs.lib || (rs.lib = import("./rescue/builder.js"));
+function rsSay(id, text, cls = "") { const e = $(id); e.textContent = text; e.className = "rsst" + (cls ? " " + cls : ""); }
+async function rsLoader() {
+  if (rs.loader) return rs.loader;
+  const L = await rsLib();
+  rsSay("rsldst", t("rsLdGet"));
+  try {
+    const r = await fetch(L.LOADER_URL);
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    rs.loader = await L.checkLoader(new Uint8Array(await r.arrayBuffer()));
+    rsSay("rsldst", t("rsLdOk"), "ok");
+  } catch (e) { rsSay("rsldst", t("rsLdBad").replace("%s", e.message), "err"); }
+  return rs.loader;
+}
+async function rsUse(bytes, name) {
+  const L = await rsLib();
+  try { const v = await L.checkPackage(bytes); rs.fw = bytes; rs.fwName = `${name} · ${v.official ? "V15" : v.identity}`; rsSay("rsfwst", t("rsFwOk").replace("%s", rs.fwName), "ok"); }
+  catch (e) { rs.fw = null; rsSay("rsfwst", t("rsFwBad").replace("%s", e.message), "err"); }
+  rsRender();
+}
+/* the published package of a firmware: its site's firmware/versions.json, the first (the installer's) */
+async function rsPublished(fw) {
+  const name = fw === "byte" ? "JIANT BYTE" : "JIANT FM", base = `${TOOLS[fw].base}firmware/`;
+  rs.fw = null; rsSay("rsfwst", t("rsFwGet").replace("%s", name)); rsRender();
+  try {
+    const v = await (await fetch(base + "versions.json", { cache: "no-cache" })).json();
+    const e = v.find((x) => !x.status || x.status === "public") || v[0];
+    const r = await fetch(base + e.file);
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    await rsUse(new Uint8Array(await r.arrayBuffer()), `${name} ${e.version}`);
+  } catch (e) { rsSay("rsfwst", t("rsFwBad").replace("%s", e.message), "err"); }
+}
+async function rsMake() {
+  if (!rs.fw) { rsSay("rsmakest", t("rsNeedFw"), "err"); return; }
+  rs.busy = true; rsRender();
+  try {
+    const L = await rsLib(), loader = await rsLoader();
+    if (!loader) throw new Error(t("rsLdBad").replace("%s", "—"));
+    const base = new Uint8Array(await (await fetch(`rescue/base/fm1-rescue-base-${rs.board}.uf2`)).arrayBuffer());
+    const { uf2 } = await L.buildRescueUf2({ baseUf2: base, fwsc: rs.fw, loader });
+    download(new Blob([uf2], { type: "application/octet-stream" }), "fm1-rescue.uf2");
+    rs.made = uf2.length;
+    rsSay("rsmakest", t("rsMade").replace("%s", `${RS_BOARDS[rs.board].name}, ${rs.fwName}`).replace("%n", Math.round(uf2.length / 1024)), "ok");
+  } catch (e) { rsSay("rsmakest", t("rsFwBad").replace("%s", e.message), "err"); }
+  rs.busy = false; rsRender();
+}
+let rsStarted = false;
+function rsRender() {
+  if (!$("v-rescue")) return;
+  document.querySelectorAll("#rsboard [data-board]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.board === rs.board)));
+  document.querySelectorAll("#rsfw [data-fwsrc]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.fwsrc === rs.src)));
+  $("rswire").innerHTML = rsWiring(rs.board);
+  $("rswiretext").textContent = t(RS_BOARDS[rs.board].text);
+  const S = RS_STEPS[lang] || RS_STEPS.en;
+  $("rsflash").innerHTML = S.flash.map((x) => `<li>${x}</li>`).join("");
+  $("rsgo").innerHTML = S.go.map((x) => `<li>${x}</li>`).join("");
+  $("rsleds").replaceChildren(...RS_LEDS.list.map(([c, c2, k, es, en]) => {
+    const r = document.createElement("div"), i = document.createElement("i"), a = document.createElement("b"), d = document.createElement("span");
+    r.className = "led"; i.className = k; i.style.setProperty("--c", c); if (c2) i.style.setProperty("--c2", c2);
+    const [x, y] = lang === "es" ? es : en; a.textContent = x; d.textContent = y; r.append(i, a, d); return r;
+  }));
+  $("rsmake").disabled = rs.busy || !rs.fw;
+  const done = { board: true, fw: !!rs.fw, make: !!rs.made };
+  document.querySelectorAll("#rsteps .rstep").forEach((li) => li.classList.toggle("done", !!done[li.dataset.k]));
+  if (!rsStarted && state.view === "rescue") { rsStarted = true; rsPublished(rs.src === "byte" ? "byte" : "fm"); rsLoader(); }
+}
+$("rsboard").addEventListener("click", (e) => { const b = e.target.closest("[data-board]"); if (b) { rs.board = b.dataset.board; rsRender(); } });
+$("rsfw").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-fwsrc]"); if (!b) return;
+  rs.src = b.dataset.fwsrc;
+  if (rs.src === "file") $("rsfile").click(); else rsPublished(rs.src);
+  rsRender();
+});
+$("rsfile").addEventListener("change", async () => { const f = $("rsfile").files[0]; $("rsfile").value = ""; if (f) rsUse(new Uint8Array(await f.arrayBuffer()), f.name); });
+$("rsmake").addEventListener("click", rsMake);
+
 /* ------------------------------------------------------------------------------------------------ manuals */
 /* each firmware's manuals on its own site (same origin): the interactive manual (here, in a frame, or a tab), the full
  * manual in HTML (tools/gen_manual_html.py), the two cheat sheets (picture and PDF) and, for JIANT FM, what's new, the
@@ -1309,6 +1482,7 @@ function render() {
   renderTakes();
   if (state.view === "ports") renderPorts();
   if (state.view === "proj") renderProj();
+  if (state.view === "rescue") { if (!rsStarted) rs.src = state.fw; rsRender(); }
   if (state.view === "docs" && docsFor !== state.fw + lang) { docsFor = state.fw + lang; renderDocs(); }
 }
 
