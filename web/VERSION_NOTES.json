@@ -155,9 +155,79 @@
     "live_compact": {
       "es": "LIVE compacto (teclas negras de STEP FX)",
       "en": "Compact LIVE (STEP FX black keys)"
+    },
+    "cloud_fix": {
+      "es": "Reverb CLOUD arranca con la nota, a tempo",
+      "en": "CLOUD reverb starts with the note, on the tempo"
+    },
+    "dist_noise": {
+      "es": "NOISE en la distorsión (modula ganancia y tono)",
+      "en": "NOISE in the distortion (modulates gain and tone)"
+    },
+    "chorus_mix": {
+      "es": "MIX del chorus (de chorus a vibrato)",
+      "en": "Chorus MIX (chorus to vibrato)"
     }
   },
   "versions": {
+    "V10.8.36": {
+      "date": "2026-11-24",
+      "status": "beta",
+      "summary": {
+        "es": "Beta: reverb CLOUD arreglada, NOISE en la distorsión, MIX chorus↔vibrato y la mezcla del generador por género, sobre V10.8.35.",
+        "en": "Beta: CLOUD reverb fixed, NOISE in the distortion, chorus↔vibrato MIX and the generator's mix by genre, on top of V10.8.35."
+      },
+      "has": [
+        "eng_west",
+        "drumx_math",
+        "life",
+        "punch_editor",
+        "fx_punchins",
+        "song_mode",
+        "stepfx_keys",
+        "drone_clay",
+        "macros_dest",
+        "euclid",
+        "euclid_role",
+        "harmony",
+        "scene",
+        "half_rate",
+        "track_colours",
+        "hud_screens",
+        "no_power_click",
+        "velocity_at",
+        "gen_new_genres",
+        "copy_paste_oct",
+        "clay_rate",
+        "clay_bars",
+        "clay_keys",
+        "west_dust_metal",
+        "ui_push",
+        "screen_mirror",
+        "emu_editor",
+        "emu_stems",
+        "mutate_compact",
+        "live_compact",
+        "cloud_fix",
+        "dist_noise",
+        "chorus_mix"
+      ],
+      "hasnt": [
+        "eng_noise",
+        "mutate",
+        "stretch",
+        "live",
+        "seq_dice",
+        "punch_lane",
+        "help_hints",
+        "flt_ms20_lp24",
+        "env_stage"
+      ],
+      "notes": {
+        "es": "Beta: puede tener errores. Los proyectos y presets con filtro MS20 o LP24 abren como LP. MUTATE y LIVE no son las páginas originales (esas quedan en V10.7.81). Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
+        "en": "Beta: it may have bugs. Projects and presets using the MS20 or LP24 filter open as LP. MUTATE and LIVE are not the original pages (those remain in V10.7.81). Make a complete backup of your projects before changing version."
+      }
+    },
     "V10.8.35": {
       "date": "2026-11-24",
       "status": "beta",
