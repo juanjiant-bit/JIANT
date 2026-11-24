@@ -44,6 +44,16 @@
   .isteps b { font-size: 16px; }
   .more { margin: 12px 0; }
   .more summary { cursor: pointer; color: var(--dim); }
+  .vn { max-width: min(620px, 94vw); border: 1px solid var(--dim); padding: 18px 20px; background: var(--bg); color: var(--fg); }
+  .vn::backdrop { background: rgba(0, 0, 0, .7); }
+  .vn h2 { margin: 2px 0 8px; font-size: 22px; } .vn h3 { margin: 8px 0 4px; font-size: 14px; }
+  .vn-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; }
+  @media (max-width: 520px) { .vn-cols { grid-template-columns: 1fr; } }
+  .vn ul { margin: 0; padding: 0; list-style: none; font-size: 14px; }
+  .vn li { margin: 3px 0; padding-left: 20px; position: relative; }
+  #vn-has li::before { content: "✓"; position: absolute; left: 0; color: #7be0a8; }
+  #vn-hasnt li::before { content: "✕"; position: absolute; left: 0; color: #ff8a80; }
+  .vn-meta b { font-weight: 600; }
   button.linkish { background: none; color: var(--dim); padding: 0; text-decoration: underline; font-size: 13px; }
   .diag pre { max-height: 220px; overflow: auto; margin: 8px 0; }
   .diag button { font-size: 13px; padding: 4px 12px; margin: 0 6px 6px 0; }
@@ -58,6 +68,10 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Instrument+Sans:wght@400;500;600&amp;family=Silkscreen&amp;family=VT323&amp;display=swap">
 <style id="jiant-skin">
 /*SKIN-BEGIN*/
+:root[data-skin] .vn { background:var(--sk-panel); border:var(--sk-b) solid var(--sk-accent); border-radius:var(--sk-r); }
+:root[data-skin] .vn h2 { font:400 22px/1.2 var(--sk-display); }
+:root[data-skin] .vn h3 { font-family:var(--sk-mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--sk-accent); }
+:root[data-skin] .vn-meta { font-family:var(--sk-mono); }
 :root[data-skin] .gate { background:var(--sk-panel); border:var(--sk-b) solid var(--line); border-radius:var(--sk-r); padding:20px 22px; }
 :root[data-skin] .gate h2 { font:400 22px/1.2 var(--sk-display); color:var(--fg); }
 :root[data-skin] .gatebody { border-color:var(--line); }
@@ -162,13 +176,23 @@
     <p class="accept"><label><input type="checkbox" id="gate-ok"> <span data-t="gateAccept"></span></label></p>
     <p><button id="gate-go" disabled data-t="gateGo"></button></p>
   </section>
+  <!-- (studio) what a version has and has not (web/VERSION_NOTES.json, published as firmware/VERSION_NOTES.json) -->
+  <dialog id="vn" class="vn" aria-labelledby="vn-title">
+    <p class="small vn-meta" id="vn-meta"></p>
+    <h2 id="vn-title"></h2>
+    <p id="vn-sum"></p>
+    <div class="vn-cols"><div><h3 data-t="vnHas"></h3><ul id="vn-has"></ul></div><div id="vn-hasnt-box"><h3 data-t="vnHasnt"></h3><ul id="vn-hasnt"></ul></div></div>
+    <p class="small" id="vn-notes"></p>
+    <p><button type="button" id="vn-ok" data-t="vnOk"></button></p>
+  </dialog>
   <section id="app" hidden>
   <ol class="isteps">
     <li><b data-t="iStep1"></b><span data-t="intro"></span></li>
     <li><b data-t="iStep2"></b>
       <select id="ver" style="font:inherit" aria-label="Version"></select>
       <span class="small" data-t="verOld"></span>
-      <span id="edition-info" class="small"></span></li>
+      <span id="edition-info" class="small"></span>
+      <button type="button" class="linkish" id="vn-open" hidden data-t="vnOpen"></button></li>
     <li><b data-t="iStep3"></b><span class="small" data-t="firstOk"></span></li>
   </ol>
   <!-- (0.8.5) the release's notice, before 0.8.5 is written (releaseNotice) -->
@@ -224,6 +248,7 @@
 const $ = (id) => document.getElementById(id);
 const TEXT = {
   ja: {
+    vnOpen: "このバージョンの内容", vnHas: "あるもの", vnHasnt: "ないもの", vnOk: "OK", vnPublic: "公開版", vnBeta: "ベータ", vnClassic: "クラシック",
     gateTitle: "インストールの前に", gateLead: "一度だけ読んでください。ファームウェアを書き込む前に知っておくべきことのすべてです。",
     gateAccept: "注意事項を読み、自己責任でインストールすることに同意します。", gateGo: "続ける",
     gateReread: "注意事項をもう一度見る", iStep1: "FM-1 を接続", iStep2: "バージョンを選ぶ", iStep3: "インストール",
@@ -276,6 +301,7 @@ const TEXT = {
     n085Confirm: "0.8.5 では DRUM-X のオクターブが加わり、中央以外のオクターブのドラムノートはラチェット / SHORT / GHOST / FLAM で鳴ります（既存の曲が変わることがあります）。プロジェクトのバックアップは保存しましたか？ OK でインストールします。",
   },
   en: {
+    vnOpen: "What this version has", vnHas: "Has", vnHasnt: "Doesn't have", vnOk: "Got it", vnPublic: "public", vnBeta: "beta", vnClassic: "classic",
     gateTitle: "Before you install", gateLead: "Read this once: it is everything worth knowing before the firmware is written.",
     gateAccept: "I have read the warnings and I install at my own risk.", gateGo: "Continue",
     gateReread: "See the warnings again", iStep1: "Connect the FM-1", iStep2: "Choose the version", iStep3: "Install",
@@ -476,6 +502,7 @@ Object.assign(TEXT.ja, {
   tip_error: "「レポートをコピー」を押して送ってください（GitHub の Issues、またはリンクを見つけた場所）。",
 });
 TEXT.es = {
+  vnOpen: "Qué trae esta versión", vnHas: "Tiene", vnHasnt: "No tiene", vnOk: "Entendido", vnPublic: "pública", vnBeta: "beta", vnClassic: "clásica",
   gateTitle: "Antes de instalar", gateLead: "Leé esto una vez: es todo lo que conviene saber antes de escribir el firmware.",
   gateAccept: "Leí las advertencias y acepto instalar bajo mi responsabilidad.", gateGo: "Continuar",
   gateReread: "Ver las advertencias otra vez", iStep1: "Conectá la FM-1", iStep2: "Elegí la versión", iStep3: "Instalá",
@@ -840,7 +867,38 @@ const noticeOf = () => releaseNotice((versions[+$("ver").value] || versions[0]).
 const showNotice = () => { $("notice").hidden = !noticeOf(); };
 fillVersions();
 showNotice();
-$("ver").addEventListener("change", () => { showNotice(); showEdition(); if (!writing) loadVersion(+$("ver").value); });
+$("ver").addEventListener("change", () => { showNotice(); showEdition(); if (!writing) loadVersion(+$("ver").value); vnShow(true); });
+/* (studio) what the version picked has and has not: firmware/VERSION_NOTES.json, the longest key the version starts
+ * with ("V10.8.25" for "V10.8.25-f9954c4-preview"); nothing when it is not there */
+let vnData = null;
+const vnLoad = () => vnData || (vnData = Promise.resolve().then(() => fetch("../../firmware/VERSION_NOTES.json", { cache: "no-cache" }))
+  .then((r) => (r && r.ok && typeof r.json === "function" ? r.json() : null)).catch(() => null));
+function vnFind(d, version) {
+  if (!d || !d.versions) return null;
+  const k = Object.keys(d.versions).filter((x) => String(version).startsWith(x)).sort((a, b) => b.length - a.length)[0];
+  return k ? { key: k, v: d.versions[k] } : null;
+}
+async function vnShow(open) {
+  const d = await vnLoad();
+  if (!d || typeof versions === "undefined" || !versions.length) return;
+  const cur = (versions[+$("ver").value] || versions[0]).version, f = vnFind(d, cur);
+  $("vn-open").hidden = !f;
+  if (!f || !open) return;
+  const L = (o) => (o ? o[lang] || o.en || o.es || "" : ""), name = (id) => L(d.features && d.features[id]) || id;
+  const st = { public: "vnPublic", beta: "vnBeta", classic: "vnClassic" }[f.v.status];
+  $("vn-meta").textContent = [st ? t(st) : "", f.v.date || ""].filter(Boolean).join(" · ");
+  $("vn-title").textContent = f.key;
+  $("vn-sum").textContent = L(f.v.summary);
+  const fill = (ul, ids) => ul.replaceChildren(...(ids || []).map((id) => Object.assign(document.createElement("li"), { textContent: name(id) })));
+  fill($("vn-has"), f.v.has); fill($("vn-hasnt"), f.v.hasnt);
+  $("vn-hasnt-box").hidden = !(f.v.hasnt || []).length;
+  $("vn-notes").textContent = L(f.v.notes); $("vn-notes").hidden = !L(f.v.notes);
+  const dlg = $("vn");
+  if (dlg.showModal && !dlg.open) dlg.showModal(); else dlg.setAttribute("open", "");
+}
+$("vn-open").addEventListener("click", () => vnShow(true));
+$("vn-ok").addEventListener("click", () => { const dlg = $("vn"); if (dlg.close) dlg.close(); else dlg.removeAttribute("open"); });
+vnShow(false);
 (async () => {
   try { permission = (await navigator.permissions.query({ name: "midi", sysex: true })).state; } catch (_) {}
   if (!env.webmidi) { const k = nomidiCode(env); sayK(k); showTip(k); log(`no WebMIDI: ${k}`); return; }
