@@ -1991,18 +1991,18 @@
        "Un solo filtro sobre el master: DJ FILT va de −64 a 63, y 0 lo apaga.",
        "Hacia la izquierda (negativo) un pasabajos que cierra; hacia la derecha (positivo) un pasaaltos que abre.",
        "El barrido sigue al oído, con una resonancia suave hacia los extremos; cruzar el medio nunca hace clic.",
-       "Girada con REC armado, se graba como automatización."
+       "Hoy no tiene perilla en el equipo (estaba en GLO › LIVE, que se fue en V10.8.3): se mueve por MIDI, desde el editor o con automatización ya grabada."
       ],
       "en": [
        "One filter on the master: DJ FILT goes from −64 to 63, and 0 turns it off.",
        "Left (negative) a low-pass closing; right (positive) a high-pass opening.",
        "The sweep follows the ear, with a gentle resonance toward the ends; crossing the middle never clicks.",
-       "Turned with REC armed, it is recorded as automation."
+       "Today it has no knob on the device (it was on GLO › LIVE, gone in V10.8.3): it is moved over MIDI, from the editor or by automation already recorded."
       ]
      },
      "where": {
-      "es": "GLO › MIXER, KNOB 4 (DJ FILT)",
-      "en": "GLO › MIXER, KNOB 4 (DJ FILT)"
+      "es": "Sin perilla en el equipo: MIDI, el editor o JIANT Studio (DJ FILT)",
+      "en": "No knob on the device: MIDI, the editor or JIANT Studio (DJ FILT)"
      },
      "anim": {
       "kind": "djfilter",

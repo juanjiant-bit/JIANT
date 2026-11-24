@@ -590,7 +590,7 @@ Guardá tus archivos WAV.</p>
 <tbody>
 <tr>
 <td><strong>HOME</strong></td>
-<td>HOME (0.9.2, como el botón de cualquier sección): desde otra sección, la última página de HOME; en HOME la primera página del grupo siguiente, en ronda: <strong>ECO → BEING → GENE → ECO</strong> (GENE: el generador, GEN hasta la V10.6m).</td>
+<td>HOME (0.9.2, como el botón de cualquier sección): desde otra sección, la última página de HOME; en HOME la primera página del grupo siguiente, en ronda: <strong>ECOSYSTEM → BEING → SONG → GENERATOR</strong>, y de vuelta a ECOSYSTEM (SONG: JAM · TAKE · ARRANGE; GENERATOR: el generador de temas, GEN hasta la V10.6m).</td>
 <td>Unos 0,7 s: abre el <strong>MENU</strong>.</td>
 </tr>
 <tr>
@@ -600,32 +600,32 @@ Guardá tus archivos WAV.</p>
 </tr>
 <tr>
 <td><strong>LFO</strong></td>
-<td>La sección LFO: desde otro lado, la última página mostrada (al encender, LFO); adentro <strong>MOD → LFO → MSEQ</strong>, en ronda.</td>
-<td>Capa <strong>MACRO</strong>: KNOB 1–4 son M1–M4.</td>
+<td>La sección LFO: desde otro lado, la última página mostrada (al encender, LFO); adentro <strong>MODULATION → LFO → MOD SEQUENCE</strong>, en ronda.</td>
+<td>(sin capa desde V10.7.66: las macros son las perillas de la capa FX)</td>
 </tr>
 <tr>
 <td><strong>FX</strong></td>
-<td>La sección FX: desde otro lado, la última página mostrada; adentro, el módulo siguiente: <strong>TRACK → BUSES → DELAY → REVERB → CHORUS → SLICER → PUNCH → MASTER</strong> (MASTER · TAPE · EQ), en ronda.</td>
+<td>La sección FX: desde otro lado, la última página mostrada; adentro, el módulo siguiente: <strong>TRACK → BUSES → DELAY → REVERB → CHORUS → SLICER → PUNCH IN → MASTER</strong> (PUNCH IN · MACROS; MASTER · TAPE · EQ), en ronda.</td>
 <td>Capa de <strong>FX punch-in</strong>.</td>
 </tr>
 <tr>
 <td><strong>SCL</strong></td>
-<td>La sección SCL (0.9.2: propia, separada de ARP): <strong>KEY → CHORD → SCENE</strong> (V10.24).</td>
+<td>La sección SCL (0.9.2: propia, separada de ARP): <strong>KEY → CHORD → HARMONY → SCENE</strong>, en ronda.</td>
 <td>Capa <strong>SCL</strong>: las teclas fijan la tónica.</td>
 </tr>
 <tr>
 <td><strong>EDIT</strong></td>
-<td>La sección EDIT: desde otro lado, la última página mostrada (una memoria para los sintes y una para FM6 y otra para DRUM); adentro el grupo siguiente: <strong>SOUND → TONE → FOCUS</strong> (FM6: SOUND → TONE → OPERATOR; DRUM: KIT → SOUND → LEVELS → TONE). Siempre EDIT (0.9.2: borrar un paso es SEQ + G5, renombrar SAVE + C5). Un paso mantenido + EDIT sigue borrando los locks de ese paso.</td>
+<td>La sección EDIT: desde otro lado, la última página mostrada (una memoria para los sintes y una para FM6 y otra para DRUM); adentro el grupo siguiente: <strong>SOUND → TONE → FOCUS → PLAY</strong> (FM6: SOUND → TONE → OPERATOR → PLAY; DRUM: KIT → SOUND → TONE). Siempre EDIT (0.9.2: borrar un paso es SEQ + G5, renombrar SAVE + C5). Un paso mantenido + EDIT sigue borrando los locks de ese paso.</td>
 <td>Capa <strong>EDIT</strong>: INIT, RECALL, mutes de los sonidos de DRUM-X, SELECT los dados de sonido. Mantenido + KNOB 1–4: <strong>MOMENTARY</strong> (la página de abajo, vuelve al soltar).</td>
 </tr>
 <tr>
 <td><strong>GLO</strong></td>
-<td>La sección GLO: desde otro lado, la última página mostrada; adentro <strong>LIVE → MIX → COMPS → GLOBAL → SYSTEM</strong>, en ronda (al prender MIXER; LIVE, las secuencias en vivo, primero; V10.37: COMPS después de MIX).</td>
+<td>La sección GLO: desde otro lado, la última página mostrada; adentro <strong>MIXER → SETUP</strong>, en ronda (al prender MIXER; SETUP: GLOBAL · SYSTEM · MIDI · KEY SPLIT · KEY SPLIT 2).</td>
 <td>Capa <strong>GLO</strong>: mutes, solos, niveles, tap tempo, UNDO.</td>
 </tr>
 <tr>
 <td><strong>SAVE</strong></td>
-<td>La sección SAVE: desde otro lado, la última página mostrada, y USER o SECTIONS llegan con su <strong>SAVE ya elegido</strong> (SAVE, OCT+, OCT+ como antes); adentro <strong>SONG → PROJECT → SOUND</strong>, en ronda (V10.2: primero el tema; al prender TIMELINE).</td>
+<td>La sección SAVE: desde otro lado, la última página mostrada, y USER o PART SLOTS llegan con su <strong>SAVE ya elegido</strong> (SAVE, OCT+, OCT+ como antes); adentro <strong>TOOLS → PROJECT → SOUND</strong>, en ronda (al prender PROJECTS; las páginas del tema son de HOME desde V10.7.63).</td>
 <td>Capa <strong>SAVE</strong>: tocar/guardar secciones en vivo; C5 NAME.</td>
 </tr>
 <tr>
@@ -890,39 +890,40 @@ páginas, sus perillas, sus dibujos y todas las funciones son las mismas, solo c
 <ol>
 <li><strong>SELECT recorre las páginas.</strong> Girar SELECT pasa por todas las páginas de la sección, en una sola cadena, una
    página por paso, y frena en la primera y en la última. Sin niveles, sin zoom. FX: SENDS → DIST → AUTO PAN → BUSES →
-   DLY → DLY 2 → DLY 3 → REVERB → … → PUNCH.</li>
+   DLY → DLY 2 → DLY 3 → REVERB → … → EQ.</li>
 <li><strong>El botón de la sección: entrar o saltar.</strong> Desde otra sección te devuelve a la última página donde estabas ahí. Si
    ya estás adentro, salta a la <strong>primera página del grupo siguiente</strong> (y da la vuelta). En FX › DLY 2, FX va a REVERB;
    en EDIT › FILTER, EDIT va a FOCUS.</li>
-<li><strong>PRESETS carga presets.</strong> Siempre: los sonidos de la pista en todas las secciones, los <strong>patrones</strong> en SEQ (el
-   cargador PHRASES), el <strong>género</strong> en GEN. Nunca cambia de página, de pista ni de módulo (en el MENU no hace nada).</li>
-<li><strong>KNOB 1 elige.</strong> Si una página elige algo (un paso, un compás, un slot, una etapa, un operador, el sonido del kit,
-   una fila), KNOB 1 es la que lo elige. La pista, siempre <strong>ALGORITHM</strong>. SEQ › STEP: KNOB 1 recorre los 64 pasos,
-   compás tras compás; la página nueva <strong>SEQ › BAR</strong>: KNOB 1 el compás.</li>
+<li><strong>PRESETS carga presets.</strong> Los sonidos de la pista en todas las secciones, también en las páginas del generador.
+   En las páginas <strong>SEQ</strong> mueve el cursor de pasos (V10.7.60: girada despacio un paso, rápido un compás entero). El
+   <strong>género</strong> es el KNOB 1 de GENERATOR 1. En el MENU no hace nada; con MENU › DISPLAY › PRESETS en MENU abre SAVE ›
+   PRESETS.</li>
+<li><strong>KNOB 1 elige.</strong> Si una página elige algo (un slot, un operador, el sonido del kit, una fila, un modulador, una
+   macro), KNOB 1 es la que lo elige. La pista, siempre <strong>ALGORITHM</strong>. Una excepción (V10.8): en SEQ › STEP el KNOB 1
+   es <strong>SEQ</strong>, la secuencia A–D de la pista; el cursor de pasos es de PRESETS y de las teclas de paso.</li>
 <li><strong>Mantener = la capa.</strong> Mantener un botón abre su capa de atajos, como antes (más allá del tiempo HOLD, MENU &gt;
    HOLD, 0,4 s por defecto: las teclas y perillas cambian de función mientras lo mantenés, un mapa muestra qué hace
-   cada tecla; una tecla o una perilla la abre al instante; soltá y volvés). Mantenido + SELECT: <strong>HOME</strong> GEN, <strong>EDIT /
-   SEQ / LFO / FX</strong> sus dados, <strong>GLO</strong> el tempo, <strong>ENV / SCL / ARP / SAVE</strong> recorren su cadena. (Mantenido + PRESETS ya
+   cada tecla; una tecla o una perilla la abre al instante; soltá y volvés). Mantenido + SELECT: <strong>HOME</strong> el generador, <strong>EDIT</strong> el dado de sonido, <strong>GLO</strong> el tempo, las demás secciones recorren su cadena (V10.7.66: los dados de LFO y de FX se fueron). (Mantenido + PRESETS ya
    no recorre páginas: regla 3; V10.7: EDIT mantenido + PRESETS salta de motor en motor.)</li>
 <li><strong>La pantalla dice dónde estás.</strong> Arriba, las pestañas son los <strong>grupos</strong> de la sección, el actual encendido y un
    puntito por cada una de sus páginas. Abajo: <strong>SECCIÓN · GRUPO · página</strong> y <strong>n/N</strong>, el lugar de la página en la
-   cadena: <strong>FX · DELAY · DLY 2  6/16</strong>. Igual en AIR, COLORS, BOTTOM y HUD, con todas las paletas.</li>
+   cadena: <strong>FX · DELAY · DLY 2  6/19</strong>. Igual en AIR, COLORS, BOTTOM y HUD, con todas las paletas.</li>
 </ol>
 <ul>
 <li>Cada sección recuerda la página donde la dejaste (EDIT una para los sintes y una para FM6 y otra para DRUM); al
-  encender SEQ abre en STEP, ENV en ENV, LFO en LFO, las demás en su primera página.</li>
-<li><strong>SCL y ARP son dos secciones</strong> (hasta la 0.9.1 una lente): SCL es KEY · CHORD, ARP es ARP · ARP 2 (un grupo: un
+  encender SEQ abre en STEP, ENV en ENV, LFO en LFO, SAVE en PROJECTS, las demás en su primera página.</li>
+<li><strong>SCL y ARP son dos secciones</strong> (hasta la 0.9.1 una lente): SCL es KEY · CHORD · HARMONY · SCENE, ARP es ARP · ARP 2 (un grupo: un
   toque de ARP adentro vuelve a ARP).</li>
-<li><strong>GEN son tres páginas de HOME</strong> (GEN 1–3, el último grupo de HOME), ya no una pantalla aparte: los botones de
+<li><strong>El generador son cuatro páginas de HOME</strong> (GENERATOR 1–4, el último grupo de HOME), ya no una pantalla aparte: los botones de
   sección funcionan ahí, OCT+ arma la pieza, OCT− vuelve a ECO. HOME + SELECT lo sigue abriendo desde cualquier lado.</li>
-<li><strong>SAVE desde afuera</strong> vuelve a la página de SAVE que dejaste; <strong>USER</strong> y <strong>SECTIONS</strong> llegan con su SAVE ya elegido,
+<li><strong>SAVE desde afuera</strong> vuelve a la página de SAVE que dejaste; <strong>USER</strong> y <strong>PART SLOTS</strong> llegan con su SAVE ya elegido,
   así SAVE, OCT+, OCT+ sigue guardando el sonido (o la sección).</li>
 <li><strong>EDIT es siempre EDIT</strong>: borrar un paso pasó a la capa SEQ (<strong>SEQ + G5</strong>, CLR STEP; en AUTO LIST borra el
   registro; llevar TIME a REST también borra la nota) y renombrar a la capa SAVE (<strong>SAVE + C5</strong>, NAME).</li>
 <li><strong>El MENU</strong> (mantené HOME): SELECT recorre todas las filas (DISPLAY → CONTROL → AUDIO → SYSTEM), ALGORITHM salta de
   pestaña, una perilla cambia el valor, HOME lo cierra.</li>
 <li>Algunas páginas solo aparecen cuando corresponden: las páginas de operadores de FM6 en una pista FM6, las de DRUM-X
-  en una pista DRUM, RETRIG en MATH, las páginas de SWARM en una pista EXT con SWARM, y con <strong>LOAD ECO</strong> se ocultan las páginas SLICER y CHORUS; la cadena
+  en una pista DRUM, MORE en ANALOG, PHASE, MATH y WHEEL, WORDS y LYRIC STEP en VOICE, las páginas de SWARM en una pista EXT con SWARM, y con <strong>LOAD ECO</strong> se ocultan las páginas SLICER y CHORUS; la cadena
   las saltea.</li>
 </ul>
 <h3 id="las-secciones-y-sus-cadenas">Las secciones y sus cadenas</h3>
@@ -939,38 +940,38 @@ la misma de la 0.9.1, con sus perillas y su dibujo (los que dibujaban las lentes
 <tbody>
 <tr>
 <td><strong>HOME</strong></td>
-<td><strong>ECO</strong>: ECO · MACROS — <strong>BEING</strong>: BEING · ROUTES — <strong>GENE</strong>: GENE 1 · GENE 2 · GENE 3</td>
-<td>7</td>
+<td><strong>ECOSYSTEM</strong>: ECOSYSTEM · LIFE — <strong>BEING</strong>: BEING — <strong>SONG</strong>: JAM · TAKE · ARRANGE — <strong>GENERATOR</strong>: GENERATOR 1 · GENERATOR 2 · GENERATOR 3 · GENERATOR 4</td>
+<td>10</td>
 </tr>
 <tr>
 <td><strong>EDIT</strong> (un sinte)</td>
-<td><strong>SOUND</strong>: EDIT 1 · EDIT 2 — <strong>TONE</strong>: FILTER · MORPH · RETRIG · ROTOR · WORDS · STEREO · SWARM · SWARM 2 (las que tengan el motor y la pista) — <strong>FOCUS</strong>: FOCUS — <strong>VOICE</strong>: VOICE · VOICE 2</td>
-<td>hasta 12</td>
+<td><strong>SOUND</strong>: las dos páginas del motor, con su propio nombre (WAVES · SHAPE, FORMULA · MOTION …, ver <a href="#4-motores">4</a>; ANALOG tiene una, OSC) — <strong>TONE</strong>: FILTER · WORDS (VOICE) · SWARM · SWARM 2 (EXT con SOURCE SWARM) — <strong>FOCUS</strong>: FOCUS (no en EXT) — <strong>PLAY</strong>: MORE (ANALOG, PHASE, MATH, WHEEL) · PLAY</td>
+<td>4 a 6</td>
 </tr>
 <tr>
 <td><strong>EDIT</strong> (FM6)</td>
-<td><strong>SOUND</strong>: EDIT 1 · EDIT 2 — <strong>TONE</strong>: FILTER · STEREO — <strong>OPERATOR</strong>: OPERATOR · OP ENV · OPERATOR 2 — <strong>VOICE</strong>: VOICE · VOICE 2</td>
-<td>9</td>
+<td><strong>SOUND</strong>: ALGO · PATCH — <strong>TONE</strong>: FILTER — <strong>OPERATOR</strong>: OPERATOR · OP ENV · OPERATOR 2 — <strong>PLAY</strong>: PLAY</td>
+<td>7</td>
 </tr>
 <tr>
 <td><strong>EDIT</strong> (DRUM)</td>
-<td><strong>KIT</strong>: KIT · KIT 2 · KIT 3 · KIT 4 — <strong>SOUND</strong>: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — <strong>LEVELS</strong>: LEVELS · LEVELS 2 — <strong>TONE</strong>: X-MOD · FILTER · STEREO · VOICE</td>
-<td>14</td>
+<td><strong>KIT</strong>: KIT · KIT 2 — <strong>SOUND</strong>: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — <strong>TONE</strong>: CROSS MOD · FILTER</td>
+<td>8</td>
 </tr>
 <tr>
 <td><strong>SEQ</strong></td>
-<td>(V10.8.35) <strong>STEP</strong>: STEP — <strong>PATTERN</strong>: LENGTH · RHYTHM · TRACK — <strong>EUCLID</strong>: EUCLID · MODES (en una pista melódica: MELODY) · MUTATE — <strong>PLAYHEADS</strong>: PLAYHEADS — <strong>STEP FX</strong>: STEP FX · STEP FX 2 — <strong>AUTO</strong>: AUTOMATION · AUTO LIST · LYRIC STEP (VOICE) — <strong>TRACK GEN</strong>: TRACK GEN — <strong>DRONE CLAY</strong>: DRONE CLAY · CLAY MOD · CLAY RHYTHM · CLAY TIME</td>
-<td>18</td>
+<td>(V10.8.35) <strong>STEP</strong>: STEP — <strong>PATTERN</strong>: LENGTH · RHYTHM · TRACK — <strong>EUCLID</strong>: EUCLID · MODES (en una pista melódica: MELODY) · MUTATE — <strong>PLAYHEADS</strong>: PLAYHEADS — <strong>STEP FX</strong>: STEP FX · STEP FX 2 — <strong>AUTO</strong>: AUTOMATION · AUTO LIST · LYRIC STEP (VOICE) — <strong>TRACK GEN</strong>: TRACK GEN (no en EXT) — <strong>DRONE CLAY</strong>: DRONE CLAY · CLAY MOD · CLAY RHYTHM · CLAY TIME</td>
+<td>hasta 18</td>
 </tr>
 <tr>
 <td><strong>FX</strong></td>
-<td><strong>TRACK</strong>: SENDS · DIST · AUTO PAN — <strong>BUSES</strong>: BUSES — <strong>DELAY</strong>: DLY · DLY 2 · DLY 3 — <strong>REVERB</strong>: REVERB · REVERB 2 — <strong>CHORUS</strong>: CHORUS — <strong>SLICER</strong>: SLICER · SL BUS · SL BUS 2 · SL PITCH — <strong>PUNCH</strong>: PUNCH — <strong>MASTER</strong>: MASTER · TAPE · EQ</td>
-<td>18</td>
+<td><strong>TRACK</strong>: SENDS · DIST · AUTO PAN — <strong>BUSES</strong>: BUSES — <strong>DELAY</strong>: DLY · DLY 2 · DLY 3 — <strong>REVERB</strong>: REVERB · REVERB 2 — <strong>CHORUS</strong>: CHORUS — <strong>SLICER</strong>: SLICER · SL BUS · SL BUS 2 · SL PITCH — <strong>PUNCH IN</strong>: PUNCH IN · MACROS — <strong>MASTER</strong>: MASTER · TAPE · EQ</td>
+<td>19</td>
 </tr>
 <tr>
 <td><strong>GLO</strong></td>
-<td><strong>LIVE</strong>: MANO · RIELES — <strong>MIX</strong>: MIXER · SENDS — <strong>COMPS</strong>: COMPS · COMPS 2 — <strong>GLOBAL</strong>: GLOBAL — <strong>SYSTEM</strong>: SYSTEM · SYSTEM 2 · KEY SPLIT · KEY SPLIT 2</td>
-<td>11</td>
+<td><strong>MIXER</strong>: MIXER · SENDS — <strong>SETUP</strong>: GLOBAL · SYSTEM · MIDI · KEY SPLIT · KEY SPLIT 2</td>
+<td>7</td>
 </tr>
 <tr>
 <td><strong>ENV</strong></td>
@@ -979,13 +980,13 @@ la misma de la 0.9.1, con sus perillas y su dibujo (los que dibujaban las lentes
 </tr>
 <tr>
 <td><strong>LFO</strong></td>
-<td><strong>MOD</strong>: MOD — <strong>LFO</strong>: LFO · LFO DEST — <strong>MSEQ</strong>: MSEQ · MSEQ 2</td>
-<td>5</td>
+<td><strong>MODULATION</strong>: MOD — <strong>LFO</strong>: LFO · LFO 2 · LFO DEST — <strong>MOD SEQUENCE</strong>: MOD SEQ · MOD SEQ 2</td>
+<td>6</td>
 </tr>
 <tr>
 <td><strong>SCL</strong></td>
-<td><strong>KEY</strong>: SCL — <strong>CHORD</strong>: CHORD — <strong>SCENE</strong>: SCENE (V10.24)</td>
-<td>3</td>
+<td><strong>KEY</strong>: KEY — <strong>CHORD</strong>: CHORD — <strong>HARMONY</strong>: HARMONY — <strong>SCENE</strong>: SCENE</td>
+<td>4</td>
 </tr>
 <tr>
 <td><strong>ARP</strong></td>
@@ -994,16 +995,19 @@ la misma de la 0.9.1, con sus perillas y su dibujo (los que dibujaban las lentes
 </tr>
 <tr>
 <td><strong>SAVE</strong></td>
-<td><strong>SONG</strong>: TIMELINE · PARTS · CLIPS · SECTIONS — <strong>PROJECT</strong>: PROJECTS · ARRANGE · TOOLS · SAVE SONG AS — <strong>SOUND</strong>: USER · PRESETS</td>
-<td>10</td>
+<td><strong>TOOLS</strong>: TOOLS — <strong>PROJECT</strong>: PART SLOTS · PROJECTS — <strong>SOUND</strong>: USER · PRESETS</td>
+<td>5</td>
 </tr>
 </tbody>
 </table></div>
-<p>Dónde vivía cada página en la 0.9.1: las vistas de seis envolventes de ENV (el nivel TRACKS) ahora son páginas propias,
-<strong>TRACKS</strong> y <strong>TRACKS DEST</strong>, con las perillas de ENV y ENV DEST; <strong>NOTE</strong> aparece una sola vez (el grupo BAR; su
-dibujo del paso grande es el de COMP); el <strong>SENDS</strong> de FX es la página FX; la página PROJECT de SAVE es <strong>SECTIONS</strong> (el
-nivel PROJECT) y <strong>PROJECTS</strong> (el nivel LIBRARY); EDIT 1 / EDIT 2 del kit DRUM son <strong>KIT</strong> / <strong>KIT 2</strong>. La página nueva
-<strong>BAR</strong> es el dibujo de los compases de PATTERN con KNOB 1 el compás y KNOB 2 LEN.</p>
+<p>Un grupo cuyo nombre no entra en su pestaña se acorta ahí: ECO, GENE (HOME); OPS (FM6); PAT, EUCL, HEAD, SFX, GEN, CLAY
+(SEQ); TRK, BUS, DLY, REV, CHO, SLC, PCH, MST (FX); MIX (GLO); MOD, MOD SEQ (LFO); PROG (el HARMONY de SCL). Al
+encender cada sección abre en su primera página, salvo LFO en LFO y SAVE en PROJECTS.</p>
+<p>Páginas que salieron de las cadenas: MACROS y ROUTES de HOME (las macros son FX › PUNCH IN y MACROS); TRACKS, TRACKS
+DEST y STAGE de ENV; LIVE (MANO, RIELES) y COMPS de GLO; MORPH, RETRIG y ROTOR de EDIT (una página <strong>MORE</strong> por motor),
+STEREO, VOICE y VOICE 2 (ahora <strong>PLAY</strong>); KIT 3, KIT 4, LEVELS y STEREO del kit DRUM (sus perillas en KIT 2, SOUND,
+SOUND 4 y FILTER); STRETCH, BAR y NOTE de SEQ; TIMELINE, PARTS, CLIPS y SAVE SONG AS de SAVE (el tema es HOME › SONG:
+JAM, TAKE, ARRANGE).</p>
 <ul>
 <li><strong>ECO</strong>: los seres de las seis pistas nadando libres por todo el panel, solos (0.8.8: como antes de 0.8.5), cada
   uno hinchándose con su sonido (un golpe lo empuja), su número debajo; el seleccionado más grande, su número violeta.
@@ -1012,25 +1016,23 @@ nivel PROJECT) y <strong>PROJECTS</strong> (el nivel LIBRARY); EDIT 1 / EDIT 2 d
   de adentro más calientes), y donde estaban sus núcleos una <strong>carita</strong>: dos ojos que <strong>se cierran con un golpe</strong> y una
   boca que <strong>se abre con el nivel</strong>. El ser de una pista muteada duerme (un contorno apagado, los ojos cerrados). (V10.6: la
   mirada para arriba y el anillo se fueron con MUTATE.) Detrás derivan los gránulos del citoplasma (los dibuja solo la pantalla: nada del
-  tiempo del sonido). <strong>MACROS</strong>: KNOB 1–4 son <strong>M1–M4</strong> (las macros, como LFO
-  mantenido), las rutas contadas arriba a la izquierda, LATCH a la derecha.</li>
+  tiempo del sonido). <strong>LIFE</strong> (V10.7.62, donde estaba MACROS): KNOB 1–4 son FILTER, TIMBRE,
+  PUMP y FX, cuánto se mueven las pistas entre sí; el panel dice LIFE ON o LIFE OFF.</li>
 <li><strong>BEING</strong>: el ser de la pista grande, sus cuatro perillas de HOME como órganos en las esquinas (un medidor cada una,
   su valor, una vena hasta el cuerpo), el nombre del sonido debajo. (0.9.4) Una pista VOICE muestra ahí su <strong>cabeza</strong>, una ANIMAL su
   <strong>criatura</strong>, una DRUM-X su <strong>batería de bichitos</strong> (ver <a href="#tres-motores-dibujan-su-propia-criatura-094">sus dibujos</a>); (0.9.6) los otros
-  seis motores los suyos (<a href="#seis-motores-más-dibujan-su-propia-criatura-096">una célula, una colonia, gusanos, un enjambre, un caracol, una oruga</a>). <strong>ROUTES</strong>: M1–M4 a la izquierda con sus rutas
-  dibujadas hasta donde van (<strong>T2 CUT+62</strong>).</li>
+  seis motores los suyos (<a href="#seis-motores-más-dibujan-su-propia-criatura-096">una célula, una colonia, gusanos, un enjambre, un caracol, una oruga</a>). (ROUTES se fue en V10.7.66: las rutas de las macros están en FX › PUNCH IN › MACROS.)</li>
 <li><strong>ENV</strong> › <strong>TRACKS</strong> / <strong>TRACKS DEST</strong>: las envolventes de las seis pistas como mosaicos (la seleccionada teñida, con su nivel actual
   como punto; DEST: FILTER, PITCH y SHAPE como barras debajo de cada una); las perillas son de la pista seleccionada —
   <strong>ALGORITHM</strong> elige la pista. <strong>ENV</strong>: la envolvente grande / las columnas de ENV DEST, como antes.
   (TRACKS y TRACKS DEST se fueron en V10.8.16; <strong>STAGE</strong> en V10.8.35: LOOP está en ENV DEST.)</li>
 <li><strong>GLO</strong> › <strong>LIVE</strong> (0.9.11; MANO y RIELES) se fue en V10.8.3; sus modificadores en vivo están desde V10.8.35 en las
   teclas negras de SEQ › STEP FX (<a href="#secuencias-en-vivo-las-teclas-negras-de-seq--step-fx-v10835">11</a>).</li>
-<li><strong>GLO</strong> › <strong>MIX</strong>: las seis pistas como tiras (MIXER: LEVEL con el vúmetro, PAN, REV; <strong>SENDS</strong>, nueva: DIST,
-  CHORUS, DLY y REV de cada pista como cuatro barras, las perillas de la pista seleccionada). <strong>GLOBAL</strong>: el compás de
+<li><strong>GLO</strong> › <strong>MIX</strong>: las seis pistas como tiras (MIXER: LEVEL con el vúmetro, PAN, MUTE, y el tempo en el KNOB 4; <strong>SENDS</strong>: los envíos de cada pista como barras, las perillas son CHORUS, DLY y REV de la pista seleccionada). <strong>GLOBAL</strong>: el compás de
   semicorcheas, como antes. <strong>SYSTEM</strong>: las pistas que suenan como fichas, los tres ajustes de LOAD (encendido el
   elegido), la ruta MIDI, la carga de CPU de los últimos segundos como una línea.</li>
 <li><strong>SCL · ARP</strong> › <strong>KEY</strong>: las doce notas en un círculo (C arriba), las de la escala encendidas y unidas, ROOT en el
-  acento con el nombre de la escala en el medio, QUANT y ALL TR a la derecha, la escala en un teclado debajo; KNOB 1
+  acento con el nombre de la escala en el medio, QUANT y ALL TRK a la derecha, la escala en un teclado debajo; KNOB 1
   fija ROOT. <strong>CHORD</strong>: el acorde que toca ahora cada grado de la tonalidad (I–VII, como lo tocaría una tecla: una nota
   si CHORD está en OFF o la voz no es POLY). <strong>ARP</strong> / <strong>ARP 2</strong>: "MODE · RATE · OCT" y el patrón que toca sobre una
   tríada (GATE el largo de las celdas, SWING los contratiempos tarde, PROB algunas fuera); en OFF lo dice.</li>
@@ -1038,22 +1040,96 @@ nivel PROJECT) y <strong>PROJECTS</strong> (el nivel LIBRARY); EDIT 1 / EDIT 2 d
   de la fuente de cada slot a su caja <strong>D1–D4</strong> a la derecha (DEST, AMT como barra), el slot elegido con KNOB 1
   enmarcado con un pulso que corre por su curva. <strong>LFO</strong>: la onda bajo "RATE · WAVE" / <strong>LFO
   DEST</strong>: el LFO chico a la izquierda, los cuatro montos como filas encendidas por lo que el LFO manda ahora.
-  <strong>MSEQ</strong> / <strong>MSEQ 2</strong>: los dieciséis pasos bajo su leyenda; KNOB 1 el paso.</li>
+  <strong>MOD SEQ</strong> / <strong>MOD SEQ 2</strong>: los dieciséis pasos bajo su leyenda; KNOB 1 el paso.</li>
 <li><strong>EDIT</strong> › <strong>SOUND</strong>: la criatura del motor a la izquierda (0.9.4 / 0.9.6: cada motor la suya, ver abajo; vivo con el sonido, el nombre de la página arriba, el del
   sonido abajo), el osciloscopio en un pozo y los ocho parámetros E como fichas a la derecha, encendidas las cuatro de
-  la página. <strong>TONE</strong>: <strong>FILTER</strong> dibuja la respuesta de TYPE en CUT con su pico de RES (LP, HP, BP, COMB), CUT una
-  línea, DRIVE / DIST una fila de celdas; <strong>VOICE</strong> / <strong>VOICE 2</strong> las voces una por fila, tan llenas como suenan,
-  VOICE y PRIO (VOICE 2: ALLOC), la curva de GLIDE; las demás conservan su dibujo. <strong>FOCUS</strong> (nueva): un parámetro E
+  la página. <strong>TONE</strong>: <strong>FILTER</strong> dibuja la respuesta de TYPE en CUT con su pico de RES (LP, HP, BP, COMB), CUT una línea; <strong>PLAY</strong> (VOICE y VOICE 2 hasta V10.7.64) las voces una por fila, tan llenas como suenan, con POLY, GLIDE, UNISON y VEL; las demás conservan su dibujo. <strong>FOCUS</strong> (nueva): un parámetro E
   grande como medidor — KNOB 1 lo elige (E1–E8), KNOB 2 lo ajusta, KNOB 3 la <strong>fuente</strong> del slot de MOD que apunta a
   él (subida desde OFF la toma un slot libre, con ese parámetro como DEST; de vuelta a OFF lo libera), KNOB 4 el
   <strong>AMT</strong> de ese slot; E1–E8 como pestañas abajo.</li>
-<li><strong>GEN 1–3</strong> son el generador (como HOME mantenido + SELECT, desde cualquier página): <strong>SELECT</strong> cambia la página (a
-  la izquierda de GEN 1: ROUTES), <strong>PRESETS</strong> el GENRE, <strong>OCT+</strong> arma la pieza, <strong>OCT−</strong> vuelve a ECO, un toque de
+<li><strong>GENERATOR 1–4</strong> son el generador (como HOME mantenido + SELECT, desde cualquier página): <strong>SELECT</strong> cambia la página (a la izquierda de GENERATOR 1: ARRANGE), el <strong>KNOB 1</strong> de GENERATOR 1 el GENRE, <strong>OCT+</strong> arma la pieza, <strong>OCT−</strong> vuelve a ECO, un toque de
   <strong>HOME</strong> sigue a ECO.</li>
 </ul>
 <h3 id="cada-pagina-y-sus-cuatro-perillas">Cada página y sus cuatro perillas</h3>
 <p>"—" significa una tarjeta vacía. Una tarjeta de "acción" elegida (girá la perilla a la derecha) queda teñida de
 violeta, con el nombre violeta, y dice <strong>OCT+</strong>; apretá OCT+ para ejecutarla.</p>
+<p><strong>HOME</strong></p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Página</th>
+<th>KNOB 1</th>
+<th>KNOB 2</th>
+<th>KNOB 3</th>
+<th>KNOB 4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ECOSYSTEM, BEING</td>
+<td>las cuatro perillas de HOME de la pista seleccionada (las de su motor, ver <a href="#4-motores">4</a>)</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>LIFE (V10.7.62)</td>
+<td>FILTER</td>
+<td>TIMBRE</td>
+<td>PUMP</td>
+<td>FX (0–100 % cada una, de todo el proyecto)</td>
+</tr>
+<tr>
+<td>JAM</td>
+<td>TRACK</td>
+<td>SEQ (A–D)</td>
+<td>CAMBIO (AT ONCE, 1/16, 1/8, 1/4, 1/2, BAR)</td>
+<td>TAKE (FREE / LOCK; ARM, REC)</td>
+</tr>
+<tr>
+<td>TAKE (V10.8.2)</td>
+<td>CHANGE</td>
+<td>WHEN</td>
+<td>SEQ</td>
+<td>BARS</td>
+</tr>
+<tr>
+<td>ARRANGE</td>
+<td>ROW</td>
+<td>PART (en END: STOP / x2–x8 / LOOP)</td>
+<td>BARS</td>
+<td>SCENE</td>
+</tr>
+<tr>
+<td>GENERATOR 1</td>
+<td>GENRE</td>
+<td>SEED</td>
+<td>ENERGY</td>
+<td>FORM (LOOP, PARTS, SONG, MY LOOP)</td>
+</tr>
+<tr>
+<td>GENERATOR 2</td>
+<td>DRUMS</td>
+<td>BASS</td>
+<td>CHORDS</td>
+<td>ARP</td>
+</tr>
+<tr>
+<td>GENERATOR 3</td>
+<td>LEAD</td>
+<td>COMPLEX</td>
+<td>SWING</td>
+<td>HUMAN</td>
+</tr>
+<tr>
+<td>GENERATOR 4</td>
+<td>KEY (NEW / KEEP)</td>
+<td>ENTRY (ALL / BUILD)</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
 <p><strong>ENV</strong> (por pista)</p>
 <div class="tw"><table>
 <thead>
@@ -1102,6 +1178,13 @@ violeta, con el nombre violeta, y dice <strong>OCT+</strong>; apretá OCT+ para 
 </thead>
 <tbody>
 <tr>
+<td>MOD</td>
+<td>SLOT (1–4)</td>
+<td>SRC</td>
+<td>DEST (su tarjeta dice TRACK, VOICE o MASTER, de quién es el destino)</td>
+<td>AMT</td>
+</tr>
+<tr>
 <td>LFO</td>
 <td>RATE</td>
 <td>WAVE</td>
@@ -1123,21 +1206,14 @@ violeta, con el nombre violeta, y dice <strong>OCT+</strong>; apretá OCT+ para 
 <td>AMP</td>
 </tr>
 <tr>
-<td>MOD</td>
-<td>SLOT (1–4)</td>
-<td>SRC</td>
-<td>DEST</td>
-<td>AMT</td>
-</tr>
-<tr>
-<td>MSEQ</td>
+<td>MOD SEQ</td>
 <td>STEP (1–16)</td>
 <td>LEVEL</td>
 <td>LEN</td>
 <td>SLEW</td>
 </tr>
 <tr>
-<td>MSEQ 2</td>
+<td>MOD SEQ 2</td>
 <td>DIV</td>
 <td>—</td>
 <td>—</td>
@@ -1161,11 +1237,11 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.</p>
 </thead>
 <tbody>
 <tr>
-<td>FX</td>
-<td>DIST</td>
+<td>SENDS</td>
 <td>CHORUS (envío)</td>
 <td>DLY (envío)</td>
 <td>REV (envío)</td>
+<td>DIST</td>
 </tr>
 <tr>
 <td>DIST</td>
@@ -1183,10 +1259,52 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.</p>
 </tr>
 <tr>
 <td>BUSES (0.8.5)</td>
-<td>MIX (del delay)</td>
-<td>SIZE (de la reverb)</td>
-<td>DEPTH (del chorus)</td>
-<td>DEPTH (del SLICER)</td>
+<td>DLY (el MIX del delay)</td>
+<td>REV (el SIZE de la reverb)</td>
+<td>CHO (el DEPTH del chorus)</td>
+<td>SLC (el DEPTH del SLICER)</td>
+</tr>
+<tr>
+<td>DLY</td>
+<td>TIME</td>
+<td>FEEDBK</td>
+<td>TONE</td>
+<td>MIX</td>
+</tr>
+<tr>
+<td>DLY 2</td>
+<td>WIDE</td>
+<td>PITCH</td>
+<td>SCATTER</td>
+<td>MOD</td>
+</tr>
+<tr>
+<td>DLY 3</td>
+<td>TYPE (ANALOG / DIGITAL / REVERS, V10.6h)</td>
+<td>PING (OFF / ON)</td>
+<td>DRIVE</td>
+<td>RIGHT (V10.49: el tiempo propio del eco derecho)</td>
+</tr>
+<tr>
+<td>REVERB</td>
+<td>TYPE</td>
+<td>SIZE</td>
+<td>DAMP (RESO: FOLLOW)</td>
+<td>PRE (SHIMMER/CLOUD: AIR; RESO: PITCH)</td>
+</tr>
+<tr>
+<td>REVERB 2</td>
+<td>MOD</td>
+<td>RATE</td>
+<td>FILT</td>
+<td>WIDE</td>
+</tr>
+<tr>
+<td>CHORUS</td>
+<td>RATE</td>
+<td>DEPTH</td>
+<td>STEREO</td>
+<td>MIX (V10.8.36)</td>
 </tr>
 <tr>
 <td>SLICER</td>
@@ -1217,46 +1335,18 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.</p>
 <td>QUANT</td>
 </tr>
 <tr>
-<td>DLY</td>
-<td>TIME</td>
-<td>FEEDBK</td>
-<td>TONE</td>
-<td>MIX</td>
+<td>PUNCH IN</td>
+<td>M1</td>
+<td>M2</td>
+<td>M3</td>
+<td>M4 (las macros, cada tarjeta con el nombre de su primera ruta: "M1 CUT"; OCT+ el editor de punch-in)</td>
 </tr>
 <tr>
-<td>DLY 2</td>
-<td>WIDE</td>
-<td>PITCH</td>
-<td>SPRAY</td>
-<td>MOD</td>
-</tr>
-<tr>
-<td>DLY 3</td>
-<td>TYPE (ANALOG / DIGITAL / REVERS, V10.6h)</td>
-<td>PING (OFF / ON)</td>
-<td>DRIVE</td>
-<td>R TIME (V10.49: el tiempo propio del eco derecho)</td>
-</tr>
-<tr>
-<td>REVERB</td>
-<td>TYPE</td>
-<td>SIZE</td>
-<td>DAMP (RESO: FOLLOW)</td>
-<td>PRE (SHIMMER/CLOUD: AIR; RESO: PITCH)</td>
-</tr>
-<tr>
-<td>REVERB 2</td>
-<td>MOD</td>
-<td>RATE</td>
-<td>FILT</td>
-<td>WIDE</td>
-</tr>
-<tr>
-<td>CHORUS</td>
-<td>RATE</td>
-<td>DEPTH</td>
-<td>STEREO</td>
-<td>MIX (V10.8.36)</td>
+<td>MACROS (V10.8.7)</td>
+<td>MACRO (M1–M4)</td>
+<td>DEST</td>
+<td>AMOUNT</td>
+<td>DESTS (cuántos mueve esa macro)</td>
 </tr>
 <tr>
 <td>MASTER</td>
@@ -1264,6 +1354,20 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.</p>
 <td>PUNCH</td>
 <td>DUCK</td>
 <td>REL</td>
+</tr>
+<tr>
+<td>TAPE</td>
+<td>TAPE</td>
+<td>WOW</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>EQ</td>
+<td>LOW</td>
+<td>LO MID</td>
+<td>HI MID</td>
+<td>HIGH</td>
 </tr>
 </tbody>
 </table></div>
@@ -1280,18 +1384,32 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.</p>
 </thead>
 <tbody>
 <tr>
-<td>SCL</td>
+<td>KEY</td>
 <td>ROOT</td>
 <td>SCALE</td>
 <td>QUANT</td>
-<td>ALL TR (0.7.6; antes TRANS, y SCL 2 tenía solo ALL TR)</td>
+<td>ALL TRK (0.7.6; antes TRANS, y SCL 2 tenía solo ALL TR)</td>
+</tr>
+<tr>
+<td>CHORD (0.6.81)</td>
+<td>CHORD</td>
+<td>VOICING</td>
+<td>STRUM</td>
+<td>—</td>
+</tr>
+<tr>
+<td>HARMONY (V10.7.66)</td>
+<td>PROG</td>
+<td>LENGTH</td>
+<td>EVOLVE</td>
+<td>SKIP (NONE, T1–T6)</td>
 </tr>
 <tr>
 <td>SCENE (V10.24)</td>
-<td>SCENE (OFF / ON)</td>
+<td>LEADER (OFF, KEYS, T1–T6, PRESS)</td>
 <td>TRACK (T1–T6)</td>
-<td>ROLE (KEEP CHORD ARP BASS LEAD DRUM)</td>
-<td>CHORD (el acorde de esa pista)</td>
+<td>ROLE (KEEP CHORD ARP BASS LEAD; un kit: KEEP, DRUM)</td>
+<td>CHORD (el acorde de esa pista; BASS y LEAD: PATTERN; DRUM: STYLE)</td>
 </tr>
 </tbody>
 </table></div>
@@ -1309,67 +1427,35 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.</p>
 </thead>
 <tbody>
 <tr>
-<td>EDIT 1</td>
+<td>las dos páginas del motor (EDIT 1, EDIT 2)</td>
 <td>E1</td>
 <td>E2</td>
 <td>E3</td>
-<td>E4</td>
-<td>todos los motores (ver <a href="#4-motores">4</a>)</td>
+<td>E4, y después E5–E8</td>
+<td>todos los motores, con su propio nombre (ver <a href="#4-motores">4</a>); ANALOG, FM6 y el kit son distintos: abajo</td>
 </tr>
 <tr>
-<td>EDIT 2</td>
-<td>E5</td>
-<td>E6</td>
-<td>E7</td>
-<td>E8</td>
-<td>todos los motores</td>
+<td>OSC</td>
+<td>WAVE</td>
+<td>DETUNE</td>
+<td>MIX</td>
+<td>INT (SAW3 / PLS3: WAVE, INT, INT 3, DETUNE)</td>
+<td>ANALOG (su única página acá: CUT y RES son de FILTER)</td>
 </tr>
 <tr>
-<td>WORDS</td>
-<td>LANG</td>
-<td>LYRIC</td>
-<td>CONS (V10.6y: el largo de las consonantes, 50–400 %; POS pasa a EDIT 1 con LANG prendido)</td>
-<td>(OCT+ TYPE: la letra)</td>
-<td>VOICE (0.8.5, <a href="#voice-palabras-y-letras-085">palabras</a>)</td>
-</tr>
-<tr>
-<td>RETRIG</td>
-<td>RTRG</td>
-<td>—</td>
-<td>—</td>
-<td>—</td>
-<td>MATH (BYTE, FLOAT)</td>
-</tr>
-<tr>
-<td>MORPH</td>
-<td>MORPH</td>
-<td>—</td>
-<td>—</td>
-<td>—</td>
-<td>ANALOG (SAW..SIN), PHASE</td>
-</tr>
-<tr>
-<td>OPERATOR</td>
-<td>OP</td>
-<td>RATIO / FIXED</td>
-<td>FINE</td>
-<td>LEVEL</td>
+<td>ALGO</td>
+<td>ALG</td>
+<td>FEEDBK</td>
+<td>MOD</td>
+<td>RATIO</td>
 <td>FM6</td>
 </tr>
 <tr>
-<td>OP ENV</td>
-<td>OP</td>
-<td>STAGE</td>
-<td>RATE</td>
-<td>LEVEL</td>
-<td>FM6</td>
-</tr>
-<tr>
-<td>OPERATOR 2</td>
-<td>OP</td>
-<td>MODE</td>
-<td>DTUN</td>
-<td>VEL</td>
+<td>PATCH</td>
+<td>SLOT</td>
+<td>MOD ENV</td>
+<td>VEL MOD</td>
+<td>SPREAD</td>
 <td>FM6</td>
 </tr>
 <tr>
@@ -1377,104 +1463,16 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.</p>
 <td>TYPE</td>
 <td>CUT</td>
 <td>RES</td>
-<td>DRIVE (ANALOG) / DIST (los demás)</td>
+<td>IMAGE (EXT: —)</td>
 <td>todos los motores</td>
 </tr>
 <tr>
-<td>KIT 3</td>
-<td>BP</td>
-<td>FEEDBK</td>
-<td>HANDS</td>
-<td>GLUE</td>
-<td>DRUM (todo el kit)</td>
-</tr>
-<tr>
-<td>KIT 4 (V10.6r)</td>
-<td>—</td>
-<td>KEY MAP (CLASSIC, EXTENDED, o EXTENDED con un sonido cromático; V10.6o: ACOUST ya no está)</td>
-<td>—</td>
-<td>—</td>
-<td>DRUM (todo el kit)</td>
-</tr>
-<tr>
-<td>X-MOD</td>
-<td>RATE</td>
-<td>DEPTH</td>
-<td>SHAPE</td>
-<td>RAND</td>
-<td>DRUM (todo el kit)</td>
-</tr>
-<tr>
-<td>STEREO</td>
-<td>IMAGE</td>
-<td>—</td>
-<td>—</td>
-<td>—</td>
-<td>DRUM (todo el kit)</td>
-</tr>
-<tr>
-<td>SOUND</td>
-<td>SOUND</td>
-<td>SIDE</td>
-<td>PITCH</td>
-<td>PMOD</td>
-<td>DRUM (un sonido)</td>
-</tr>
-<tr>
-<td>SOUND 2</td>
-<td>SOUND</td>
-<td>DECAY</td>
-<td>NOISE</td>
-<td>COLOR</td>
-<td>DRUM (un sonido)</td>
-</tr>
-<tr>
-<td>SOUND 3</td>
-<td>SOUND</td>
-<td>MODE</td>
-<td>PM.TYPE</td>
-<td>DRIVE</td>
-<td>DRUM (un sonido)</td>
-</tr>
-<tr>
-<td>SOUND 4</td>
-<td>SOUND</td>
-<td>LAYER</td>
-<td>FEEDBK</td>
-<td>SEND</td>
-<td>DRUM (un sonido)</td>
-</tr>
-<tr>
-<td>LEVELS</td>
-<td>KICK</td>
-<td>SNARE</td>
-<td>CLAP</td>
-<td>HATCL</td>
-<td>DRUM</td>
-</tr>
-<tr>
-<td>LEVELS 2</td>
-<td>HATOP</td>
-<td>TOM</td>
-<td>RIM</td>
-<td>BELL</td>
-<td>DRUM</td>
-</tr>
-<tr>
-<td>VOICE</td>
-<td>VOICE</td>
-<td>GLIDE</td>
-<td>MODE</td>
-<td>PRIO</td>
-<td>todos los motores</td>
-</tr>
-<tr>
-<td>VOICE 2 (0.8.5)</td>
-<td>ALLOC</td>
-<td>DETUNE (la apertura de UNI)</td>
-<td>VEL (cuánta velocidad le llega al sonido, 0..100 %)</td>
-<td>—</td>
-<td>todos menos DRUM</td>
+<td>WORDS</td>
+<td>LANG</td>
+<td>LYRIC</td>
+<td>CONS (V10.6y: el largo de las consonantes; POS pasa a la primera página con LANG prendido)</td>
+<td>— (OCT+ TYPE: la letra)</td>
+<td>VOICE (0.8.5, <a href="#voice-palabras-y-letras-085">palabras</a>)</td>
 </tr>
 <tr>
 <td>SWARM, SWARM 2 (V10.6z6)</td>
@@ -1490,11 +1488,123 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.</p>
 <td>su valor</td>
 <td>SRC (el slot de MOD sobre él)</td>
 <td>AMT</td>
-<td>los sintes (no FM6, DRUM)</td>
+<td>los sintes (no FM6, DRUM, EXT)</td>
+</tr>
+<tr>
+<td>MORE</td>
+<td>MORPH</td>
+<td>DRIFT</td>
+<td>GAIN</td>
+<td>—</td>
+<td>ANALOG, PHASE</td>
+</tr>
+<tr>
+<td>MORE</td>
+<td>RESTART</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>MATH</td>
+</tr>
+<tr>
+<td>MORE</td>
+<td>DEPTH</td>
+<td>DUST</td>
+<td>—</td>
+<td>—</td>
+<td>WHEEL (los del rotor)</td>
+</tr>
+<tr>
+<td>PLAY</td>
+<td>POLY (POLY, MONO, LEG, UNI)</td>
+<td>GLIDE</td>
+<td>UNISON (su apertura)</td>
+<td>VEL (cuánta velocidad le llega al sonido)</td>
+<td>todos menos DRUM</td>
+</tr>
+<tr>
+<td>OPERATOR</td>
+<td>OP</td>
+<td>COARSE</td>
+<td>FINE</td>
+<td>OUTPUT</td>
+<td>FM6</td>
+</tr>
+<tr>
+<td>OP ENV</td>
+<td>OP</td>
+<td>STAGE</td>
+<td>RATE</td>
+<td>LEVEL</td>
+<td>FM6</td>
+</tr>
+<tr>
+<td>OPERATOR 2</td>
+<td>OP</td>
+<td>MODE (RATIO / FIXED)</td>
+<td>DETUNE</td>
+<td>KEY VEL</td>
+<td>FM6</td>
+</tr>
+<tr>
+<td>KIT</td>
+<td>MORPH</td>
+<td>SNAP</td>
+<td>TONE</td>
+<td>DECAY</td>
+<td>DRUM (todo el kit)</td>
+</tr>
+<tr>
+<td>KIT 2</td>
+<td>NOISE</td>
+<td>BODY</td>
+<td>GLUE</td>
+<td>GAIN</td>
+<td>DRUM (todo el kit)</td>
+</tr>
+<tr>
+<td>SOUND</td>
+<td>SOUND</td>
+<td>PITCH</td>
+<td>DECAY</td>
+<td>LEVEL</td>
+<td>DRUM (un sonido)</td>
+</tr>
+<tr>
+<td>SOUND 2</td>
+<td>SOUND</td>
+<td>NOISE</td>
+<td>COLOR (con una fórmula: MOD AMT)</td>
+<td>PMOD (el CLAP: HANDS; con el filtro GUIRO: SCRAPE)</td>
+<td>DRUM (un sonido)</td>
+</tr>
+<tr>
+<td>SOUND 3</td>
+<td>SOUND</td>
+<td>WAVE (SINE, FM, METAL, BELL, F01–F48)</td>
+<td>FILTER (LP, BP, HP, GUIRO; cada uno también SHORT)</td>
+<td>P.ENV (con una fórmula: RATIO)</td>
+<td>DRUM (un sonido)</td>
+</tr>
+<tr>
+<td>SOUND 4</td>
+<td>SOUND</td>
+<td>SIDE (A / B)</td>
+<td>SEND (OFF, CHO, DLY, REV)</td>
+<td>KEY MAP (BASIC, EXTRA, o un sonido cromático: KICK … BELL)</td>
+<td>DRUM (un sonido; KEY MAP es del kit)</td>
+</tr>
+<tr>
+<td>CROSS MOD</td>
+<td>RATE</td>
+<td>DEPTH</td>
+<td>SHAPE</td>
+<td>RAND</td>
+<td>DRUM (todo el kit)</td>
 </tr>
 </tbody>
 </table></div>
-<p><strong>GLO</strong> (MANO y RIELES van a las pistas elegidas; MIXER es por pista; GLOBAL y SYSTEM son globales)</p>
+<p><strong>GLO</strong> (MIXER y SENDS son por pista; las páginas de SETUP son globales)</p>
 <div class="tw"><table>
 <thead>
 <tr>
@@ -1507,32 +1617,18 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.</p>
 </thead>
 <tbody>
 <tr>
-<td>MANO (0.9.11)</td>
-<td>RATE</td>
-<td>LOOP</td>
-<td>THIN</td>
-<td>DJ FILT (el DJ FILTER del master; las teclas: los modificadores en vivo)</td>
-</tr>
-<tr>
-<td>RIELES (0.9.11)</td>
-<td>PISTAS (ALL, T1 … T6, SYN, DRM)</td>
-<td>RATE</td>
-<td>CORTE</td>
-<td>DENS</td>
-</tr>
-<tr>
 <td>MIXER</td>
 <td>LEVEL</td>
 <td>PAN</td>
-<td>REV</td>
-<td>BPM (V10.37; antes el DJ FILTER, ahora en el KNOB 4 de MANO)</td>
+<td>MUTE</td>
+<td>BPM (V10.37)</td>
 </tr>
 <tr>
 <td>SENDS (0.8.5)</td>
-<td>DIST</td>
 <td>CHORUS</td>
 <td>DLY</td>
-<td>REV (los de la pista seleccionada, como FX &gt; SENDS)</td>
+<td>REV</td>
+<td>— (los de la pista seleccionada, como FX › SENDS)</td>
 </tr>
 <tr>
 <td>GLOBAL</td>
@@ -1547,6 +1643,27 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.</p>
 <td>LOAD</td>
 <td>ROUTE</td>
 <td>CPU (%)</td>
+</tr>
+<tr>
+<td>MIDI</td>
+<td>USB (su estado)</td>
+<td>TRS IN (los mensajes que entran)</td>
+<td>BT (el estado del Bluetooth)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>KEY SPLIT</td>
+<td>SPLIT</td>
+<td>LOW TRK</td>
+<td>HIGH TRK</td>
+<td>KEY CUT</td>
+</tr>
+<tr>
+<td>KEY SPLIT 2</td>
+<td>LOW OCT</td>
+<td>HIGH OCT</td>
+<td>MIDI CH</td>
+<td>MIDI CUT</td>
 </tr>
 </tbody>
 </table></div>
@@ -1563,11 +1680,25 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.</p>
 </thead>
 <tbody>
 <tr>
-<td>PRESETS</td>
-<td>No. (el sonido; suena al pasar)</td>
-<td>ENG (el motor)</td>
-<td>FAV (marcar como favorito)</td>
-<td>LIST (ALL / FAV / un tipo de sonido: BASS LEAD PAD KEYS PLUCK BELL VOX DRUM FX, 0.9.12) — V10.24: <strong>OCT+</strong> se queda con el sonido, <strong>OCT−</strong> vuelve al de antes de buscar</td>
+<td>TOOLS (V10.24)</td>
+<td>TARGET (PROJECT, TRACK, SOUND, SONG, SYSTEM)</td>
+<td>ACTION (PROJECT: CLEAR · TRACK: CLEAR · SOUND: INIT · SONG: DEL ROW, CLEAR · SYSTEM: CPU)</td>
+<td>—</td>
+<td>DO: <strong>OCT+ mantenido</strong></td>
+</tr>
+<tr>
+<td>PART SLOTS</td>
+<td>PART (A–D)</td>
+<td>LOAD (acción)</td>
+<td>ERASE (acción, V10.17)</td>
+<td>SAVE (acción)</td>
+</tr>
+<tr>
+<td>PROJECTS</td>
+<td>PROJECT (1–6)</td>
+<td>LOAD (acción)</td>
+<td>ERASE (acción)</td>
+<td>SAVE (acción)</td>
 </tr>
 <tr>
 <td>USER</td>
@@ -1577,53 +1708,11 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.</p>
 <td>SAVE (acción)</td>
 </tr>
 <tr>
-<td>TIMELINE (V10.6o)</td>
-<td>ROW</td>
-<td>SECT (la parte A–D de la fila)</td>
-<td>BARS (1–64)</td>
-<td>VAR (la variación de la pista de ALGORITHM en la fila)</td>
-</tr>
-<tr>
-<td>PARTS (V10.6o)</td>
-<td>PART (A–D)</td>
-<td>ROW (las filas del tema de esa parte)</td>
-<td>—</td>
-<td>LOOP / SONG (qué toca PLAY)</td>
-</tr>
-<tr>
-<td>CLIPS (V10.6s)</td>
-<td>TRACK (T1–T6)</td>
-<td>PART (A–D)</td>
-<td>—</td>
-<td>—</td>
-</tr>
-<tr>
-<td>PROJECTS / SECTIONS (la página PROJECT)</td>
-<td>PROJECT (1–6; en SECTIONS: SECT A–D)</td>
-<td>SECT (A–D; en SECTIONS: ERASE, V10.17)</td>
-<td>LOAD (acción)</td>
-<td>SAVE (acción)</td>
-</tr>
-<tr>
-<td>ARRANGE</td>
-<td>ROW ("2/6")</td>
-<td>SECT (en END: STOP / x2–x8 / LOOP)</td>
-<td>BARS</td>
-<td>SCENE</td>
-</tr>
-<tr>
-<td>SAVE SONG AS</td>
-<td>el proyecto de destino (1–6)</td>
-<td>—</td>
-<td>—</td>
-<td>SAVE (OCT+, después el nombre)</td>
-</tr>
-<tr>
-<td>TOOLS (V10.24)</td>
-<td>SCOPE (TRACK, SOUND, SONG, SYSTEM)</td>
-<td>ACTION (CLEAR SEQ · INIT SOUND · DELETE ROW, CLEAR SONG · NEW PROJECT, CPU TEST)</td>
-<td>—</td>
-<td>DO: <strong>OCT+ mantenido un segundo</strong></td>
+<td>PRESETS</td>
+<td>No. (el sonido; suena al pasar)</td>
+<td>ENG (el motor)</td>
+<td>FAV (marcar como favorito)</td>
+<td>LIST (ALL / FAV / USER / un tipo de sonido, 0.9.12) — V10.24: <strong>OCT+</strong> se queda con el sonido, <strong>OCT−</strong> vuelve al de antes de buscar</td>
 </tr>
 </tbody>
 </table></div>
@@ -1656,7 +1745,7 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.</p>
 </tbody>
 </table></div>
 <p><strong>SEQ</strong> (por pista)</p>
-<p>Las páginas SEQ son una cadena de cinco grupos (0.9.2; ver <a href="#cómo-moverse-la-cadena-de-seq">6</a>): <strong>SELECT</strong> las
+<p>Las páginas SEQ son una cadena de ocho grupos (V10.8.35; ver <a href="#cómo-moverse-la-cadena-de-seq">6</a>): <strong>SELECT</strong> las
 recorre página por página, un toque de <strong>SEQ</strong> salta al grupo siguiente.</p>
 <div class="tw"><table>
 <thead>
@@ -1671,8 +1760,24 @@ recorre página por página, un toque de <strong>SEQ</strong> salta al grupo sig
 </thead>
 <tbody>
 <tr>
+<td>STEP</td>
+<td>STEP (melódica: piano roll)</td>
+<td>SEQ (V10.8: la secuencia A–D de la pista)</td>
+<td>NOTE</td>
+<td>TIME (REST ← TIE ← NOTE → 2 ST … 16 ST: la duración de la nota en pasos; REST borra el paso)</td>
+<td>VEL (V10.8, antes FLAG: 1–127, después ACC / SLD / A+S)</td>
+</tr>
+<tr>
+<td>STEP</td>
+<td>STEP (DRUM: grilla)</td>
+<td>SEQ</td>
+<td>LANE</td>
+<td>HIT</td>
+<td>ACC</td>
+</tr>
+<tr>
 <td>PATTERN</td>
-<td>PATTERN</td>
+<td>LENGTH</td>
 <td>LEN</td>
 <td>DIV</td>
 <td>SWING</td>
@@ -1680,27 +1785,19 @@ recorre página por página, un toque de <strong>SEQ</strong> salta al grupo sig
 </tr>
 <tr>
 <td>PATTERN</td>
-<td>STRETCH</td>
-<td>STRETCH (/8 … /2, x1, x2 … x8)</td>
-<td>REPEAT (OFF, x2 … x8, TO 64)</td>
-<td>NUDGE (OCT− la secuencia, OCT+ el MICRO del paso, OCT+ otra vez el paso)</td>
-<td>ROTATE (−32 … +32)</td>
+<td>RHYTHM</td>
+<td>SPAN (1–64)</td>
+<td>FIT (OFF / ON)</td>
+<td>—</td>
+<td>—</td>
 </tr>
 <tr>
 <td>PATTERN</td>
-<td>PLAYHEADS</td>
-<td>HEAD</td>
-<td>RATE</td>
-<td>DIR</td>
-<td>INTERVAL</td>
-</tr>
-<tr>
-<td>TRACK</td>
 <td>TRACK</td>
 <td>PITCH</td>
 <td>CHANCE</td>
 <td>HUMAN</td>
-<td>REC Q</td>
+<td>REC GRID</td>
 </tr>
 <tr>
 <td>EUCLID</td>
@@ -1708,71 +1805,47 @@ recorre página por página, un toque de <strong>SEQ</strong> salta al grupo sig
 <td>HITS (DRUM-X con LANE ALL: DENSITY, V10.7)</td>
 <td>STEPS (2–64)</td>
 <td>ROTATE</td>
-<td>LANE (DRUM-X: ALL, BD … CB) · VARY (melódica)</td>
+<td>LANE (DRUM-X: ALL, BD … CB) · ROLE (melódica, V10.8.35: MELODY, CHORDS, BASS, ARP)</td>
 </tr>
 <tr>
 <td>EUCLID</td>
-<td>MODES (V10.6)</td>
-<td>ACCENT · MOTION</td>
-<td>GHOST · HARMONY</td>
-<td>RATCHET · OCTAVE</td>
-<td>VARY · SLIDE</td>
+<td>MODES (DRUM-X) · MELODY (melódica)</td>
+<td>ACCENT · CONTOUR</td>
+<td>GHOST · RANGE</td>
+<td>RATCHET · MOTIF</td>
+<td>VARY · VARY</td>
 </tr>
 <tr>
 <td>EUCLID</td>
-<td>MUTATE (V10.16)</td>
-<td>EVERY (OFF, 1–16 compases)</td>
-<td>AMOUNT</td>
-<td>MODE (ORBIT DRIFT PULSE)</td>
-<td>WHAT (GROOVE RHYTHM FEEL ALL)</td>
-</tr>
-<tr>
-<td>BAR</td>
-<td>BAR (0.9.2)</td>
-<td>BAR (el compás que editás)</td>
-<td>LEN</td>
+<td>MUTATE (V10.8.35)</td>
+<td>EVERY (OFF, 1, 2, 4, 8 compases)</td>
+<td>—</td>
 <td>—</td>
 <td>—</td>
 </tr>
 <tr>
-<td>BAR</td>
-<td>STEP (melódica: piano roll)</td>
-<td>STEP (los 64, compás tras compás)</td>
-<td>NOTE</td>
-<td>TIME (REST ← TIE ← NOTE → 2 ST … 16 ST: la duración de la nota en pasos; REST borra el paso)</td>
-<td>VEL (V10.8, antes FLAG: 1–127, después ACC / SLD / A+S)</td>
+<td>PLAYHEADS</td>
+<td>PLAYHEADS</td>
+<td>HEAD</td>
+<td>RATE</td>
+<td>DIR</td>
+<td>INTVL</td>
 </tr>
 <tr>
-<td>BAR</td>
-<td>STEP (DRUM: grilla)</td>
-<td>STEP</td>
-<td>LANE</td>
-<td>HIT</td>
-<td>ACC</td>
-</tr>
-<tr>
-<td>BAR</td>
-<td>NOTE</td>
-<td>FOCUS</td>
-<td>PITCH</td>
-<td>MOVE</td>
-<td>MICRO (−32/64 … +31/64; 0.9.1)</td>
-</tr>
-<tr>
-<td>STEP</td>
-<td>COMP</td>
+<td>STEP FX</td>
+<td>STEP FX</td>
 <td>ACTION</td>
 <td>LENGTH</td>
-<td>CONDITION</td>
-<td>VALUE (0.9.9-seq2d: C1)</td>
+<td>COND</td>
+<td>VALUE (el primer componente del paso)</td>
 </tr>
 <tr>
-<td>STEP</td>
-<td>COMP 2</td>
-<td>ACTION</td>
+<td>STEP FX</td>
+<td>STEP FX 2</td>
+<td>ACTION 2</td>
 <td>LENGTH</td>
-<td>CONDITION (ELSE: MONO)</td>
-<td>VALUE (C2)</td>
+<td>COND (ELSE: MONO)</td>
+<td>VALUE (el segundo)</td>
 </tr>
 <tr>
 <td>AUTO</td>
@@ -1790,10 +1863,58 @@ recorre página por página, un toque de <strong>SEQ</strong> salta al grupo sig
 <td>PARAM</td>
 <td>VALUE</td>
 </tr>
+<tr>
+<td>AUTO</td>
+<td>LYRIC STEP (VOICE)</td>
+<td>STEP</td>
+<td>WORD</td>
+<td>SYLL</td>
+<td>PLACE (acción)</td>
+</tr>
+<tr>
+<td>TRACK GEN</td>
+<td>TRACK GEN</td>
+<td>GENRE</td>
+<td>SEED</td>
+<td>ROLE (un kit: BUSY)</td>
+<td>ENERGY (OCT+: MAKE)</td>
+</tr>
+<tr>
+<td>DRONE CLAY</td>
+<td>DRONE CLAY (V10.8.21)</td>
+<td>CLAY (OFF / ON)</td>
+<td>DRONE (su octava sobre la ROOT)</td>
+<td>PITCH (−24 … +36)</td>
+<td>RATE</td>
+</tr>
+<tr>
+<td>DRONE CLAY</td>
+<td>CLAY MOD</td>
+<td>MOD (1–4)</td>
+<td>DEST</td>
+<td>SHAPE</td>
+<td>AMOUNT</td>
+</tr>
+<tr>
+<td>DRONE CLAY</td>
+<td>CLAY RHYTHM</td>
+<td>MOD (1–4)</td>
+<td>RATE</td>
+<td>EUCLID</td>
+<td>DECAY</td>
+</tr>
+<tr>
+<td>DRONE CLAY</td>
+<td>CLAY TIME</td>
+<td>RUN (SONG, FREE, SONG NOKEY, FREE NOKEY)</td>
+<td>SEED</td>
+<td>—</td>
+<td>—</td>
+</tr>
 </tbody>
 </table></div>
-<p>PRESETS en cualquier página SEQ carga un patrón (PHRASES); el compás es el KNOB 1 de BAR, el paso el de STEP (0.9.2;
-hasta la 0.9.1 PRESETS hacía las dos cosas).</p>
+<p>PRESETS en cualquier página SEQ mueve el cursor de pasos (V10.7.60: girada despacio un paso, rápido un compás entero;
+el encabezado dice el compás y el paso).</p>
 <h3 id="las-capas-mantene-el-boton">Las capas (mantené el botón)</h3>
 <p>(0.8.5) Una capa mantenida también es una lente, como la maqueta: <strong>girá ALGORITHM mientras mantenés el botón</strong> para
 ir <strong>MAP · KNOBS · STATE</strong> (recuerda el nivel; SELECT conserva sus combinaciones: GLO + SELECT el tempo, los dados).
@@ -2029,47 +2150,47 @@ click; las notas siguen.</p>
 <thead>
 <tr>
 <th>Motor</th>
-<th>EDIT 1</th>
-<th>EDIT 2</th>
+<th>EDIT 1 (su nombre en pantalla)</th>
+<th>EDIT 2 (su nombre en pantalla)</th>
 <th>Perillas de HOME</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><strong>ANALOG</strong></td>
-<td>WAVE, DETUNE, MIX, NOISE</td>
-<td>CUT, RES, DRIVE, INT</td>
+<td><strong>OSC</strong>: WAVE, DETUNE, MIX, INT (SAW3 / PLS3: WAVE, INT, INT 3, DETUNE)</td>
+<td>no tiene (V10.7.21): CUT y RES en FILTER, NOISE y DRIVE en FOCUS</td>
 <td>CUT, RES, ATK, REL</td>
 </tr>
 <tr>
 <td><strong>FM6</strong></td>
-<td>ALG, FB, MOD, RATIO</td>
-<td>MEG, VMOD, DETUNE, SLOT</td>
-<td>MOD, RATIO, MEG, SLOT</td>
+<td><strong>ALGO</strong>: ALG, FEEDBK, MOD, RATIO</td>
+<td><strong>PATCH</strong>: SLOT, MOD ENV, VEL MOD, SPREAD</td>
+<td>MOD, RATIO, MOD ENV, SLOT</td>
 </tr>
 <tr>
 <td><strong>PHASE</strong></td>
-<td>WAVE, WAVE2, DCW, ENV</td>
-<td>DETUNE, LINE, SUB, FB</td>
-<td>DCW, ENV, DETUNE, REL</td>
+<td><strong>WAVES</strong>: WAVE, WAVE2, BRIGHT, ENV</td>
+<td><strong>SHAPE</strong>: DETUNE, LINE, SUB, FEEDBK</td>
+<td>BRIGHT, ENV, DETUNE, REL</td>
 </tr>
 <tr>
 <td><strong>MATH</strong> (V10.6e)</td>
-<td>CHIP, WAVE (BYTE / FLOAT), ALGO, VAR</td>
-<td>MOTION, GRIT (FLOAT: FEEDBK), BEND, LOOP</td>
-<td>ALGO, VAR, MOTION, REL</td>
+<td><strong>FORMULA</strong>: CHIP (FLOAT: ALGO B), WAVE (BYTE / FLOAT), ALGO, VARIANT</td>
+<td><strong>MOTION</strong>: MOTION, GRIT (FLOAT: FEEDBK), BEND (FLOAT: MORPH), LOOP</td>
+<td>WAVE, ALGO, VARIANT, REL</td>
 </tr>
 <tr>
 <td><strong>VOICE</strong></td>
-<td>VOWEL, VOWEL2, TALK, SHIFT</td>
-<td>BUZZ, BREATH, Q, RAND</td>
+<td><strong>VOWELS</strong>: VOWEL, VOWEL2, TALK, SHIFT (con LANG: POS, THEME, ARTIC, SHIFT)</td>
+<td><strong>SOURCE</strong>: BUZZ, BREATH, RESO, RAND (con LANG: LOOP)</td>
 <td>VOWEL, BUZZ, BREATH, TALK</td>
 </tr>
 <tr>
 <td><strong>WHEEL</strong></td>
-<td>REG, SUB, BODY, TOP</td>
-<td>PERC, CLICK, DRIVE, ROTOR</td>
-<td>REG, PERC, DRIVE, ROTOR</td>
+<td><strong>DRAWBARS</strong>: BARS, SUB, BODY, TOP</td>
+<td><strong>COLOR</strong>: PERC, CLICK, GAIN (V10.7.64, en el lugar de DRIVE; DRIVE en FOCUS), SPEED</td>
+<td>BARS, PERC, DRIVE, SPEED</td>
 </tr>
 <tr>
 <td><strong>WEST</strong> (V10.7.37)</td>
@@ -2079,27 +2200,27 @@ click; las notas siguen.</p>
 </tr>
 <tr>
 <td><strong>DRUM</strong> (DRUM-X)</td>
-<td>MORPH, TUNE, TONE, DECAY</td>
-<td>NOISE, FM ENV, FOLD, DRIVE</td>
+<td><strong>KIT</strong>: MORPH, SNAP, TONE, DECAY</td>
+<td><strong>KIT 2</strong>: NOISE, BODY, GLUE, GAIN</td>
 <td>MORPH, TUNE, TONE, DECAY</td>
 </tr>
 <tr>
 <td><strong>ANIMAL</strong> (0.8.3)</td>
-<td>MODE, PRESS, CHAOS, SIZE</td>
-<td>SWEEP, RATE, GROUP, TEMP</td>
+<td><strong>CREATURE</strong>: MODE, PRESS, CHAOS, SIZE</td>
+<td><strong>HABITS</strong>: SWEEP, RATE, GROUP, TEMP</td>
 <td>PRESS, SWEEP, RATE, SIZE</td>
 </tr>
 <tr>
 <td><strong>STRING</strong></td>
+<td><strong>STRING</strong>: EXCITE, DECAY, BRIGHT, POS (EXCITE FDBK: MOVE en el lugar de POS)</td>
+<td><strong>BODY</strong>: STRETCH, BODY, SIZE, BOW (EXCITE FDBK, el feedback de guitarra: GAIN, DIST, SPEAKR, BLOOM)</td>
 <td>EXCITE, DECAY, BRIGHT, POS</td>
-<td>STRETCH, BODY, SIZE, BOW</td>
-<td>(EXCITE FDBK: el feedback de guitarra, MOVE, GAIN, DIST, SPEAKR, BLOOM)</td>
 </tr>
 <tr>
 <td><strong>ADD</strong></td>
-<td>MODE (diez espectros), MORPH, BRIGHT, PARTIAL</td>
-<td>SHIFT, COMB, DECAY, MOTION</td>
-<td></td>
+<td><strong>SPECTRUM</strong>: MODE (diez espectros), MORPH, BRIGHT, PARTIAL</td>
+<td><strong>MOTION</strong>: SHIFT, COMB, DECAY, MOTION</td>
+<td>MODE, PARTIAL, COMB, DECAY</td>
 </tr>
 <tr>
 <td><strong>EXT</strong> (V10.6d)</td>
@@ -2111,46 +2232,42 @@ click; las notas siguen.</p>
 </table></div>
 <ul>
 <li><strong>ANALOG</strong>: dos osciladores. WAVE: SAW, SQR, TRI, SIN, PWM, SYNC, RING, SAW3, <strong>PLS3</strong> (V10.22: tres pulsos, el oscilador 3 desafinado al revés;
-  MORPH fija el ancho de pulso). <strong>INT</strong> fija el intervalo del
-  oscilador 2 (±24 semitonos). En <strong>SAW3</strong> y <strong>PLS3</strong> la perilla NOISE pasa a ser <strong>INT 3</strong>, el intervalo propio del
-  oscilador 3 (V10.39; sin ruido en esas dos formas de onda). Una elección al azar (GEN, los dados) deja INT e INT 3 en
+  MORPH fija el ancho de pulso). Desde V10.7.21 tiene una sola página, <strong>OSC</strong>: WAVE, DETUNE, MIX e <strong>INT</strong>, el intervalo del oscilador 2 (±24 semitonos); en <strong>SAW3</strong> y <strong>PLS3</strong> (V10.7.22) la página es WAVE, INT, <strong>INT 3</strong> (el intervalo propio del oscilador 3, V10.39; sin ruido en esas dos formas de onda) y DETUNE. CUT y RES están en FILTER, NOISE, DRIVE (y MIX en SAW3 / PLS3) en FOCUS, MORPH, DRIFT y GAIN en MORE. Una elección al azar (GEN, los dados) deja INT e INT 3 en
   0, cuarta, quinta u octava (V10.38). Su filtro es por voz.</li>
 <li><strong>FM6</strong>: un motor FM de seis operadores (msfa, de Dexed), 32 algoritmos dibujados en pantalla, cuatro voces por
-  pista. Las perillas de EDIT 1/2 son macros sobre el patch. <strong>SLOT</strong>: los patches de fábrica F1–F8, OWN (un patch
+  pista. Las perillas de sus dos páginas, <strong>ALGO</strong> (ALG, FEEDBK, MOD, RATIO) y <strong>PATCH</strong> (SLOT, MOD ENV, VEL MOD, SPREAD), son macros sobre el patch. <strong>SLOT</strong>: los patches de fábrica F1–F8, OWN (un patch
   editado o importado) y B1–B32 (un banco DX7 de 32 voces enviado desde el editor web; los slots vacíos se saltean). Una voz del editor o de un
   slot B suena tal como viene en el archivo: los macros vuelven a cero (0.8.1).
-  <strong>OPERATOR / OP ENV / OPERATOR 2</strong> editan cada uno de los seis operadores en el equipo (KNOB 1 elige el operador);
+  <strong>OPERATOR / OP ENV / OPERATOR 2</strong> editan cada uno de los seis operadores en el equipo (KNOB 1 elige el operador; después COARSE, FINE, OUTPUT / STAGE, RATE, LEVEL / MODE, DETUNE, KEY VEL);
   editar convierte el patch en propio de la pista (SLOT OWN), y se guarda con el proyecto. Una voz del banco que
   elegís se copia a la pista, así que los proyectos la conservan aunque después mandes otro banco. (0.9.6) Su panel es
   el algoritmo como una <strong>colonia de operadores</strong> (OP ENV: la envolvente con el operador recorriéndola), con todos los
   números que mostraban.</li>
-<li><strong>PHASE</strong>: distorsión de fase. WAVE / WAVE2: SAW, SQR, PLS, DSIN, SPLS, RSAW, RTRI, RTRP. LINE: MIX o RING.
-  <strong>FB</strong> realimenta la salida hacia la fase.</li>
-<li><strong>MATH</strong> (LOFI hasta la V10.6e, solo sus fórmulas): WAVE <strong>BYTE</strong> o <strong>FLOAT</strong>; CHIP 4BIT, 4B/2, 8BIT (en FLOAT:
-  FULL), 1BIT. Las ondas de chip (PLS TRI SAW NOIS WRAM) y la envolvente STEP ya no están: un sonido de chip guardado
-  carga como el más parecido de ANALOG, con un oscilador. Todo sonido de MATH arranca quieto (MOTION 0) y con RTRG
-  prendido, así una nota suena afinada; las cinco voces FLOAT MATH KEYS, BASS, PAD, LEAD y BELL tocan en la nota. (Lo
-  que sigue es de la época de LOFI: BYTE y FLOAT funcionan así.)</li>
-<li><strong>BYTE</strong> (bytebeat): KNOB 3 pasa a ser <strong>ALGO</strong> (32 fórmulas), KNOB 4 <strong>VAR</strong> (muta la fórmula); EDIT 2 pasa a
-    ser <strong>MOTION, GRIT, BEND, LOOP</strong>. MOTION acelera o frena el ritmo de la fórmula (64 = tal como está escrita),
-    GRIT es un reductor de frecuencia de muestreo, BEND pliega el tiempo, LOOP repite un tramo mínimo (con LOOP alto
-    el ruido se vuelve una nota afinada).</li>
-<li><strong>FLOAT</strong> (floatbeat): CHIP pasa a ser la resolución (4BIT, 4B/2, FULL, 1BIT), KNOB 3 <strong>ALGO</strong> (32 fórmulas
-    hechas de senos), KNOB 4 <strong>VAR</strong>; EDIT 2: <strong>MOTION, FEEDBK, BEND, LOOP</strong>. Mantené una tecla: la fórmula suena en
-    esa tonalidad.</li>
-<li>Página <strong>RETRIG</strong> (BYTE / FLOAT): <strong>RTRG ON</strong> reinicia la fórmula desde el principio en cada nota.</li>
-<li><strong>MORPH</strong> (EDIT &gt; MORPH, en ANALOG y PHASE; el de LOFI se fue con sus ondas de chip): la onda se desliza de forma
+<li><strong>PHASE</strong>: distorsión de fase. WAVE / WAVE2: SAW, SQR, PLS, DSIN, SPLS, RSAW, RTRI, RTRP. LINE: MIX o RING. <strong>BRIGHT</strong> es cuánto se dobla la fase, <strong>FEEDBK</strong> realimenta la salida hacia la fase. Sus páginas: WAVES, SHAPE.</li>
+<li><strong>MATH</strong> (LOFI hasta la V10.6e, solo sus fórmulas): WAVE <strong>BYTE</strong> o <strong>FLOAT</strong>. Las ondas de chip (PLS TRI SAW NOIS
+  WRAM) y la envolvente STEP ya no están: un sonido de chip guardado carga como el más parecido de ANALOG, con un
+  oscilador. Todo sonido de MATH arranca quieto (MOTION 0) y con RESTART prendido, así una nota suena afinada; las cinco
+  voces FLOAT MATH KEYS, BASS, PAD, LEAD y BELL tocan en la nota. Sus páginas: FORMULA y MOTION.</li>
+<li><strong>BYTE</strong> (bytebeat): <strong>CHIP</strong> la resolución (4BIT, 4B/2, 8BIT, 1BIT), <strong>ALGO</strong> la fórmula (B01–B48), <strong>VARIANT</strong> la
+    muta; después <strong>MOTION, GRIT, BEND, LOOP</strong>. MOTION acelera o frena el ritmo de la fórmula (64 = tal como está
+    escrita; pasado 127, SYNC: su ritmo al compás, la nota solo su altura), GRIT es un reductor de frecuencia de
+    muestreo, BEND pliega el tiempo, LOOP repite un tramo mínimo (con LOOP alto el ruido se vuelve una nota afinada).</li>
+<li><strong>FLOAT</strong> (floatbeat): <strong>ALGO</strong> (F01–F48, fórmulas hechas de senos) y <strong>VARIANT</strong>; desde V10.7.69 la perilla de CHIP
+    es <strong>ALGO B</strong>, una segunda fórmula, y la de BEND es <strong>MORPH</strong>, de ALGO a ALGO B; la de GRIT es <strong>FEEDBK</strong>. Mantené
+    una tecla: la fórmula suena en esa tonalidad.</li>
+<li>Página <strong>MORE</strong> (RETRIG hasta V10.7.60): <strong>RESTART ON</strong> reinicia la fórmula desde el principio en cada nota.</li>
+<li><strong>MORPH</strong> (EDIT › <strong>MORE</strong>, en ANALOG y PHASE; página propia hasta V10.7.60): la onda se desliza de forma
   continua hacia las siguientes (en ANALOG SAW &gt; SQR &gt; TRI &gt; SIN, en PHASE hacia su forma siguiente). 0 = la
   onda tal como la elegiste. En ANALOG la modulación <strong>SHAPE</strong> también mueve el morph, así un LFO o una
   envolvente barren la onda. La página dibuja un ciclo de la onda resultante y dice qué dos ondas mezcla. La KNOB 2 es
   <strong>DRIFT</strong> (0–100 %, 0 = apagado): la afinación de cada voz (hasta unos ±27 cents) y su filtro derivan lento, cada una
   a su manera, como los osciladores analógicos viejos. Un acorde cobra vida; en valores altos se marea.</li>
-<li><strong>VOICE</strong>: una voz por formantes (basada en klattsch): vocales, habla, aliento. Desde 0.8.5 también canta palabras
-  y letras en castellano, inglés y japonés: ver <a href="#voice-palabras-y-letras-085">VOICE: palabras y letras</a>.</li>
-<li><strong>WHEEL</strong>: un órgano de drawbars: registraciones (REG), percusión (PERC: OFF, 2ND, 3RD, 2SOFT, 3SOFT, 2SLOW,
-  3SLOW), click de tecla, drive, ROTOR (OFF, SLOW, FAST). EDIT &gt; <strong>ROTOR</strong> (solo WHEEL): <strong>DEPTH</strong> (cuánto gira el
-  parlante rotativo: 100 % como antes, 0 % quieto) y <strong>DUST</strong> (0–100 %: el crujido y el siseo de un órgano viejo mientras
-  suena).</li>
+<li><strong>VOICE</strong>: una voz por formantes (basada en klattsch): vocales, habla, aliento. Sus páginas: VOWELS (VOWEL, VOWEL2, TALK, SHIFT) y SOURCE (BUZZ, BREATH, RESO, RAND). Desde 0.8.5 también canta palabras y letras (LANG: ES, EN, JA, RU, DE, FR, ZH, PT, GN): ver <a href="#voice-palabras-y-letras-085">VOICE: palabras y letras</a>.</li>
+<li><strong>WHEEL</strong>: un órgano de drawbars. DRAWBARS: <strong>BARS</strong> (dieciséis registraciones), SUB, BODY, TOP. COLOR: <strong>PERC</strong> (OFF,
+  2ND, 3RD, 2SOFT, 3SOFT, 2SLOW, 3SLOW), CLICK (el click de tecla), <strong>GAIN</strong> (0–12 dB; el DRIVE al que reemplazó ahí
+  está en FOCUS) y <strong>SPEED</strong>, la del rotor (OFF, SLOW, FAST). EDIT › <strong>MORE</strong> (ROTOR hasta V10.7.60): <strong>DEPTH</strong> (cuánto
+  gira el parlante rotativo: 100 % como antes, 0 % quieto) y <strong>DUST</strong> (0–100 %: el crujido y el siseo de un órgano viejo
+  mientras suena).</li>
 <li><strong>WEST</strong> (V10.7.37, en el lugar de NOISE): síntesis de la costa oeste. Un oscilador complejo (un núcleo seno, o
   triángulo con los RATIO terminados en <strong>T</strong>) modulado en fase por un segundo oscilador (<strong>MOD</strong> la profundidad,
   <strong>RATIO</strong> su relación con la nota: 0.5 … 8), que entra a un plegador de onda (<strong>FOLD</strong> cuánto se pliega, <strong>SKEW</strong>
@@ -4261,7 +4378,7 @@ sobre el master: toda la mezcla, también lo que entra por una pista EXT. Este e
 <li><strong>Perillas</strong> con FX mantenido (V10.7.59): los cuatro <strong>macros M1–M4</strong>, que mueven lo que les hayas ruteado en
   <strong>FX › MACROS</strong>. Parten del valor que tenían y, al soltar FX, vuelven ahí (con FX LATCH se quedan; OCT− ALL OFF
   los devuelve). Las perillas de antes (FILTER, CRUSH, THROW, DEPTH) ya no están: para tirar una pista al delay,
-  ruteá un macro a DLY.</li>
+  ruteá un macro a DLY (mueve el envío de delay de todas las pistas).</li>
 <li><strong>Teclas negras 1–6</strong>: mutean T1–T6 mientras las mantenés (no se guarda).</li>
 <li><strong>G5 CLR AUTO</strong>: FX + G5 vacía el carril de punch-in (su automatización) y nada más, parado o tocando; grabando,
   borra solo donde pasa el cabezal.</li>
@@ -5027,7 +5144,7 @@ modular a las otras pistas.</p>
   dice <strong>USB AUDIO IN READY: USE INPUT</strong>. El FM-1 no alimenta el puerto: la interfaz necesita su propia fuente o un hub
   alimentado. Mientras HOST está activo no hay USB hacia la computadora (ni editor, ni grabación por USB), y HOST no
   se guarda: al encender hay que volver a elegirlo.</li>
-<li><strong>Con STEMS+IN</strong> (la app del celular, ver más abajo): el micrófono del celular entra y vuelve grabado en su canal.</li>
+<li><strong>Con STEMS+IN</strong> (ver más abajo): el audio que manda el host entra y vuelve grabado en un stem propio.</li>
 </ul>
 <p><strong>2. Una pista EXT la hace sonar.</strong> Desde V10.56 la entrada <strong>solo suena donde una pista con el motor EXT la toma</strong>
 (antes entraba sola por la última pista; se cambió porque una app que monitorea lo que graba devolvía la salida del
@@ -5094,7 +5211,8 @@ STRETCH actúan sobre toda la mezcla, tu entrada incluida, y al soltar vuelve to
 los macros M1–M4. Ver <a href="#fx-punch-in-mantené-fx">FX punch-in</a>.</p>
 <p><strong>8. Los envíos.</strong> Los envíos de la pista EXT (FX › SENDS) mandan la entrada a CHORUS, DELAY y REVERB, los mismos
 buses que usan los sintes. Para tirarla al eco en el momento justo, como en el dub, ruteá un macro a DLY en <strong>FX ›
-MACROS</strong> y giralo con FX mantenido: al soltar FX vuelve a donde estaba.</p>
+MACROS</strong> y giralo con FX mantenido: sube el envío de delay de todas las pistas, la entrada incluida, y al soltar FX
+vuelve a donde estaba.</p>
 <p><strong>9. La entrada como modulador: IN ENV.</strong> En la matriz (LFO › MOD), la fuente <strong>IN ENV</strong> es el volumen de lo que entra
 (sube al instante, baja en unos 50 ms; mira las dos entradas). Mandala a cualquier destino de cualquier pista: CUT,
 PITCH, AMP, PAN, un envío. Funciona aunque ninguna pista esté sonando la entrada: puede ser solo un controlador. Con
