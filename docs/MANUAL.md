@@ -743,7 +743,7 @@ breadcrumb, **FX · MAP**. The keys and knobs do exactly what they did.
 | Keys | Effect |
 | --- | --- |
 | F3 G3 A3 | REPEAT 1/8, 1/16, 1/32 |
-| B3 / C4 | LPF / HPF |
+| B3 / C4 | REVERSE / FREEZE (V10.7.59) |
 | D4 / E4 | OCT− / OCT+ |
 | F4 | 1/2 TEMPO |
 | G4 / A4 | DEC− / DEC+ |
@@ -753,8 +753,11 @@ breadcrumb, **FX · MAP**. The keys and knobs do exactly what they did.
 | F5 | RANDOM |
 | G5 | erases the punch-in lane |
 | Black keys 1–6 (F#3 G#3 A#3 C#4 D#4 F#4) | mute T1–T6 while held |
-| A#4 | which tracks the note effects touch: ALL / SYN / DRM |
-| **Knobs** | FILTER, CRUSH, THROW, DEPTH |
+| G#4 | LOOP 3 |
+| A#4 | TAPE STOP |
+| C#5 / D#5 | PITCH UP / PITCH DOWN |
+| F#5 | STRETCH |
+| **Knobs** | the macros M1–M4 (V10.7.59) |
 
 **GLO — mix**
 
@@ -2206,7 +2209,7 @@ the music plays on). After OK, **GLO held + G4** still undoes it.
 
 ### Sequence, LFO and FX dice (SEQ / LFO / FX + SELECT)
 
-**LFO + SELECT** and **FX + SELECT** roll the LFO and the effects (OCT+ keeps, OCT− cancels). The sequence dice (SEQ + SELECT) was removed in V10.8.21.
+These dice are gone: the LFO's and the FX's (LFO + SELECT, FX + SELECT) were removed in V10.7.66 and the sequence's (SEQ + SELECT) in V10.8.21. The sound dice (EDIT + SELECT) stays.
 
 ### Macro dice
 
@@ -2457,11 +2460,10 @@ whole mix, what comes in on an EXT track too. This is the factory map (V10.7.59)
   (B4 C5), ATK+ (slow attacks, drums too) (D5), ARP (E5; on a DRUM track a new fill every press), RANDOM (F5). They come
   in on the next 1/16 and act on every track. **G#4 LOOP 3**: every track repeats its last 3 steps while held; let go
   and it is back where it would have been.
-- **Knobs** while FX is held: **FILTER** (left low-pass, right high-pass), **CRUSH**, **THROW** (sends the dry mix into
-  the delay and reverb), **DEPTH** (the buffer effects' level). (0.9.9-snd2) While THROW sends, and for 12 s after (its
-  tail), the delay's repeats go through a band, tape-echo style: a low cut at ~180 Hz and a low-pass at ~4.8 kHz that
-  closes to ~3 kHz as FEEDBK goes up and further (~1.8 kHz) over the tail: a thrown drum loop rings out as echoes
-  instead of a wash of hats and snare noise. The delay without THROW is as before.
+- **Knobs** while FX is held (V10.7.59): the four **macros M1–M4**, moving whatever you routed them to on **FX ›
+  MACROS**. They start from the value they had and go back to it when FX is let go (with FX LATCH they stay; OCT−
+  ALL OFF puts them back). The earlier knobs (FILTER, CRUSH, THROW, DEPTH) are gone: to throw a track into the
+  delay, route a macro to DLY.
 - **Black keys 1–6**: mute T1–T6 while held (not saved).
 - **G5 CLR AUTO**: FX + G5 empties the punch-in lane (its automation) and nothing else, stopped or playing; while
   recording it erases only where the playhead passes.
@@ -3006,11 +3008,11 @@ records the steps that play and repeats the last one on the others: a stutter in
 
 **7. Audio punch-ins.** Hold **FX** and play the keys: REPEAT, REVERSE, FREEZE, TAPE STOP, PITCH UP / DOWN and STRETCH
 act on the whole mix, your input included, and it all comes back when you let go. While FX is held the knobs are
-FILTER, CRUSH, THROW and DEPTH. See [Punch-in FX](#punch-in-fx-hold-fx).
+the macros M1–M4. See [Punch-in FX](#punch-in-fx-hold-fx).
 
-**8. The sends and THROW.** The EXT track's sends (FX › SENDS) take the input into CHORUS, DELAY and REVERB, the same
-buses the synths use. **THROW** (FX held, KNOB 3) throws the dry mix into the delay and the reverb while you turn it,
-dub style.
+**8. The sends.** The EXT track's sends (FX › SENDS) take the input into CHORUS, DELAY and REVERB, the same buses
+the synths use. To throw it into the echo at the right moment, dub style, route a macro to DLY on **FX › MACROS**
+and turn it with FX held: let FX go and it is back where it was.
 
 **9. The input as a modulator: IN ENV.** In the matrix (LFO › MOD), the source **IN ENV** is the level of what comes
 in (up at once, down in about 50 ms; it watches both inputs). Send it to any destination of any track: CUT, PITCH, AMP,

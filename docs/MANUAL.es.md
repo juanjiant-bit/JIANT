@@ -765,7 +765,7 @@ SEQ las suyas). El encabezado nombra la capa en palabras, **[GLO] SET**. El pie 
 | Teclas | Efecto |
 | --- | --- |
 | F3 G3 A3 | REPEAT 1/8, 1/16, 1/32 |
-| B3 / C4 | LPF / HPF |
+| B3 / C4 | REVERSE / FREEZE (V10.7.59) |
 | D4 / E4 | OCT− / OCT+ |
 | F4 | 1/2 TEMPO |
 | G4 / A4 | DEC− / DEC+ |
@@ -775,8 +775,11 @@ SEQ las suyas). El encabezado nombra la capa en palabras, **[GLO] SET**. El pie 
 | F5 | RANDOM |
 | G5 | borra el carril de punch-in |
 | Teclas negras 1–6 (F#3 G#3 A#3 C#4 D#4 F#4) | mutean T1–T6 mientras las mantenés |
-| A#4 | a qué pistas afectan los efectos de nota: ALL / SYN / DRM |
-| **Perillas** | FILTER, CRUSH, THROW, DEPTH |
+| G#4 | LOOP 3 |
+| A#4 | TAPE STOP |
+| C#5 / D#5 | PITCH UP / PITCH DOWN |
+| F#5 | STRETCH |
+| **Perillas** | los macros M1–M4 (V10.7.59) |
 
 **GLO — mezcla**
 
@@ -2316,7 +2319,7 @@ primera tirada (solo el sonido de esa pista: la música sigue). Después de OK, 
 
 ### Dados de secuencia, LFO y FX (SEQ / LFO / FX + SELECT)
 
-**LFO + SELECT** y **FX + SELECT** sortean el LFO y los efectos (OCT+ los deja, OCT− los cancela). El dado de secuencia (SEQ + SELECT) se sacó en V10.8.21.
+Estos dados ya no están: los de LFO y FX (LFO + SELECT, FX + SELECT) se sacaron en V10.7.66 y el de secuencia (SEQ + SELECT) en V10.8.21. Queda el dado de sonido (EDIT + SELECT).
 
 ### Dados de macros
 
@@ -2584,12 +2587,10 @@ sobre el master: toda la mezcla, también lo que entra por una pista EXT. Este e
   1/8 / 1/16 (B4 C5), ATK+ (ataques lentos, baterías incluidas) (D5), ARP (E5; en una pista DRUM, un fill nuevo en cada
   pulsación), RANDOM (F5). Entran en la siguiente 1/16 y actúan sobre todas las pistas. **G#4 LOOP 3**: cada pista
   repite sus últimos 3 pasos mientras lo mantenés; al soltar vuelve a donde habría estado.
-- **Perillas** con FX mantenido: **FILTER** (izquierda pasa-bajos, derecha pasa-altos), **CRUSH**, **THROW** (manda la
-  mezcla seca al delay y la reverb), **DEPTH** (el nivel de los efectos de buffer). (0.9.9-snd2) Mientras THROW manda,
-  y 12 s después (su cola), las repeticiones del delay pasan por una banda, al estilo de un eco de cinta: un corte de
-  graves en ~180 Hz y un pasabajos en ~4,8 kHz que se cierra hasta ~3 kHz cuanto más FEEDBK y más todavía (~1,8 kHz)
-  en la cola: un loop de batería tirado al delay suena a ecos y no a una nube de ruido de hats y caja. El delay sin
-  THROW queda como antes.
+- **Perillas** con FX mantenido (V10.7.59): los cuatro **macros M1–M4**, que mueven lo que les hayas ruteado en
+  **FX › MACROS**. Parten del valor que tenían y, al soltar FX, vuelven ahí (con FX LATCH se quedan; OCT− ALL OFF
+  los devuelve). Las perillas de antes (FILTER, CRUSH, THROW, DEPTH) ya no están: para tirar una pista al delay,
+  ruteá un macro a DLY.
 - **Teclas negras 1–6**: mutean T1–T6 mientras las mantenés (no se guarda).
 - **G5 CLR AUTO**: FX + G5 vacía el carril de punch-in (su automatización) y nada más, parado o tocando; grabando,
   borra solo donde pasa el cabezal.
@@ -3163,11 +3164,11 @@ SLICER.
 
 **7. Punch-in de audio.** Mantené **FX** y tocá las teclas: REPEAT, REVERSE, FREEZE, TAPE STOP, PITCH UP / DOWN y
 STRETCH actúan sobre toda la mezcla, tu entrada incluida, y al soltar vuelve todo. Con FX mantenido las perillas son
-FILTER, CRUSH, THROW y DEPTH. Ver [FX punch-in](#fx-punch-in-mantené-fx).
+los macros M1–M4. Ver [FX punch-in](#fx-punch-in-mantené-fx).
 
-**8. Los envíos y THROW.** Los envíos de la pista EXT (FX › SENDS) mandan la entrada a CHORUS, DELAY y REVERB, los
-mismos buses que usan los sintes. **THROW** (FX mantenido, KNOB 3) tira la mezcla seca al delay y la reverb mientras
-lo girás, como en el dub.
+**8. Los envíos.** Los envíos de la pista EXT (FX › SENDS) mandan la entrada a CHORUS, DELAY y REVERB, los mismos
+buses que usan los sintes. Para tirarla al eco en el momento justo, como en el dub, ruteá un macro a DLY en **FX ›
+MACROS** y giralo con FX mantenido: al soltar FX vuelve a donde estaba.
 
 **9. La entrada como modulador: IN ENV.** En la matriz (LFO › MOD), la fuente **IN ENV** es el volumen de lo que entra
 (sube al instante, baja en unos 50 ms; mira las dos entradas). Mandala a cualquier destino de cualquier pista: CUT,

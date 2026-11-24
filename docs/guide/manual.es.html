@@ -1819,7 +1819,7 @@ SEQ las suyas). El encabezado nombra la capa en palabras, <strong>[GLO] SET</str
 </tr>
 <tr>
 <td>B3 / C4</td>
-<td>LPF / HPF</td>
+<td>REVERSE / FREEZE (V10.7.59)</td>
 </tr>
 <tr>
 <td>D4 / E4</td>
@@ -1858,12 +1858,24 @@ SEQ las suyas). El encabezado nombra la capa en palabras, <strong>[GLO] SET</str
 <td>mutean T1–T6 mientras las mantenés</td>
 </tr>
 <tr>
+<td>G#4</td>
+<td>LOOP 3</td>
+</tr>
+<tr>
 <td>A#4</td>
-<td>a qué pistas afectan los efectos de nota: ALL / SYN / DRM</td>
+<td>TAPE STOP</td>
+</tr>
+<tr>
+<td>C#5 / D#5</td>
+<td>PITCH UP / PITCH DOWN</td>
+</tr>
+<tr>
+<td>F#5</td>
+<td>STRETCH</td>
 </tr>
 <tr>
 <td><strong>Perillas</strong></td>
-<td>FILTER, CRUSH, THROW, DEPTH</td>
+<td>los macros M1–M4 (V10.7.59)</td>
 </tr>
 </tbody>
 </table></div>
@@ -3887,7 +3899,7 @@ alrededor del kit de fábrica. Lo escuchás al instante bajo <strong>KEEP DICED 
 SELECT otra vez para otra tirada, <strong>OCT+ OK</strong> la deja, <strong>OCT− CANCEL</strong> devuelve el sonido que tenías antes de la
 primera tirada (solo el sonido de esa pista: la música sigue). Después de OK, <strong>GLO mantenido + G4</strong> también lo deshace.</p>
 <h3 id="dados-de-secuencia-lfo-y-fx-seq-lfo-fx-select">Dados de secuencia, LFO y FX (SEQ / LFO / FX + SELECT)</h3>
-<p><strong>LFO + SELECT</strong> y <strong>FX + SELECT</strong> sortean el LFO y los efectos (OCT+ los deja, OCT− los cancela). El dado de secuencia (SEQ + SELECT) se sacó en V10.8.21.</p>
+<p>Estos dados ya no están: los de LFO y FX (LFO + SELECT, FX + SELECT) se sacaron en V10.7.66 y el de secuencia (SEQ + SELECT) en V10.8.21. Queda el dado de sonido (EDIT + SELECT).</p>
 <h3 id="dados-de-macros">Dados de macros</h3>
 <p>Con las macros abiertas (LFO mantenido) o enganchadas: <strong>F3</strong> tira rutas de macro nuevas en las pistas que están
 sonando; G3 las borra. Ver <a href="#10-modulación-y-macros">10</a>.</p>
@@ -4246,12 +4258,10 @@ sobre el master: toda la mezcla, también lo que entra por una pista EXT. Este e
   1/8 / 1/16 (B4 C5), ATK+ (ataques lentos, baterías incluidas) (D5), ARP (E5; en una pista DRUM, un fill nuevo en cada
   pulsación), RANDOM (F5). Entran en la siguiente 1/16 y actúan sobre todas las pistas. <strong>G#4 LOOP 3</strong>: cada pista
   repite sus últimos 3 pasos mientras lo mantenés; al soltar vuelve a donde habría estado.</li>
-<li><strong>Perillas</strong> con FX mantenido: <strong>FILTER</strong> (izquierda pasa-bajos, derecha pasa-altos), <strong>CRUSH</strong>, <strong>THROW</strong> (manda la
-  mezcla seca al delay y la reverb), <strong>DEPTH</strong> (el nivel de los efectos de buffer). (0.9.9-snd2) Mientras THROW manda,
-  y 12 s después (su cola), las repeticiones del delay pasan por una banda, al estilo de un eco de cinta: un corte de
-  graves en ~180 Hz y un pasabajos en ~4,8 kHz que se cierra hasta ~3 kHz cuanto más FEEDBK y más todavía (~1,8 kHz)
-  en la cola: un loop de batería tirado al delay suena a ecos y no a una nube de ruido de hats y caja. El delay sin
-  THROW queda como antes.</li>
+<li><strong>Perillas</strong> con FX mantenido (V10.7.59): los cuatro <strong>macros M1–M4</strong>, que mueven lo que les hayas ruteado en
+  <strong>FX › MACROS</strong>. Parten del valor que tenían y, al soltar FX, vuelven ahí (con FX LATCH se quedan; OCT− ALL OFF
+  los devuelve). Las perillas de antes (FILTER, CRUSH, THROW, DEPTH) ya no están: para tirar una pista al delay,
+  ruteá un macro a DLY.</li>
 <li><strong>Teclas negras 1–6</strong>: mutean T1–T6 mientras las mantenés (no se guarda).</li>
 <li><strong>G5 CLR AUTO</strong>: FX + G5 vacía el carril de punch-in (su automatización) y nada más, parado o tocando; grabando,
   borra solo donde pasa el cabezal.</li>
@@ -5081,10 +5091,10 @@ el nivel de la repetición. <strong>SL PITCH</strong> afina cada repetición con
 SLICER.</p>
 <p><strong>7. Punch-in de audio.</strong> Mantené <strong>FX</strong> y tocá las teclas: REPEAT, REVERSE, FREEZE, TAPE STOP, PITCH UP / DOWN y
 STRETCH actúan sobre toda la mezcla, tu entrada incluida, y al soltar vuelve todo. Con FX mantenido las perillas son
-FILTER, CRUSH, THROW y DEPTH. Ver <a href="#fx-punch-in-mantené-fx">FX punch-in</a>.</p>
-<p><strong>8. Los envíos y THROW.</strong> Los envíos de la pista EXT (FX › SENDS) mandan la entrada a CHORUS, DELAY y REVERB, los
-mismos buses que usan los sintes. <strong>THROW</strong> (FX mantenido, KNOB 3) tira la mezcla seca al delay y la reverb mientras
-lo girás, como en el dub.</p>
+los macros M1–M4. Ver <a href="#fx-punch-in-mantené-fx">FX punch-in</a>.</p>
+<p><strong>8. Los envíos.</strong> Los envíos de la pista EXT (FX › SENDS) mandan la entrada a CHORUS, DELAY y REVERB, los mismos
+buses que usan los sintes. Para tirarla al eco en el momento justo, como en el dub, ruteá un macro a DLY en <strong>FX ›
+MACROS</strong> y giralo con FX mantenido: al soltar FX vuelve a donde estaba.</p>
 <p><strong>9. La entrada como modulador: IN ENV.</strong> En la matriz (LFO › MOD), la fuente <strong>IN ENV</strong> es el volumen de lo que entra
 (sube al instante, baja en unos 50 ms; mira las dos entradas). Mandala a cualquier destino de cualquier pista: CUT,
 PITCH, AMP, PAN, un envío. Funciona aunque ninguna pista esté sonando la entrada: puede ser solo un controlador. Con

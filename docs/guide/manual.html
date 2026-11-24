@@ -1803,7 +1803,7 @@ breadcrumb, <strong>FX · MAP</strong>. The keys and knobs do exactly what they 
 </tr>
 <tr>
 <td>B3 / C4</td>
-<td>LPF / HPF</td>
+<td>REVERSE / FREEZE (V10.7.59)</td>
 </tr>
 <tr>
 <td>D4 / E4</td>
@@ -1842,12 +1842,24 @@ breadcrumb, <strong>FX · MAP</strong>. The keys and knobs do exactly what they 
 <td>mute T1–T6 while held</td>
 </tr>
 <tr>
+<td>G#4</td>
+<td>LOOP 3</td>
+</tr>
+<tr>
 <td>A#4</td>
-<td>which tracks the note effects touch: ALL / SYN / DRM</td>
+<td>TAPE STOP</td>
+</tr>
+<tr>
+<td>C#5 / D#5</td>
+<td>PITCH UP / PITCH DOWN</td>
+</tr>
+<tr>
+<td>F#5</td>
+<td>STRETCH</td>
 </tr>
 <tr>
 <td><strong>Knobs</strong></td>
-<td>FILTER, CRUSH, THROW, DEPTH</td>
+<td>the macros M1–M4 (V10.7.59)</td>
 </tr>
 </tbody>
 </table></div>
@@ -3783,7 +3795,7 @@ You hear it at once under <strong>KEEP DICED SOUND?</strong> (DRUM: <strong>KEEP
 <strong>OCT+ OK</strong> keeps it, <strong>OCT− CANCEL</strong> brings back the sound you had before the first roll (only that track's sound:
 the music plays on). After OK, <strong>GLO held + G4</strong> still undoes it.</p>
 <h3 id="sequence-lfo-and-fx-dice-seq-lfo-fx-select">Sequence, LFO and FX dice (SEQ / LFO / FX + SELECT)</h3>
-<p><strong>LFO + SELECT</strong> and <strong>FX + SELECT</strong> roll the LFO and the effects (OCT+ keeps, OCT− cancels). The sequence dice (SEQ + SELECT) was removed in V10.8.21.</p>
+<p>These dice are gone: the LFO's and the FX's (LFO + SELECT, FX + SELECT) were removed in V10.7.66 and the sequence's (SEQ + SELECT) in V10.8.21. The sound dice (EDIT + SELECT) stays.</p>
 <h3 id="macro-dice">Macro dice</h3>
 <p>With the macros open (LFO held) or latched: <strong>F3</strong> rolls new macro routes on the tracks that are sounding;
 G3 clears them. See <a href="#10-modulation-and-macros">10</a>.</p>
@@ -4126,11 +4138,10 @@ whole mix, what comes in on an EXT track too. This is the factory map (V10.7.59)
   (B4 C5), ATK+ (slow attacks, drums too) (D5), ARP (E5; on a DRUM track a new fill every press), RANDOM (F5). They come
   in on the next 1/16 and act on every track. <strong>G#4 LOOP 3</strong>: every track repeats its last 3 steps while held; let go
   and it is back where it would have been.</li>
-<li><strong>Knobs</strong> while FX is held: <strong>FILTER</strong> (left low-pass, right high-pass), <strong>CRUSH</strong>, <strong>THROW</strong> (sends the dry mix into
-  the delay and reverb), <strong>DEPTH</strong> (the buffer effects' level). (0.9.9-snd2) While THROW sends, and for 12 s after (its
-  tail), the delay's repeats go through a band, tape-echo style: a low cut at ~180 Hz and a low-pass at ~4.8 kHz that
-  closes to ~3 kHz as FEEDBK goes up and further (~1.8 kHz) over the tail: a thrown drum loop rings out as echoes
-  instead of a wash of hats and snare noise. The delay without THROW is as before.</li>
+<li><strong>Knobs</strong> while FX is held (V10.7.59): the four <strong>macros M1–M4</strong>, moving whatever you routed them to on <strong>FX ›
+  MACROS</strong>. They start from the value they had and go back to it when FX is let go (with FX LATCH they stay; OCT−
+  ALL OFF puts them back). The earlier knobs (FILTER, CRUSH, THROW, DEPTH) are gone: to throw a track into the
+  delay, route a macro to DLY.</li>
 <li><strong>Black keys 1–6</strong>: mute T1–T6 while held (not saved).</li>
 <li><strong>G5 CLR AUTO</strong>: FX + G5 empties the punch-in lane (its automation) and nothing else, stopped or playing; while
   recording it erases only where the playhead passes.</li>
@@ -4931,10 +4942,10 @@ records the steps that play and repeats the last one on the others: a stutter in
 <strong>DEPTH</strong> the repeat's level. <strong>SL PITCH</strong> tunes each repeat with a 16-step sequence. With LOAD ECO there is no SLICER.</p>
 <p><strong>7. Audio punch-ins.</strong> Hold <strong>FX</strong> and play the keys: REPEAT, REVERSE, FREEZE, TAPE STOP, PITCH UP / DOWN and STRETCH
 act on the whole mix, your input included, and it all comes back when you let go. While FX is held the knobs are
-FILTER, CRUSH, THROW and DEPTH. See <a href="#punch-in-fx-hold-fx">Punch-in FX</a>.</p>
-<p><strong>8. The sends and THROW.</strong> The EXT track's sends (FX › SENDS) take the input into CHORUS, DELAY and REVERB, the same
-buses the synths use. <strong>THROW</strong> (FX held, KNOB 3) throws the dry mix into the delay and the reverb while you turn it,
-dub style.</p>
+the macros M1–M4. See <a href="#punch-in-fx-hold-fx">Punch-in FX</a>.</p>
+<p><strong>8. The sends.</strong> The EXT track's sends (FX › SENDS) take the input into CHORUS, DELAY and REVERB, the same buses
+the synths use. To throw it into the echo at the right moment, dub style, route a macro to DLY on <strong>FX › MACROS</strong>
+and turn it with FX held: let FX go and it is back where it was.</p>
 <p><strong>9. The input as a modulator: IN ENV.</strong> In the matrix (LFO › MOD), the source <strong>IN ENV</strong> is the level of what comes
 in (up at once, down in about 50 ms; it watches both inputs). Send it to any destination of any track: CUT, PITCH, AMP,
 PAN, a send. It works even when no track plays the input: the input can be a controller only. With a negative amount
