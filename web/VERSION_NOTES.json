@@ -1,766 +1,829 @@
 {
- "features": {
-  "eng_west": {
-   "es": "Motor WEST COAST",
-   "en": "WEST COAST engine"
+  "features": {
+    "eng_west": {
+      "es": "Motor WEST COAST",
+      "en": "WEST COAST engine"
+    },
+    "eng_noise": {
+      "es": "Motor NOISE",
+      "en": "NOISE engine"
+    },
+    "west_dust_metal": {
+      "es": "WEST: DUST nuevo y zona METAL",
+      "en": "WEST: new DUST and METAL zone"
+    },
+    "drumx_math": {
+      "es": "DRUM-X: fórmulas MATH como wavetable",
+      "en": "DRUM-X: MATH formulas as wavetables"
+    },
+    "life": {
+      "es": "LIFE (las pistas se mueven entre sí)",
+      "en": "LIFE (tracks move each other)"
+    },
+    "mutate": {
+      "es": "SEQ › MUTATE",
+      "en": "SEQ › MUTATE"
+    },
+    "stretch": {
+      "es": "SEQ › STRETCH",
+      "en": "SEQ › STRETCH"
+    },
+    "live": {
+      "es": "LIVE (KEYS / RAILS)",
+      "en": "LIVE (KEYS / RAILS)"
+    },
+    "seq_dice": {
+      "es": "Dado de secuencia (SEQ + SELECT)",
+      "en": "Sequence dice (SEQ + SELECT)"
+    },
+    "punch_lane": {
+      "es": "Página PUNCH LANE",
+      "en": "PUNCH LANE page"
+    },
+    "punch_editor": {
+      "es": "Editor de punch-ins (WHAT / HOW)",
+      "en": "Punch-in editor (WHAT / HOW)"
+    },
+    "fx_punchins": {
+      "es": "Punch-ins de FX (REVERSE, FREEZE, TAPE STOP…)",
+      "en": "FX punch-ins (REVERSE, FREEZE, TAPE STOP…)"
+    },
+    "song_mode": {
+      "es": "Modo canción (JAM / TAKE / LOCK)",
+      "en": "Song mode (JAM / TAKE / LOCK)"
+    },
+    "stepfx_keys": {
+      "es": "STEP FX: componentes que se tocan con las teclas",
+      "en": "STEP FX: components played on the keys"
+    },
+    "drone_clay": {
+      "es": "DRONE CLAY",
+      "en": "DRONE CLAY"
+    },
+    "clay_rate": {
+      "es": "DRONE CLAY: RATE por modulador, golpes en cualquier motor",
+      "en": "DRONE CLAY: per-modulator RATE, hits on any engine"
+    },
+    "clay_bars": {
+      "es": "DRONE CLAY: barras de los moduladores",
+      "en": "DRONE CLAY: modulator bars"
+    },
+    "clay_keys": {
+      "es": "DRONE CLAY: teclas (gestos y grados)",
+      "en": "DRONE CLAY: keys (gestures and degrees)"
+    },
+    "macros_dest": {
+      "es": "Macros como destinos (16 rutas)",
+      "en": "Macros as destinations (16 routes)"
+    },
+    "euclid": {
+      "es": "SEQ › EUCLID y MODES",
+      "en": "SEQ › EUCLID and MODES"
+    },
+    "euclid_role": {
+      "es": "EUCLID › ROLE (MELODY, CHORDS, BASS, ARP)",
+      "en": "EUCLID › ROLE (MELODY, CHORDS, BASS, ARP)"
+    },
+    "harmony": {
+      "es": "SCL › HARMONY (progresiones)",
+      "en": "SCL › HARMONY (progressions)"
+    },
+    "scene": {
+      "es": "SCL › SCENE",
+      "en": "SCL › SCENE"
+    },
+    "flt_ms20_lp24": {
+      "es": "Filtros MS20 y LP24",
+      "en": "MS20 and LP24 filters"
+    },
+    "env_stage": {
+      "es": "Página ENV › STAGE",
+      "en": "ENV › STAGE page"
+    },
+    "half_rate": {
+      "es": "Media frecuencia en vez de cortar notas",
+      "en": "Half sample rate instead of cutting notes"
+    },
+    "track_colours": {
+      "es": "Colores por pista y barra TRACK / ENGINE",
+      "en": "Track colours and the TRACK / ENGINE bar"
+    },
+    "hud_screens": {
+      "es": "Pantallas rediseñadas (FX HUD, MIXER, ENV, LFO…)",
+      "en": "Redesigned screens (FX HUD, MIXER, ENV, LFO…)"
+    },
+    "no_power_click": {
+      "es": "Sin click al encender",
+      "en": "No click at power-on"
+    },
+    "velocity_at": {
+      "es": "Velocity y aftertouch de las teclas",
+      "en": "Key velocity and aftertouch"
+    },
+    "gen_new_genres": {
+      "es": "GEN: DUBSTEP, SHOEGAZE, METALCORE, CUMBIA villera",
+      "en": "GEN: DUBSTEP, SHOEGAZE, METALCORE, CUMBIA villera"
+    },
+    "copy_paste_oct": {
+      "es": "Copiar y pegar pasos con OCT+ / OCT−",
+      "en": "Copy and paste steps with OCT+ / OCT−"
+    },
+    "screen_mirror": {
+      "es": "Espejo de pantalla para JIANT Studio",
+      "en": "Screen mirror for JIANT Studio"
+    },
+    "emu_editor": {
+      "es": "Emulador: se edita y graba desde Studio",
+      "en": "Emulator: edited and recorded from Studio"
+    },
+    "emu_stems": {
+      "es": "Emulador: stems y MIDI OUT hacia Studio",
+      "en": "Emulator: stems and MIDI OUT into Studio"
+    },
+    "ui_push": {
+      "es": "Aviso de página para la guía en vivo de Studio",
+      "en": "Page push for Studio's live guide"
+    },
+    "help_hints": {
+      "es": "Textos de ayuda completos en pantalla",
+      "en": "Full on-screen help texts"
+    },
+    "mutate_compact": {
+      "es": "MUTATE compacto (EUCLID: OCT+ muta, EVERY)",
+      "en": "Compact MUTATE (EUCLID: OCT+ mutates, EVERY)"
+    },
+    "live_compact": {
+      "es": "LIVE compacto (teclas negras de STEP FX)",
+      "en": "Compact LIVE (STEP FX black keys)"
+    }
   },
-  "eng_noise": {
-   "es": "Motor NOISE",
-   "en": "NOISE engine"
-  },
-  "west_dust_metal": {
-   "es": "WEST: DUST nuevo y zona METAL",
-   "en": "WEST: new DUST and METAL zone"
-  },
-  "drumx_math": {
-   "es": "DRUM-X: fórmulas MATH como wavetable",
-   "en": "DRUM-X: MATH formulas as wavetables"
-  },
-  "life": {
-   "es": "LIFE (las pistas se mueven entre sí)",
-   "en": "LIFE (tracks move each other)"
-  },
-  "mutate": {
-   "es": "SEQ › MUTATE",
-   "en": "SEQ › MUTATE"
-  },
-  "stretch": {
-   "es": "SEQ › STRETCH",
-   "en": "SEQ › STRETCH"
-  },
-  "live": {
-   "es": "LIVE (KEYS / RAILS)",
-   "en": "LIVE (KEYS / RAILS)"
-  },
-  "seq_dice": {
-   "es": "Dado de secuencia (SEQ + SELECT)",
-   "en": "Sequence dice (SEQ + SELECT)"
-  },
-  "punch_lane": {
-   "es": "Página PUNCH LANE",
-   "en": "PUNCH LANE page"
-  },
-  "punch_editor": {
-   "es": "Editor de punch-ins (WHAT / HOW)",
-   "en": "Punch-in editor (WHAT / HOW)"
-  },
-  "fx_punchins": {
-   "es": "Punch-ins de FX (REVERSE, FREEZE, TAPE STOP…)",
-   "en": "FX punch-ins (REVERSE, FREEZE, TAPE STOP…)"
-  },
-  "song_mode": {
-   "es": "Modo canción (JAM / TAKE / LOCK)",
-   "en": "Song mode (JAM / TAKE / LOCK)"
-  },
-  "stepfx_keys": {
-   "es": "STEP FX: componentes que se tocan con las teclas",
-   "en": "STEP FX: components played on the keys"
-  },
-  "drone_clay": {
-   "es": "DRONE CLAY",
-   "en": "DRONE CLAY"
-  },
-  "clay_rate": {
-   "es": "DRONE CLAY: RATE por modulador, golpes en cualquier motor",
-   "en": "DRONE CLAY: per-modulator RATE, hits on any engine"
-  },
-  "clay_bars": {
-   "es": "DRONE CLAY: barras de los moduladores",
-   "en": "DRONE CLAY: modulator bars"
-  },
-  "clay_keys": {
-   "es": "DRONE CLAY: teclas (gestos y grados)",
-   "en": "DRONE CLAY: keys (gestures and degrees)"
-  },
-  "macros_dest": {
-   "es": "Macros como destinos (16 rutas)",
-   "en": "Macros as destinations (16 routes)"
-  },
-  "euclid": {
-   "es": "SEQ › EUCLID y MODES",
-   "en": "SEQ › EUCLID and MODES"
-  },
-  "euclid_role": {
-   "es": "EUCLID › ROLE (MELODY, CHORDS, BASS, ARP)",
-   "en": "EUCLID › ROLE (MELODY, CHORDS, BASS, ARP)"
-  },
-  "harmony": {
-   "es": "SCL › HARMONY (progresiones)",
-   "en": "SCL › HARMONY (progressions)"
-  },
-  "scene": {
-   "es": "SCL › SCENE",
-   "en": "SCL › SCENE"
-  },
-  "flt_ms20_lp24": {
-   "es": "Filtros MS20 y LP24",
-   "en": "MS20 and LP24 filters"
-  },
-  "env_stage": {
-   "es": "Página ENV › STAGE",
-   "en": "ENV › STAGE page"
-  },
-  "half_rate": {
-   "es": "Media frecuencia en vez de cortar notas",
-   "en": "Half sample rate instead of cutting notes"
-  },
-  "track_colours": {
-   "es": "Colores por pista y barra TRACK / ENGINE",
-   "en": "Track colours and the TRACK / ENGINE bar"
-  },
-  "hud_screens": {
-   "es": "Pantallas rediseñadas (FX HUD, MIXER, ENV, LFO…)",
-   "en": "Redesigned screens (FX HUD, MIXER, ENV, LFO…)"
-  },
-  "no_power_click": {
-   "es": "Sin click al encender",
-   "en": "No click at power-on"
-  },
-  "velocity_at": {
-   "es": "Velocity y aftertouch de las teclas",
-   "en": "Key velocity and aftertouch"
-  },
-  "gen_new_genres": {
-   "es": "GEN: DUBSTEP, SHOEGAZE, METALCORE, CUMBIA villera",
-   "en": "GEN: DUBSTEP, SHOEGAZE, METALCORE, CUMBIA villera"
-  },
-  "copy_paste_oct": {
-   "es": "Copiar y pegar pasos con OCT+ / OCT−",
-   "en": "Copy and paste steps with OCT+ / OCT−"
-  },
-  "screen_mirror": {
-   "es": "Espejo de pantalla para JIANT Studio",
-   "en": "Screen mirror for JIANT Studio"
-  },
-  "emu_editor": {
-   "es": "Emulador: se edita y graba desde Studio",
-   "en": "Emulator: edited and recorded from Studio"
-  },
-  "emu_stems": {
-   "es": "Emulador: stems y MIDI OUT hacia Studio",
-   "en": "Emulator: stems and MIDI OUT into Studio"
-  },
-  "ui_push": {
-   "es": "Aviso de página para la guía en vivo de Studio",
-   "en": "Page push for Studio's live guide"
-  },
-  "help_hints": {
-   "es": "Textos de ayuda completos en pantalla",
-   "en": "Full on-screen help texts"
+  "versions": {
+    "V10.8.35": {
+      "date": "2026-11-24",
+      "status": "beta",
+      "summary": {
+        "es": "Beta: vuelven MUTATE y LIVE en versión compacta; salen los filtros MS20 y LP24 y la página ENV STAGE; anillo de EUCLID simple; ROLE a la vista en sintes.",
+        "en": "Beta: MUTATE and LIVE are back in a compact form; the MS20 and LP24 filters and the ENV STAGE page are gone; a simpler EUCLID ring; ROLE in view on synth tracks."
+      },
+      "has": [
+        "eng_west",
+        "drumx_math",
+        "life",
+        "punch_editor",
+        "fx_punchins",
+        "song_mode",
+        "stepfx_keys",
+        "drone_clay",
+        "macros_dest",
+        "euclid",
+        "euclid_role",
+        "harmony",
+        "scene",
+        "half_rate",
+        "track_colours",
+        "hud_screens",
+        "no_power_click",
+        "velocity_at",
+        "gen_new_genres",
+        "copy_paste_oct",
+        "clay_rate",
+        "clay_bars",
+        "clay_keys",
+        "west_dust_metal",
+        "ui_push",
+        "screen_mirror",
+        "emu_editor",
+        "emu_stems",
+        "mutate_compact",
+        "live_compact"
+      ],
+      "hasnt": [
+        "eng_noise",
+        "mutate",
+        "stretch",
+        "live",
+        "seq_dice",
+        "punch_lane",
+        "help_hints",
+        "flt_ms20_lp24",
+        "env_stage"
+      ],
+      "notes": {
+        "es": "Beta: puede tener errores. Los proyectos y presets con filtro MS20 o LP24 abren como LP. MUTATE y LIVE no son las páginas originales (esas quedan en V10.7.81). Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
+        "en": "Beta: it may have bugs. Projects and presets using the MS20 or LP24 filter open as LP. MUTATE and LIVE are not the original pages (those remain in V10.7.81). Make a complete backup of your projects before changing version."
+      }
+    },
+    "V10.8.34": {
+      "date": "2026-11-24",
+      "status": "beta",
+      "summary": {
+        "es": "Beta: primera etapa del generador de canciones nuevo (más progresiones, secciones con contraste, diálogo entre lead y arpegio), sobre V10.8.33.",
+        "en": "Beta: the first stage of the new song generator (more progressions, contrasting sections, lead and arp in dialogue), on top of V10.8.33."
+      },
+      "has": [
+        "eng_west",
+        "drumx_math",
+        "life",
+        "punch_editor",
+        "fx_punchins",
+        "song_mode",
+        "stepfx_keys",
+        "drone_clay",
+        "macros_dest",
+        "euclid",
+        "euclid_role",
+        "harmony",
+        "scene",
+        "flt_ms20_lp24",
+        "env_stage",
+        "half_rate",
+        "track_colours",
+        "hud_screens",
+        "no_power_click",
+        "velocity_at",
+        "gen_new_genres",
+        "copy_paste_oct",
+        "clay_rate",
+        "clay_bars",
+        "clay_keys",
+        "west_dust_metal",
+        "ui_push",
+        "screen_mirror",
+        "emu_editor",
+        "emu_stems"
+      ],
+      "hasnt": [
+        "eng_noise",
+        "mutate",
+        "stretch",
+        "live",
+        "seq_dice",
+        "punch_lane",
+        "help_hints"
+      ],
+      "notes": {
+        "es": "Beta: puede tener errores. Se quitaron la página PUNCH LANE, el dibujo del carril de PUNCH IN y muchos textos de ayuda para hacer lugar. Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
+        "en": "Beta: it may have bugs. The PUNCH LANE page, PUNCH IN's lane picture and many help texts were removed for room. Make a complete backup of your projects before changing version."
+      }
+    },
+    "V10.8.33": {
+      "date": "2026-11-24",
+      "status": "beta",
+      "summary": {
+        "es": "Beta: teclas de DRONE CLAY, wavetables de DRUM-X suaves, DUST nuevo de WEST y el aviso de página para la guía de Studio.",
+        "en": "Beta: DRONE CLAY keys, smooth DRUM-X wavetables, WEST's new DUST and the page push for Studio's guide."
+      },
+      "has": [
+        "eng_west",
+        "drumx_math",
+        "life",
+        "punch_editor",
+        "fx_punchins",
+        "song_mode",
+        "stepfx_keys",
+        "drone_clay",
+        "macros_dest",
+        "euclid",
+        "euclid_role",
+        "harmony",
+        "scene",
+        "flt_ms20_lp24",
+        "env_stage",
+        "half_rate",
+        "track_colours",
+        "hud_screens",
+        "no_power_click",
+        "velocity_at",
+        "gen_new_genres",
+        "copy_paste_oct",
+        "clay_rate",
+        "clay_bars",
+        "clay_keys",
+        "west_dust_metal",
+        "ui_push",
+        "screen_mirror",
+        "emu_editor",
+        "emu_stems"
+      ],
+      "hasnt": [
+        "eng_noise",
+        "mutate",
+        "stretch",
+        "live",
+        "seq_dice",
+        "punch_lane",
+        "help_hints"
+      ],
+      "notes": {
+        "es": "Beta: puede tener errores. Se quitaron la página PUNCH LANE, el dibujo del carril de PUNCH IN y muchos textos de ayuda para hacer lugar. Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
+        "en": "Beta: it may have bugs. The PUNCH LANE page, PUNCH IN's lane picture and many help texts were removed for room. Make a complete backup of your projects before changing version."
+      }
+    },
+    "V10.8.25": {
+      "date": "2026-11-24",
+      "status": "public",
+      "summary": {
+        "es": "Versión pública actual: el emulador como entrada en JIANT Studio (stems y MIDI OUT). El firmware del equipo es el de V10.8.24.",
+        "en": "Current public release: the emulator as an input in JIANT Studio (stems and MIDI OUT). The device's firmware is V10.8.24's."
+      },
+      "has": [
+        "eng_west",
+        "drumx_math",
+        "life",
+        "punch_editor",
+        "fx_punchins",
+        "song_mode",
+        "stepfx_keys",
+        "drone_clay",
+        "macros_dest",
+        "euclid",
+        "euclid_role",
+        "harmony",
+        "scene",
+        "flt_ms20_lp24",
+        "env_stage",
+        "half_rate",
+        "track_colours",
+        "hud_screens",
+        "no_power_click",
+        "velocity_at",
+        "gen_new_genres",
+        "copy_paste_oct",
+        "punch_lane",
+        "help_hints",
+        "screen_mirror",
+        "emu_editor",
+        "emu_stems"
+      ],
+      "hasnt": [
+        "eng_noise",
+        "mutate",
+        "stretch",
+        "live",
+        "seq_dice",
+        "clay_rate",
+        "clay_bars",
+        "clay_keys",
+        "west_dust_metal",
+        "ui_push"
+      ],
+      "notes": {
+        "es": "Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
+        "en": "Make a complete backup of your projects before changing version."
+      }
+    },
+    "V10.8.24": {
+      "date": "2026-11-23",
+      "status": "classic",
+      "summary": {
+        "es": "El emulador responde al editor: JIANT Studio lo edita y lo graba. Firmware como V10.8.23.",
+        "en": "The emulator answers the editor: JIANT Studio edits and records it. Firmware as V10.8.23."
+      },
+      "has": [
+        "eng_west",
+        "drumx_math",
+        "life",
+        "punch_editor",
+        "fx_punchins",
+        "song_mode",
+        "stepfx_keys",
+        "drone_clay",
+        "macros_dest",
+        "euclid",
+        "euclid_role",
+        "harmony",
+        "scene",
+        "flt_ms20_lp24",
+        "env_stage",
+        "half_rate",
+        "track_colours",
+        "hud_screens",
+        "no_power_click",
+        "velocity_at",
+        "gen_new_genres",
+        "copy_paste_oct",
+        "punch_lane",
+        "help_hints",
+        "screen_mirror",
+        "emu_editor"
+      ],
+      "hasnt": [
+        "eng_noise",
+        "mutate",
+        "stretch",
+        "live",
+        "seq_dice",
+        "clay_rate",
+        "clay_bars",
+        "clay_keys",
+        "west_dust_metal",
+        "ui_push",
+        "emu_stems"
+      ],
+      "notes": {
+        "es": "Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
+        "en": "Make a complete backup of your projects before changing version."
+      }
+    },
+    "V10.8.23": {
+      "date": "2026-11-23",
+      "status": "classic",
+      "summary": {
+        "es": "Espejo de pantalla para Studio y nombres completos en la MOD MATRIX.",
+        "en": "Screen mirror for Studio and full names in the MOD MATRIX."
+      },
+      "has": [
+        "eng_west",
+        "drumx_math",
+        "life",
+        "punch_editor",
+        "fx_punchins",
+        "song_mode",
+        "stepfx_keys",
+        "drone_clay",
+        "macros_dest",
+        "euclid",
+        "euclid_role",
+        "harmony",
+        "scene",
+        "flt_ms20_lp24",
+        "env_stage",
+        "half_rate",
+        "track_colours",
+        "hud_screens",
+        "no_power_click",
+        "velocity_at",
+        "gen_new_genres",
+        "copy_paste_oct",
+        "punch_lane",
+        "help_hints",
+        "screen_mirror"
+      ],
+      "hasnt": [
+        "eng_noise",
+        "mutate",
+        "stretch",
+        "live",
+        "seq_dice",
+        "clay_rate",
+        "clay_bars",
+        "clay_keys",
+        "west_dust_metal",
+        "ui_push",
+        "emu_editor",
+        "emu_stems"
+      ],
+      "notes": {
+        "es": "Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
+        "en": "Make a complete backup of your projects before changing version."
+      }
+    },
+    "V10.8.21": {
+      "date": "2026-11-23",
+      "status": "classic",
+      "summary": {
+        "es": "Modo canción, DRONE CLAY, componentes de paso que se tocan y las pantallas redibujadas.",
+        "en": "Song mode, DRONE CLAY, step components you play and the screens redrawn."
+      },
+      "has": [
+        "eng_west",
+        "drumx_math",
+        "life",
+        "punch_editor",
+        "fx_punchins",
+        "song_mode",
+        "stepfx_keys",
+        "drone_clay",
+        "macros_dest",
+        "euclid",
+        "euclid_role",
+        "harmony",
+        "scene",
+        "flt_ms20_lp24",
+        "env_stage",
+        "half_rate",
+        "track_colours",
+        "hud_screens",
+        "no_power_click",
+        "velocity_at",
+        "gen_new_genres",
+        "copy_paste_oct",
+        "punch_lane",
+        "help_hints"
+      ],
+      "hasnt": [
+        "eng_noise",
+        "mutate",
+        "stretch",
+        "live",
+        "seq_dice",
+        "clay_rate",
+        "clay_bars",
+        "clay_keys",
+        "west_dust_metal",
+        "ui_push",
+        "screen_mirror",
+        "emu_editor",
+        "emu_stems"
+      ],
+      "notes": {
+        "es": "Primera versión sin MUTATE, STRETCH ni LIVE. Los proyectos de V10.7.81 abren; esos ajustes se guardan pero no hacen nada. Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
+        "en": "First version without MUTATE, STRETCH and LIVE. V10.7.81 projects open; those settings are kept but do nothing. Make a complete backup of your projects before changing version."
+      }
+    },
+    "V10.7.81": {
+      "date": "2026-11-21",
+      "status": "classic",
+      "summary": {
+        "es": "DRUM-X MATH, el editor de punch-ins, HARMONY y la capa FX más clara. La última versión con MUTATE, STRETCH y LIVE.",
+        "en": "DRUM-X MATH, the punch-in editor, HARMONY and a clearer FX layer. The last version with MUTATE, STRETCH and LIVE."
+      },
+      "has": [
+        "eng_west",
+        "drumx_math",
+        "life",
+        "mutate",
+        "stretch",
+        "live",
+        "seq_dice",
+        "punch_lane",
+        "punch_editor",
+        "fx_punchins",
+        "euclid",
+        "euclid_role",
+        "harmony",
+        "scene",
+        "flt_ms20_lp24",
+        "env_stage",
+        "half_rate",
+        "velocity_at",
+        "gen_new_genres",
+        "help_hints"
+      ],
+      "hasnt": [
+        "eng_noise",
+        "song_mode",
+        "stepfx_keys",
+        "drone_clay",
+        "macros_dest",
+        "track_colours",
+        "hud_screens",
+        "no_power_click",
+        "screen_mirror",
+        "emu_editor",
+        "emu_stems",
+        "clay_rate",
+        "clay_bars",
+        "clay_keys",
+        "west_dust_metal",
+        "ui_push"
+      ],
+      "notes": {
+        "es": "La última versión con MUTATE, STRETCH y LIVE. Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
+        "en": "The last version with MUTATE, STRETCH and LIVE. Make a complete backup of your projects before changing version."
+      }
+    },
+    "V10.7.58": {
+      "date": "2026-11-19",
+      "status": "classic",
+      "summary": {
+        "es": "Más motores a media frecuencia y reverbs más livianas.",
+        "en": "More engines at half rate, lighter reverbs."
+      },
+      "has": [
+        "eng_west",
+        "mutate",
+        "stretch",
+        "live",
+        "seq_dice",
+        "euclid",
+        "scene",
+        "flt_ms20_lp24",
+        "env_stage",
+        "half_rate",
+        "velocity_at",
+        "help_hints"
+      ],
+      "hasnt": [
+        "eng_noise",
+        "life",
+        "drumx_math",
+        "punch_editor",
+        "euclid_role",
+        "harmony",
+        "gen_new_genres",
+        "song_mode",
+        "stepfx_keys",
+        "drone_clay",
+        "macros_dest",
+        "track_colours",
+        "hud_screens",
+        "no_power_click",
+        "screen_mirror",
+        "emu_editor",
+        "emu_stems",
+        "clay_rate",
+        "clay_bars",
+        "clay_keys",
+        "west_dust_metal",
+        "ui_push"
+      ],
+      "notes": {
+        "es": "Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
+        "en": "Make a complete backup of your projects before changing version."
+      }
+    },
+    "V10.7.56": {
+      "date": "2026-11-19",
+      "status": "classic",
+      "summary": {
+        "es": "Seis pistas sin cortes ni notas perdidas, sobre la base de V10.7.23, con WEST.",
+        "en": "Six tracks without glitches or lost notes, on V10.7.23's base, with WEST."
+      },
+      "has": [
+        "eng_west",
+        "mutate",
+        "stretch",
+        "live",
+        "seq_dice",
+        "euclid",
+        "scene",
+        "flt_ms20_lp24",
+        "env_stage",
+        "half_rate",
+        "velocity_at",
+        "help_hints"
+      ],
+      "hasnt": [
+        "eng_noise",
+        "life",
+        "drumx_math",
+        "punch_editor",
+        "euclid_role",
+        "harmony",
+        "gen_new_genres",
+        "song_mode",
+        "stepfx_keys",
+        "drone_clay",
+        "macros_dest",
+        "track_colours",
+        "hud_screens",
+        "no_power_click",
+        "screen_mirror",
+        "emu_editor",
+        "emu_stems",
+        "clay_rate",
+        "clay_bars",
+        "clay_keys",
+        "west_dust_metal",
+        "ui_push"
+      ],
+      "notes": {
+        "es": "Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
+        "en": "Make a complete backup of your projects before changing version."
+      }
+    },
+    "V10.7.45": {
+      "date": "2026-11-17",
+      "status": "classic",
+      "summary": {
+        "es": "LIFE afuera por estabilidad; copiar y pegar pasos con OCT.",
+        "en": "LIFE out for stability; copy and paste steps with OCT."
+      },
+      "has": [
+        "eng_west",
+        "mutate",
+        "stretch",
+        "live",
+        "seq_dice",
+        "fx_punchins",
+        "copy_paste_oct",
+        "euclid",
+        "scene",
+        "flt_ms20_lp24",
+        "env_stage",
+        "velocity_at",
+        "help_hints"
+      ],
+      "hasnt": [
+        "eng_noise",
+        "life",
+        "half_rate",
+        "drumx_math",
+        "punch_editor",
+        "euclid_role",
+        "harmony",
+        "gen_new_genres",
+        "song_mode",
+        "stepfx_keys",
+        "drone_clay",
+        "macros_dest",
+        "track_colours",
+        "hud_screens",
+        "no_power_click",
+        "screen_mirror",
+        "emu_editor",
+        "emu_stems",
+        "clay_rate",
+        "clay_bars",
+        "clay_keys",
+        "west_dust_metal",
+        "ui_push"
+      ],
+      "notes": {
+        "es": "Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
+        "en": "Make a complete backup of your projects before changing version."
+      }
+    },
+    "V10.7.23": {
+      "date": "2026-11-13",
+      "status": "classic",
+      "summary": {
+        "es": "La referencia estable: tarjetas con contorno, una sola piel, AFTERTOUCH 1–10. Anterior a WEST y a LIFE.",
+        "en": "The stable reference: outlined cards, one skin, AFTERTOUCH 1–10. Before WEST and LIFE."
+      },
+      "has": [
+        "eng_noise",
+        "mutate",
+        "stretch",
+        "live",
+        "seq_dice",
+        "euclid",
+        "scene",
+        "flt_ms20_lp24",
+        "env_stage",
+        "velocity_at",
+        "help_hints"
+      ],
+      "hasnt": [
+        "eng_west",
+        "life",
+        "half_rate",
+        "drumx_math",
+        "punch_editor",
+        "euclid_role",
+        "harmony",
+        "gen_new_genres",
+        "song_mode",
+        "stepfx_keys",
+        "drone_clay",
+        "macros_dest",
+        "track_colours",
+        "hud_screens",
+        "no_power_click",
+        "screen_mirror",
+        "emu_editor",
+        "emu_stems",
+        "clay_rate",
+        "clay_bars",
+        "clay_keys",
+        "west_dust_metal",
+        "ui_push"
+      ],
+      "notes": {
+        "es": "Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
+        "en": "Make a complete backup of your projects before changing version."
+      }
+    },
+    "v0.9.9-par12": {
+      "date": "2026-10-27",
+      "status": "classic",
+      "summary": {
+        "es": "La línea 0.9 (octubre): la base anterior a V10. No tiene nada de lo sumado desde V10.",
+        "en": "The 0.9 line (October): the base before V10. It has nothing added since V10."
+      },
+      "has": [],
+      "hasnt": [
+        "eng_west",
+        "life",
+        "euclid",
+        "velocity_at",
+        "half_rate",
+        "drumx_math",
+        "punch_editor",
+        "euclid_role",
+        "harmony",
+        "gen_new_genres",
+        "song_mode",
+        "stepfx_keys",
+        "drone_clay",
+        "macros_dest",
+        "track_colours",
+        "hud_screens",
+        "no_power_click",
+        "screen_mirror",
+        "emu_editor",
+        "emu_stems",
+        "clay_rate",
+        "clay_bars",
+        "clay_keys",
+        "west_dust_metal",
+        "ui_push"
+      ],
+      "notes": {
+        "es": "Versión muy anterior: los proyectos de V10 pueden no abrir en ella. Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
+        "en": "A much older version: V10 projects may not open in it. Make a complete backup of your projects before changing version."
+      }
+    }
   }
- },
- "versions": {
-  "V10.8.34": {
-   "date": "2026-11-24",
-   "status": "beta",
-   "summary": {
-    "es": "Beta: primera etapa del generador de canciones nuevo (más progresiones, secciones con contraste, diálogo entre lead y arpegio), sobre V10.8.33.",
-    "en": "Beta: the first stage of the new song generator (more progressions, contrasting sections, lead and arp in dialogue), on top of V10.8.33."
-   },
-   "has": [
-    "eng_west",
-    "drumx_math",
-    "life",
-    "punch_editor",
-    "fx_punchins",
-    "song_mode",
-    "stepfx_keys",
-    "drone_clay",
-    "macros_dest",
-    "euclid",
-    "euclid_role",
-    "harmony",
-    "scene",
-    "flt_ms20_lp24",
-    "env_stage",
-    "half_rate",
-    "track_colours",
-    "hud_screens",
-    "no_power_click",
-    "velocity_at",
-    "gen_new_genres",
-    "copy_paste_oct",
-    "clay_rate",
-    "clay_bars",
-    "clay_keys",
-    "west_dust_metal",
-    "ui_push",
-    "screen_mirror",
-    "emu_editor",
-    "emu_stems"
-   ],
-   "hasnt": [
-    "eng_noise",
-    "mutate",
-    "stretch",
-    "live",
-    "seq_dice",
-    "punch_lane",
-    "help_hints"
-   ],
-   "notes": {
-    "es": "Beta: puede tener errores. Se quitaron la página PUNCH LANE, el dibujo del carril de PUNCH IN y muchos textos de ayuda para hacer lugar. Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
-    "en": "Beta: it may have bugs. The PUNCH LANE page, PUNCH IN's lane picture and many help texts were removed for room. Make a complete backup of your projects before changing version."
-   }
-  },
-  "V10.8.33": {
-   "date": "2026-11-24",
-   "status": "beta",
-   "summary": {
-    "es": "Beta: teclas de DRONE CLAY, wavetables de DRUM-X suaves, DUST nuevo de WEST y el aviso de página para la guía de Studio.",
-    "en": "Beta: DRONE CLAY keys, smooth DRUM-X wavetables, WEST's new DUST and the page push for Studio's guide."
-   },
-   "has": [
-    "eng_west",
-    "drumx_math",
-    "life",
-    "punch_editor",
-    "fx_punchins",
-    "song_mode",
-    "stepfx_keys",
-    "drone_clay",
-    "macros_dest",
-    "euclid",
-    "euclid_role",
-    "harmony",
-    "scene",
-    "flt_ms20_lp24",
-    "env_stage",
-    "half_rate",
-    "track_colours",
-    "hud_screens",
-    "no_power_click",
-    "velocity_at",
-    "gen_new_genres",
-    "copy_paste_oct",
-    "clay_rate",
-    "clay_bars",
-    "clay_keys",
-    "west_dust_metal",
-    "ui_push",
-    "screen_mirror",
-    "emu_editor",
-    "emu_stems"
-   ],
-   "hasnt": [
-    "eng_noise",
-    "mutate",
-    "stretch",
-    "live",
-    "seq_dice",
-    "punch_lane",
-    "help_hints"
-   ],
-   "notes": {
-    "es": "Beta: puede tener errores. Se quitaron la página PUNCH LANE, el dibujo del carril de PUNCH IN y muchos textos de ayuda para hacer lugar. Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
-    "en": "Beta: it may have bugs. The PUNCH LANE page, PUNCH IN's lane picture and many help texts were removed for room. Make a complete backup of your projects before changing version."
-   }
-  },
-  "V10.8.25": {
-   "date": "2026-11-24",
-   "status": "public",
-   "summary": {
-    "es": "Versión pública actual: el emulador como entrada en JIANT Studio (stems y MIDI OUT). El firmware del equipo es el de V10.8.24.",
-    "en": "Current public release: the emulator as an input in JIANT Studio (stems and MIDI OUT). The device's firmware is V10.8.24's."
-   },
-   "has": [
-    "eng_west",
-    "drumx_math",
-    "life",
-    "punch_editor",
-    "fx_punchins",
-    "song_mode",
-    "stepfx_keys",
-    "drone_clay",
-    "macros_dest",
-    "euclid",
-    "euclid_role",
-    "harmony",
-    "scene",
-    "flt_ms20_lp24",
-    "env_stage",
-    "half_rate",
-    "track_colours",
-    "hud_screens",
-    "no_power_click",
-    "velocity_at",
-    "gen_new_genres",
-    "copy_paste_oct",
-    "punch_lane",
-    "help_hints",
-    "screen_mirror",
-    "emu_editor",
-    "emu_stems"
-   ],
-   "hasnt": [
-    "eng_noise",
-    "mutate",
-    "stretch",
-    "live",
-    "seq_dice",
-    "clay_rate",
-    "clay_bars",
-    "clay_keys",
-    "west_dust_metal",
-    "ui_push"
-   ],
-   "notes": {
-    "es": "Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
-    "en": "Make a complete backup of your projects before changing version."
-   }
-  },
-  "V10.8.24": {
-   "date": "2026-11-23",
-   "status": "classic",
-   "summary": {
-    "es": "El emulador responde al editor: JIANT Studio lo edita y lo graba. Firmware como V10.8.23.",
-    "en": "The emulator answers the editor: JIANT Studio edits and records it. Firmware as V10.8.23."
-   },
-   "has": [
-    "eng_west",
-    "drumx_math",
-    "life",
-    "punch_editor",
-    "fx_punchins",
-    "song_mode",
-    "stepfx_keys",
-    "drone_clay",
-    "macros_dest",
-    "euclid",
-    "euclid_role",
-    "harmony",
-    "scene",
-    "flt_ms20_lp24",
-    "env_stage",
-    "half_rate",
-    "track_colours",
-    "hud_screens",
-    "no_power_click",
-    "velocity_at",
-    "gen_new_genres",
-    "copy_paste_oct",
-    "punch_lane",
-    "help_hints",
-    "screen_mirror",
-    "emu_editor"
-   ],
-   "hasnt": [
-    "eng_noise",
-    "mutate",
-    "stretch",
-    "live",
-    "seq_dice",
-    "clay_rate",
-    "clay_bars",
-    "clay_keys",
-    "west_dust_metal",
-    "ui_push",
-    "emu_stems"
-   ],
-   "notes": {
-    "es": "Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
-    "en": "Make a complete backup of your projects before changing version."
-   }
-  },
-  "V10.8.23": {
-   "date": "2026-11-23",
-   "status": "classic",
-   "summary": {
-    "es": "Espejo de pantalla para Studio y nombres completos en la MOD MATRIX.",
-    "en": "Screen mirror for Studio and full names in the MOD MATRIX."
-   },
-   "has": [
-    "eng_west",
-    "drumx_math",
-    "life",
-    "punch_editor",
-    "fx_punchins",
-    "song_mode",
-    "stepfx_keys",
-    "drone_clay",
-    "macros_dest",
-    "euclid",
-    "euclid_role",
-    "harmony",
-    "scene",
-    "flt_ms20_lp24",
-    "env_stage",
-    "half_rate",
-    "track_colours",
-    "hud_screens",
-    "no_power_click",
-    "velocity_at",
-    "gen_new_genres",
-    "copy_paste_oct",
-    "punch_lane",
-    "help_hints",
-    "screen_mirror"
-   ],
-   "hasnt": [
-    "eng_noise",
-    "mutate",
-    "stretch",
-    "live",
-    "seq_dice",
-    "clay_rate",
-    "clay_bars",
-    "clay_keys",
-    "west_dust_metal",
-    "ui_push",
-    "emu_editor",
-    "emu_stems"
-   ],
-   "notes": {
-    "es": "Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
-    "en": "Make a complete backup of your projects before changing version."
-   }
-  },
-  "V10.8.21": {
-   "date": "2026-11-23",
-   "status": "classic",
-   "summary": {
-    "es": "Modo canción, DRONE CLAY, componentes de paso que se tocan y las pantallas redibujadas.",
-    "en": "Song mode, DRONE CLAY, step components you play and the screens redrawn."
-   },
-   "has": [
-    "eng_west",
-    "drumx_math",
-    "life",
-    "punch_editor",
-    "fx_punchins",
-    "song_mode",
-    "stepfx_keys",
-    "drone_clay",
-    "macros_dest",
-    "euclid",
-    "euclid_role",
-    "harmony",
-    "scene",
-    "flt_ms20_lp24",
-    "env_stage",
-    "half_rate",
-    "track_colours",
-    "hud_screens",
-    "no_power_click",
-    "velocity_at",
-    "gen_new_genres",
-    "copy_paste_oct",
-    "punch_lane",
-    "help_hints"
-   ],
-   "hasnt": [
-    "eng_noise",
-    "mutate",
-    "stretch",
-    "live",
-    "seq_dice",
-    "clay_rate",
-    "clay_bars",
-    "clay_keys",
-    "west_dust_metal",
-    "ui_push",
-    "screen_mirror",
-    "emu_editor",
-    "emu_stems"
-   ],
-   "notes": {
-    "es": "Primera versión sin MUTATE, STRETCH ni LIVE. Los proyectos de V10.7.81 abren; esos ajustes se guardan pero no hacen nada. Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
-    "en": "First version without MUTATE, STRETCH and LIVE. V10.7.81 projects open; those settings are kept but do nothing. Make a complete backup of your projects before changing version."
-   }
-  },
-  "V10.7.81": {
-   "date": "2026-11-21",
-   "status": "classic",
-   "summary": {
-    "es": "DRUM-X MATH, el editor de punch-ins, HARMONY y la capa FX más clara. La última versión con MUTATE, STRETCH y LIVE.",
-    "en": "DRUM-X MATH, the punch-in editor, HARMONY and a clearer FX layer. The last version with MUTATE, STRETCH and LIVE."
-   },
-   "has": [
-    "eng_west",
-    "drumx_math",
-    "life",
-    "mutate",
-    "stretch",
-    "live",
-    "seq_dice",
-    "punch_lane",
-    "punch_editor",
-    "fx_punchins",
-    "euclid",
-    "euclid_role",
-    "harmony",
-    "scene",
-    "flt_ms20_lp24",
-    "env_stage",
-    "half_rate",
-    "velocity_at",
-    "gen_new_genres",
-    "help_hints"
-   ],
-   "hasnt": [
-    "eng_noise",
-    "song_mode",
-    "stepfx_keys",
-    "drone_clay",
-    "macros_dest",
-    "track_colours",
-    "hud_screens",
-    "no_power_click",
-    "screen_mirror",
-    "emu_editor",
-    "emu_stems",
-    "clay_rate",
-    "clay_bars",
-    "clay_keys",
-    "west_dust_metal",
-    "ui_push"
-   ],
-   "notes": {
-    "es": "La última versión con MUTATE, STRETCH y LIVE. Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
-    "en": "The last version with MUTATE, STRETCH and LIVE. Make a complete backup of your projects before changing version."
-   }
-  },
-  "V10.7.58": {
-   "date": "2026-11-19",
-   "status": "classic",
-   "summary": {
-    "es": "Más motores a media frecuencia y reverbs más livianas.",
-    "en": "More engines at half rate, lighter reverbs."
-   },
-   "has": [
-    "eng_west",
-    "mutate",
-    "stretch",
-    "live",
-    "seq_dice",
-    "euclid",
-    "scene",
-    "flt_ms20_lp24",
-    "env_stage",
-    "half_rate",
-    "velocity_at",
-    "help_hints"
-   ],
-   "hasnt": [
-    "eng_noise",
-    "life",
-    "drumx_math",
-    "punch_editor",
-    "euclid_role",
-    "harmony",
-    "gen_new_genres",
-    "song_mode",
-    "stepfx_keys",
-    "drone_clay",
-    "macros_dest",
-    "track_colours",
-    "hud_screens",
-    "no_power_click",
-    "screen_mirror",
-    "emu_editor",
-    "emu_stems",
-    "clay_rate",
-    "clay_bars",
-    "clay_keys",
-    "west_dust_metal",
-    "ui_push"
-   ],
-   "notes": {
-    "es": "Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
-    "en": "Make a complete backup of your projects before changing version."
-   }
-  },
-  "V10.7.56": {
-   "date": "2026-11-19",
-   "status": "classic",
-   "summary": {
-    "es": "Seis pistas sin cortes ni notas perdidas, sobre la base de V10.7.23, con WEST.",
-    "en": "Six tracks without glitches or lost notes, on V10.7.23's base, with WEST."
-   },
-   "has": [
-    "eng_west",
-    "mutate",
-    "stretch",
-    "live",
-    "seq_dice",
-    "euclid",
-    "scene",
-    "flt_ms20_lp24",
-    "env_stage",
-    "half_rate",
-    "velocity_at",
-    "help_hints"
-   ],
-   "hasnt": [
-    "eng_noise",
-    "life",
-    "drumx_math",
-    "punch_editor",
-    "euclid_role",
-    "harmony",
-    "gen_new_genres",
-    "song_mode",
-    "stepfx_keys",
-    "drone_clay",
-    "macros_dest",
-    "track_colours",
-    "hud_screens",
-    "no_power_click",
-    "screen_mirror",
-    "emu_editor",
-    "emu_stems",
-    "clay_rate",
-    "clay_bars",
-    "clay_keys",
-    "west_dust_metal",
-    "ui_push"
-   ],
-   "notes": {
-    "es": "Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
-    "en": "Make a complete backup of your projects before changing version."
-   }
-  },
-  "V10.7.45": {
-   "date": "2026-11-17",
-   "status": "classic",
-   "summary": {
-    "es": "LIFE afuera por estabilidad; copiar y pegar pasos con OCT.",
-    "en": "LIFE out for stability; copy and paste steps with OCT."
-   },
-   "has": [
-    "eng_west",
-    "mutate",
-    "stretch",
-    "live",
-    "seq_dice",
-    "fx_punchins",
-    "copy_paste_oct",
-    "euclid",
-    "scene",
-    "flt_ms20_lp24",
-    "env_stage",
-    "velocity_at",
-    "help_hints"
-   ],
-   "hasnt": [
-    "eng_noise",
-    "life",
-    "half_rate",
-    "drumx_math",
-    "punch_editor",
-    "euclid_role",
-    "harmony",
-    "gen_new_genres",
-    "song_mode",
-    "stepfx_keys",
-    "drone_clay",
-    "macros_dest",
-    "track_colours",
-    "hud_screens",
-    "no_power_click",
-    "screen_mirror",
-    "emu_editor",
-    "emu_stems",
-    "clay_rate",
-    "clay_bars",
-    "clay_keys",
-    "west_dust_metal",
-    "ui_push"
-   ],
-   "notes": {
-    "es": "Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
-    "en": "Make a complete backup of your projects before changing version."
-   }
-  },
-  "V10.7.23": {
-   "date": "2026-11-13",
-   "status": "classic",
-   "summary": {
-    "es": "La referencia estable: tarjetas con contorno, una sola piel, AFTERTOUCH 1–10. Anterior a WEST y a LIFE.",
-    "en": "The stable reference: outlined cards, one skin, AFTERTOUCH 1–10. Before WEST and LIFE."
-   },
-   "has": [
-    "eng_noise",
-    "mutate",
-    "stretch",
-    "live",
-    "seq_dice",
-    "euclid",
-    "scene",
-    "flt_ms20_lp24",
-    "env_stage",
-    "velocity_at",
-    "help_hints"
-   ],
-   "hasnt": [
-    "eng_west",
-    "life",
-    "half_rate",
-    "drumx_math",
-    "punch_editor",
-    "euclid_role",
-    "harmony",
-    "gen_new_genres",
-    "song_mode",
-    "stepfx_keys",
-    "drone_clay",
-    "macros_dest",
-    "track_colours",
-    "hud_screens",
-    "no_power_click",
-    "screen_mirror",
-    "emu_editor",
-    "emu_stems",
-    "clay_rate",
-    "clay_bars",
-    "clay_keys",
-    "west_dust_metal",
-    "ui_push"
-   ],
-   "notes": {
-    "es": "Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
-    "en": "Make a complete backup of your projects before changing version."
-   }
-  },
-  "v0.9.9-par12": {
-   "date": "2026-10-27",
-   "status": "classic",
-   "summary": {
-    "es": "La línea 0.9 (octubre): la base anterior a V10. No tiene nada de lo sumado desde V10.",
-    "en": "The 0.9 line (October): the base before V10. It has nothing added since V10."
-   },
-   "has": [],
-   "hasnt": [
-    "eng_west",
-    "life",
-    "euclid",
-    "velocity_at",
-    "half_rate",
-    "drumx_math",
-    "punch_editor",
-    "euclid_role",
-    "harmony",
-    "gen_new_genres",
-    "song_mode",
-    "stepfx_keys",
-    "drone_clay",
-    "macros_dest",
-    "track_colours",
-    "hud_screens",
-    "no_power_click",
-    "screen_mirror",
-    "emu_editor",
-    "emu_stems",
-    "clay_rate",
-    "clay_bars",
-    "clay_keys",
-    "west_dust_metal",
-    "ui_push"
-   ],
-   "notes": {
-    "es": "Versión muy anterior: los proyectos de V10 pueden no abrir en ella. Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
-    "en": "A much older version: V10 projects may not open in it. Make a complete backup of your projects before changing version."
-   }
-  }
- }
 }
