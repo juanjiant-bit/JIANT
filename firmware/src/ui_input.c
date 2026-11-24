@@ -1626,8 +1626,8 @@ sect:
         sc_put((uint32_t)(vp - sc_v), v);
         return;
     }
-    if (vp >= &clay[0][0] && vp < &clay[NTRK][0]) {    /* (V10.8.21, BYTE's) DRONE CLAY's settings (seq.c clay.c clay_put) */
-        clay_put((uint32_t)(vp - &clay[0][0]), was_clay, v);
+    if (vp >= clay_ui && vp < clay_ui + CLAY_NF) {      /* (V10.8.21, BYTE's) DRONE CLAY's settings, their view (clay.c clay_put) */
+        clay_put(song.sel, (uint32_t)(vp - clay_ui), was_clay, v);
         return;
     }
     if (vp >= eu_v && vp < eu_v + EK_N) {               /* (V10.6) EUCLID / MODES: the setting, the pattern again */
@@ -1702,11 +1702,6 @@ static __attribute__((noinline)) void act_do(void)
         if(err) {ui_message(err==2u?"AUTOMATION FULL":"CANNOT PLACE LYRIC");return;}
         TSEL->p[P_VLYR]=LYR_FIXED;
         ui_message(pos?"PLACED":"PLACED: AUTO");
-        return;
-    }
-    if (cur_page()->graph == GR_PUNCH) {                /* (0.6.99) the punch-in lane cleared (a dialog) */
-        if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
-        confirm_open(CF_CLEAR_PFX, song.sel);
         return;
     }
     if (cur_page()->graph == GR_EVENTS) {
@@ -2756,8 +2751,6 @@ static void ui_input_frame(void)
                 ui_message(dk.msg);
             } else if (kind == CF_LOAD_PAT) {
                 pat_load_ui(&trk[ui.confirm_trk % NTRK], pat_pick());
-            } else if (kind == CF_CLEAR_PFX) {         /* (0.6.99) FX > PUNCH > CLEAR */
-                if (!chain_busy()) { memset(pfx_lane, 0, sizeof pfx_lane); pfx_ltgt = 0; ui_message("PUNCH IN LANE CLEARED"); }
             } else if (kind == CF_CLEAR_COMP) {        /* (V10.7.62) every step component of the track */
                 track_t *t = &trk[ui.confirm_trk % NTRK];
                 uint32_t i, n = 0;

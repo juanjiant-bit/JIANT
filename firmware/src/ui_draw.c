@@ -1448,17 +1448,6 @@ static void draw_columns(void)
                     r < n ? VAL(3u) : T_DIM, RATIO(d, enum_rank(d, v)), param_icon(d, v));
         return;
     }
-    if (cur_page()->graph == GR_PUNCH) {               /* (0.6.99) the punch-in lane: LEN, RES, its state, CLEAR */
-        uint32_t n = 0, i;
-        for (i = 0; i < 64u; i++) n += pfx_lane_at(i) != 0u;
-        fmt_int(val, song.g[G_PFXLEN]);
-        draw_column(0, "LEN", val, "ST", VAL(0u), RATIO(&GP[G_PFXLEN], song.g[G_PFXLEN]), ICON_AUTO);
-        hot_text_column(1, "RES", N_PFXRES[(uint32_t)clamp(song.g[G_PFXRES], 0, 2)]);
-        fmt_int(val, (int32_t)n);
-        text_column(2, pfx_rec_ok() ? "REC" : song.playing ? "PLAY" : "STEPS", pfx_rec_ok() ? "ON" : song.playing ? "ON" : val, pfx_rec_ok() ? T_ACCENT : T_MID);
-        draw_act_column(3, "ERASE", n ? T_MID : T_DIM, ICON_X_MOTION_DEL);   /* (snd2: the lane only) */
-        return;
-    }
     if (cur_page()->graph == GR_MOTION) {
         hot_text_column(0, "PLAY", motion_enabled(TSEL) ? "ON" : "OFF");
         fmt_int(val, (int32_t)(motion_count(TSEL) - motion_lock_count(TSEL)));
@@ -2050,9 +2039,6 @@ static void confirm_text(char *a, char *b)
         break;
     case CF_CLEAR_MOTION:
         str_cpy(a, "CLEAR T1 AUTOMATION?", 24); a[7] = (char)('1' + k % NTRK);
-        break;
-    case CF_CLEAR_PFX:
-        str_cpy(a, "CLEAR PUNCH IN LANE?", 24);   /* (snd2: the lane only) */
         break;
     case CF_CLEAR_COMP:                                 /* (V10.7.62) SEQ > STEP FX, OCT- */
         str_cpy(a, "CLEAR T1 STEP FX?", 24); a[7] = (char)('1' + k % NTRK);
