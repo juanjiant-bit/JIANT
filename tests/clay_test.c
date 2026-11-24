@@ -1,6 +1,8 @@
 // Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant). All rights reserved.
 /* (V10.8.21) DRONE CLAY (seq.c clay.c, JIANT BYTE's): the drone on and off, RATE's strikes, a modulator moving its
- * destination through mod_begin, the 'C' 'Y' block saved and loaded, an older project loading with it off.
+ * destination through mod_begin, the 'C' 'L' block saved and loaded, an older project loading with it off.
+ * (V10.8.27) BYTE's fix: RATE on the bar's grid (0 HOLD, 3 1/16), each modulator its own RATE, clay_vk what it adds;
+ * tests/clay_engines_test.c every engine.
  *   cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src -Itests tests/clay_test.c -lm */
 #define UI_TEST_NO_MAIN 1
 #include "ui_test.c"
@@ -40,10 +42,10 @@ int main(void)
 
     clay[tr][CL_ON] = 0;
     blocks(40);
-    ok = !clay_dn[tr] && !clay_nn[tr] && !clay_v[tr][0] && !clay_v[tr][1] && !clay_v[tr][2] && !clay_v[tr][3];
+    ok = !clay_dn[tr] && !clay_nn[tr] && !clay_vk(tr, 0) && !clay_vk(tr, 1) && !clay_vk(tr, 2) && !clay_vk(tr, 3);
     bad += check("clay OFF: the drone and its gestures end, the modulators at 0", ok);
 
-    clay[tr][CL_ON] = 1; clay[tr][CL_RATE] = 7;          /* 1/16: struck again each sixteenth */
+    clay[tr][CL_ON] = 1; clay[tr][CL_RATE] = 3;          /* 1/16: struck again each sixteenth */
     last = clay_lr[tr];
     for (k = 0; k < 400u; k++) { blocks(4); if (clay_lr[tr] != last) { strikes++; last = clay_lr[tr]; } }
     bad += check("clay RATE 1/16: the drone struck again and again", strikes >= 8u);
@@ -60,19 +62,19 @@ int main(void)
         seq_note_off(t, 72u);
         blocks(40);
         ok &= clay_dn[tr] == n0;
-        t->p[P_VOICE] = V_POLY; clay[tr][CL_RATE] = 7;
+        t->p[P_VOICE] = V_POLY; clay[tr][CL_RATE] = 3;
         bad += check("clay on MONO: a key's note takes the voice, the drone back after it", ok);
     }
     {   /* a modulator on DIST (CLAY_MD 6): mod_begin moves the track's parameter by what it adds, mod_end puts it back */
         uint32_t id = mod_param(MD_DIST), moved = 0;
         int16_t keep;
         for (k = 0; k < 4u; k++) { clay[tr][CL_MF(k, 0u)] = 0; clay[tr][CL_MF(k, 3u)] = 0; }
-        clay[tr][CL_MF(0u, 0u)] = 6; clay[tr][CL_MF(0u, 3u)] = 127; clay[tr][CL_MF(0u, 2u)] = 2;
+        clay[tr][CL_MF(0u, 0u)] = 6; clay[tr][CL_MF(0u, 3u)] = 127; clay[tr][CL_MF(0u, 2u)] = 2; clay[tr][CL_MF(0u, 5u)] = 2;   /* 1/16 */
         t->p[id] = 64;
         keep = t->p[id];
         for (k = 0; k < 600u && !moved; k++) {
             blocks(2);
-            if (clay_v[tr][0]) {
+            if (clay_vk(tr, 0)) {
                 macro_master();
                 if (mod_begin(t)) { moved = t->p[id] != keep; mod_end(t); }
             }
@@ -81,18 +83,22 @@ int main(void)
         bad += check("clay MOD 1 on DIST: mod_begin moves it, mod_end restores the stored value", ok);
     }
 
-    {   /* saved and loaded: the 'C' 'Y' block, the track's 26 settings back */
+    {   /* saved and loaded: the 'C' 'L' block, the track's 30 settings back (PITCH biased) */
         static project_t q, r;
         static project_store_t st;
-        int16_t was[CLAY_NF];
-        memcpy(was, clay[tr], sizeof was);
+        clay[tr][CL_PIT] = -7; clay[tr][CL_MF(2u, 5u)] = 17;
         project_capture(&q);
         ok = proj_pack(&st, &q);
         memset(&r, 0, sizeof r);
         ok &= proj_unpack_c(&r, st.raw) != 0;
-        for (k = 0; k < CLAY_NF; k++) ok &= r.clay[tr][k] == (uint8_t)clamp(was[k], 0, 127);
+        ok &= !memcmp(r.clay[tr], q.clay[tr], CLAY_NF);
+        {
+            clay_t back[CLAY_NF];
+            clay_unpack(r.clay[tr], back);
+            ok &= back[CL_PIT] == -7 && back[CL_MF(2u, 5u)] == 17 && back[CL_ON] == 1;
+        }
         for (k = 0; k < NTRK; k++) ok &= k == tr || !r.clay[k][CL_ON];
-        bad += check("clay saved and loaded: its 26 settings back, the other tracks off", ok);
+        bad += check("clay saved and loaded: its 30 settings back (PITCH -7, MOD 3's RATE), the other tracks off", ok);
         clay[tr][CL_ON] = 0;
         blocks(20);
         project_capture(&q);                             /* no track ON: no 'C' 'Y' block, as an older project */
@@ -101,6 +107,17 @@ int main(void)
         ok &= proj_unpack_c(&r, st.raw) != 0;
         for (k = 0; k < NTRK; k++) ok &= !r.clay[k][CL_ON];
         bad += check("a project without the block (older): DRONE CLAY off on every track", ok);
+    }
+    {   /* (V10.8.27) an older project's 'C' 'Y' (V10.8.21 .. 26: 26 settings): ON, RATE 1/16, MOD 1 on DIST, STEP 1 */
+        uint8_t o[26], nb[CLAY_NF];
+        clay_t c[CLAY_NF];
+        memset(o, 0, sizeof o);
+        o[0] = 1; o[1] = 2; o[2] = 7; o[4] = 6; o[7] = 100; o[24] = 1; o[25] = 33;
+        clay_from_v1(o, nb);
+        clay_unpack(nb, c);
+        ok = c[CL_ON] == 1 && c[CL_OCT] == 2 && c[CL_RATE] == 3 && c[CL_PIT] == 0 && c[CL_SEED] == 33 &&
+             c[CL_MF(0u, 0u)] == 6 && c[CL_MF(0u, 3u)] == 100 && c[CL_MF(0u, 5u)] == 3;
+        bad += check("an older 'C' 'Y' block read: ON, OCT, RATE 1/16, PITCH 0, MOD 1 on DIST, its STEP its RATE", ok);
     }
     printf(bad ? "clay: %d FAILED\n" : "clay: all passed\n", bad);
     return bad != 0;

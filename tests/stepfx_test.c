@@ -120,30 +120,7 @@ int main(void)
         btn_up(B_FX); frame();
         bad += check("FX layer banner: the punch-in held (RPT 1/32) large with its key; 0.6 s after, then gone, latched too", ok);
     }
-    {   /* (V10.8.9) the song mode's hints: one a state, each fits the line; HELP OFF: none */
-        const char *h[6];
-        uint8_t ho = ui_help_off;
-        stop_transport(); frame();
-        nav_put(SEC_HOME, "JAM"); frame();
-        memset(live.jam, 0, sizeof live.jam); jam_lock = 0; jam_tr = 0; jam_undo = 0; live.srec = 0;
-        h[0] = song_hint();
-        live.srec = 1; h[1] = song_hint();
-        live.srec = 2; h[2] = song_hint();
-        live.srec = 0; jam_lock = 1; h[3] = song_hint();
-        jam_undo = 1; h[4] = song_hint();
-        jam_undo = 0; jam_lock = 0;
-        nav_put(SEC_HOME, "TAKE"); frame();
-        h[5] = song_hint();
-        ok = h[0] && str_eq(h[0], "PLAY \xB7 KEYS A-D ALL \xB7 OCT+ GO \xB7 OCT- STOP") && str_eq(h[1], "REC: FROM THE NEXT BAR") &&
-             str_eq(h[2], "RECORDING: CHANGE SEQS \xB7 REC ENDS") && str_eq(h[3], "PLAY OVER IT: YOU \xB7 REC: REDO A TRACK") &&
-             str_eq(h[4], "OCT- UNDO THE ROUND") && str_eq(h[5], "NO TAKE: REC ONE ON JAM");
-        for (i = 0; i < 6u; i++) ok &= h[i] && text_w(&AF_X, h[i]) <= 230;
-        ui_help_off |= 1u;
-        ok &= !song_hint();
-        nav_put(SEC_HOME, "JAM"); frame();
-        ok &= !song_hint();
-        ui_help_off = ho;
-        bad += check("song mode hints: JAM stopped / REC armed / recording / LOCK / UNDO, TAKE; they fit; HELP OFF none", ok);
+    {   /* (V10.8.9) the song mode's hints: gone in V10.8.27 for DRONE CLAY's flash (the owner: the help texts cut) */
         go_title("COMP"); frame();
         transport_req = 1; ui_input(); steps(1);
     }

@@ -276,7 +276,7 @@ static void graph_eco(void)
         cv_text_in(px - 30, ny, 60, &AF_S, num, eco_off(c) ? T_DIM : trk_col(c), T_SURF);   /* (V10.8.10) */
     }
     if (home_set())                                     /* (V10.7.62) LIFE (was MACROS: the FX layer's knobs since V10.7.59) */
-        cv_text(6, 2, &AF_X, life_on ? "TRACKS MOVE EACH OTHER" : "LIFE OFF: TURN A KNOB", life_on ? T_MID : T_DIM);
+        cv_text(6, 2, &AF_X, life_on ? "LIFE ON" : "LIFE OFF", life_on ? T_MID : T_DIM);
 }
 /* BEING: the track's being large, its HOME knobs as organs at the corners */
 static const int16_t ORG_X[4] = {30, 210, 30, 210}, ORG_Y[4] = {28, 28, 116, 116};

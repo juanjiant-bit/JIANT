@@ -1448,17 +1448,6 @@ static void draw_columns(void)
                     r < n ? VAL(3u) : T_DIM, RATIO(d, enum_rank(d, v)), param_icon(d, v));
         return;
     }
-    if (cur_page()->graph == GR_PUNCH) {               /* (0.6.99) the punch-in lane: LEN, RES, its state, CLEAR */
-        uint32_t n = 0, i;
-        for (i = 0; i < 64u; i++) n += pfx_lane_at(i) != 0u;
-        fmt_int(val, song.g[G_PFXLEN]);
-        draw_column(0, "LEN", val, "ST", VAL(0u), RATIO(&GP[G_PFXLEN], song.g[G_PFXLEN]), ICON_AUTO);
-        hot_text_column(1, "RES", N_PFXRES[(uint32_t)clamp(song.g[G_PFXRES], 0, 2)]);
-        fmt_int(val, (int32_t)n);
-        text_column(2, pfx_rec_ok() ? "REC" : song.playing ? "PLAY" : "STEPS", pfx_rec_ok() ? "ON" : song.playing ? "ON" : val, pfx_rec_ok() ? T_ACCENT : T_MID);
-        draw_act_column(3, "ERASE", n ? T_MID : T_DIM, ICON_X_MOTION_DEL);   /* (snd2: the lane only) */
-        return;
-    }
     if (cur_page()->graph == GR_MOTION) {
         hot_text_column(0, "PLAY", motion_enabled(TSEL) ? "ON" : "OFF");
         fmt_int(val, (int32_t)(motion_count(TSEL) - motion_lock_count(TSEL)));
@@ -2007,7 +1996,6 @@ static void confirm_text(char *a, char *b)
         str_cpy(a, "OVERWRITE PROJECT ", 24);
         fmt_int(a + str_len(a), (int32_t)k + 1);
         str_cpy(a + str_len(a), "?", 2);
-        str_cpy(b, "NEXT: K3 SONG OR LOOP", 24);      /* (on the NAME screen that follows) */
         break;
     case CF_OVR_PROJ:
         str_cpy(a, "OVERWRITE PROJECT A?", 24);
@@ -2029,21 +2017,19 @@ static void confirm_text(char *a, char *b)
         break;
     case CF_CPU_TEST:                                /* (0.6.83) SAVE > TOOLS 6 */
         str_cpy(a, "BUILD CPU TEST SONG?", 24);
-        str_cpy(b, "UNDO AFTER: GLO + G4", 24);
+        str_cpy(b, "UNDO: GLO + G4", 24);
         break;
     case CF_INIT_SYS:                                /* (0.6.40) SAVE > TOOLS; (V10.7.22) CLEAR PROJECT, MENU > INIT */
         str_cpy(a, "CLEAR PROJECT?", 24);
-        str_cpy(b, "THE SAVED ONE STAYS", 24);
         break;
     case CF_DICE_SOUND:                              /* (0.6.65) EDIT + SELECT: heard already */
     case CF_DICE_LFO:
     case CF_DICE_FX:
         str_cpy(a, drum_track(TSEL) ? "KEEP DICED KIT?" : "KEEP DICED SOUND?", 24);
-        str_cpy(b, "SELECT: DICE AGAIN", 24);
         break;
     case CF_DICE_ALL:                                /* (0.6.21) HOME + SELECT */
         str_cpy(a, "DICE EVERYTHING?", 24);
-        str_cpy(b, "UNDO AFTER: GLO + G4", 24);
+        str_cpy(b, "UNDO: GLO + G4", 24);
         break;
     case CF_RECALL_SOUND:
         str_cpy(a, drum_track(TSEL) ? "RECALL SOUND + KIT?" : "RECALL SAVED SOUND?", 24);
@@ -2051,12 +2037,8 @@ static void confirm_text(char *a, char *b)
     case CF_CLEAR_MOTION:
         str_cpy(a, "CLEAR T1 AUTOMATION?", 24); a[7] = (char)('1' + k % NTRK);
         break;
-    case CF_CLEAR_PFX:
-        str_cpy(a, "CLEAR PUNCH IN LANE?", 24);   /* (snd2: the lane only) */
-        break;
     case CF_CLEAR_COMP:                                 /* (V10.7.62) SEQ > STEP FX, OCT- */
         str_cpy(a, "CLEAR T1 STEP FX?", 24); a[7] = (char)('1' + k % NTRK);
-        str_cpy(b, "THE NOTES STAY", 24);
         break;
     case CF_OVR_USER:
         str_cpy(a, "OVERWRITE ", 24);
@@ -2071,8 +2053,7 @@ static void confirm_text(char *a, char *b)
     case CF_ERASE_SECT:                              /* (V10.17) SAVE > PART SLOTS > ERASE */
         str_cpy(a, "ERASE PART A?", 24);
         a[11] = (char)('A' + (k & 3u));
-        str_cpy(b, graph_project_used(k & 3u) && graph_project_name(k & 3u)[0] ? graph_project_name(k & 3u) :
-                   "THE SLOT GOES EMPTY", 24);
+        str_cpy(b, graph_project_used(k & 3u) && graph_project_name(k & 3u)[0] ? graph_project_name(k & 3u) : "", 24);
         break;
     case CF_ERASE_USER:
         str_cpy(a, "ERASE ", 24);

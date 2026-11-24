@@ -1373,7 +1373,6 @@ static BTAPP_FN int pke_oct_bt(int up)
         pk.edit = 1;
         fx_lock = 1;                                    /* (the FX layer locked open: the keys its, the map shown) */
         ui_message("HOLD A KEY");
-        str_cpy(ui.msg2, "OCT+ SAVE OCT- EXIT", sizeof ui.msg2);
     } else if (up) {
         memcpy(pk_row(pk.eslot, 0), pk.we, PK_KEYS);
         memcpy(pk_row(pk.eslot, 1), pk.wo, PK_KEYS);

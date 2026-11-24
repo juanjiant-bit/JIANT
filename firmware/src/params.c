@@ -280,8 +280,8 @@ static const param_desc_t DXIMG_DESC = {"IMAGE", F_INT, 0, 127, 0, 0};       /* 
 #define ID_SC0 0xE8u                                    /* (V10.25) SCL > SCENE's four (ui_scene.c sc_desc) */
 #define ID_MU0 0xE4u                                    /* (V10.16) SEQ > MUTATE's four (EK_U0 + 0..3) */
 #define ID_CL0 0xC0u                                    /* (V10.8.21) DRONE CLAY's settings (seq.c clay.c clay_desc: CL_*) */
-_Static_assert(ID_CL0 + CLAY_NF <= 0xDFu && P_COUNT < ID_CL0, "DRONE CLAY's ids between the parameters and GAIN's");
-static const param_desc_t *clay_desc(const track_t *t, uint32_t f, int16_t **valp);   /* (seq.c clay.c) */
+_Static_assert(ID_CL0 + CL_SEL <= 0xDFu && P_COUNT < ID_CL0, "DRONE CLAY's ids between the parameters and GAIN's");
+static const param_desc_t *clay_page_desc(const track_t *t, uint32_t f, int16_t **valp);   /* (seq.c clay.c) */
 static const param_desc_t *eu_desc(uint32_t k, int16_t **valp);
 static const param_desc_t *sc_desc(uint32_t k, int16_t **valp);   /* (V10.25) ui_scene.c */
 static const char *const N_CHRD[] = {"OFF", "TRIAD", "7TH", "ADD9", "SUS2", "SUS4", "MAJ", "MIN", "7", "MAJ7", "MIN7",
@@ -763,8 +763,6 @@ static const page_t PAGES[] = {
     {"SL PITCH", FAM_FX, SC_GLOBAL, GR_SLPIT, {0xFF, G_SLP0, G_SLPLEN, G_SLPQ}},   /* KNOB 1 the step (sl_ui_step) */
     {"PUNCH IN", FAM_FX, SC_GLOBAL, GR_PUNCH, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (V10.7.66, the owner) KNOB 1..4 the MACROS M1..M4
                                                          * (ui_input.c, ui_draw.c), OCT+ the punch-in editor */
-    {"PUNCH LANE", FAM_FX, SC_GLOBAL, GR_PUNCH, {G_PFXLEN, G_PFXRES, 0xFF, 0xFF}},   /* (0.6.99) the punch-in lane: LEN RES, REC,
-                                                         * CLEAR (codex/coherence: was PUNCH, MASTER's knob's name) */
     {"SCL", FAM_SCL, SC_TRACK, GR_SCALE, {P_ROOT, P_SCALE, P_QUANT, ID_ALLTR}},   /* (JIANT: ROOT, SCALE every melodic track's;
                                                          * 0.7.6: ALL TR, the global, where TRANS was: SCL 2 gone) */
     {"CHORD", FAM_SCL, SC_TRACK, GR_NONE, {P_CHRD, P_CVOI, P_CSTR, 0xFF}},   /* (0.6.81) a key plays a chord (seq.c) */
@@ -902,13 +900,13 @@ static const page_t PAGES[] = {
     {"EDIT 2", FAM_EDIT, SC_ENGINE, GR_NONE, {P_E7, P_E4, P_E5, P_E6}},   /* (codex/coherence) FM6's EDIT 2 (PATCH): SLOT on KNOB 1
                                                          * (rule 4: a page that picks, picks with KNOB 1), MEG VMOD SPREAD */
     /* (V10.8.21, JIANT BYTE's DRONE CLAY) a track's sequencer: its drone, four modulators on the matrix (seq.c clay.c) */
-    {"DRONE CLAY", FAM_SEQ, SC_TRACK, GR_CLAY, {ID_CL0 + CL_ON, ID_CL0 + CL_OCT, ID_CL0 + CL_RATE, ID_CL0 + CL_RUN}},
-    {"CLAY MOD 1", FAM_SEQ, SC_TRACK, GR_CLAY, {ID_CL0 + 4u, ID_CL0 + 5u, ID_CL0 + 6u, ID_CL0 + 7u}},
-    {"CLAY MOD 2", FAM_SEQ, SC_TRACK, GR_CLAY, {ID_CL0 + 8u, ID_CL0 + 9u, ID_CL0 + 10u, ID_CL0 + 11u}},
-    {"CLAY MOD 3", FAM_SEQ, SC_TRACK, GR_CLAY, {ID_CL0 + 12u, ID_CL0 + 13u, ID_CL0 + 14u, ID_CL0 + 15u}},
-    {"CLAY MOD 4", FAM_SEQ, SC_TRACK, GR_CLAY, {ID_CL0 + 16u, ID_CL0 + 17u, ID_CL0 + 18u, ID_CL0 + 19u}},
-    {"CLAY DECAY", FAM_SEQ, SC_TRACK, GR_CLAY, {ID_CL0 + CL_DEC, ID_CL0 + CL_DEC + 1u, ID_CL0 + CL_DEC + 2u, ID_CL0 + CL_DEC + 3u}},
-    {"CLAY TIME", FAM_SEQ, SC_TRACK, GR_CLAY, {ID_CL0 + CL_STEP, ID_CL0 + CL_SEED, 0xFF, 0xFF}},
+    /* (V10.8.27, BYTE's 1adbf0a6) DRONE CLAY: ON, the drone's OCT, its PITCH, its RATE; CLAY MOD and CLAY RHYTHM: KNOB 1
+     * the MOD (1 .. 4), the others its DEST SHAPE AMOUNT, its RATE EUCLID DECAY (MOD 1's ids: clay.c clay_page_desc);
+     * CLAY TIME: RUN SEED */
+    {"DRONE CLAY", FAM_SEQ, SC_TRACK, GR_CLAY, {ID_CL0 + CL_ON, ID_CL0 + CL_OCT, ID_CL0 + CL_PIT, ID_CL0 + CL_RATE}},
+    {"CLAY MOD", FAM_SEQ, SC_TRACK, GR_CLAY, {ID_CL0 + CL_SEL, ID_CL0 + CL_M0, ID_CL0 + CL_M0 + 1u, ID_CL0 + CL_M0 + 3u}},
+    {"CLAY RHYTHM", FAM_SEQ, SC_TRACK, GR_CLAY, {ID_CL0 + CL_SEL, ID_CL0 + CL_M0 + 5u, ID_CL0 + CL_M0 + 2u, ID_CL0 + CL_M0 + 4u}},
+    {"CLAY TIME", FAM_SEQ, SC_TRACK, GR_CLAY, {ID_CL0 + CL_RUN, ID_CL0 + CL_SEED, 0xFF, 0xFF}},
 };
 #define SPLIT_PAGE(pg) ((uint32_t)((pg)->graph - GR_SPLIT) < 2u)
 #define FIT_PAGE(pg) ((pg)->graph == GR_STEPS && (pg)->id[1] == 0xFFu)   /* RHYTHM (BAR: KNOB 2 LEN) */
@@ -1024,8 +1022,8 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
         return eu_desc(id - ID_MU0 + 8u, valp);
     if (id >= ID_SC0 && id < ID_SC0 + 4u)            /* (V10.25) SCENE's */
         return sc_desc(id - ID_SC0, valp);
-    if (id >= ID_CL0 && id < ID_CL0 + CLAY_NF)        /* (V10.8.21) DRONE CLAY's (seq.c clay.c clay_desc) */
-        return clay_desc(TSEL, id - ID_CL0, valp);
+    if (id >= ID_CL0 && id <= ID_CL0 + CL_SEL)        /* (V10.8.21) DRONE CLAY's (seq.c clay.c clay_page_desc) */
+        return clay_page_desc(TSEL, id - ID_CL0, valp);
     *valp = &TSEL->p[id];
     if (id == P_APRATE && TSEL->p[P_APSYNC])         /* (0.6.9) AUTO PAN on the tempo: a division */
         return &AP_BEAT;

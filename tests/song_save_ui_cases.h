@@ -52,7 +52,7 @@ static int test_song_save_ui(void)
     turn(EN_K4, 1); press(B_OCTUP); frame();
     ok = ui.confirm == CF_OVR_SONG && !name_on();
     confirm_text(a, b);
-    ok &= strstr(a, "OVERWRITE PROJECT") != 0 && !strcmp(b, "NEXT: K3 SONG OR LOOP");
+    ok &= strstr(a, "OVERWRITE PROJECT") != 0 && !b[0]   /* (V10.8.27: the hint gone) */;
     press(B_OCTDN); frame();
     ok &= !ui.confirm && !name_on();
     bad += check("occupied destination asks to overwrite (SONG or LOOP comes on NAME); cancel writes nothing", ok);

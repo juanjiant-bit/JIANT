@@ -288,14 +288,14 @@ static __attribute__((noinline)) void graph_chord(const track_t *t)
         param_format(&CHORD_DESC[1], t->p[P_CVOI], v, &u);
         str_cpy(b + str_len(b), v, 32 - str_len(b));
     } else
-        str_cpy(b, "CHORD OFF \xB7 ONE NOTE A KEY", 32);
+        str_cpy(b, "CHORD OFF", 32);
     kd = (key + 12u - rt) % 12u;
     for (k = 0; k < NVOICE; k++) snd |= t->v[k].active && t->v[k].gate;
     for (d = 0; d < c; d++) if (deg[d] == kd) pd = d;
     n = t->p[P_CHRD] ? chord_peek(t, key, pn) : 0u;
     if (n == 1u) {                                      /* (V10.8.20) CHORD on, one note sounds: say why (a kit, not POLY) */
         str_cpy(nm, drum_track(t) ? "DRUM TRACK" : "NOT POLY", sizeof nm);
-        str_cpy(b, drum_track(t) ? "CHORDS PLAY ON SYNTH TRACKS" : "CHORDS NEED EDIT > PLAY > POLY", 32);
+        b[0] = 0;
         n = 0;
     } else if (t->p[P_CHRD]) chord_label(pn, n, nm, 1); else str_cpy(nm, "OFF", sizeof nm);
     cv_text(10, 4 - AF_L_CAP_Y + 1, text_w(&AF_L, nm) <= 220 ? &AF_L : &AF_M, nm, snd ? HUD_YE : t->p[P_CHRD] ? tc : T_DIM);

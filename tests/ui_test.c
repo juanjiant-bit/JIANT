@@ -5289,8 +5289,8 @@ static int test_rec_combos(void)
     /* (0.9.9-snd2) the FX chain: MASTER its last page, after PUNCH (ui_lens.c CE_FX), its module last on BUSES */
     bad += check("  FX chain: ... SL PITCH, PUNCH IN, MASTER, its TAPE and EQ last (the BUSES tiles too)",
                  !strcmp(CE_FX[NELEM(CE_FX) - 1u].t, "EQ") && !strcmp(CE_FX[NELEM(CE_FX) - 2u].t, "TAPE") &&
-                 !strcmp(CE_FX[NELEM(CE_FX) - 3u].t, "MASTER") && !strcmp(CE_FX[NELEM(CE_FX) - 4u].t, "PUNCH LANE") &&
-                 !strcmp(CE_FX[NELEM(CE_FX) - 5u].t, "MACROS") && !strcmp(CE_FX[NELEM(CE_FX) - 6u].t, "PUNCH IN") &&
+                 !strcmp(CE_FX[NELEM(CE_FX) - 3u].t, "MASTER") &&   /* (V10.8.27: PUNCH LANE's page gone) */
+                 !strcmp(CE_FX[NELEM(CE_FX) - 4u].t, "MACROS") && !strcmp(CE_FX[NELEM(CE_FX) - 5u].t, "PUNCH IN") &&
                  !strcmp(CG_FX[NELEM(CG_FX) - 1u].nm, "MASTER") && !strcmp(FX_MOD[FX_NMOD - 1u], "MASTER"));
     {   /* (0.9.9-snd2) CLEAR AUTOMATION on the punch-in layer itself: FX + G5 (CLR AUTO on the map) empties the lane
          * only, stopped or playing (not recording); the tracks' automation stays */
@@ -7731,9 +7731,9 @@ static int test_lente(void)
 {
     /* (2463a3b, 2026-11-04, FIT / SPAN: SEQ > LENGTH > RHYTHM after LENGTH; 92fc1d7, 2026-11-05: the GENERATE tab at the
      * end (LYRIC STEP only on a VOICE track): 14 pages in eight tabs, was 12 in seven) */
-    static const char *const CH[19] = {"STEP", "LENGTH", "RHYTHM", "TRACK", "EUCLID", "MODES", "PLAYHEADS",
+    static const char *const CH[16] = {"STEP", "LENGTH", "RHYTHM", "TRACK", "EUCLID", "MODES", "PLAYHEADS",
                                        "STEP FX", "STEP FX 2", "AUTOMATION", "AUTO LIST", "TRACK GEN", "DRONE CLAY",
-                                       "CLAY MOD 1", "CLAY MOD 2", "CLAY MOD 3", "CLAY MOD 4", "CLAY DECAY", "CLAY TIME"};   /* (V10.8.21: DRONE CLAY) */   /* (V10.8.20: MUTATE, STRETCH gone) */   /* (V10.7.59: STEP FX,
+                                       "CLAY MOD", "CLAY RHYTHM", "CLAY TIME"};   /* (V10.8.27: BYTE's four CLAY pages) */   /* (V10.8.21: DRONE CLAY) */   /* (V10.8.20: MUTATE, STRETCH gone) */   /* (V10.7.59: STEP FX,
                                                          * was COMP) (codex/coherence: TRACK
                                                          * GEN, was GENERATE) */
     static const char *const TP[7] = {"LENGTH", "EUCLID", "PLAYHEADS", "STEP FX", "AUTOMATION", "TRACK GEN", "DRONE CLAY"};
@@ -7743,26 +7743,26 @@ static int test_lente(void)
     TSEL->p[P_SLEN] = 64;
     open_family(FAM_SEQ); frame();
     ok = str_eq(cur_page()->title, "STEP") && lens_level() == LV_BAR && roll_view(cur_page()) && lz_tabs() == 8u &&
-         lz_tab_lit(0) && lz_crumb_is("SEQ \xB7 STEP \xB7 STEP") && lz_count_is("1/19");
+         lz_tab_lit(0) && lz_crumb_is("SEQ \xB7 STEP \xB7 STEP") && lz_count_is("1/16");
     turn(EN_SELECT, -1); frames(32);
-    ok &= str_eq(cur_page()->title, "STEP") && lz_count_is("1/19");                /* (the first: no wrap) */
+    ok &= str_eq(cur_page()->title, "STEP") && lz_count_is("1/16");                /* (the first: no wrap) */
     turn(EN_SELECT, 1); frames(32);
-    ok &= str_eq(cur_page()->title, "PATTERN") && seq_roll_view(cur_page()) && lz_tab_lit(1) && lz_count_is("2/19") &&
+    ok &= str_eq(cur_page()->title, "PATTERN") && seq_roll_view(cur_page()) && lz_tab_lit(1) && lz_count_is("2/16") &&
           lz_crumb_is("SEQ \xB7 PATTERN \xB7 LENGTH");                             /* (PATTERN, named LENGTH; codex/coherence:
                                                          * its group PATTERN) */
     turn(EN_SELECT, 1); frames(32);
-    ok &= str_eq(cur_page()->title, "RHYTHM") && lz_tab_lit(1) && lz_count_is("3/19");
+    ok &= str_eq(cur_page()->title, "RHYTHM") && lz_tab_lit(1) && lz_count_is("3/16");
     turn(EN_SELECT, 1); frames(32);
-    ok &= str_eq(cur_page()->title, "TRACK") && lz_tab_lit(1) && lz_count_is("4/19") &&
+    ok &= str_eq(cur_page()->title, "TRACK") && lz_tab_lit(1) && lz_count_is("4/16") &&
           lz_crumb_is("SEQ \xB7 PATTERN \xB7 TRACK");                              /* (TRACK under the PAT tab) */
     turn(EN_SELECT, 4); frames(32);
-    ok &= str_eq(cur_page()->title, "COMP") && seq_roll_view(cur_page()) && lz_tab_lit(4) && lz_count_is("8/19") &&
+    ok &= str_eq(cur_page()->title, "COMP") && seq_roll_view(cur_page()) && lz_tab_lit(4) && lz_count_is("8/16") &&
           lz_crumb_is("SEQ \xB7 STEP FX \xB7 STEP FX");
     turn(EN_SELECT, 1); frames(32);
-    ok &= str_eq(cur_page()->title, "COMP 2") && lz_tab_lit(4) && lz_count_is("9/19");
-    bad += check("seq2 SEQ: enters at STEP (1/19, eight tabs: V10.8.21 DRONE CLAY); LENGTH the roll (seq2b), RHYTHM, TRACK under its tab, COMP the roll, COMP 2 after it", ok);
-    bad += check("seq2 SEQ: one chain of 19 by SELECT (no wrap); a SEQ tap the next tab's first, round",
-                 chain_walk(B_SEQ, CH, 19, TP, 7));
+    ok &= str_eq(cur_page()->title, "COMP 2") && lz_tab_lit(4) && lz_count_is("9/16");
+    bad += check("seq2 SEQ: enters at STEP (1/16, eight tabs: V10.8.21 DRONE CLAY); LENGTH the roll (seq2b), RHYTHM, TRACK under its tab, COMP the roll, COMP 2 after it", ok);
+    bad += check("seq2 SEQ: one chain of 16 by SELECT (no wrap); a SEQ tap the next tab's first, round",
+                 chain_walk(B_SEQ, CH, 16, TP, 7));
     {   /* (0.9.9-seq2b) every page of the chain the same picture: the bars' strip, the roll with its keys */
         static const char *const TI[10] = {"STEP", "PATTERN", "TRACK", "EUCLID", "MODES", "PLAYHEADS",
                                            "COMP", "COMP 2", "AUTOMATION", "AUTO LIST"};
@@ -8711,19 +8711,19 @@ static int test_scl_alltr(void)
  * the page left. (Was 0.8.5's lens: SELECT TRACK <-> BUSES <-> EFFECT, PRESETS the module, the FX tap the level's next) */
 static int test_fx_sections(void)
 {
-    static const char *const CH[20] = {"SENDS", "DIST", "AUTO PAN", "BUSES", "DLY", "DLY 2", "DLY 3", "REVERB", "REVERB 2",
-                                       "CHORUS", "SLICER", "SL BUS", "SL BUS 2", "SL PITCH", "PUNCH IN", "MACROS", "LANE", "MASTER",
-                                       "TAPE", "EQ"};   /* (V10.7.66: PUNCH LANE) */
+    static const char *const CH[19] = {"SENDS", "DIST", "AUTO PAN", "BUSES", "DLY", "DLY 2", "DLY 3", "REVERB", "REVERB 2",
+                                       "CHORUS", "SLICER", "SL BUS", "SL BUS 2", "SL PITCH", "PUNCH IN", "MACROS", "MASTER",
+                                       "TAPE", "EQ"};   /* (V10.7.66: PUNCH LANE; V10.8.27: its page gone) */
     static const char *const TP[7] = {"BUSES", "DLY", "REVERB", "CHORUS", "SLICER", "PUNCH IN", "MASTER"};   /* (codex/coherence:
                                                          * PUNCH IN, was PUNCH, MASTER's knob's name) */
     int bad = 0, ok;
     uint32_t pr;
     ui_power_on();
     bad += check("0.9.2 FX: one chain of 18 (TRK BUS DLY REV CHO SLC PCH MST; snd8: MASTER, TAPE; p9: EQ) by SELECT, no wrap; an FX tap each group's first, round",
-                 chain_walk(B_FX, CH, 20, TP, 7));
+                 chain_walk(B_FX, CH, 19, TP, 7));
     ui_power_on(); go_home(); frame(); press(B_FX); frame();
     ok = fx_on() && fx_level() == FXL_TRACK && lz_on() && card_y() == LZ_CARD_Y && lz_tabs() == 8u && lz_tab_lit(0) &&
-         lz_crumb_is("FX \xB7 TRACK \xB7 SENDS") && lz_count_is("1/20");
+         lz_crumb_is("FX \xB7 TRACK \xB7 SENDS") && lz_count_is("1/19");
     turn(EN_SELECT, 3); frame();
     ok &= fx_level() == FXL_BUSES && cur_page()->graph == GR_BUSES && lz_tab_lit(1) && lz_crumb_is("FX \xB7 BUSES \xB7 BUSES");
     ok &= cur_page()->id[0] == G_DMIX && cur_page()->id[1] == G_RSIZE && cur_page()->id[2] == G_CDEPTH && cur_page()->id[3] == G_SLDEP;
@@ -8731,7 +8731,7 @@ static int test_fx_sections(void)
     ok &= song.g[G_RSIZE] > 50;
     turn(EN_SELECT, 2); frame();
     ok &= fx_level() == FXL_EFFECT && str_eq(cur_page()->title, "DLY 2") && lz_tab_lit(2) &&
-          lz_crumb_is("FX \xB7 DELAY \xB7 DLY 2") && lz_count_is("6/20") && ui.fxmod == 0u;
+          lz_crumb_is("FX \xB7 DELAY \xB7 DLY 2") && lz_count_is("6/19") && ui.fxmod == 0u;
     {   /* the eight tabs: their short names (the full ones do not fit) */
         const char *nm[8], *tab[8];
         uint8_t cnt[8];
@@ -8750,7 +8750,7 @@ static int test_fx_sections(void)
     ui_load = LOAD_ECO; frame();                                   /* LOAD ECO: no CHORUS, no SLICER */
     turn(EN_SELECT, 1); frame(); ok &= str_eq(cur_page()->title, "REVERB 2");
     turn(EN_SELECT, 1); frame(); ok &= str_eq(cur_page()->title, "PUNCH IN");   /* (CHORUS, SLICER skipped) */
-    ok &= lz_tabs() == 6u && lz_count_is("10/15");
+    ok &= lz_tabs() == 6u && lz_count_is("10/14");   /* (V10.8.27: PUNCH LANE gone) */
     frames(320); press(B_FX); frame(); ok &= str_eq(cur_page()->title, "MASTER");
     ui_load = LOAD_FULL; frame();
     bad += check("0.9.2 FX: from elsewhere the page left; LOAD ECO: CHORUS and SLICER out of the chain and the tabs", ok);
@@ -12495,8 +12495,7 @@ static int test_toasts(void)
     ok = str_eq(cur_page()->title, "EUCLID");
     for (n = 0; n < 200u; n++) { frame(); seen |= ui.msg_t && ui.msg[0]; }
     go_title("AUTOMATION"); for (n = 0; n < 200u; n++) { frame(); seen |= ui.msg_t && ui.msg[0]; }
-    go_title("PUNCH LANE"); for (n = 0; n < 200u; n++) { frame(); seen |= ui.msg_t && ui.msg[0]; }
-    bad += check("V10.8.18 no teaching hint: EUCLID walked past or dwelt on, AUTOMATION, PUNCH LANE say nothing", passed && ok && !seen);
+    bad += check("V10.8.18 no teaching hint: EUCLID walked past or dwelt on, AUTOMATION say nothing (V10.8.27: PUNCH LANE's page gone)", passed && ok && !seen);
     ui_power_on();                                      /* (0.9.5) no layer hint: SCL or EDIT tapped, dwelt on */
     go_home(); frames(160); ui.msg_t = 0;
     press(B_SCL);
@@ -12822,7 +12821,8 @@ static int coh_ok(uint32_t sec, const char *a, const char *b)
     static const struct { uint8_t sec; const char *a, *b; } OK[] = {
         {SEC_GLO, "MIXER", "GLOBAL"}, {SEC_FX, "SENDS", "DIST"},
         {SEC_FX, "BUSES", "DLY"}, {SEC_FX, "BUSES", "REVERB"}, {SEC_FX, "BUSES", "CHORUS"}, {SEC_FX, "BUSES", "SLICER"},
-        {SEC_EDIT, "MORE", FELUCCA_FM4 ? "OP LEVEL" : "-"}};   /* (FELUCCA_FM4's retired DIGITAL: P_TVEL is its OP4 LEVEL) */
+        {SEC_EDIT, "MORE", FELUCCA_FM4 ? "OP LEVEL" : "-"},
+        {SEC_SEQ, "CLAY MOD", "CLAY RHYTHM"}};   /* (V10.8.27, BYTE's: their MOD the same selector on both) */   /* (FELUCCA_FM4's retired DIGITAL: P_TVEL is its OP4 LEVEL) */
     uint32_t i;
     for (i = 0; i < NELEM(OK); i++)
         if (OK[i].sec == sec && ((str_eq(OK[i].a, a) && str_eq(OK[i].b, b)) || (str_eq(OK[i].a, b) && str_eq(OK[i].b, a))))

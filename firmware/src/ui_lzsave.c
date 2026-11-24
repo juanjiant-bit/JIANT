@@ -94,8 +94,7 @@ static __attribute__((noinline)) void graph_lz_tools(void)
     }
     cv_rect(4, (int32_t)h - 20, 232, 6, T_RAISE);        /* OCT+ held: the bar */
     if (hold > 0) cv_rect(4, (int32_t)h - 20, hold > 232 ? 232 : hold, 6, col);
-    cv_text_in(4, (int32_t)h - 11, 232, &AF_X, ui.act == 1u ? "OCT+ ASKS FIRST" : ui.act ? "HOLD OCT+ TO DO IT" :
-               "TURN A KNOB TO PICK", T_MID, T_SURF);
+    if (ui.act > 1u) cv_text_in(4, (int32_t)h - 11, 232, &AF_X, "HOLD OCT+", T_MID, T_SURF);   /* (V10.8.27: hints cut) */
 }
 /* the song's length and END ("120 BARS . LOOP") into b (24) */
 static void song_len_txt(char *b, uint32_t total)
@@ -183,8 +182,6 @@ static void graph_parts(void)
         song_strip(110, 10, ui.part & 3u, 0);
     else
         cv_text(4, 110, &AF_X, "NO SONG ROWS", T_DIM);
-    GFX_HOOK_ALIGN(0, 128, 0, 139, AL_V | AL_PASS, "parts hint");
-    cv_text(4, 128, &AF_X, "OCT+ LOOP \xB7 OCT- SONG \xB7 F3-B3 A-D", T_MID);
 }
 /* (V10.6s, the owner's mock-up C) CLIPS: the six tracks x the four parts, a cell a track's pattern in a part (its part's
  * colour calm where it plays there, grey where silent or the part empty); the part each track sounds framed in its
@@ -233,19 +230,6 @@ static void jam_lanes(int32_t y, int32_t dy, int32_t h, int32_t sel)
     }
     if (xp) cv_rect((int32_t)xp, y - dy * NTRK - 2, 1, dy * NTRK + 2, T_TEXT);
 }
-/* (V10.8.9, the owner) the song mode's hint, by its state (MENU > DISPLAY > HELP OFF: none); the cards name the knobs */
-static const char *song_hint(void)
-{
-    if (ui_help_off & 1u)
-        return 0;
-    if (SONG_TAKE(cur_page()))
-        return jam_len() ? "OCT+ A NEW CHANGE \xB7 OCT- DELETE IT" : "NO TAKE: REC ONE ON JAM";
-    return live.srec == 2u ? "RECORDING: CHANGE SEQS \xB7 REC ENDS" : live.srec ? "REC: FROM THE NEXT BAR" :
-           jam_tr & 8u ? "RECORDING THE TRACK: ONE ROUND" : jam_tr ? "TRACK REC: FROM THE TAKE START" :
-           jam_undo ? "OCT- UNDO THE ROUND" : jam_lock ? "PLAY OVER IT: YOU \xB7 REC: REDO A TRACK" :
-           jam_len() ? "K4 LOCK: THE TAKE PLAYS \xB7 JAM OVER IT" :
-           song.playing ? "KEYS A-D ALL \xB7 OCT+ GO \xB7 REC: A TAKE" : "PLAY \xB7 KEYS A-D ALL \xB7 OCT+ GO \xB7 OCT- STOP";
-}
 static void graph_clips(void)                           /* (V10.8.2) and TAKE: the take full screen, the change picked */
 {                                                       /* ringed, its track lit */
     uint32_t s, k, i, tk = SONG_TAKE(cur_page()), full = tk || jam_full(), hi = song.sel;
@@ -289,8 +273,6 @@ static void graph_clips(void)                           /* (V10.8.2) and TAKE: t
         }
     } else if (jam_len())
         jam_lanes(120, 3, 2, -1);
-    if (song_hint())                                    /* (V10.8.9) TAKE: over its lanes (its zoom row below) */
-        cv_text(tk ? 26 : 4, tk ? 2 : 128, &AF_X, song_hint(), live.srec || jam_tr ? T_ACCENT : T_MID);
 }
 /* (V10.6o, the owner's mock-up B) TIMELINE: the song as blocks (the cursor's row framed), what plays; under it the row
  * opened: each track's bar (its own part's colour calm, another part's bright with FROM and its letter,
@@ -310,7 +292,7 @@ static __attribute__((noinline)) void graph_tl(void)
     uint32_t n = chain_config.count, r = ui.song_row < n ? ui.song_row : n - 1u, k;
     char b[24];
     if (!n) {
-        cv_text_in(4, 60, 232, &AF_X, "NO ROWS: OCT+ ADDS ONE", T_MID, T_SURF);
+        cv_text_in(4, 60, 232, &AF_X, "NO ROWS", T_MID, T_SURF);
         return;
     }
     song_strip(3, 18, 4u, 1);
@@ -411,7 +393,7 @@ static void graph_score(int gen)
     if (gen)
         return;
     if (!n) {
-        cv_text_in(4, 128, 232, &AF_X, "NO ROWS: OCT+ ADDS ONE", T_MID, T_SURF);
+        cv_text_in(4, 128, 232, &AF_X, "NO ROWS", T_MID, T_SURF);
         return;
     }
     if (ui.song_row < n) {                                  /* the row picked: ROW n/N . its part and bars */
@@ -476,7 +458,7 @@ static void graph_proj(void)
         return;
     song_len_txt(b, total);
     GFX_HOOK_ALIGN(0, 128, 0, 139, AL_V | AL_PASS, "project song length");
-    cv_text_r(236, 128, &AF_X, n ? b : "NO ROWS: OCT+ ADDS ONE", T_MID, T_SURF);
+    cv_text_r(236, 128, &AF_X, n ? b : "NO ROWS", T_MID, T_SURF);
 }
 /* a being small at (cx, cy) radius r (px): engine e's species, its outline in heat c; 24 vertices (bg_outline's form,
  * its spikes and lobes, at a slot's size: a quarter of the lines) */

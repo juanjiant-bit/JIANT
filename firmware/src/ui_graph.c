@@ -216,8 +216,7 @@ static void graph_sing(const track_t *t)
     uint16_t bg = cv_bg;
     char b[64];
     if (!lang) {
-        cv_text_in(PANEL_X0, 44, PANEL_W, &AF_X, "LANG OFF: VOWELS", T_MID, bg);
-        cv_text_in(PANEL_X0, 58, PANEL_W, &AF_X, "LANG ES EN JA: WORDS", T_MID, bg);
+        cv_text_in(PANEL_X0, 44, PANEL_W, &AF_X, "LANG OFF", T_MID, bg);
         return;
     }
     str_cpy(b, N_LANG[lang], sizeof b);
@@ -1220,9 +1219,7 @@ static __attribute__((noinline)) void seq_overlay(const track_t *t, const page_t
         if (mine == CA_RAMP && k >= base && k < base + 16u && bt_hw_seg())
             ramp_draw_bt(t, dr, top, k - base);
         if (bn_on(1))                                   /* (V10.8.8) the component held, large (V10.8.9; V10.8.13: 0.6 s on) */
-            hold_banner(bn_nm, bn_k, rec_on(t));
-        else
-            cv_text_r(236, (int32_t)graph_h() - 9, &AF_X, "HOLD A KEY: STEP FX", T_MID, cv_bg);   /* (V10.8.22: at the foot, off the steps) */
+            hold_banner(bn_nm, bn_k, rec_on(t));   /* (V10.8.27: the "HOLD A KEY" hint gone) */
     } else if (pg->graph == GR_MOTION || pg->graph == GR_EVENTS) {
         uint8_t idx[MOTION_MAX];
         uint32_t n = ev_rows(idx), cur = ev_row(n);

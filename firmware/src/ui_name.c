@@ -416,7 +416,7 @@ static __attribute__((noinline)) void nm_draw_panel(void)
         }
         cv_text(14 + 14 * (int32_t)n, 48 - AF_X_CAP_Y, &AF_X, "TAP AGAIN: NEXT", T_MID);
     } else
-        cv_text(10, 48 - AF_X_CAP_Y, &AF_X, nm.num ? "ONE TAP, ONE CHARACTER" : "TAP AGAIN: NEXT", T_MID);
+        cv_text(10, 48 - AF_X_CAP_Y, &AF_X, "TAP AGAIN: NEXT", T_MID);
     GFX_HOOK_ALIGN(4, 0, 236, 0, AL_H | AL_CELLS | AL_N(8), "name keys' row in the panel");
     for (i = 0; i < 16u; i++) {                        /* the white keys: the left octave, then the right one */
         int32_t x = 9 + 28 * (int32_t)(i % 8u), y = i < 8u ? 62 : 84;
@@ -442,9 +442,9 @@ static __attribute__((noinline)) void nm_draw_panel(void)
 static void nm_draw_foot(void)
 {
     cv_begin(240, LZ_FOOT_H, T_BG);
-    cv_text(6, CRUMB_Y, &AF_X, nm.kind == NK_LYRIC ? "LENTE \xB7 LYRIC \xB7 K3 DICE \xB7 OCT- CANCEL" :   /* (0.8.5: playing too) */
-            transport_busy() ? "LENTE \xB7 NAME \xB7 STOP TO SAVE" :
-            nm.kind == NK_SONG_SAVE ? "NAME \xB7 K3 SONG/LOOP \xB7 OCT- CANCEL" : "LENTE \xB7 NAME \xB7 OCT- CANCEL", T_DIM);
+    cv_text(6, CRUMB_Y, &AF_X, nm.kind == NK_LYRIC ? "K3 DICE \xB7 OCT- CANCEL" :   /* (0.8.5: playing too) */
+            transport_busy() ? "STOP TO SAVE" :
+            nm.kind == NK_SONG_SAVE ? "K3 SONG/LOOP \xB7 OCT- CANCEL" : "OCT- CANCEL", T_DIM);
     cv_blit(0, LZ_FOOT_Y);
 }
 static void name_draw(void)

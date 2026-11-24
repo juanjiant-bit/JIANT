@@ -38,7 +38,7 @@ struct scr_state {
     uint32_t prev, run;
     uint32_t frames, lost;                     /* (the host test's counters) */
 };
-struct scr_state scr __attribute__((section(".pool.mirror")));
+struct scr_state scr;                          /* (V10.8.27: in the RAM, not the pool: the pool keeps its 8 KiB) */
 
 static void mir_put(uint32_t b) { scr.out[scr.n++] = (uint8_t)(b & 0x7Fu); }
 static void mir_flush_run(void)

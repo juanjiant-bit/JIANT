@@ -373,37 +373,65 @@ static __attribute__((noinline)) void life_mod(track_t *t, int32_t *off)
 }
 static void (*const volatile LIFE_MOD)(track_t *, int32_t *) = life_mod;   /* (mod_begin's RAM copy: its reach) */
 
-/* (V10.8.21, BYTE's) DRONE CLAY's four: what each adds now on its DEST, as a slot of the whole range (clay.c clay_tick;
- * its AMOUNT in it) */
+/* (BYTE's 1adbf0a6) a per-block destination id moved by x, Q15 of its range: its slot among the block's, kept to put back */
+static void clay_off(const track_t *t, mod_t *mp, int32_t *off, uint32_t id, int32_t x)
+{
+    const param_desc_t *pd = mod_track_desc(t, id);
+    uint32_t j;
+    for (j = 0; j < mp->nk && mp->kid[j] != id; j++)
+        ;
+    if (j == mp->nk) {
+        if (j >= sizeof mp->kid)                        /* (V10.8.27: the HITs' CUTOFF and the held SUS beside the four:
+                                                         * room for them only when the other slots leave it) */
+            return;
+        mp->kid[j] = (uint8_t)id;
+        mp->keep[j] = t->p[id];
+        off[j] = 0;
+        mp->nk++;
+    }
+    off[j] += (x * (id == P_LRATE ? 127 : pd->max - pd->min)) >> 15;
+}
+/* (FM) a destination's knob: CUTOFF on the engines whose filter is the track's (as the matrix), ANALOG's its E5 */
+static uint32_t clay_param(const track_t *t, uint32_t d)
+{
+    return d == MD_FCUT && t->engine == ENGI_ANALOG ? P_E4 : mod_param(d);
+}
+/* (V10.8.21, BYTE's; V10.8.27 its 1adbf0a6) DRONE CLAY's four: what each adds now on its DEST, as a slot of the whole
+ * range (clay.c clay_tick; its AMOUNT in it); the HITs' bundle: the voice as a drum on any engine (its pitch and noise,
+ * its level gated, the CUTOFF); a held drone held on any envelope */
 static __attribute__((noinline)) void clay_mod(mod_t *mp, const track_t *t, uint32_t tr, int32_t *off)
 {
-    const int16_t *p = t->p;
-    uint32_t k, j;
-    for (k = 0; k < 4u; k++) {                   /* (V10.8.21, BYTE's) DRONE CLAY's four: what each adds now on its DEST,
-                                                         * as a slot of the whole range (seq.c clay.c clay_tick; its AMOUNT in it) */
+    const clay_hb_t *hb = &form_st[tr].hb;
+    uint32_t k;
+    if (hb->on) {
+        mp->pit += hb->pit;
+        mp->amp = 1u;
+        mp->gain = mulq15(mp->gain, hb->gain);
+        if (hb->cut)
+            clay_off(t, mp, off, clay_param(t, MD_FCUT), hb->cut);
+    }
+    if (!clay[tr][CL_RATE] && t->p[P_SUS] < 100)      /* (the owner: "any engine") a held drone held: a decaying envelope
+                                                         * (a pluck's, any engine's) sustains while it is (RATE: struck) */
+        clay_off(t, mp, off, P_SUS, (100 - t->p[P_SUS]) * 258);
+    for (k = 0; k < 4u; k++) {
         uint32_t d = CLAY_MD[clamp(clay[tr][CL_MF(k, 0u)], 0, CLAY_ND - 1)], id;
-        int32_t x = clay_v[tr][k];
-        const param_desc_t *pd;
+        int32_t x = clay_vk(tr, k);
         if (!d || !x)
             continue;
         if (d == MD_CUT && (t->engine == ENGI_WHEEL || t->engine == ENGI_DRUM ||
                             t->engine == ENGI_STRING || t->engine == ENGI_INPUT)) d = MD_FCUT;
         if (d <= MD_AMP) {
+            if (clay_is_hit(clay[tr], k) && (d == MD_PITCH || d == MD_AMP))
+                continue;                               /* (a HIT's pitch and level: its bundle's) */
             mp->amp |= d == MD_AMP;
             mod_voice_add(MS_LFO, d, x, 64, &mp->pit, &mp->cut, &mp->shp, &mp->gain);
             continue;
         }
-        id = d == MD_FCUT && t->engine == ENGI_ANALOG ? P_E4 : mod_param(d);
-        pd = mod_track_desc(t, id);
-        for (j = 0; j < mp->nk && mp->kid[j] != id; j++)
-            ;
-        if (j == mp->nk) {
-            mp->kid[j] = (uint8_t)id;
-            mp->keep[j] = p[id];
-            off[j] = 0;
-            mp->nk++;
-        }
-        off[j] += (x * (id == P_LRATE ? 127 : pd->max - pd->min)) >> 15;
+        id = clay_param(t, d);
+        if (id != P_LRATE && 2 * (int32_t)t->p[id] > mod_track_desc(t, id)->max + mod_track_desc(t, id)->min)
+            x = -x;                                     /* (the owner: "a sensible depth") a knob over its middle moved down,
+                                                         * under it up: a one-sided shape always has room */
+        clay_off(t, mp, off, id, x);
     }
 }
 /* before a part's block (fx.c mix_part): the per-track offsets, the per-block destinations into t->p.

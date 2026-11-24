@@ -4,18 +4,7 @@
 /* Felucca UI input: LEDs, knobs and buttons, SEQ step entry, panel setup. */
 #include "ui_name.c"                                    /* NAME: naming user presets and projects */
 static uint8_t fx_mon;                                  /* (V10.7.59) ui_layer.c: the FX layer moved the MACROS */
-/* (V10.7.60, the users: "I don't know what I turned") a knob's plain meaning in the header while it turns (its card
- * keeps the value): the labels that need one */
-/* (V10.60) a knob's meaning, by its label: "LABEL" "\0" "HINT" "\0" in one string (V10.7.62, BYTE's: no pointers,
- * ~600 B of flash); its end the "" after the last */
-static void knob_hint(const char *label)           /* (V10.7.81: CHORD's the one left, no table) */
-{
-    if (!label || (ui_help_off & 1u))                  /* (MENU > DISPLAY > HELP OFF) */
-        return;
-    if (str_eq(label, "CHORD"))
-        ui_say("EACH KEY ITS OWN CHORD", "");
-}
-
+/* (V10.8.27) the knobs' hints in the header gone for the flash (DRONE CLAY's fix) */
 static void fx_macro_back(void);
 /* ----------------------------------------------------------- LEDs --- */
 /* The LED picture is built off-line and copied one byte per column: clearing
@@ -1607,7 +1596,6 @@ sect:
     }
     if (pg->id[0] == G_MIDI && pg->scope == SC_GLOBAL) {   /* (V10.6z8, a Discord user) GLO > SYSTEM 2 shows, edits nothing */
         ui_message("EDIT: MENU > BLUETOOTH");
-        str_cpy(ui.msg2, "HOLD HOME, TAB SYSTEM", sizeof ui.msg2);
         return;
     }
     d = page_desc(pg, slot, &vp);
@@ -1626,8 +1614,8 @@ sect:
         sc_put((uint32_t)(vp - sc_v), v);
         return;
     }
-    if (vp >= &clay[0][0] && vp < &clay[NTRK][0]) {    /* (V10.8.21, BYTE's) DRONE CLAY's settings (seq.c clay.c clay_put) */
-        clay_put((uint32_t)(vp - &clay[0][0]), was_clay, v);
+    if (vp >= clay_ui && vp < clay_ui + CLAY_NF) {      /* (V10.8.21, BYTE's) DRONE CLAY's settings, their view (clay.c clay_put) */
+        clay_put(song.sel, (uint32_t)(vp - clay_ui), was_clay, v);
         return;
     }
     if (vp >= eu_v && vp < eu_v + EK_N) {               /* (V10.6) EUCLID / MODES: the setting, the pattern again */
@@ -1702,11 +1690,6 @@ static __attribute__((noinline)) void act_do(void)
         if(err) {ui_message(err==2u?"AUTOMATION FULL":"CANNOT PLACE LYRIC");return;}
         TSEL->p[P_VLYR]=LYR_FIXED;
         ui_message(pos?"PLACED":"PLACED: AUTO");
-        return;
-    }
-    if (cur_page()->graph == GR_PUNCH) {                /* (0.6.99) the punch-in lane cleared (a dialog) */
-        if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
-        confirm_open(CF_CLEAR_PFX, song.sel);
         return;
     }
     if (cur_page()->graph == GR_EVENTS) {
@@ -2756,8 +2739,6 @@ static void ui_input_frame(void)
                 ui_message(dk.msg);
             } else if (kind == CF_LOAD_PAT) {
                 pat_load_ui(&trk[ui.confirm_trk % NTRK], pat_pick());
-            } else if (kind == CF_CLEAR_PFX) {         /* (0.6.99) FX > PUNCH > CLEAR */
-                if (!chain_busy()) { memset(pfx_lane, 0, sizeof pfx_lane); pfx_ltgt = 0; ui_message("PUNCH IN LANE CLEARED"); }
             } else if (kind == CF_CLEAR_COMP) {        /* (V10.7.62) every step component of the track */
                 track_t *t = &trk[ui.confirm_trk % NTRK];
                 uint32_t i, n = 0;
@@ -3080,8 +3061,6 @@ static void ui_input_frame(void)
         }
         if (!ui.home && !ui.menu && !ui.confirm) {      /* (V10.7.60) its meaning in the header */
             const param_desc_t *hd = page_desc(pg, k, &hv);
-            if (hd)
-                knob_hint(hd->label);
             if (hd && hd->label && ((hd->label[0] == 'S' && hd->label[1] == 'R') || (hd->label[0] == 'D' && hd->label[1] == 'E')) &&
                 pg->graph == GR_MOD)                    /* (V10.8.22) a slot's SRC / DEST: its full names (mx_banner) */
                 mxn_s = (uint8_t)(hd->label[str_len(hd->label) - 1u] - '0');
@@ -3093,15 +3072,7 @@ static void ui_input_frame(void)
             const param_desc_t *d = home_param(k, &vp);
             int32_t was = *vp;
             *vp = (int16_t)param_turn(d, *vp, accel(EN_K1 + k, s, d->fmt == F_ENUM ? 0 : d->max - d->min));
-            if (home_life()) {                          /* (V10.7.62) LIFE: the project's, no track's */
-                static const char *const LH[4] = {"HITS CLOSE, NOTES OPEN", "THE OTHERS SHAPE IT",
-                                                  "KICKS DUCK THE SYNTHS", "THE OTHERS FEED THE SENDS"};
-                if (ui.msg_t && str_eq(ui.msg, LH[k & 3u]))
-                    ui.msg_t = 40;                      /* (still turning: it stays) */
-                else if (!(ui_help_off & 1u))
-                    ui_say(LH[k & 3u], "");
-            }
-            else {
+            if (!home_life()) {                         /* (V10.7.62) LIFE: the project's, no track's (V10.8.27: its hints gone) */
                 knob_cap(TSEL, (uint32_t)(vp - TSEL->p));
                 excite_turn(TSEL, vp, was);
             }

@@ -2048,7 +2048,7 @@ static uint32_t act_cols(void)                   /* the columns that are actions
     uint32_t c, m = 0;
     if (ui.home)
         return 0;
-    if (pg->graph == GR_MOTION || (pg->graph == GR_PUNCH && pg->id[0] != 0xFF)) return 8u;   /* (0.6.99) PUNCH: KNOB 4
+    if (pg->graph == GR_MOTION) return 8u;   /* (0.6.99) PUNCH: KNOB 4
                                                          * CLEAR (V10.7.70: PUNCH LANE's only; PUNCH IN its knobs the
                                                          * macros, OCT+ the editor) */
     if (pg->graph == GR_EVENTS || pg->graph==GR_TRACKGEN) return 16u;
@@ -2083,7 +2083,6 @@ static const char *act_name(uint32_t c)          /* column c's action (the foote
 {
     static const char *const UP_GO[3] = {"LOAD", "ERASE", "SAVE"};
     uint32_t id = cur_page()->id[c & 3u];
-    if (cur_page()->graph == GR_PUNCH) return "ERASE";   /* (snd2) the punch-in lane only (V10.7.62: CLR AUTO cut) */
     if (cur_page()->graph == GR_MOTION) return "CLEAR";
     if (cur_page()->graph == GR_EVENTS) return ev_act_name();
     if (cur_page()->graph == GR_LYRIC) return "TYPE";

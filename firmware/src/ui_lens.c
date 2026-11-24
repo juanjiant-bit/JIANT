@@ -82,8 +82,7 @@ static const nv_t CE_SEQ[] = {NV("STEP", 0, 0, LV_BAR), NV("PATTERN", "LENGTH", 
                               NV("PLAYHEADS", 0, 3, LV_PAT),
                               NV("COMP", "STEP FX", 4, LV_STEP), NV("COMP 2", "STEP FX 2", 4, LV_STEP), NV("AUTOMATION", 0, 5, LV_BAR),
                               NV("AUTO LIST", 0, 5, LV_BAR), NV("LYRIC STEP",0,5,LV_BAR),NV("TRACK GEN",0,6,LV_BAR),
-                              NV("DRONE CLAY", 0, 7, LV_PAT), NV("CLAY MOD 1", 0, 7, LV_PAT), NV("CLAY MOD 2", 0, 7, LV_PAT),
-                              NV("CLAY MOD 3", 0, 7, LV_PAT), NV("CLAY MOD 4", 0, 7, LV_PAT), NV("CLAY DECAY", 0, 7, LV_PAT),
+                              NV("DRONE CLAY", 0, 7, LV_PAT), NV("CLAY MOD", 0, 7, LV_PAT), NV("CLAY RHYTHM", 0, 7, LV_PAT),
                               NV("CLAY TIME", 0, 7, LV_PAT)};   /* (V10.8.21: BYTE's DRONE CLAY) */   /* (V10.8.20: STRETCH gone) */
 static const ng_t CG_SEQ[] = {{"STEP", 0}, {"PATTERN", "PAT"}, {"EUCLID", "EUCL"}, {"PLAYHEADS", "HEAD"},
                               {"STEP FX", "SFX"}, {"AUTO", 0}, {"TRACK GEN", "GEN"}, {"DRONE CLAY", "CLAY"}};   /* (V10.7.59: STEP FX, was COMP) */   /* (codex/coherence: PATTERN, was LENGTH: its
@@ -93,7 +92,7 @@ static const nv_t CE_FX[] = {NV("FX", "SENDS", 0, FXL_TRACK), NV("DIST", 0, 0, F
                              NV("BUSES", 0, 1, FXL_BUSES), NV("DLY", 0, 2, FXL_EFFECT), NV("DLY 2", 0, 2, FXL_EFFECT),
                              NV("DLY 3", 0, 2, FXL_EFFECT), NV("REVERB", 0, 3, FXL_EFFECT), NV("REVERB 2", 0, 3, FXL_EFFECT),
                              NV("CHORUS", 0, 4, FXL_EFFECT), NV("SLICER", 0, 5, FXL_EFFECT), NV("SL BUS", 0, 5, FXL_EFFECT),
-                             NV("SL BUS 2", 0, 5, FXL_EFFECT), NV("SL PITCH", 0, 5, FXL_EFFECT), NV("PUNCH IN", 0, 6, FXL_EFFECT), NV("MACROS", 0, 6, FXL_EFFECT), NV("PUNCH LANE", "LANE", 6, FXL_EFFECT),
+                             NV("SL BUS 2", 0, 5, FXL_EFFECT), NV("SL PITCH", 0, 5, FXL_EFFECT), NV("PUNCH IN", 0, 6, FXL_EFFECT), NV("MACROS", 0, 6, FXL_EFFECT),
                              NV("MASTER", 0, 7, FXL_EFFECT), NV("TAPE", 0, 7, FXL_EFFECT),
                              NV("EQ", 0, 7, FXL_EFFECT)};   /* (p9: the master's EQ) */   /* (0.9.9-snd2: MASTER last, the
                                                          * end of the chain; snd8: its TAPE) */

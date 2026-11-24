@@ -601,7 +601,7 @@ static void jam_round_end(void)
     jam_vos &= (uint8_t)~(1u << K);                     /* (the player's is the take's now) */
     jam_undo = 1;
     live.rec_done = 1;
-    ui_message("TRACK DONE: OCT- UNDO");
+    ui_message("TRACK DONE");
 }
 static uint32_t jam_len(void)                           /* the take's length in 16ths (its END), 0 none */
 {
