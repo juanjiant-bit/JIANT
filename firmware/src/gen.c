@@ -1865,6 +1865,14 @@ static __attribute__((noinline)) void gen_mix(track_t *t, uint32_t r)
     t->p[P_DLY] = (int16_t)clamp((r == RL_LEAD || r == RL_ARP ? grr(25, 70) : r == RL_PAD && (g->pads == CS_DUB || g->pads == CS_SKANK) ? grr(55, 95) :
                                   r == RL_PAD ? grr(0, 30) : r == RL_DRUM ? grr(0, 10) : 0) * (40 + wet) / 100, 0, 127);
     if (r == RL_LEAD && t->p[P_REV] < 25 && t->p[P_DLY] < 20) t->p[P_DLY] = (int16_t)grr(25, 55);
+    /* (V10.8.36, the mix pass's second: docs/GENERATOR-STUDY.es.md 5.3) a hook its delay or its reverb, not both high
+     * (a riff's the delay, a held line's the reverb); a club's stab half its reverb (the off-beat clear); its arp a
+     * pluck (the release short: it ran into its own delay) */
+    if (r == RL_LEAD && t->p[P_REV] >= 25 && t->p[P_DLY] >= 20) t->p[g->lead >= LD_RIFF || g->lead == LD_HOOK ? P_REV : P_DLY] >>= 1;
+    if (gclub()) {
+        if (r == RL_PAD && g->pads == CS_STAB) t->p[P_REV] >>= 1;
+        if (r == RL_ARP && t->p[P_REL] > 25) t->p[P_REL] = (int16_t)grr(15, 25);
+    }
     t->p[P_HVEL] = (int16_t)(127 - clamp((HV[r] + HT[r] + HG[r]) * hum / 150, 0, 127));   /* (0.6.92: one amount) */
     t->p[P_HTIM] = t->p[P_HGAT] = 127;
     if (g->lead == LD_EBM) {   /* (p7b, the owner's references measured: the bass's and the pads' brightness swings
@@ -1882,7 +1890,8 @@ static __attribute__((noinline)) void gen_mix(track_t *t, uint32_t r)
     }
     if (r == RL_PAD || r == RL_ARP || r == RL_LEAD)     /* (p6b: the owner's references all dark, their centroid 350 ..
                                                          * 660 Hz: the melodic parts' cutoff 15 % down) */
-        t->p[P_FCUT] = (int16_t)(t->p[P_FCUT] * 85 / 100);
+        t->p[P_FCUT] = (int16_t)(t->p[P_FCUT] * (79 + (gs.root + gs.pn) % 3u * 6) / 100);   /* (V10.8.36: the piece's own
+                                                         * colour: dark, as it was, or brighter, the three parts together) */
     if (r == RL_DRUM && (g->spec & GSP_HEAVY))          /* (p4b, the owner: EBM's drums industrial, distorted, simple;
                                                          * V10.6p: phonk's and baile funk's too) */
         t->p[P_DIST] = (int16_t)grr(40, 60);
@@ -2160,7 +2169,7 @@ static void gen_parts(void)
                                                          * LOOP: the verse the genre's progression, the break it or the
                                                          * drop's) */
         if (fam != HF_LOOP && ((form == FM_PARTS && k == 1u) || (form != FM_PARTS && k == 3u))) {
-            if (pn > 1u && !gls.on && !glatin() && gch(80)) {   /* (V10.8.34, the owner: "different parts within a song") the
+            if ((pn > 1u || gx.on) && !gls.on && !glatin() && gch(80)) {   /* (V10.8.36: EXPLORE's one chord too) */   /* (V10.8.34, the owner: "different parts within a song") the
                                                          * contrast section its own progression, the family's grammar's (as
                                                          * many chords as A's, A's qualities), from its predominant */
                 for (i = 0; i < 6u && (gx_prog(fam), gs.pn != pn || !memcmp(gs.pdeg, pdeg, pn)); i++) {}
@@ -2550,7 +2559,7 @@ static void gen_post(void)
         {   /* (V10.8.34, the owner: "call and response") a dialogue, a throw in two: where the lead speaks (two notes or
              * more in a half bar) the arp is silent, and answers in its gaps; not where the lead leaves it none */
             uint32_t ld = gs.trk_of[RL_LEAD], ar = gs.trk_of[RL_ARP], c = 0, kill = 0, busy = 0, j;
-            if (ld < NTRK && ar < NTRK && gs.act[RL_LEAD] && gs.act[RL_ARP] && !gx.on && gch(50)) {
+            if (ld < NTRK && ar < NTRK && gs.act[RL_LEAD] && gs.act[RL_ARP] && gch(50)) {   /* (V10.8.36: EXPLORE's too) */
                 uint32_t ll = dlen(&trk[ld]);
                 len = dlen(&trk[ar]);
                 for (k = 0; k < 2u; k++)                /* (the first pass counts the lead's busy half bars) */
@@ -3096,7 +3105,7 @@ static __attribute__((noinline)) void gen_make(void)
     song.g[G_RPRE] = (int16_t)(g->rtype == 3 ? grr(0, 4) : g->rtype == 2 || g->rtype == 4 ? grr(-12, 0) : grr(0, 30));
     song.g[G_CRATE] = (int16_t)grr(10, 60);
     song.g[G_CDEPTH] = (int16_t)grr(20, 80);
-    song.g[G_DUCK] = (int16_t)(gs.act[RL_DRUM] ? (g->spec & GSP_PUMP ? grr(60, 80) : g->kick_mode == KM_SUSTAIN ? grr(30, 50) : grr(14, 30)) : 0);   /* (V10.6n:
+    song.g[G_DUCK] = (int16_t)(gs.act[RL_DRUM] ? (g->spec & GSP_PUMP ? grr(60, 80) : g->kick_mode == KM_SUSTAIN || gclub() ? grr(30, 50) : grr(14, 30)) : 0);   /* (V10.6n:
                                                          * hard bass pumped) */
     if (g->snd[GP_BASS] == SR_WOW && gs.act[RL_BASS] && gs.trk_of[RL_BASS] < NTRK) gwobble(&trk[gs.trk_of[RL_BASS]]);
     song.g[G_DREL] = (int16_t)(g->drum == DM_TECHNO || g->drum == DM_HARD || g->drum == DM_HBASS ? grr(15, 30) : grr(25, 45));

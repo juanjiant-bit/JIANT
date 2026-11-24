@@ -951,13 +951,13 @@ _Static_assert(sizeof GGRAM / sizeof GGRAM[0] == NGENRE, "GGRAM: a grammar a gen
 static const uint8_t GMIX[][3] = {
     GMX(0, 7, -2, 0, 5, 0),   /* MINIMAL TECHNO */
     GMX(-3, 0, 0, 0, 7, 6),   /* HARD TECHNO (V10.7.2: the bass +1.5 dB, V10.6z10's basses ~1.8 under) */
-    GMX(-3, 7, 3, 7, 0, 6),   /* HARD BASS */
+    GMX(-3, 7, 3, 7, 4, 6),   /* HARD BASS (V10.8.36: the arp +6 dB, 22 under the drums) */
     GMX(-1, 2, 1, 0, 7, 0),   /* HOUSE */
     GMX(-2, 4, 2, 0, 7, 0),   /* DEEP HOUSE (V10.7.2: the bass +1.5, z10's ~1.2 under) */
     GMX(-3, 1, -1, 0, 7, 0),   /* TECH HOUSE (V10.7.2: the bass +1.5, z10's ~1.6 under) */
     GMX(-3, 4, 1, 0, 7, 5),   /* TRIBAL */
-    GMX(0, 1, 2, 2, 0, -2),   /* CUMBIA */
-    GMX(-1, 1, -5, 2, 5, 4),   /* REGGAETON (V10.7.8, the owner's reference: the drums up front, the 808 up, the pad, the hook
+    GMX(0, 1, 2, 2, 3, -2),   /* CUMBIA (V10.8.36: the arp +4.5 dB, 21 under) */
+    GMX(-1, 1, -5, 6, 5, 4),   /* REGGAETON (V10.8.36: the hook +6 dB, 19 under the drums) (V10.7.8, the owner's reference: the drums up front, the 808 up, the pad, the hook
                                                          * and the arp under them, the pad under the arp) */
     GMX(-3, 2, -2, 7, 7, 4),   /* DEMBOW (V10.7.2: the marimba's riff and the chants' arp up: phonk's levels) */
     GMX(-3, 0, 1, 7, 7, 5),   /* ELECTRO */
@@ -971,16 +971,16 @@ static const uint8_t GMIX[][3] = {
                                                          * other throws' FAT BASS as it was, at the level's top already) */
     GMX(0, 0, 4, 3, 2, 3),   /* NEO CLASSIC */
     GMX(0, 0, 5, 1, 1, 2),   /* FUGA */
-    GMX(0, -2, -2, 4, -5, 1),   /* ELECTRO METAL */
+    GMX(0, -2, -2, 4, -2, 1),   /* ELECTRO METAL (V10.8.36: the arp +4.5 dB, 21 under) */
     GMX(0, -1, 0, 3, 0, 1),   /* TECHNO ROCK */
-    GMX(-1, 4, -3, -1, 2, 3),   /* DREAM POP */
+    GMX(-1, 4, -3, 2, 2, 3),   /* DREAM POP (V10.8.36: the voice +4.5 dB, 23 under the drums) */
     GMX(-4, 1, -2, 7, 7, 4),   /* PHONK (V10.7.2: the drums -1.5, z10's DNA ~2 dB over the parts) */
-    GMX(-3, 2, -3, 7, 4, 4),   /* BAILE FUNK (V10.7.8: the 808 4.5 dB up, the chops under) */
+    GMX(-3, 2, -3, 7, 7, 4),   /* BAILE FUNK (V10.8.36: the arp +4.5 dB) (V10.7.8: the 808 4.5 dB up, the chops under) */
     GMX(0, 0, 0, 1, 0, -2),   /* JAZZ */
     GMX(-3, -2, -1, 7, 5, 4),   /* HIP HOP */
-    GMX(-2, 5, -3, 2, 0, 3),   /* (V10.7.63) DUBSTEP: the wobble up front */
+    GMX(-2, 5, -3, 6, 4, 3),   /* (V10.7.63) DUBSTEP: the wobble up front (V10.8.36: the lead and the arp +6 dB) */
     GMX(-1, 0, 4, -2, 0, 3),   /* SHOEGAZE: the wall over everything, the voice back */
-    GMX(0, -2, 0, 3, -5, 1),   /* METALCORE: as ELECTRO METAL */
+    GMX(0, -2, 0, 3, -2, 1),   /* METALCORE: as ELECTRO METAL */
 };
 _Static_assert(sizeof GMIX / sizeof GMIX[0] == NGENRE, "GMIX: a mix a genre");
 /* (V10.6z10, the owner: "every throw of a genre the same song") each genre's groove DNA (GENRE's order, EXPLORE last):

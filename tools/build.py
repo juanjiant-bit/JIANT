@@ -193,7 +193,9 @@ def build_loader():
 HOT_FNS = ("mix_block", "mix_part_m0", "fx_run0", "perf_begin", "perf_pre", "perf_block", "perf_master", "slicer_bus",
            "dly_lo", "dly_grain", "dly_grain_adv", "dly_wow_adv", "dly_line_clear", "dly_rate", "fx_rest",
            "rev_run", "rev_idle", "rev_room", "rev_spring", "rev_cloud", "rev_shimmer",   # (V10.7.56: rev_spring_side, SPRING's WIDE, and rev_room_mod, ROOM's MOD / WIDE, from flash: the room)
-           "rev_reso", "cho_admit", "dist_shape", "dist_amp", "pk_step", "perf_kpress")   # (V10.7.65: the punch-in keys, packed)
+           "rev_reso", "cho_admit", "dist_shape", "dist_amp",
+           "track_dist")   # (V10.8.36: one copy, with its NOISE; was inlined twice. pk_step and perf_kpress, V10.7.65's, back
+                           # in the flash for its room: both are called through a pointer, a key or a beat at a time)   # (V10.7.65: the punch-in keys, packed)
 
 
 def share_strings(ir, keep=()):

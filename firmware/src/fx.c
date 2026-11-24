@@ -193,7 +193,15 @@ static __attribute__((noinline)) void dist_amp(track_t *t, int32_t *b, uint32_t 
  * at 1: the low cut and the clip at once), the blend eased a block at a time and ramped across it; at 0 out of the
  * chain once the blend is down */
 static int32_t dist_w[NTRK];                            /* the blend the last block ended at, Q12 */
-static void track_dist(track_t *t, int32_t *b, uint32_t n)
+/* (V10.8.36, the owner: "the distortion's NOISE only a fade of volume; it should modulate tone and gain") DIST's NOISE
+ * (FX > DIST's KNOB 4, params.c ID_DNZ; the project's 'D' 'N'): low-passed white noise moves the drive's gain before the
+ * shaper and its TONE's corner: sidebands round every partial, at any level; nothing is added (silence stays silent,
+ * the level as it was). Not on AMP (its own loop, in the RAM) */
+int16_t dnz_v[NTRK];
+int16_t cho_mix;                                        /* (V10.8.36) FX > CHORUS's MIX, 0..100 (params.c ID_CMIX; mix_part_m0) */
+static uint32_t dnz_r[NTRK];
+static int32_t dnz_lp[NTRK];
+static __attribute__((noinline)) void track_dist(track_t *t, int32_t *b, uint32_t n)
 {
     int32_t d = t->p[P_DIST], i, g, k, mk, b0 = softclip(2400), w0, w1, dw, full;
     uint32_t type = (uint32_t)t->p[P_DTYPE], ti = (uint32_t)(t - trk) % NTRK;
@@ -224,11 +232,18 @@ static void track_dist(track_t *t, int32_t *b, uint32_t n)
         return;
     }
     {                                                   /* (0.7.9) the state in registers through the block */
-        int32_t hp = t->dist_hp, l1 = t->dist_lp1, l2 = t->dist_lp2;
+        int32_t hp = t->dist_hp, l1 = t->dist_lp1, l2 = t->dist_lp2, nz = dnz_lp[ti], na = dnz_v[ti], g0 = g, k0 = k;
+        uint32_t r = dnz_r[ti] | 1u;
         for (i = 0; i < (int32_t)n; i++) {
             int32_t x = b[i], y;
             hp += (x - hp + 64) >> 7;                   /* ~55 Hz low cut: keep the bass out of the clipper */
             x = clamp(x - hp, -230000, 230000);         /* (x >> 2) * g fits 32 bits; the clip is flat out there */
+            if (na) {                                   /* (V10.8.36) NOISE: the gain and the tone's corner moved */
+                r ^= r << 13; r ^= r >> 17; r ^= r << 5;
+                nz += mulq15(((int32_t)r >> 16) - nz, 6000);
+                g = g0 + ((((g0 * na) >> 7) * nz) >> 13);
+                k = clamp(k0 + ((nz * na) >> 8), 2500, 32767);
+            }
             y = type == DT_SOFT ? softclip((((x >> 2) * g) >> 10) + 2400) - b0 : dist_shape(t, type, x, g, d);
             l1 += mulq15(y - l1, k);                    /* two poles: tames the fizz */
             l2 += mulq15(l1 - l2, k);
@@ -238,6 +253,8 @@ static void track_dist(track_t *t, int32_t *b, uint32_t n)
         t->dist_hp = hp;
         t->dist_lp1 = l1;
         t->dist_lp2 = l2;
+        dnz_lp[ti] = nz;
+        dnz_r[ti] = r;
     }
 }
 
@@ -1200,10 +1217,12 @@ static __attribute__((noinline)) void rev_spring_side(uint32_t n, int32_t wd)
  *   RESO (3)     four combs tuned to the song's scale (ROOT and SCALE: its I III V VII from C3), a sympathetic string
  *                each: whatever is sent rings in the key. SIZE their sustain (to ~0.995), DAMP their brightness, MOD the
  *                voicing open (the V and VII an octave up), PRE as ever. In ROOM's comb memory
- *   CLOUD (4)    a granular cloud: the send recorded (half rate, ~0.74 s) and read by up to six grains, each from a
- *                random point of the last SIZE of it, 70 .. 380 ms long, faded in and out, at the pitch of the note or
- *                (MOD: the more, the oftener) an octave up / down or a fifth up; RATE their density, DAMP the tone,
- *                WIDE them left and right. SIZE full: FREEZE (the line stops being written: the cloud holds) */
+ *   CLOUD (4)    a granular cloud: the send recorded (half rate, ~0.74 s) and read by up to twelve grains, 90 .. 280 ms
+ *                long, faded in and out, (V10.8.36) half of them from just behind the write, the others 1, 2 or 3
+ *                sixteenths of the tempo back; at the pitch of the note or (MOD: the more, the oftener) an octave up /
+ *                down or a fifth up; RATE their density, DAMP the tone, WIDE them left and right; the send goes
+ *                straight into the network too (the bloom starts with the note). PRE is AIR here (the grains' pitch).
+ *                SIZE: the network's decay and the tail fed back; full: FREEZE (the line stops being written) */
 static uint32_t scale_mask(const track_t *t);           /* seq.c */
 static int32_t shim_fb[CTL];                            /* (SHIMMER's line: rev_x, at the top) */
 /* (0.6.12) AIR (G_RPRE on SHIMMER and CLOUD, -24..24 st): the pitch moved, the tone with it. A semitone count as a
@@ -1346,7 +1365,8 @@ static uint32_t cl_rand(void) { fx.cl_rng = fx.cl_rng * 1664525u + 1013904223u; 
 /* CLOUD (G_RTYPE 4, JIANT 0.5, made wet in 0.5.1): a granular wash. The input and the cloud's own tail fed back
  * (SIZE: the tail ~0.09, the grains ~0.43: the wash builds on itself) are written at half rate into a 0.74 s line;
  * up to 12 overlapping
- * grains (RATE: their density; 45 .. 140 ms long, triangle windows) read it from anywhere behind the write, MOD of
+ * grains (RATE: their density; 90 .. 280 ms long, triangle windows) read it from behind the write (V10.8.36: near it
+ * or sixteenths back, cl_spawn), MOD of
  * them an octave up, down or a fifth up; each grain panned at random (WIDE: how far, left and right). The grains go
  * through ROOM's network (SIZE its decay, DAMP its tone; MOD chorusing it, WIDE its combs apart): the grains are not
  * heard dry, they bloom into a tail around the sound. SIZE full freezes the line (the cloud holds) */
@@ -1370,7 +1390,13 @@ static void cl_spawn(int32_t gap, int32_t wd, uint32_t ar)
                                                          * across the write, a click each) */
         back = inc > 32768u ? (uint32_t)(umul64(cl_g[k].len, inc - 32768u) >> 16) : 0u;   /* (faster than
                                                          * the line is written: started that much further back) */
-        cl_g[k].pos = ((fx.cl_w >> 1) - 200u - back - cl_rand() % (CL_LEN - 6000u - back)) << 16;
+        {   /* (V10.8.36, the owner: "always late, a strange delay") where it reads from: near the write head most often (the cloud starts with the note), else a
+             * 16th or a few behind it (the repeats on the tempo's grid, not anywhere in the last 0.47 s) */
+            uint32_t r = cl_rand(), q = r & 7u, s16 = beat_samples() >> 3, off = 48u + back + ((r >> 3) & 127u);
+            off += ((q * q) >> 4) * s16;                 /* 0 0 0 0 1 1 2 3 sixteenths (the line at half rate) */
+            if (off > CL_LEN - 6000u) off = 48u + back;
+            cl_g[k].pos = ((fx.cl_w >> 1) - off) << 16;
+        }
         cl_g[k].inc = inc + (cl_rand() % 129u) - 64u;   /* (the line at half rate; each grain
                                                          * a few cents off: a chorused shimmer, not one pitch) */
         cl_g[k].age = 0;
@@ -1475,6 +1501,9 @@ static __attribute__((noinline)) void rev_cloud(const int32_t *rev_in, int32_t *
                                                          * was, x2 at its output: 6 dB more room before ROOM's lines bend) */
         if (air > 0)                                     /* (AIR up: the grains' highs lifted) */
             g[i] += ((m - fx.cl_lp) * air) / 24;
+        out[i] += g[i] >> 1;                             /* (the grains themselves, under the bloom) */
+        g[i] += rev_in[i] >> 3;                          /* (V10.8.36) the send straight into the network too: the bloom
+                                                         * starts with the note, the grains come into it */
         t[i] = 0;
         if (wd) {                                        /* the grains' own place, left and right (a side) */
             int32_t sd = ((l - r) * wd) >> 9;
@@ -1491,7 +1520,7 @@ static __attribute__((noinline)) void rev_cloud(const int32_t *rev_in, int32_t *
     else
         rev_room(g, t, n);
     for (i = 0; i < n; i++) {
-        out[i] += t[i] * 3 + (g[i] >> 1);                /* the bloom (+3.5 dB, 0.5.1), the grains themselves under it */
+        out[i] += t[i] * 2;                              /* (V10.8.36: x2, was x3: SIZE high clipped) the bloom */
         shim_fb[i] = t[i];                               /* (the tail into the line, next block) */
     }
 }
@@ -1628,11 +1657,13 @@ static __attribute__((noinline)) void cho_lfo(uint32_t ph, int32_t depth, int32_
     r[1] = ((420 << 8) + ((osc_sine(ph + 0x55555555u) + 32768) * depth >> 8)) << 6;
     r[2] = ((540 << 8) + ((osc_sine(ph + 0xAAAAAAAAu) + 32768) * depth >> 8)) << 6;
 }
-static inline int32_t cho_ens(const int16_t *buf, uint32_t w, const int32_t *r, int32_t *sd)
+static inline int32_t cho_ens(const int16_t *buf, uint32_t w, const int32_t *r, int32_t *sd, int32_t wo)
 {
     int32_t a = cho_tap(buf, w, r[0] >> 6), b = cho_tap(buf, w, r[1] >> 6), c = cho_tap(buf, w, r[2] >> 6);
     *sd = a - b;
-    return ((a + b + c) * 21845) >> 15;                 /* (x2 / 3 each: the sum at x2, as the one tap was) */
+    return (a * (65535 - 2 * wo) + (b + c) * wo) >> 15;   /* (x2 / 3 each: the sum at x2, as the one tap was; V10.8.36:
+                                                         * wo the other two's share, 21845 the ensemble, 0 (MIX 100) the
+                                                         * first tap alone: one voice, a vibrato) */
 }
 
 /* process the three buses for one block; sends in, wet stereo-equal out */
@@ -2053,6 +2084,8 @@ static inline __attribute__((always_inline)) void fx_buses(const int32_t *cho_in
     int32_t cho = sys_load != LOAD_ECO && cho_run;                /* (0.6.30) LOAD ECO: no chorus */
     int32_t cs = song.g[G_CSTER], cw = 80 + wd / 2;    /* (0.6.9) the chorus's side: 0 as before, - to mono, + ~2x */
     cw = cs >= 0 ? cw + cs * 2 : (cw * (64 + cs)) >> 6;
+    int32_t cwo = (100 - cho_mix) * 21845 / 100;        /* (V10.8.36) CHORUS MIX: towards one voice, in the middle */
+    cw = cw * (100 - cho_mix) / 100;
 #ifndef FX_REST_OFF                                     /* (tests/fx_rest_test.c: the reference without it) */
     if (!any && fx.primed && fx_rest(wet, n, cinc, cdepth, cw, dmix)) {   /* (cpu5) at rest: not run */
         fx.db_t = 0; fx.db_a = 0;                       /* (snd2: the tail gone, THROW's band with it) */
@@ -2093,6 +2126,7 @@ static inline __attribute__((always_inline)) void fx_buses(const int32_t *cho_in
     /* .. and the chorus's DEPTH, its width and the delay's MIX glide across the block (a quarter of the way) */
     dcd = fx_glide(fx.cd_cur, cdepth, n);
     dcw = fx_glide(fx.cw_cur, cw, n);
+    if (cho_mix && !dcw) fx.cw_cur = cw;                /* (V10.8.36: the glide's last steps, so that MIX 100 is the middle alone) */
     ddm = fx_glide(fx.dm_cur, dmix, n);
     dly_wow_adv(n, &wm, &dwm);
     if (tone_set(&rtn, song.g[G_RFILT], 121, 50, 14, 79, 1600, 1)) {   /* (JIANT) the reverb's tone: FILT < 0 a low-pass (~12 kHz ..
@@ -2147,7 +2181,7 @@ static inline __attribute__((always_inline)) void fx_buses(const int32_t *cho_in
                 cdr[0] = (ce[0] - cr[0]) >> clg; cdr[1] = (ce[1] - cr[1]) >> clg; cdr[2] = (ce[2] - cr[2]) >> clg;
             }
             cr[0] += cdr[0]; cr[1] += cdr[1]; cr[2] += cdr[2];
-            y += cho_ens(cho_buf, fx.cho_w, cr, &sd);
+            y += cho_ens(cho_buf, fx.cho_w, cr, &sd, cwo);
             sd = (sd * fx.cw_cur) >> 7;
             side += sd;
         }
@@ -2501,6 +2535,12 @@ static inline __attribute__((always_inline)) void mix_part(track_t *t, uint32_t 
         dgl = ((4096 - (mp_pan[ti] > 0 ? mp_pan[ti] >> 2 : 0)) - gl) >> CTL_LOG2;
         dgr = ((4096 + (mp_pan[ti] < 0 ? mp_pan[ti] >> 2 : 0)) - gr) >> CTL_LOG2;
         int32_t c = t->p[P_CHOR] * 258, d = t->p[P_DLY] * 258, r = t->p[P_REV] * 258, pk = t->peak;
+        if (cho_mix && c) {                             /* (V10.8.36, the owner) CHORUS MIX: the part's dry down by what it
+                                                         * sends to the chorus (MIX 100 and the send whole: the chorus
+                                                         * alone, a vibrato) */
+            int32_t f = 4096 - ((cho_mix * t->p[P_CHOR] * 165) >> 9);
+            gl = (gl * f) >> 12; gr = (gr * f) >> 12; dgl = (dgl * f) >> 12; dgr = (dgr * f) >> 12;
+        }
         int32_t xmax = c > d ? c : d, *ol = c1 ? c1_mix.l : mix_l, *or_ = c1 ? c1_mix.r : mix_r;
         int32_t *sc = c1 ? c1_mix.c : send_c, *sd = c1 ? c1_mix.d : send_d, *sr = c1 ? c1_mix.rv : send_r;
         if (slicer_routes((uint32_t)(t - trk))) {       /* (JIANT 0.6.3) into the SLICER's bus, not the dry mix */

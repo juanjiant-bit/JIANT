@@ -677,6 +677,10 @@ static int16_t trks_ui;
 #define G_LOADP 0xFDu
 /* (0.7.6) a track page's slot holding the global ALL TR (G_STRN): SCL's KNOB 4, where TRANS was (page_desc) */
 #define ID_ALLTR 0xFCu
+#define ID_DNZ 0xE5u                                    /* (V10.8.36) a track's DIST NOISE (fx.c dnz_v) */
+extern int16_t dnz_v[NTRK];
+#define ID_CMIX 0xE6u                                   /* (V10.8.36) FX > CHORUS's MIX (fx.c cho_mix); both in MUTATE's old ids */
+extern int16_t cho_mix;
 #define ID_GAIN 0xDFu                                   /* (V10.7.64) a track's GAIN (trk_gain) */
 static int16_t trk_gain[NTRK] __attribute__((section(".bss.tape")));   /* (V10.7.64, the owner: GAIN, not DRIVE)
                                                          * 0..12 dB clean on the track's level (fx.c) */
@@ -746,7 +750,7 @@ static const page_t PAGES[] = {
                                                          * (0.7.6) FX's second page, at hand (was after SL PITCH) */
     {"TAPE", FAM_FX, SC_GLOBAL, GR_NONE, {ID_TAPE, ID_TWOW, 0xFF, 0xFF}},
     {"EQ", FAM_FX, SC_GLOBAL, GR_NONE, {ID_EQ0, ID_EQ0 + 1u, ID_EQ0 + 2u, ID_EQ0 + 3u}},   /* (p9) the master's EQ, last */   /* (0.9.9-snd8) the master's tape, after MASTER */
-    {"DIST", FAM_FX, SC_TRACK, GR_NONE, {P_DIST, P_DTYPE, P_DTONE, 0xFF}},   /* JIANT: the drive's type and tone */
+    {"DIST", FAM_FX, SC_TRACK, GR_NONE, {P_DIST, P_DTYPE, P_DTONE, ID_DNZ}},   /* (V10.8.36) NOISE */   /* JIANT: the drive's type and tone */
     {"AUTO PAN", FAM_FX, SC_TRACK, GR_NONE, {P_APDEP, P_APRATE, P_APSYNC, P_APWAVE}},   /* (JIANT 0.6.9) the track's pan swung */
     {"BUSES", FAM_FX, SC_GLOBAL, GR_BUSES, {G_DMIX, G_RSIZE, G_CDEPTH, G_SLDEP}},   /* (0.8.5) FX's lens: the buses' main values */
     {"DLY", FAM_FX, SC_GLOBAL, GR_NONE, {G_DTIME, G_DFDBK, G_DCOLOR, G_DMIX}},
@@ -755,7 +759,7 @@ static const page_t PAGES[] = {
                                                                                  * in DLY's TONE; G_DHPF stored, unused) */
     {"REVERB", FAM_FX, SC_GLOBAL, GR_NONE, {G_RTYPE, G_RSIZE, G_RDAMP, G_RPRE}},   /* TYPE: ROOM / SPRING */
     {"REVERB 2", FAM_FX, SC_GLOBAL, GR_NONE, {G_RMOD, G_RRATE, G_RFILT, G_RWIDE}},   /* JIANT: modulation, tone, width */
-    {"CHORUS", FAM_FX, SC_GLOBAL, GR_NONE, {G_CRATE, G_CDEPTH, G_CSTER, 0xFF}},   /* (0.6.9: STEREO) */
+    {"CHORUS", FAM_FX, SC_GLOBAL, GR_NONE, {G_CRATE, G_CDEPTH, G_CSTER, ID_CMIX}},   /* (V10.8.36) MIX */   /* (0.6.9: STEREO) */
     /* (0.6.81) the SLICER after the buses, before MASTER: DELAY, REVERB and CHORUS nearer at hand */
     {"SLICER", FAM_FX, SC_GLOBAL, GR_SLCR, {G_SLMODE, G_SLPAT, G_SLRATE, G_SLDEP}},   /* (0.6.3) one, on a bus */
     {"SL BUS", FAM_FX, SC_GLOBAL, GR_SLCR, {G_SLT1, G_SLT1 + 1, G_SLT1 + 2, G_SLT1 + 3}},   /* what goes in */
@@ -966,6 +970,16 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
         static const param_desc_t TGAIN_DESC = {"GAIN", F_INT, 0, 12, 0, 0};
         *valp = &trk_gain[(uint32_t)(TSEL - trk) % NTRK];
         return &TGAIN_DESC;
+    }
+    if (id == ID_CMIX) {                              /* (V10.8.36) FX > CHORUS's MIX: chorus .. vibrato */
+        static const param_desc_t CMIX_DESC = {"MIX", F_PCT, 0, 100, 0, 0};
+        *valp = &cho_mix;
+        return &CMIX_DESC;
+    }
+    if (id == ID_DNZ) {                               /* (V10.8.36) FX > DIST's NOISE */
+        static const param_desc_t DNZ_DESC = {"NOISE", F_PCT, 0, 127, 0, 0};
+        *valp = &dnz_v[(uint32_t)(TSEL - trk) % NTRK];
+        return &DNZ_DESC;
     }
     if (id == ID_ALLTR) {                             /* (0.7.6) SCL's KNOB 4: the global ALL TR on the track page */
         *valp = &song.g[G_STRN];

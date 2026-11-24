@@ -68,6 +68,10 @@ jobs:
           set -euo pipefail
           cc -O2 -w -Ibuild/gen -Ifirmware/src tests/regress.c -lm -o build/song-check/regress
           build/song-check/regress tests/golden.txt tests/cpu_baseline.txt | tee build/song-check/regress.log
+          cc -O1 -w -Ibuild/gen -Ifirmware/src tests/dist_noise_test.c -lm -o build/song-check/dist-noise
+          build/song-check/dist-noise | tee build/song-check/dist-noise.log
+          cc -O1 -w -Ibuild/gen -Ifirmware/src tests/chorus_mix_test.c -lm -o build/song-check/chorus-mix
+          build/song-check/chorus-mix | tee build/song-check/chorus-mix.log
           cc -O1 -w -Ibuild/gen -Ifirmware/src tests/west_test.c -lm -o build/song-check/west
           build/song-check/west | tee build/song-check/west.log
           for test in audio perform upreset; do

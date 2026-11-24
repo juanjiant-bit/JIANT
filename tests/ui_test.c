@@ -4278,8 +4278,29 @@ static int test_layer(void)
         memset(dx_mot, 0, 4);
     }
     go_title("CHORUS");
-    bad += check("  CHORUS page: CRT CDP STER (0.6.9)", cur_page()->fam == FAM_FX && cur_page()->id[0] == G_CRATE &&
-                 cur_page()->id[1] == G_CDEPTH && cur_page()->id[2] == G_CSTER && cur_page()->id[3] == 0xFFu);
+    bad += check("  CHORUS page: CRT CDP STER (0.6.9), MIX (V10.8.36)", cur_page()->fam == FAM_FX && cur_page()->id[0] == G_CRATE &&
+                 cur_page()->id[1] == G_CDEPTH && cur_page()->id[2] == G_CSTER && cur_page()->id[3] == ID_CMIX);
+    {   /* (V10.8.36) CHORUS's MIX and DIST's NOISE: their knobs, a project keeps them, an empty one has none */
+        int ok;
+        cho_mix = 0;
+        turn(EN_K4, 3);
+        ok = cho_mix > 0 && cho_mix <= 100;
+        cho_mix = 70;
+        go_title("DIST");
+        ok &= cur_page()->id[3] == ID_DNZ;
+        dnz_v[TSEL - trk] = 0;
+        turn(EN_K4, 3);
+        ok &= dnz_v[TSEL - trk] > 0;
+        dnz_v[TSEL - trk] = 90;
+        song.playing = 0;
+        project_save(2);
+        cho_mix = 0; dnz_v[TSEL - trk] = 0;
+        project_load(2);
+        bad += check("  CHORUS MIX and DIST NOISE: KNOB 4 turns them, a project keeps them (V10.8.36)",
+                     ok && cho_mix == 70 && dnz_v[TSEL - trk] == 90);
+        cho_mix = 0; dnz_v[TSEL - trk] = 0;
+        project_save(2);
+    }
     /* chording: a key held before FX stays a note, its note-off arrives */
     ui_power_on();
     mo = mo_w;

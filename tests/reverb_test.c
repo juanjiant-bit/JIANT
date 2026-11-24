@@ -110,7 +110,7 @@ static void ref_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_
                 for (k = 0; k < 3u; k++) cdr[k] = (ce[k] - cr[k]) >> clg;
             }
             for (k = 0; k < 3u; k++) cr[k] += cdr[k];
-            y += cho_ens(ref_cho, rf.cho_w, cr, &sd);
+            y += cho_ens(ref_cho, rf.cho_w, cr, &sd, 21845);
             (void)r;
         }
         rf.cho_w++;
