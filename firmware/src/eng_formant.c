@@ -505,8 +505,8 @@ static const preset_t FORMANT_PRESETS[] = {
     {"CHOIR AAH", {0, 0, 0, 0, 40, 22, 60, 0}, {85, 90, 115, 95}, 0, TAG(VOX), FX(0, 70, 15, 90), PAT(5),
      MODS(P_LWAVE, LW_DRIFT, P_LRATE, 36, P_LD_FLT, 6, MMOD(1, PS_MODW, PD_CUT, 40))},   /* the vowel breathes; MODW: OOH */
     {"VOX LEAD", {32, 0, 0, 2, 90, 8, 72, 0}, {6, 70, 105, 55}, 0, 1 | TAG(VOX), FX(0, 20, 45, 40), PAT(4),
-     MODS(P_LRATE, 88, P_LFADE, 70, MMOD(1, PS_MODW, PD_VIB, 2))},          /* the wheel brings a vibrato in */
-    {"WOW BASS", {95, 0, 68, 0, 100, 0, 80, 0}, {0, 60, 80, 28}, 0, 1 | TAG(BASS), FX(10, 0, 10, 10), PAT(8),
+     MODS(P_LRATE, 88, P_LFADE, 70, MMOD(1, PS_MODW, PD_VIB, 2), P_LD_PIT, 1)},   /* the wheel brings a vibrato in */
+    {"WOW BASS", {95, 0, 68, 0, 100, 0, 80, 0}, {0, 60, 80, 28}, 0, 1 | TAG(BASS), FX(10, 0, 0, 5), PAT(8),
      MODS(P_GLIDE, 18, MMOD(1, PS_VEL, PD_SHP, 30))},                                     /* a harder note buzzes */
     {"INIT VOWEL", {0, 64, 0, 0, 64, 10, 64, 0}, {2, 64, 127, 30}, 0, TAG(VOX), FX(0, 0, 0, 0)},
     {"OOH PAD", {80, 100, 50, 0, 55, 25, 55, 0}, {70, 90, 115, 95}, 0, TAG(VOX), FX(0, 60, 25, 85), PAT(5),
@@ -519,12 +519,10 @@ static const preset_t FORMANT_PRESETS[] = {
      * (0.9.8) the singers' REL longer (~190 ms to -40 dB, was ~70): a syllable's vowel carries on into the next note's
      * consonant, as sung, not cut off by the step's gate; their ATK ~5 ms (was ~1.5): a voice's onset, no tick.
      * (V10.6i) their own vibrato kept (none on PITCH from here): AT / MODW on the voice (BUZZ BREATH Q) */
-    {"CANTOR ES", {0, 64, 0, 0, 80, 6, 72, 0}, {24, 70, 112, 72}, 0, 1 | TAG(VOX), FX(0, 10, 30, 35), PAT(4), WORDS(LG_ES, 1),
-     MODS(MMOD(1, PS_AT, PD_SHP, 30))},
+    {"CANTOR ES", {0, 64, 0, 0, 80, 6, 72, 0}, {24, 70, 112, 72}, 0, 1 | TAG(VOX), FX(0, 10, 30, 35), PAT(4), WORDS(LG_ES, 1), .mod = R_ATSHP},
     {"CANTORA ES", {0, 0, 0, 4, 70, 10, 74, 0}, {26, 70, 112, 72}, 0, 1 | TAG(VOX), FX(0, 15, 30, 45), PAT(4), WORDS(LG_ES, 2),
      MODS(MMOD(1, PS_MODW, PD_E(5), 40))},
-    {"SINGER EN", {0, 64, 0, 0, 84, 6, 72, 0}, {24, 70, 112, 72}, 0, 1 | TAG(VOX), FX(0, 10, 30, 35), PAT(4), WORDS(LG_EN, 3),
-     MODS(MMOD(1, PS_AT, PD_SHP, 30))},
+    {"SINGER EN", {0, 64, 0, 0, 84, 6, 72, 0}, {24, 70, 112, 72}, 0, 1 | TAG(VOX), FX(0, 10, 30, 35), PAT(4), WORDS(LG_EN, 3), .mod = R_ATSHP},
     {"UTA JA", {0, 48, 0, 5, 76, 8, 74, 0}, {24, 70, 112, 70}, 0, 1 | TAG(VOX), FX(0, 15, 30, 40), PAT(4), WORDS(LG_JA, 4),
      MODS(MMOD(1, PS_MODW, PD_E(6), 40))},
     {"WORD CHOIR", {0, 64, 16, 0, 45, 20, 62, 0}, {60, 90, 115, 85}, 0, TAG(VOX), FX(0, 70, 15, 90), PAT(5), WORDS(LG_ES, 5),

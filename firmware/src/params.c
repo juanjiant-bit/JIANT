@@ -881,7 +881,7 @@ static const page_t PAGES[] = {
                                                          * old RAILS page gone (the two were nearly the same) */
     {"TIMELINE", FAM_SAVE, SC_GLOBAL, GR_SONG, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (add15) the song as lanes (was ARRANGE 2): a row's tracks, the section each
                                                          * plays from (song_chain.c row_src; ui_input.c song_trk_knob) */
-    {"MUTATE", FAM_SEQ, SC_TRACK, GR_EUCLID, {ID_MU0, 0xFF, 0xFF, 0xFF}},   /* (V10.8.35: back, its EVERY alone) */
+    {"MUTATE", FAM_SEQ, SC_TRACK, GR_EUCLID, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (V10.8.37: out of the chain, its row kept: the index; EVERY on EUCLID, OCT+ held + KNOB 4) */
     {"ENV 2", FAM_ENV, SC_TRACK, GR_ADSR, {P_E2ATK, P_E2DEC, P_E2SUS, P_E2REL}},   /* (V10.22) a second ADSR, a MOD
                                                          * source (SRC ENV2) */   /* (V10.16) EUCLID's
                                                          * mutations on the bar: EVERY AMOUNT MODE WHAT */
@@ -1032,8 +1032,6 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
         id += ms_ui_step & 15u;
     if (id >= ID_EU0 && id < ID_EU0 + 8u)            /* (V10.6) EUCLID's and MODES' views (ui_euclid.c eu_put) */
         return eu_desc(id - ID_EU0, valp);
-    if (id == ID_MU0)                                /* (V10.8.35) MUTATE's EVERY */
-        return eu_desc(8u, valp);
     if (id >= ID_SC0 && id < ID_SC0 + 4u)            /* (V10.25) SCENE's */
         return sc_desc(id - ID_SC0, valp);
     if (id >= ID_CL0 && id <= ID_CL0 + CL_SEL)        /* (V10.8.21) DRONE CLAY's (seq.c clay.c clay_page_desc) */

@@ -306,8 +306,7 @@ static const preset_t WEST_PRESETS[] = {
     {"ARCADE", {100, 40, 50, 16, 80, 56, 30, 0}, {0, 80, 0, 50}, 0, TAG(FX), FX(0, 0, 10, 20), PAT(3),
      MODS(MENV2(0, 40, 0, 30), MMOD(1, PS_ENV2, PD_PITCH, 63), MMOD(2, PS_RAND, PD_E(3), 20))},
     /* clangorous: a triangle core at a bar's second mode, folded hard with DUST's METAL (V10.8.28: NOISE's META 93) */
-    {"METAL", {85, 30, 75, 23, 96, 76, 30, 104}, {0, 75, 127, 70}, 10, TAG(FX), FX(0, 20, 30, 45), PAT(7),
-     MODS(MMOD(1, PS_VEL, PD_CUT, 20))},
+    {"METAL", {85, 30, 75, 23, 96, 76, 30, 104}, {0, 75, 127, 70}, 10, TAG(FX), FX(0, 20, 30, 45), PAT(7), .mod = R_VELCUT},
     {"SEA", {0, 0, 0, 1, 0, 104, 30, 95}, {100, 90, 120, 110}, 0, TAG(FX), FX(0, 20, 20, 80), PAT(5),
      MODS(P_LRATE, 10, P_LD_FLT, 20, P_LD_AMP, 30)},
     {"HISS PAD", {20, 0, 0, 1, 30, 120, 60, 90}, {80, 90, 105, 100}, 0, TAG(PAD), FX(0, 40, 30, 85), PAT(5),
@@ -316,25 +315,24 @@ static const preset_t WEST_PRESETS[] = {
     {"TAPE AIR", {0, 0, 0, 1, 20, 100, 20, 80}, {90, 90, 115, 110}, 0, TAG(FX), FX(0, 30, 25, 70), PAT(5),
      MODS(P_LWAVE, LW_DRIFT, P_LRATE, -1, P_LD_FLT, 10)},
     /* (V10.7.36, revoiced V10.7.37) the west coast. A sine core folded, the gate pinged: the classic pluck */
-    {"WEST PLUCK", {52, 12, 0, 1, 64, 68, 30, 0}, {0, 64, 127, 80}, 0, TAG(PLUCK), FX(0, 0, 25, 30), PAT(3)},
+    {"WEST PLUCK", {43, 12, 0, 1, 64, 68, 30, 0}, {0, 64, 127, 80}, 0, TAG(PLUCK), FX(0, 0, 35, 25), PAT(3), .mod = R_STRUCK},
     /* the bongo: a gate pinged short and resonant (its knock falls in pitch with the light), the core barely
      * folded, a fifth above it in the FM */
-    {"BONGO", {16, 0, 22, 3, 64, 50, 100, 0}, {0, 64, 127, 70}, 0, TAG(PLUCK), FX(0, 0, 10, 25), PAT(6)},
+    {"BONGO", {7, 0, 22, 3, 64, 50, 100, 0}, {0, 64, 127, 70}, 0, TAG(DRUM), FX(0, 0, 10, 25), PAT(6), .mod = R_STRUCK},
     /* a wooden bar: the 4th partial from the modulator, the gate mostly a low-pass, a soft mallet */
-    {"MARIMBA", {10, 0, 34, 10, 56, 66, 18, 0}, {0, 64, 110, 85}, 0, TAG(KEYS), FX(0, 0, 15, 35), PAT(3)},
+    {"MARIMBA", {1, 0, 34, 10, 56, 66, 18, 0}, {0, 64, 110, 85}, 0, TAG(BELL), FX(0, 0, 15, 35), PAT(3), .mod = R_STRUCK},
     /* a struck bell: 1.41 (inharmonic), the gate mostly a VCA (it stays bright as it rings), a long memory */
-    {"WEST BELL", {12, 0, 70, 2, 104, 78, 0, 0}, {0, 64, 127, 100}, 0, TAG(BELL), FX(0, 0, 20, 55), PAT(7)},
+    {"WEST BELL", {3, 0, 70, 2, 104, 78, 0, 0}, {0, 64, 127, 100}, 0, TAG(BELL), FX(0, 0, 20, 55), PAT(7), .mod = R_STRUCK},
     /* bronze: a free bar's 2.76 in the FM, folded asymmetric, the gate rings long */
-    {"GAMELAN", {34, 24, 52, 7, 84, 74, 22, 0}, {0, 64, 127, 100}, 0, TAG(BELL), FX(0, 10, 25, 50), PAT(7)},
+    {"GAMELAN", {25, 24, 52, 7, 84, 74, 22, 0}, {0, 64, 127, 100}, 0, TAG(BELL), FX(0, 10, 25, 50), PAT(7), .mod = R_STRUCK},
     /* a triangle core folded (Serge), the gate a low-pass mostly: it growls and closes */
-    {"FOLD BASS", {70, 30, 8, 17, 36, 70, 34, 0}, {0, 64, 100, 60}, 0, 1 | TAG(BASS), FX(0, 0, 0, 10), PAT(2)},
+    {"FOLD BASS", {54, 30, 8, 17, 36, 70, 34, 0}, {0, 64, 100, 60}, 0, 1 | TAG(BASS), FX(0, 0, 0, 5), PAT(2), .mod = R_WFOLD},
     /* the octave below in the FM, a resonant low-pass gate: it bounces */
-    {"RUBBER BASS", {26, 0, 48, 0, 16, 52, 84, 0}, {0, 64, 64, 50}, 0, 1 | TAG(BASS), FX(0, 0, 0, 5), PAT(2)},
+    {"RUBBER BASS", {10, 0, 48, 0, 16, 52, 84, 0}, {0, 64, 64, 50}, 0, 1 | TAG(BASS), FX(0, 0, 0, 5), PAT(2), .mod = R_WFOLD},
     /* a held line: the triangle core folded, the cell kept lit while held (DECAY 112), MODW folds it */
-    {"WEST LEAD", {48, 20, 14, 21, 64, 112, 26, 0}, {0, 64, 100, 60}, 0, 1 | TAG(LEAD), FX(0, 10, 30, 30), PAT(4),
-     MODS(P_GLIDE, 12, MMOD(1, PS_MODW, PD_E(0), 40))},
+    {"WEST LEAD", {32, 20, 14, 21, 64, 112, 26, 0}, {0, 64, 100, 60}, 0, 1 | TAG(LEAD), FX(0, 10, 30, 22), PAT(4), .mod = R_WFOLD},
     /* the sine folded to its limit and offset, pressure folds it, a vibrato */
-    {"FOLD LEAD", {82, 46, 20, 1, 60, 120, 36, 0}, {0, 64, 92, 55}, 0, 1 | TAG(LEAD), FX(10, 0, 25, 25), PAT(4),
+    {"FOLD LEAD", {82, 46, 20, 1, 60, 120, 36, 0}, {0, 64, 92, 55}, 0, 1 | TAG(LEAD), FX(10, 0, 30, 22), PAT(4),
      MODS(MMOD(1, PS_AT, PD_E(0), 35), MLFO(LW_SIN, 50, 6, 0))},
     /* the folds breathing slowly (the LFO on SHP), a triangle core through a low-pass gate held open */
     {"FOLD DRONE", {56, 10, 12, 21, 28, 127, 30, 0}, {70, 64, 60, 90}, 0, TAG(PAD), FX(0, 30, 30, 80), PAT(5),

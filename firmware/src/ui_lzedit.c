@@ -61,6 +61,7 @@ static int32_t ed_resp(uint32_t ty, int32_t x, int32_t xc, int32_t res)
     y = ty == 0u ? (d > 0 ? 2 * d : 0) : ty == 1u ? (d < 0 ? 2 * a : 0) : 2 * a / 3;   /* LP HP BP */
     return clamp(62 + y - bump - (ty == 2u ? pk / 3 : 0), 8, 104);
 }
+static const char *const KT_N[4] = {"", "KEY TRK 50", "KEY TRK 100", "KEY TRK NOTE"};   /* (V10.8.37) */
 static void graph_filter_lz(const track_t *t, const page_t *pg)
 {
     static const char *const FX[3] = {"100", "1k", "10k"};
@@ -90,6 +91,8 @@ static void graph_filter_lz(const track_t *t, const page_t *pg)
     str_cpy(b, N_FTYPE[ty], 32);
     str_cpy(b + str_len(b), trk_eng(t) == 0u ? " \xB7 PER VOICE" : " \xB7 ON THE PART", 32 - str_len(b));
     ed_cap(10, 6, b, T_TEXT);
+    if (kt_v[song.sel % NTRK])                          /* (V10.8.37) KEY TRK, a tag on the curve */
+        cv_text_r(226, 22 - AF_X_CAP_Y, &AF_X, KT_N[kt_v[song.sel % NTRK]], T_ACCENT, T_SURF);
     d = page_desc(pg, 3, &vp);
     if (d) {
         const char *u = "";

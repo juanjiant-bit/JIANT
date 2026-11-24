@@ -618,7 +618,8 @@ static int page_visible(uint32_t i)
 {
     if (PAGES[i].graph == GR_SONG && (PAGES[i].fam == FAM_SEQ || (PAGES[i].title[0] == 'T' && PAGES[i].title[1] == 'I')))
         return 0;                                       /* (V10.8: TIMELINE, PARTS gone, the song mode's redesign) */
-    if (PAGES[i].graph == GR_LIVE || PAGES[i].graph == GR_SHAPE || PAGES[i].graph == GR_GCOMP || PAGES[i].graph == GR_STAGE)
+    if (PAGES[i].graph == GR_LIVE || PAGES[i].graph == GR_SHAPE || PAGES[i].graph == GR_GCOMP || PAGES[i].graph == GR_STAGE ||
+        (PAGES[i].graph == GR_EUCLID && PAGES[i].id[0] == 0xFFu))   /* (V10.8.37: MUTATE's row, EVERY on EUCLID) */
         return 0;                                       /* (V10.8.3: GLO > LIVE, V10.8.20: SEQ > STRETCH, V10.8.21: GLO >
                                                          * G.COMP, V10.8.35: ENV > STAGE gone for the flash (the owner);
                                                          * kept in the table: their index) */

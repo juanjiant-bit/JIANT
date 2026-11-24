@@ -889,13 +889,13 @@ static int test_eumutate(void)
         if (m->step[i].time == ST_NOTE && m->step[i].n) { n++; c += (SCALE_MASK[2] >> (m->step[i].note[0] % 12u)) & 1u; }
     ok &= n == 4u * eu[1].l[0].h && c == n;
     bad += check("V10.16 VARY on a melody: four turns, the motif answered (notes in the key, HITS in each turn)", ok);
-    {   /* (V10.8.35, the owner) MUTATE back, compact: its page (EVERY alone) in SEQ; on EUCLID OCT+ a mutation now (from
-         * the anchor, as far as VARY), OCT- the anchor again; on the bar while it plays, every EVERY bars */
-        uint32_t i2, vis = 0, a0, a1, a2;
+    {   /* (V10.8.35, the owner) MUTATE back, compact; (V10.8.37, the owner) without a page: on EUCLID OCT+ let go a
+         * mutation now (from the anchor, as far as VARY), OCT- the anchor again; OCT+ held and KNOB 4 its EVERY (a tag,
+         * no mutation when let go); on the bar while it plays, every EVERY bars */
+        uint32_t i2, vis = 0, a0, a1, a2, ub = 1u << panel.btn[B_OCTUP];
         step_t was[NSTEP];
-        const param_desc_t *dd; int16_t *vp;
-        for (i2 = 0; i2 < NPAGES; i2++) if (PAGES[i2].id[0] == ID_MU0) vis |= (uint32_t)page_visible(i2);
-        ok = vis != 0;
+        for (i2 = 0; i2 < NPAGES; i2++) if (str_eq(PAGES[i2].title, "MUTATE")) vis |= (uint32_t)page_visible(i2);
+        ok = !vis;
         eu_put(EK_M0 + 3u, 40); frame();
         eu_put(EK_HITS, 6); frame();
         memcpy(was, m->step, sizeof was);
@@ -907,19 +907,68 @@ static int test_eumutate(void)
         ok &= msg_is("MUTATED") && a1 >= 5u;
         eu_oct(0, 1); frame();
         ok &= msg_is("ANCHOR") && eu_cyc_sig(m, 0, 16, NLANE) == a0;   /* (the notes; a rest's stale bytes aside) */
-        go_title("MUTATE"); frame();
-        ok &= str_eq(cur_page()->title, "MUTATE");
-        dd = page_desc(cur_page(), 0, &vp);
-        ok &= dd && str_eq(dd->label, "EVERY") && dd->max == 4 && !page_desc(cur_page(), 1, &vp);
-        eu_put(EK_U0, 1); frame();                       /* EVERY 1 BAR */
-        ok &= eu[1].mu[0] == 1u;
+        go_title("EUCLID"); frame();
+        ok &= str_eq(cur_page()->title, "EUCLID");
+        ui.msg_t = 0;
+        fm1_in.buttons |= ub; host_pressed |= ub; frame();   /* OCT+ down: nothing yet */
+        ok &= !msg_is("MUTATED") && eu_cyc_sig(m, 0, 16, NLANE) == a0;
+        fm1_in.buttons &= ~ub; frame();                  /* let go: a mutation */
+        ok &= msg_is("MUTATED");
+        press(B_OCTDN);
+        ok &= msg_is("ANCHOR") && eu_cyc_sig(m, 0, 16, NLANE) == a0;
+        fm1_in.buttons |= ub; host_pressed |= ub; frame();   /* OCT+ held, KNOB 4: EVERY 1 BAR (ROLE as it was) */
+        i2 = eu[1].role;
+        turn(EN_K4, 1);
+        ok &= eu[1].mu[0] == 1u && eu[1].role == i2;
+        ui.msg_t = 0;
+        fm1_in.buttons &= ~ub; frame();                  /* let go: no mutation */
+        ok &= !msg_is("MUTATED") && eu_cyc_sig(m, 0, 16, NLANE) == a0;
+        turn(EN_K4, 1);                                  /* (not held: ROLE again) */
+        ok &= eu[1].mu[0] == 1u && eu[1].role != i2;
+        turn(EN_K4, -1);
         song.playing = 1; bar_n = 0; beat_n = 3; beat_pos = beat_samples() - 1u;
         eu_tick();
         ok &= eu_cyc_sig(m, 0, 16, NLANE) != a0 || memcmp(was, m->step, sizeof was);
         eu_tick();                                       /* (once a bar) */
         song.playing = 0; eu_tick();
-        eu_put(EK_U0, 0); frame();
-        bad += check("V10.8.35 MUTATE compact: its page (EVERY), OCT+ on EUCLID mutates from the anchor, OCT- the anchor; on the bar", ok);
+        eu[1].mu[0] = 0;
+        bad += check("V10.8.37 MUTATE without a page: OCT+ let go mutates, OCT- the anchor, OCT+ held + KNOB 4 EVERY; on the bar", ok);
+    }
+    {   /* (V10.8.37) EDIT > FILTER's KEY TRK: OCT+ held + KNOB 2 (CUT's) OFF 50 100 NOTE, the cutoff as it was; OCT+ alone
+         * the keys' octave still (when let go); per track, with the project ('D' 'N'); a project without it OFF */
+        uint32_t ub = 1u << panel.btn[B_OCTUP], ti = song.sel % NTRK, id, sl = live.cur >= 0 ? (uint32_t)live.cur & 3u : 0u;   /* (the section's own slot) */
+        int ok, cut, oct;
+        ui.home = 0; ui.menu = 0;
+        go_title("FILTER"); frame();
+        ok = cur_page()->id[0] == P_FTYPE;
+        id = cur_page()->id[1];                              /* (CUT: ANALOG's own, else the part's) */
+        memset(kt_v, 0, sizeof kt_v);
+        TSEL->p[id] = 90;
+        cut = TSEL->p[id]; oct = song.octave;
+        fm1_in.buttons |= ub; host_pressed |= ub; frame();   /* OCT+ down: no octave yet */
+        ok &= song.octave == oct;
+        turn(EN_K2, 2);
+        ok &= kt_v[ti] == 2u && TSEL->p[id] == cut;
+        turn(EN_K2, 5);
+        ok &= kt_v[ti] == 3u;                                /* (NOTE: the last) */
+        fm1_in.buttons &= ~ub; frame();                      /* let go: no octave (the knob turned) */
+        ok &= song.octave == oct && kt_v[(ti + 1u) % NTRK] == 0u;
+        turn(EN_K2, -1);                                     /* (not held: CUT again) */
+        ok &= kt_v[ti] == 3u && TSEL->p[id] == cut - 1;
+        fm1_in.buttons |= ub; host_pressed |= ub; frame();   /* OCT+ alone: the octave, when let go */
+        fm1_in.buttons &= ~ub; frame();
+        ok &= song.octave == oct + 1 && kt_v[ti] == 3u;
+        song.octave = (int8_t)oct;
+        project_save(sl);
+        memset(kt_v, 0, sizeof kt_v);
+        project_load(sl);
+        ok &= kt_v[ti] == 3u && kt_v[(ti + 1u) % NTRK] == 0u;
+        memset(kt_v, 0, sizeof kt_v);
+        project_save(sl);                                     /* (none set: no block; a project of before) */
+        kt_v[ti] = 2;
+        project_load(sl);
+        ok &= kt_v[ti] == 0u;
+        bad += check("V10.8.37 KEY TRK: OCT+ held + KNOB 2 on FILTER (OFF 50 100 NOTE), OCT+ alone the octave; with the project", ok);
     }
     memset(eu, 0, sizeof eu);
     return bad;
@@ -7783,7 +7832,7 @@ static int test_lente(void)
 {
     /* (2463a3b, 2026-11-04, FIT / SPAN: SEQ > LENGTH > RHYTHM after LENGTH; 92fc1d7, 2026-11-05: the GENERATE tab at the
      * end (LYRIC STEP only on a VOICE track): 14 pages in eight tabs, was 12 in seven) */
-    static const char *const CH[17] = {"STEP", "LENGTH", "RHYTHM", "TRACK", "EUCLID", "MODES", "MUTATE", "PLAYHEADS",   /* (V10.8.35: MUTATE back) */
+    static const char *const CH[16] = {"STEP", "LENGTH", "RHYTHM", "TRACK", "EUCLID", "MODES", "PLAYHEADS",   /* (V10.8.37: MUTATE's page gone again) */
                                        "STEP FX", "STEP FX 2", "AUTOMATION", "AUTO LIST", "TRACK GEN", "DRONE CLAY",
                                        "CLAY MOD", "CLAY RHYTHM", "CLAY TIME"};   /* (V10.8.27: BYTE's four CLAY pages) */   /* (V10.8.21: DRONE CLAY) */   /* (V10.8.20: MUTATE, STRETCH gone) */   /* (V10.7.59: STEP FX,
                                                          * was COMP) (codex/coherence: TRACK
@@ -7795,26 +7844,26 @@ static int test_lente(void)
     TSEL->p[P_SLEN] = 64;
     open_family(FAM_SEQ); frame();
     ok = str_eq(cur_page()->title, "STEP") && lens_level() == LV_BAR && roll_view(cur_page()) && lz_tabs() == 8u &&
-         lz_tab_lit(0) && lz_crumb_is("SEQ \xB7 STEP \xB7 STEP") && lz_count_is("1/17");
+         lz_tab_lit(0) && lz_crumb_is("SEQ \xB7 STEP \xB7 STEP") && lz_count_is("1/16");
     turn(EN_SELECT, -1); frames(32);
-    ok &= str_eq(cur_page()->title, "STEP") && lz_count_is("1/17");                /* (the first: no wrap) */
+    ok &= str_eq(cur_page()->title, "STEP") && lz_count_is("1/16");                /* (the first: no wrap) */
     turn(EN_SELECT, 1); frames(32);
-    ok &= str_eq(cur_page()->title, "PATTERN") && seq_roll_view(cur_page()) && lz_tab_lit(1) && lz_count_is("2/17") &&
+    ok &= str_eq(cur_page()->title, "PATTERN") && seq_roll_view(cur_page()) && lz_tab_lit(1) && lz_count_is("2/16") &&
           lz_crumb_is("SEQ \xB7 PATTERN \xB7 LENGTH");                             /* (PATTERN, named LENGTH; codex/coherence:
                                                          * its group PATTERN) */
     turn(EN_SELECT, 1); frames(32);
-    ok &= str_eq(cur_page()->title, "RHYTHM") && lz_tab_lit(1) && lz_count_is("3/17");
+    ok &= str_eq(cur_page()->title, "RHYTHM") && lz_tab_lit(1) && lz_count_is("3/16");
     turn(EN_SELECT, 1); frames(32);
-    ok &= str_eq(cur_page()->title, "TRACK") && lz_tab_lit(1) && lz_count_is("4/17") &&
+    ok &= str_eq(cur_page()->title, "TRACK") && lz_tab_lit(1) && lz_count_is("4/16") &&
           lz_crumb_is("SEQ \xB7 PATTERN \xB7 TRACK");                              /* (TRACK under the PAT tab) */
-    turn(EN_SELECT, 5); frames(32);
-    ok &= str_eq(cur_page()->title, "COMP") && seq_roll_view(cur_page()) && lz_tab_lit(4) && lz_count_is("9/17") &&
+    turn(EN_SELECT, 4); frames(32);
+    ok &= str_eq(cur_page()->title, "COMP") && seq_roll_view(cur_page()) && lz_tab_lit(4) && lz_count_is("8/16") &&
           lz_crumb_is("SEQ \xB7 STEP FX \xB7 STEP FX");
     turn(EN_SELECT, 1); frames(32);
-    ok &= str_eq(cur_page()->title, "COMP 2") && lz_tab_lit(4) && lz_count_is("10/17");
+    ok &= str_eq(cur_page()->title, "COMP 2") && lz_tab_lit(4) && lz_count_is("9/16");
     bad += check("seq2 SEQ: enters at STEP (1/16, eight tabs: V10.8.21 DRONE CLAY); LENGTH the roll (seq2b), RHYTHM, TRACK under its tab, COMP the roll, COMP 2 after it", ok);
-    bad += check("seq2 SEQ: one chain of 17 by SELECT (no wrap); a SEQ tap the next tab's first, round",
-                 chain_walk(B_SEQ, CH, 17, TP, 7));
+    bad += check("seq2 SEQ: one chain of 16 by SELECT (no wrap); a SEQ tap the next tab's first, round",
+                 chain_walk(B_SEQ, CH, 16, TP, 7));
     {   /* (0.9.9-seq2b) every page of the chain the same picture: the bars' strip, the roll with its keys */
         static const char *const TI[10] = {"STEP", "PATTERN", "TRACK", "EUCLID", "MODES", "PLAYHEADS",
                                            "COMP", "COMP 2", "AUTOMATION", "AUTO LIST"};
@@ -7917,7 +7966,7 @@ static int test_lente(void)
     go_title("BAR"); frames(32);
     turn(EN_K1, 1);
     ok &= ui.bank == 1u;
-    turn(EN_SELECT, 7); frames(32);                                               /* (from BAR, LENGTH's place: COMP; V10.8.35: past MUTATE again;
+    turn(EN_SELECT, 6); frames(32);                                               /* (from BAR, LENGTH's place: COMP; V10.8.37: MUTATE's page gone again;
                                                                                     * 2463a3b: past RHYTHM) */
     ok &= seq_roll_view(cur_page()) && lens_level() == LV_STEP;
     bad += check("  DRUM: STEP is the grid (its keys); LENGTH the grid (seq2b), BAR (by code) KNOB 1 the bar; COMP the grid", ok);
@@ -13059,7 +13108,7 @@ static void tk_start(uint32_t from)                     /* 0 home, 1 seq, 2 fxdl
 }
 static int test_nav_tasks(void)
 {
-    static const uint8_t WANT[14] = {4, 3, 5, 6, 4, 9, 9, 2, 3, 1, 4, 7, 18, 4};   /* (V10.8.35: task 13 a detent more, MUTATE back) */   /* (V10.8.21: task 14 a GLO tap less) */   /* (V10.8.20: task 13 two detents less) */   /* (V10.8: task 5 by PRESETS, two fast turns) */   /* (V10.7.63: task 11 a detent less) */   /* (V10.7.63: task 5 a SAVE tap less) */   /* (2463a3b, 2026-11-04: SEQ > LENGTH >
+    static const uint8_t WANT[14] = {4, 3, 5, 6, 4, 9, 9, 2, 3, 1, 4, 7, 17, 4};   /* (V10.8.37: 17 again) */   /* (V10.8.35: task 13 a detent more, MUTATE back) */   /* (V10.8.21: task 14 a GLO tap less) */   /* (V10.8.20: task 13 two detents less) */   /* (V10.8: task 5 by PRESETS, two fast turns) */   /* (V10.7.63: task 11 a detent less) */   /* (V10.7.63: task 5 a SAVE tap less) */   /* (2463a3b, 2026-11-04: SEQ > LENGTH >
                                                          * RHYTHM between LENGTH and TRACK: tasks 11 and 13 a detent more) */   /* (V10.37: COMPS before GLOBAL, SYSTEM a tap further) */   /* (V10.1: SAVE composes first, 106 -> 108) */   /* (seq2: task 5 by STEP's KNOB 1, no BAR;
                                                          * task 11 TRACK under LEN's tab; task 13 eight detents (seq2c:
                                                          * MUTATE 2); was 73) */
@@ -13131,7 +13180,7 @@ static int test_nav_tasks(void)
               ok = song.sel == 3u && str_eq(cur_page()->title, "SOUND") && c == 1u && dv[DXP_DECAY] != d0; }
             break;
         case 12:                                        /* COMP 2 of step 9 */
-            tk_start(1); tk_go(EN_PRESET, 8); tk_go(EN_SELECT, 9); tk_val(EN_K1, 1);   /* (2463a3b: RHYTHM, ten; V10.8.20: MUTATE, STRETCH gone, eight) */   /* (seq2c: eight detents to COMP 2, V10.16 nine;
+            tk_start(1); tk_go(EN_PRESET, 8); tk_go(EN_SELECT, 8); tk_val(EN_K1, 1);   /* (2463a3b: RHYTHM, ten; V10.8.20: MUTATE, STRETCH gone, eight) */   /* (seq2c: eight detents to COMP 2, V10.16 nine;
                                                          * seq2d: the step picked on STEP, KNOB 1 its ACTION) */
             ok = str_eq(cur_page()->title, "COMP 2") && ui.cursor == 8u && TSEL->step[8].comp2 != 0u;
             break;
@@ -13150,7 +13199,7 @@ static int test_nav_tasks(void)
     }
     printf("ui:   the race: %u %u %u %u %u %u %u %u %u %u %u %u %u %u = %u actions (0.9.1: 75)\n", got[0], got[1], got[2], got[3],
            got[4], got[5], got[6], got[7], got[8], got[9], got[10], got[11], got[12], got[13], tot);
-    bad += check("0.9.2 the mock-up's 14 tasks on the panel: each goal reached in its PROPOSED actions (seq2c: 106, was 73)", okall && tot == 79u);   /* (V10.8.21: G.COMP gone, GLO a tap less) */   /* (V10.8.20: MUTATE, STRETCH out of SEQ's chain: -2) */   /* (V10.8: task 5 by PRESETS, 34 -> 4) */   /* (2463a3b RHYTHM: +2) */   /* (V10.8: an accent past VEL 127: +1; V10.16 MUTATE in SEQ's chain: +1) */
+    bad += check("0.9.2 the mock-up's 14 tasks on the panel: each goal reached in its PROPOSED actions (seq2c: 106, was 73)", okall && tot == 78u);   /* (V10.8.21: G.COMP gone, GLO a tap less) */   /* (V10.8.20: MUTATE, STRETCH out of SEQ's chain: -2) */   /* (V10.8: task 5 by PRESETS, 34 -> 4) */   /* (2463a3b RHYTHM: +2) */   /* (V10.8: an accent past VEL 127: +1; V10.16 MUTATE in SEQ's chain: +1) */
     ui_power_on();
     return bad;
 }

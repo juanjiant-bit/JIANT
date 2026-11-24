@@ -1329,6 +1329,17 @@ static void edit_param(uint32_t slot, int32_t steps)
     const page_t *pg = cur_page();
     const param_desc_t *d;
     int32_t v;
+    if (eu_hold && slot == 3u && pg->id[0] == ID_EU0) {    /* (V10.8.37) EUCLID, OCT+ held: KNOB 4 MUTATE's EVERY */
+        eu_every(steps);
+        return;
+    }
+    if (eu_hold && slot == 1u && pg->id[0] == P_FTYPE) {   /* (V10.8.37) FILTER, OCT+ held: CUT's knob the KEY TRK */
+        uint8_t *kp = &kt_v[song.sel % NTRK];
+        *kp = (uint8_t)clamp((int32_t)*kp + steps, 0, 3);
+        eu_hold = 2;
+        ui.force = 1;
+        return;
+    }
     if (BAR_PAGE(pg) && slot == 0u) {                    /* (0.9.2) SEQ > BAR: KNOB 1 the bar (no wrap), the cursor at its
                                                          * place in it */
         uint32_t len = (uint32_t)clamp(TSEL->p[P_SLEN], 1, NSTEP), nb = (len + 15u) / 16u;
@@ -2951,10 +2962,19 @@ static void ui_input_frame(void)
                 break;
             }
             if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_EUCLID) {   /* (V10.6) EUCLID / MODES: */
-                eu_oct(b == B_OCTUP, cur_page()->id[0] != ID_EU0 + 4u);   /* (V10.8.35) EUCLID, MUTATE: OCT+ mutates,
-                                                         * OCT- the anchor; MODES / MELODY: a new variation, the one before */
+                if (b == B_OCTUP && cur_page()->id[0] == ID_EU0) eu_hold = 1;   /* (V10.8.37) EUCLID's OCT+ when let go
+                                                         * (held with KNOB 4: EVERY, no mutation) */
+                else eu_pend = (uint8_t)(1u | (b == B_OCTUP) << 1 | (cur_page()->id[0] != ID_EU0 + 4u) << 2);   /* (V10.8.35)
+                                                         * EUCLID: OCT+ mutates, OCT- the anchor; MODES / MELODY: a new
+                                                         * variation, the one before (below: one place) */
                 break;
             }
+            if (b == B_OCTUP && !fm1_in.notes && !ui.home && !ui.menu && !ui.confirm && cur_page()->id[0] == P_FTYPE) {
+                eu_hold = 1;                            /* (V10.8.37) FILTER: OCT+'s octave when let go (held with CUT's
+                                                         * knob: KEY TRK, no octave) */
+                break;
+            }
+            eu_hold = 0;                                /* (OCT- under an armed OCT+: both, the octave 0, as ever) */
             oct_key(b, both);                           /* (V10.6z4: a note held, the expression keys) */
             break;
         }
@@ -2972,6 +2992,18 @@ static void ui_input_frame(void)
                 ui.pg_down |= (uint16_t)(1u << id);
             break;
         }
+    }
+    if (eu_hold && !((fm1_in.buttons >> panel.btn[B_OCTUP]) & 1u)) {   /* (V10.8.37) EUCLID's OCT+ let go: a mutation
+                                                         * now, unless KNOB 4 turned under it (EVERY) or the page left */
+        if (eu_hold == 1u && !ui.home && !ui.menu && !ui.confirm) {
+            if (cur_page()->id[0] == ID_EU0) eu_pend = 7;
+            else if (cur_page()->id[0] == P_FTYPE) oct_key(B_OCTUP, ~0u);
+        }
+        eu_hold = 0;
+    }
+    if (eu_pend) {
+        eu_oct((eu_pend >> 1) & 1, eu_pend >> 2);
+        eu_pend = 0;
     }
     b = ui.pg_down & ~fm1_in.buttons;
     ui.pg_down &= (uint16_t)~b;

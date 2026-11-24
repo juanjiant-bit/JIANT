@@ -35,14 +35,14 @@ static uint32_t mfnv(uint32_t h, const void *p, uint32_t n)
 }
 
 /* ---- 2. a project of before: the steps' MICRO set as 0.9.0 stored it (cwhen's bits 4-7, sixteenths) ---- */
-#define MICRO_OLD_090 0xcc6ae3e1u   /* (V10.7.56: 0x91835b33 before ROOM at half the rate and VPOL; V10.7.17: 0x6377849c before ROOM's network, the mix's reverb; 2026-11-09 bug review: 0xe7ee65d3 until the sounds and defaults since V10.6
+#define MICRO_OLD_090 0x58422ccau   /* (V10.8.37: 0xcc6ae3e1 before the factory sounds' retouch, the kit's RAND -> TONE and the sends; V10.7.56: 0x91835b33 before ROOM at half the rate and VPOL; V10.7.17: 0x6377849c before ROOM's network, the mix's reverb; 2026-11-09 bug review: 0xe7ee65d3 until the sounds and defaults since V10.6
                                          * (GATE 100 % for new tracks V10.6z4, the levelled presets V10.6t, V10.7's mix):
                                          * the steps' places, checked below, as before. 0.9.9 ctl64: the render in blocks of 64 differs from 0.9.0's bit for bit
                                          * (the notes at their samples, the fades); was 0xd5c5b5c5: the steps' places as read
                                          * from the project are unchanged, the second check below. Then 0x249e3fdc, rewritten
                                          * by 0.9.9-snd2's chorus (da051a3: 0xd8795d59) and gen6e's notes in a release
                                          * (b587793), the goldens they rewrote; the steps' places as before) */
-#define MICRO_PACK_090 0xd49924b3u           /* (V10.7.6: 0x49120182 before FUNC's VEL mark, byte 65 'V'; was 0x55f3c173: the project's defaults since, e.g. GATE 100 % (V10.6z4);
+#define MICRO_PACK_090 0x9b84e723u           /* (V10.8.37: 0xd49924b3 before the factory sounds' retouch, a kit's MOD route in its sound; V10.7.6: 0x49120182 before FUNC's VEL mark, byte 65 'V'; was 0x55f3c173: the project's defaults since, e.g. GATE 100 % (V10.6z4);
                                          * still no 'M' 'F' block and every MICRO read back x 4, below) */
 static void old_steps(void)
 {

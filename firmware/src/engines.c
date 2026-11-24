@@ -4,6 +4,17 @@
 /* Engine table (order = PRESETS browsing order and the engine numbers of the editor protocol), the
  * factory patterns (SEQ > PATTERNS) and the parts' sounds at power-on. */
 #include "dsp.c"
+/* (V10.8.37) movement by role: the lists the factory sounds share (a preset's .mod, as core.h MODS) */
+static const int8_t R_VELCUT[] = {MMOD(1, PS_VEL, PD_CUT, 26), -1};                               /* struck harder: brighter */
+static const int8_t R_VELKEY[] = {MMOD(1, PS_VEL, PD_CUT, 22), MMOD(2, PS_KEY, PD_CUT, 20), -1};   /* .. and up the keys */
+static const int8_t R_PLUCKED[] = {P_FCUT, 78, MMOD(1, PS_VEL, PD_CUT, 62), -1};                  /* STRING: softer is darker */
+static const int8_t R_ATSHP[] = {MMOD(1, PS_AT, PD_SHP, 30), -1};                                 /* VOICE: pressed, it buzzes */
+static const int8_t R_ROTOR[] = {MMOD(1, PS_MODW, PD_E(7), 63), -1};                              /* WHEEL: the wheel, the fast rotor */
+static const int8_t R_WDRIVE[] = {MMOD(1, PS_MODW, PD_E(6), 20), -1};                             /* .. into the drive */
+static const int8_t R_KIT[] = {MMOD(1, PS_RAND, PD_E(2), 5), -1};                                 /* DRUM: no two hits the same TONE */
+static const int8_t R_CALL[] = {MMOD(1, PS_RAND, PD_PAN, 20), -1};                                /* ANIMAL: each call its place */
+static const int8_t R_STRUCK[] = {MMOD(1, PS_VEL, PD_E(0), 12), MMOD(2, PS_RAND, PD_PAN, 14), -1};   /* WEST: harder folds more */
+static const int8_t R_WFOLD[] = {P_GLIDE, 12, MMOD(1, PS_MODW, PD_E(0), 40), MMOD(2, PS_VEL, PD_E(0), 20), -1};   /* .. the wheel too */
 #include "eng_analog.c"
 #include "eng_phase.c"
 #include "eng_lofi.c"

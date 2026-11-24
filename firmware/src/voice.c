@@ -197,8 +197,11 @@ static __attribute__((noinline)) void tf_run(track_t *t, int32_t *out, uint32_t 
             comb_pq[ti] = 0;                            /* (snd1: no glide in, its damping from rest) */
             comb_lp[ti] = 0;
         }
-        track_comb(t, out, n, ccut + ((((mulq15(t->lfo_val, t->lfo_fade) * p[P_LD_FLT]) >> 7) + ((envq * p[P_ED_FLT]) >> 7)) >> 8),
-                   cres, ft == FT_COMBN);
+        k = ccut + ((((mulq15(t->lfo_val, t->lfo_fade) * p[P_LD_FLT]) >> 7) + ((envq * p[P_ED_FLT]) >> 7)) >> 8);
+        if (kt_v[ti] == 3u)                             /* (V10.8.37) KEY TRK NOTE: the comb (it follows the note as
+                                                         * ever, CUT half a semitone a step) on whole semitones */
+            k = (k + 1) & ~1;
+        track_comb(t, out, n, k, cres, ft == FT_COMBN);
         tf_cmb[ti] = 1;
         return;
     }
@@ -209,6 +212,16 @@ static __attribute__((noinline)) void tf_run(track_t *t, int32_t *out, uint32_t 
             cut = (127 << 8) - span > 0 ? (127 << 8) - span : 0;
     }
     cut += ((mulq15(t->lfo_val, t->lfo_fade) * p[P_LD_FLT]) >> 7) + ((envq * p[P_ED_FLT]) >> 7);
+    if (kt_v[ti]) {                                     /* (V10.8.37) KEY TRK: about the newest note sounding (the
+                                                         * comb's: comb_p16, kept when none sounds) */
+        uint32_t age = 0;
+        for (i = 0; i < NVOICE; i++)
+            if (t->v[i].active && t->v[i].age >= age) {
+                age = t->v[i].age;
+                comb_p16[ti] = (int16_t)t->v[i].pitch_cur;
+            }
+        cut = kt_cut(kt_v[ti], cut, comb_p16[ti]);
+    }
     {
         uint32_t on = !(ft == FT_LP && fo == TF_DRY && cut >= (127 << 8) && !p[P_FRES]), was = tf_on[ti];
         if (!on && !was)
@@ -1835,6 +1848,11 @@ static uint32_t voice_block(track_t *t, const engine_t *e, voice_t *v, int32_t *
     m.shape = (64 << 8) + ((c->lfo * p[P_LD_SHP]) >> 7) + ((m.envq15 * p[P_ED_SHP]) >> 7);
     if (MOD.on)                                     /* the modulation matrix (mod.c) */
         mod_voice(t, v, &m, fsum);
+    if (kt_v[c->ti] && (e == &ENG_ANALOG || e == &ENG_LOFI)) {   /* (V10.8.37) KEY TRK on a voice's own filter: its
+                                                         * whole cut (CUT, what moves it), ANALOG's own quarter out */
+        int32_t b = (e == &ENG_ANALOG ? p[P_E4] << 8 : p[P_FCUT] << 8);
+        m.cutoff = kt_cut(kt_v[c->ti], b + m.cutoff, v->pitch16) - b - (e == &ENG_ANALOG ? (v->pitch16 - 60 * 16) << 2 : 0);
+    }
     vo_off_c[MC_CPU() & 1u] = (uint8_t)off;
     {
         static const int8_t VP[8] = {-64, 64, -32, 32, -48, 48, -16, 16};

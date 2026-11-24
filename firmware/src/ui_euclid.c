@@ -27,7 +27,7 @@ typedef struct { uint8_t on, lane, src, root, ctr, vary; uint16_t mask, prev, se
 static eu_t eu[NTRK];
 static uint8_t eu_z[NTRK][EU_ZN];                       /* (V10.16) each track's anchor: what MUTATE orbits, OCT- returns to */
 static uint32_t eu_s, eu_ms;
-enum { EK_HITS, EK_STEPS, EK_ROT, EK_K4, EK_M0, EK_U0 = EK_M0 + EU_M, EK_N = EK_U0 + 4 };
+enum { EK_HITS, EK_STEPS, EK_ROT, EK_K4, EK_M0, EK_N = EK_M0 + EU_M };
 #define EU_EV 4                                         /* (V10.8.35) MUTATE's EVERY: OFF, 1, 2, 4, 8 bars */
 static uint16_t eu_zs[NTRK];                            /* (V10.24) the anchor's seed (OCT- returns to it too) */
 /* (V10.28) the sequence the track had (recorded, edited, a song's) when EUCLID came to it: a kit's lanes step by step;
@@ -458,7 +458,6 @@ static const param_desc_t *eu_desc(uint32_t k, int16_t **valp)
     static const char *const CT[7] = {"WALK", "UP", "DOWN", "ARCH", "WAVE", "LEAP", "RANDOM"};   /* (V10.7.66, the owner) */
     static const char *const MO[5] = {"OFF", "2", "3", "4", "8"};
     static const char *const RO[4] = {"MELODY", "CHORDS", "BASS", "ARP"};   /* (V10.7.67, the owner) */
-    static const char *const MU[EU_EV + 1] = {"OFF", "1 BAR", "2 BARS", "4 BARS", "8 BARS"};
     eu_t *e = eu_of(song.sel);
     uint32_t dr = drum_track(TSEL) != 0;
     uint32_t al = dr && !(e->lane % (NLANE + 1u));
@@ -472,15 +471,12 @@ static const param_desc_t *eu_desc(uint32_t k, int16_t **valp)
     else if (k == EK_K4 && dr) { eu_d.label = "LANE"; eu_d.fmt = F_ENUM; eu_d.max = NLANE; eu_d.names = LN; eu_v[k] = e->lane; }
     else if (k == EK_K4) { eu_d.label = "ROLE"; eu_d.fmt = F_ENUM; eu_d.max = 3; eu_d.names = RO; eu_v[k] = e->role; }   /* (V10.8.35, the
                                                          * owner: what the track plays, up front; VARY on MELODY) */
-    else if (k < EK_U0) {
+    else {
         eu_d.label = MD[dr][k - EK_M0]; eu_d.max = 100; eu_v[k] = e->m[k - EK_M0];
         if (!dr && k == EK_M0) { eu_d.fmt = F_ENUM; eu_d.max = 6; eu_d.names = CT; }   /* (a melody: CONTOUR RANGE MOTIF CHORD) */
         else if (!dr && k == EK_M0 + 1u) { eu_d.min = 2; eu_d.max = 15; eu_v[k] = e->m[1] ? e->m[1] : 5; }
         else if (!dr && k == EK_M0 + 2u) { eu_d.fmt = F_ENUM; eu_d.max = 4; eu_d.names = MO; }
         else if (!dr) eu_v[k] = e->vary;
-    }
-    else {                                               /* (V10.8.35) MUTATE's EVERY (its other three gone) */
-        eu_d.label = "EVERY"; eu_d.fmt = F_ENUM; eu_d.max = EU_EV; eu_d.names = MU; eu_v[k] = e->mu[0];
     }
     *valp = &eu_v[k];
     return &eu_d;
@@ -493,12 +489,6 @@ static void eu_put(uint32_t k, int32_t v)
     uint32_t al = dr && !(e->lane % (NLANE + 1u));
     eul_t *L = al ? &e->a : &e->l[dr ? (e->lane + NLANE) % (NLANE + 1u) : 0];
     if (k == EK_K4 && dr) { e->lane = (uint8_t)clamp(v, 0, NLANE); ui.force = 1; return; }
-    if (k >= EK_U0) {                                    /* (V10.8.35) MUTATE's EVERY (on: the anchor now) */
-        if (!e->mu[0] && v > 0) eu_anchor(song.sel);
-        e->mu[0] = (uint8_t)clamp(v, 0, EU_EV);
-        ui.force = 1;
-        return;
-    }
     if (k == EK_HITS) L->h = (uint8_t)clamp(v, 0, al ? 8 : L->n);
     else if (k == EK_STEPS) { L->n = (uint8_t)clamp(v, 2, 64); if (!al && L->h > L->n) L->h = L->n; if (L->r >= L->n) L->r = 0; }
     else if (k == EK_ROT) L->r = (uint8_t)clamp(v, 0, L->n - 1);
@@ -561,6 +551,19 @@ static void eu_tick(void)
     }
 }
 
+/* (V10.8.37, the owner: MUTATE's page gone) EUCLID, OCT+ held and KNOB 4 turned: EVERY (OFF, 1 2 4 8 bars; on: the
+ * anchor now), a tag on the ring */
+static uint8_t eu_pend;                                  /* an OCT key's turn waiting (ui_input.c: 1 | up << 1 | mutate << 2) */
+static uint8_t eu_hold;                                   /* OCT+ down on EUCLID: 1, 2 once KNOB 4 turned (no mutation let go) */
+static __attribute__((noinline)) void eu_every(int32_t steps)
+{
+    eu_t *e = eu_of(song.sel);
+    int32_t v = clamp((int32_t)e->mu[0] + steps, 0, EU_EV);
+    if (!e->mu[0] && v > 0) eu_anchor(song.sel);
+    e->mu[0] = (uint8_t)v;
+    eu_hold = 2;
+    ui.force = 1;
+}
 /* MODES / MELODY: OCT+ a new variation, OCT- the one before; (V10.8.35) EUCLID and MUTATE: OCT+ a mutation now, OCT-
  * back to the anchor (what was dialled) */
 static void eu_oct(int up, int mu)
@@ -594,6 +597,10 @@ static __attribute__((noinline)) void graph_euclid(const track_t *t)
     int32_t h = (int32_t)graph_h(), cy = h / 2, rad = h / 2 - 10 < 54 ? h / 2 - 10 : 54;
     uint16_t col = trk_col(song.sel);
     if (base + n > len) base = len - n;                 /* (STEPS that do not divide the pattern: its last n) */
+    if (e->mu[0]) {                                     /* (V10.8.37) MUTATE's EVERY, a tag (none: OFF) */
+        static const char EV[EU_EV][8] = {"EVERY 1", "EVERY 2", "EVERY 4", "EVERY 8"};
+        cv_text(6, 2, &AF_X, EV[(e->mu[0] - 1u) % EU_EV], T_MID);
+    }
     for (i = 0; i < n; i++) {
         uint32_t a = i * 65536u / n + 49152u, lm;
         int32_t x = 120 + ((rad * og_cos(a)) >> 15), y = cy + ((rad * og_sin(a)) >> 15), r = n > 24u ? 1 : 2;

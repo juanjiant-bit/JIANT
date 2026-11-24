@@ -423,13 +423,13 @@ static const preset_t LOFI_PRESETS[] = {
     {"MATH KEYS", {2, 6, 108, 0, 0, 0, 0, 0}, {0, 75, 40, 45}, 20, TAG(KEYS), FX(0, 20, 30, 35), PAT(6),
      MODS(P_FCUT, 84, MMOD(1, PS_VEL, PD_CUT, 20))},
     {"MATH BASS", {2, 6, 76, 0, 0, 0, 0, 0}, {0, 60, 90, 22}, 24, 1 | TAG(BASS), FX(0, 0, 5, 0), PAT(2),
-     MODS(P_FCUT, 70, P_GLIDE, 10)},
+     MODS(P_FCUT, 54, P_GLIDE, 10, MMOD(1, PS_VEL, PD_CUT, 20))},
     {"MATH PAD", {2, 6, 44, 0, 0, 0, 0, 0}, {75, 90, 78, 95}, 0, TAG(PAD), FX(0, 50, 30, 60), PAT(5),
      MODS(P_FCUT, 96, P_LRATE, 20, P_LD_FLT, 10)},
     {"MATH LEAD", {2, 6, 92, 0, 0, 0, 0, 0}, {4, 70, 100, 42}, 0, 1 | TAG(LEAD), FX(0, 0, 35, 25), PAT(4),
-     MODS(P_LRATE, 88, P_LFADE, 72, MMOD(1, PS_MODW, PD_VIB, 2), P_GLIDE, 10)},
-    {"MATH BELL", {2, 6, 40, 0, 0, 0, 0, 0}, {0, 88, 0, 70}, 12, TAG(BELL), FX(0, 20, 35, 55), PAT(7),
-     MODS(P_FCUT, 100, MMOD(1, PS_VEL, PD_CUT, 22))},
+     MODS(P_LRATE, 88, P_LFADE, 72, MMOD(1, PS_MODW, PD_VIB, 2), P_GLIDE, 10, P_LD_PIT, 1)},
+    {"MATH BELL", {2, 6, 40, 0, 0, 0, 0, 0}, {0, 88, 0, 70}, 24, TAG(BELL), FX(0, 20, 35, 55), PAT(7),
+     MODS(P_FCUT, 88, MMOD(1, PS_VEL, PD_CUT, 30))},
     /* (JIANT 0.5, appended) BYTE B11 looped (LOOP 80: a short cycle, a tone at the note), resonant; its LOOP leaps on
      * the 1/8 (V10.6i), MODW the VAR */
     {"BYTE TONE", {2, 5, 40, 0, 0, 0, 0, 80}, {0, 70, 100, 40}, 0, 1 | TAG(LEAD), FX(0, 0, 30, 20), PAT(4),
@@ -440,7 +440,7 @@ static const preset_t LOFI_PRESETS[] = {
      * place); F29 FM breathing at 1 Hz, slow (V10.6i: the filter drifting) */
     {"FLOAT ARP", {2, 6, 8, 0, 0, 0, 0, 0}, {0, 50, 80, 50}, 0, 1 | TAG(PLUCK), FX(0, 25, 40, 30), PAT(3),
      MODS(P_FCUT, 100, P_LWAVE, LW_SH, P_LRATE, -10, P_LD_FLT, 16, MMOD(1, PS_RAND, PD_PAN, 40))},
-    {"FLOAT PAD", {2, 6, 112, 0, 0, 0, 0, 0}, {80, 90, 69, 100}, 0, 1 | TAG(PAD), FX(30, 10, 50, 40), PAT(3), BREATHE(14, 0, 0),
+    {"FLOAT PAD", {2, 6, 112, 0, 0, 0, 0, 0}, {80, 90, 69, 100}, 0, 1 | TAG(PAD), FX(30, 20, 30, 55), PAT(3), BREATHE(14, 0, 0),
      MODS(P_FCUT, 90)},
 };
 /* (V10.6i) browsed: the voices to play, the experiments, INIT (ui.c: in LOFI_ORDER's place; LOFI_PC stays) */

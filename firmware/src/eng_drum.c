@@ -715,23 +715,23 @@ static int32_t drum_keys(const track_t *t, uint32_t k)
  * were; a few move the whole kit (the per-block destinations: the knobs, the sends; the LFO FREE, a hit does not restart
  * it): no RAND -> PAN (one pan for the kit: every hit would throw the kick about too) */
 static const preset_t DRUM_PRESETS[] = {                /* (0.7.2) one a factory kit: drumx_voice.c DX_KITS, this order */
-    {"DRUM-X", DRUM_KIT_E, {0, 100, 127, 100}, 0, TAG(DRUM), FX(0, 0, 0, 20), PAT(12)},   /* (core.h: SAMPLE PERC's too) */
-    {"909 CLUB", {60, 64, 78, 64, 64, 0, 0, 10}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(0, 0, 0, 16), PAT(12)},
-    {"808 BOOM", {58, 60, 54, 76, 59, 0, 0, 0}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(0, 0, 0, 24), PAT(12)},
+    {"DRUM-X", DRUM_KIT_E, {0, 100, 127, 100}, 0, TAG(DRUM), FX(0, 0, 0, 20), PAT(12), .mod = R_KIT},   /* (core.h: SAMPLE PERC's too) */
+    {"909 CLUB", {60, 64, 78, 64, 64, 0, 0, 10}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(0, 0, 0, 16), PAT(12), .mod = R_KIT},
+    {"808 BOOM", {58, 60, 54, 76, 59, 0, 0, 0}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(0, 0, 0, 24), PAT(12), .mod = R_KIT},
     {"LOFI DUST", {70, 64, 46, 54, 78, 0, 0, 20}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(8, 0, 0, 18), PAT(12),
      MODS(MLFO(LW_DRIFT, -3, 0, 0), P_LPHASE, -1, P_LD_SHP, 8)},                 /* MORPH wanders, a worn tape */
     {"INDUSTRIAL", {72, 66, 99, 70, 75, 20, 0, 40}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(16, 0, 10, 30), PAT(12),
      MODS(MLFO(LW_SH, -10, 0, 0), P_LPHASE, -1, MMOD(1, PS_LFO, PD_E(6), 16))},   /* FOLD at random on the 16ths */
-    {"ACOUSTIC", {56, 64, 56, 62, 64, 0, 0, 0}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(0, 0, 0, 34), PAT(12)},
+    {"ACOUSTIC", {56, 64, 56, 62, 64, 0, 0, 0}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(0, 0, 0, 34), PAT(12), .mod = R_KIT},
     {"DUB ROOTS", {60, 60, 50, 70, 59, 0, 0, 0}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(0, 0, 18, 36), PAT(12),
      MODS(MMOD(1, PS_RAND, PD_DLY, 20))},                                       /* each hit its own throw into the echo */
     {"TECHNO RAW", {66, 64, 83, 62, 66, 10, 0, 30}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(10, 0, 0, 14), PAT(12),
      MODS(MLFO(LW_TRI, -1, 0, 0), P_LPHASE, -1, MMOD(1, PS_LFO, PD_E(2), 10))},   /* TONE opens and closes over 4 bars */
-    {"BREAKS", {62, 66, 74, 62, 71, 0, 0, 10}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(4, 0, 0, 22), PAT(12)},
-    {"HIP HOP", {58, 62, 56, 64, 67, 0, 0, 18}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(6, 0, 0, 20), PAT(14)},   /* (V10.34) */
-    {"LATIN PERC", {60, 64, 64, 64, 64, 0, 0, 0}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(0, 0, 0, 22), PAT(12)},   /* (V10.7.8) */
-    {"GLITCH FM", {60, 66, 84, 50, 64, 30, 0, 50}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(12, 0, 0, 16), PAT(12)},   /* (V10.7.79) */
-    {"MATH LAB", {64, 64, 70, 60, 60, 0, 20, 20}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(0, 0, 10, 24), PAT(12)},   /* (V10.7.79: DRUM-X's kit) */
+    {"BREAKS", {62, 66, 74, 62, 71, 0, 0, 10}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(4, 0, 0, 22), PAT(12), .mod = R_KIT},
+    {"HIP HOP", {58, 62, 56, 64, 67, 0, 0, 18}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(6, 0, 0, 20), PAT(14), .mod = R_KIT},   /* (V10.34) */
+    {"LATIN PERC", {60, 64, 64, 64, 64, 0, 0, 0}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(0, 0, 0, 22), PAT(12), .mod = R_KIT},   /* (V10.7.8) */
+    {"GLITCH FM", {60, 66, 84, 50, 64, 30, 0, 50}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(12, 0, 0, 16), PAT(12), .mod = R_KIT},   /* (V10.7.79) */
+    {"MATH LAB", {64, 64, 70, 60, 60, 0, 20, 20}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(0, 0, 10, 24), PAT(12), .mod = R_KIT},   /* (V10.7.79: DRUM-X's kit) */
 };
 _Static_assert(sizeof DRUM_PRESETS / sizeof DRUM_PRESETS[0] == DX_NKIT + 1u, "a DRUM preset a kit (MATH LAB DRUM-X's)");
 /* (0.7.2) a factory kit into the section's: the sounds, their LAYERs, their SENDs (the project saves them) */
