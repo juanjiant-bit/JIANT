@@ -203,9 +203,91 @@
     "gen_radio_mood": {
       "es": "GEN: RADIO (genera el tema siguiente al terminar) y MOOD de CALM a DANCE",
       "en": "GEN: RADIO (makes the next piece when one ends) and MOOD from CALM to DANCE"
+    },
+    "seq_sync_fix": {
+      "es": "Secuenciador: tempo exacto y pistas siempre en fase (ya no se corren tras cambiar largo, división, EUCLID o variaciones)",
+      "en": "Sequencer: exact tempo and tracks always in phase (they no longer slip after changing length, division, EUCLID or variations)"
+    },
+    "resync": {
+      "es": "RESYNC: SEQ mantenido + PLAY re-engancha todas las pistas en el próximo compás",
+      "en": "RESYNC: SEQ held + PLAY realigns every track at the next bar"
+    },
+    "mood_strong": {
+      "es": "MOOD actúa sobre la batería en todos los modos (CALM casi sin batería, DANCE batería fuerte)",
+      "en": "MOOD acts on the drums in every mode (CALM nearly drumless, DANCE strong drums)"
     }
   },
   "versions": {
+    "V10.8.40": {
+      "date": "2026-11-24",
+      "status": "beta",
+      "summary": {
+        "es": "Beta: arreglo del tempo que se adelantaba y de las pistas que se desfasaban entre sí, RESYNC (SEQ + PLAY) y MOOD mucho más marcado. Sobre V10.8.39.",
+        "en": "Beta: fixes the tempo creeping ahead and tracks slipping out of phase, adds RESYNC (SEQ + PLAY) and a much stronger MOOD. On top of V10.8.39."
+      },
+      "has": [
+        "eng_west",
+        "drumx_math",
+        "life",
+        "punch_editor",
+        "fx_punchins",
+        "song_mode",
+        "stepfx_keys",
+        "drone_clay",
+        "macros_dest",
+        "euclid",
+        "euclid_role",
+        "harmony",
+        "scene",
+        "half_rate",
+        "track_colours",
+        "hud_screens",
+        "no_power_click",
+        "velocity_at",
+        "gen_new_genres",
+        "copy_paste_oct",
+        "clay_rate",
+        "clay_bars",
+        "clay_keys",
+        "west_dust_metal",
+        "ui_push",
+        "screen_mirror",
+        "emu_editor",
+        "emu_stems",
+        "mutate_compact",
+        "live_compact",
+        "cloud_fix",
+        "dist_noise",
+        "chorus_mix",
+        "key_trk",
+        "presets_retouch",
+        "gain_all",
+        "dj_filter_knob",
+        "swarm_wave",
+        "swarm_notes",
+        "gen_character",
+        "gen_radio_mood",
+        "seq_sync_fix",
+        "resync",
+        "mood_strong"
+      ],
+      "hasnt": [
+        "eng_noise",
+        "mutate",
+        "stretch",
+        "live",
+        "seq_dice",
+        "punch_lane",
+        "help_hints",
+        "flt_ms20_lp24",
+        "env_stage",
+        "pages_bar_phrases_sys2"
+      ],
+      "notes": {
+        "es": "Beta: puede tener errores. Los proyectos y presets con filtro MS20 o LP24 abren como LP. MUTATE y LIVE no son las páginas originales (esas quedan en V10.7.81). Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
+        "en": "Beta: it may have bugs. Projects and presets using the MS20 or LP24 filter open as LP. MUTATE and LIVE are not the original pages (those remain in V10.7.81). Make a complete backup of your projects before changing version."
+      }
+    },
     "V10.8.39": {
       "date": "2026-11-24",
       "status": "beta",
@@ -266,7 +348,10 @@
         "help_hints",
         "flt_ms20_lp24",
         "env_stage",
-        "pages_bar_phrases_sys2"
+        "pages_bar_phrases_sys2",
+        "seq_sync_fix",
+        "resync",
+        "mood_strong"
       ],
       "notes": {
         "es": "Beta: puede tener errores. Los proyectos y presets con filtro MS20 o LP24 abren como LP. MUTATE y LIVE no son las páginas originales (esas quedan en V10.7.81). Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
@@ -333,7 +418,10 @@
         "env_stage",
         "pages_bar_phrases_sys2",
         "gen_character",
-        "gen_radio_mood"
+        "gen_radio_mood",
+        "seq_sync_fix",
+        "resync",
+        "mood_strong"
       ],
       "notes": {
         "es": "Beta: puede tener errores. Los proyectos y presets con filtro MS20 o LP24 abren como LP. MUTATE y LIVE no son las páginas originales (esas quedan en V10.7.81). Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
@@ -396,7 +484,10 @@
         "flt_ms20_lp24",
         "env_stage",
         "gen_character",
-        "gen_radio_mood"
+        "gen_radio_mood",
+        "seq_sync_fix",
+        "resync",
+        "mood_strong"
       ],
       "notes": {
         "es": "Beta: puede tener errores. Los proyectos y presets con filtro MS20 o LP24 abren como LP. MUTATE y LIVE no son las páginas originales (esas quedan en V10.7.81). Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
@@ -457,7 +548,10 @@
         "flt_ms20_lp24",
         "env_stage",
         "gen_character",
-        "gen_radio_mood"
+        "gen_radio_mood",
+        "seq_sync_fix",
+        "resync",
+        "mood_strong"
       ],
       "notes": {
         "es": "Beta: puede tener errores. Los proyectos y presets con filtro MS20 o LP24 abren como LP. MUTATE y LIVE no son las páginas originales (esas quedan en V10.7.81). Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
@@ -515,7 +609,10 @@
         "flt_ms20_lp24",
         "env_stage",
         "gen_character",
-        "gen_radio_mood"
+        "gen_radio_mood",
+        "seq_sync_fix",
+        "resync",
+        "mood_strong"
       ],
       "notes": {
         "es": "Beta: puede tener errores. Los proyectos y presets con filtro MS20 o LP24 abren como LP. MUTATE y LIVE no son las páginas originales (esas quedan en V10.7.81). Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
@@ -571,7 +668,10 @@
         "punch_lane",
         "help_hints",
         "gen_character",
-        "gen_radio_mood"
+        "gen_radio_mood",
+        "seq_sync_fix",
+        "resync",
+        "mood_strong"
       ],
       "notes": {
         "es": "Beta: puede tener errores. Se quitaron la página PUNCH LANE, el dibujo del carril de PUNCH IN y muchos textos de ayuda para hacer lugar. Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
@@ -627,7 +727,10 @@
         "punch_lane",
         "help_hints",
         "gen_character",
-        "gen_radio_mood"
+        "gen_radio_mood",
+        "seq_sync_fix",
+        "resync",
+        "mood_strong"
       ],
       "notes": {
         "es": "Beta: puede tener errores. Se quitaron la página PUNCH LANE, el dibujo del carril de PUNCH IN y muchos textos de ayuda para hacer lugar. Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
@@ -683,7 +786,10 @@
         "west_dust_metal",
         "ui_push",
         "gen_character",
-        "gen_radio_mood"
+        "gen_radio_mood",
+        "seq_sync_fix",
+        "resync",
+        "mood_strong"
       ],
       "notes": {
         "es": "Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
@@ -739,7 +845,10 @@
         "ui_push",
         "emu_stems",
         "gen_character",
-        "gen_radio_mood"
+        "gen_radio_mood",
+        "seq_sync_fix",
+        "resync",
+        "mood_strong"
       ],
       "notes": {
         "es": "Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
@@ -795,7 +904,10 @@
         "emu_editor",
         "emu_stems",
         "gen_character",
-        "gen_radio_mood"
+        "gen_radio_mood",
+        "seq_sync_fix",
+        "resync",
+        "mood_strong"
       ],
       "notes": {
         "es": "Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
@@ -851,7 +963,10 @@
         "emu_editor",
         "emu_stems",
         "gen_character",
-        "gen_radio_mood"
+        "gen_radio_mood",
+        "seq_sync_fix",
+        "resync",
+        "mood_strong"
       ],
       "notes": {
         "es": "Primera versión sin MUTATE, STRETCH ni LIVE. Los proyectos de V10.7.81 abren; esos ajustes se guardan pero no hacen nada. Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
@@ -906,7 +1021,10 @@
         "west_dust_metal",
         "ui_push",
         "gen_character",
-        "gen_radio_mood"
+        "gen_radio_mood",
+        "seq_sync_fix",
+        "resync",
+        "mood_strong"
       ],
       "notes": {
         "es": "La última versión con MUTATE, STRETCH y LIVE. Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
@@ -959,7 +1077,10 @@
         "west_dust_metal",
         "ui_push",
         "gen_character",
-        "gen_radio_mood"
+        "gen_radio_mood",
+        "seq_sync_fix",
+        "resync",
+        "mood_strong"
       ],
       "notes": {
         "es": "Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
@@ -1012,7 +1133,10 @@
         "west_dust_metal",
         "ui_push",
         "gen_character",
-        "gen_radio_mood"
+        "gen_radio_mood",
+        "seq_sync_fix",
+        "resync",
+        "mood_strong"
       ],
       "notes": {
         "es": "Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
@@ -1067,7 +1191,10 @@
         "west_dust_metal",
         "ui_push",
         "gen_character",
-        "gen_radio_mood"
+        "gen_radio_mood",
+        "seq_sync_fix",
+        "resync",
+        "mood_strong"
       ],
       "notes": {
         "es": "Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
@@ -1120,7 +1247,10 @@
         "west_dust_metal",
         "ui_push",
         "gen_character",
-        "gen_radio_mood"
+        "gen_radio_mood",
+        "seq_sync_fix",
+        "resync",
+        "mood_strong"
       ],
       "notes": {
         "es": "Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
@@ -1163,7 +1293,10 @@
         "ui_push",
         "pages_bar_phrases_sys2",
         "gen_character",
-        "gen_radio_mood"
+        "gen_radio_mood",
+        "seq_sync_fix",
+        "resync",
+        "mood_strong"
       ],
       "notes": {
         "es": "Versión muy anterior: los proyectos de V10 pueden no abrir en ella. Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
