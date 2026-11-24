@@ -106,40 +106,6 @@ static BTAPP_FN void tech_eq(int32_t x, int32_t y, int32_t w, int32_t h)
         cv_text_in(cx - 12, y + h - 7, 24, &AF_X, k == 0 ? "60" : k == 1 ? "250" : k == 2 ? "2K" : "8K", T_DIM, T_SURF);
     }
 }
-/* GLO > SYSTEM 2: the three ports as boxes, a light each way that flashes as messages pass (MIDI in: the queue's write
- * count, USB / TRS by its source; out: USB's and Bluetooth's queue), Bluetooth's state and, linked or in AIR, PROX */
-static uint32_t sp_in, sp_out, sp_trs;
-static uint8_t sp_lit[4];
-/* (V10.6z5) back in the app (the segment's room for the drift of its other code; still drawn only with the segment) */
-static __attribute__((noinline)) void tech_ports(void)
-{
-    static const char *const N[3] = {"USB", "TRS", "BT"};
-    uint32_t i, b = (uint32_t)bt_get();
-    if (mi_w != sp_in) { sp_lit[midi_in_source[(mi_w - 1u) % MQ] == 2u ? 2 : 0] = 6; sp_in = mi_w; }
-    if (mo_w != sp_out) { sp_lit[1] = 6; sp_out = mo_w; }
-    if (um.msgs != sp_trs) { sp_lit[2] = 6; sp_trs = um.msgs; }
-    for (i = 0; i < 3u; i++) {
-        int32_t x = 8 + (int32_t)i * 78, on = i == 0u ? usb.up : i == 1u ? 1 : b != 0u;
-        uint32_t li = i == 1u ? 2u : 0u;
-        cv_frame(x, 14, 70, 70, on ? T_THEME : T_LINE);
-        cv_text(x + 6, 20, &AF_S, N[i], on ? T_TEXT : T_DIM);
-        cv_text(x + 6, 38, &AF_X, i == 0u ? (!usb.up ? "OFF" : usb.config ? "MIDI" : "WAIT") : i == 1u ? "IN" : bt_vname(b),
-                T_MID);
-        cv_rect(x + 8, 62, 10, 10, (i == 2u ? b == 2u && sp_lit[0] : sp_lit[li]) ? heat_col(200) : T_RAISE);
-        cv_text(x + 21, 64, &AF_X, "IN", T_DIM);
-        if (i != 1u) {
-            cv_rect(x + 40, 62, 10, 10, (i == 2u ? b == 2u : 1) && sp_lit[1] ? heat_col(120) : T_RAISE);
-            cv_text(x + 53, 64, &AF_X, "OUT", T_DIM);
-        }
-    }
-    if (b >= 2u) {                                     /* (linked or AIR: PROX, what the radio hears) */
-        cv_text(8, 96, &AF_X, "PROX", T_DIM);
-        cv_rect(40, 96, 190, 6, T_RAISE);
-        cv_rect(40, 96, mod_prox * 190 / 32767, 6, heat_col(64 + mod_prox / 200));
-    }
-    for (i = 0; i < 3u; i++)
-        if (sp_lit[i]) sp_lit[i]--;
-}
 /* (V10.43) EDIT > LEVELS / LEVELS 2 (DRUM-X): a column a sound, its LEVEL the height, lit by the sound as it plays
  * (its envelope now, as the colony's beings), the page's four framed */
 static BTAPP_FN void tech_levels(const track_t *t, uint32_t b)   /* (V10.44 in the segment) */

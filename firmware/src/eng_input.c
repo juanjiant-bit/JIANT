@@ -20,7 +20,7 @@ static int32_t sw_l[CTL], sw_r[CTL];                    /* (SWARM) its own block
 static uint8_t sw_on;
 enum { AIN_IN1, AIN_IN2, AIN_SUM, AIN_ST, AIN_SW, AIN_N };   /* (SWARM: the drone of the surroundings) */
 static const char *const N_AIN_SRC[] = {"IN 1", "IN 2", "1+2", "STEREO", "SWARM"};
-static const char *const N_AIN_PLAY[] = {"THRU", "KEYS"};
+static const char *const N_AIN_PLAY[] = {"THRU", "KEYS", ">T1", ">T2", ">T3", ">T4", ">T5", ">T6"};   /* (SWARM: its notes to a track) */
 static const int16_t SW_FULL[P_COUNT] = {[P_E4] = 127};   /* (SWARM's fill: WIDTH whole, DIST none) */
 static int16_t ain_gg[NTRK];                             /* GATE's gain now, Q15 */
 static uint8_t ain_upd[NTRK];                            /* this block's GATE not yet stepped (ain_block) */
@@ -181,6 +181,41 @@ static struct {
                                                           * morph (0 FAR .. 128 NEAR); the lead's decay, attack (shifts);
                                                           * the depth; RATE's place (0 1/1 .. 5 1/32) */
 } sm __attribute__((section(".bss.swarm")));
+/* (the owner: "reuse FLOAT; each modulator in the formula") WAVE (SWARM 2's KNOB 4, P_MORPH's slot: 0 the sine, as every
+ * project and preset before): the voices read a cycle of a FLOAT formula (eng_lofi.c lofi_float, SW_WF: the ones a whole
+ * number of turns a cycle, no noise, no state) from two tables, four samples of each written a block (a pole: no
+ * click). What writes the formula's time t: the closeness (FAR 0 .. NEAR 32 steps), the devices (a step each), a device
+ * just come (a jump of four steps, gliding back), the nearest's jitter (a wobble); the nearest's level drives it into a
+ * soft clip; the second table two steps ahead, each device its own place between the two (its bytes) */
+#define SWT_N 64u
+static int16_t sw_tab[2][SWT_N + 1u] __attribute__((section(".bss.swarm")));
+static int16_t sw_tj __attribute__((section(".bss.swarm")));
+static uint8_t sw_ti __attribute__((section(".bss.swarm"))), sw_wv __attribute__((section(".bss.swarm")));
+static const uint8_t SW_WF[8] = {28, 47, 40, 41, 12, 33, 44, 23};
+#define SW_TRMS 2896                                     /* (the sine's RMS / 8: what the tables are brought to) */
+static const uint8_t SW_WT[8] = {43, 41, 36, 44, 43, 43, 37, 45};   /* (.. and what the two tables' blend, the cut peaks and a
+                                                         * voice's tone take of each formula, back on the swarm's sum: Q5,
+                                                         * measured in four scenes against the sine, tests/sw_study.c) */
+static uint32_t sw_tt __attribute__((section(".bss.swarm")));
+static int16_t sw_tg __attribute__((section(".bss.swarm"))), sw_tq __attribute__((section(".bss.swarm")));
+static uint8_t sw_dv __attribute__((section(".bss.swarm")));
+static uint32_t form_isqrt(uint32_t x);                  /* (clay_form.c) */
+/* (the owner: SWARM a note source) MODE >T1 .. >T6: the swarm plays that track's own engine and its own voices are
+ * silent: each device's hit on the grid its note (its address's, OCTAVE's walk; a DRUM track: its pad), the velocity
+ * its level, held PLUCK's length (2.5 steps .. half a step); the lead's line too. A voice a note at a time (swn), so
+ * nine at most, the track's own voice limit under that; PROX in the track's matrix moves its timbre */
+static struct { uint8_t nt, tr; uint16_t cnt; } swn[SW_V] __attribute__((section(".bss.swarm")));
+static void seq_note_on(track_t *t, uint32_t note, uint32_t vel);   /* seq.c */
+static void seq_note_off(track_t *t, uint32_t note);
+static int drum_track(const track_t *t);
+static void sw_note(uint32_t v, uint32_t tg, uint32_t nt, uint32_t vel, uint32_t len)
+{
+    if (swn[v].nt)
+        seq_note_off(&trk[swn[v].tr % NTRK], swn[v].nt);
+    swn[v].nt = (uint8_t)nt, swn[v].tr = (uint8_t)tg, swn[v].cnt = (uint16_t)(len > 65535u ? 65535u : len ? len : 1u);
+    if (nt)
+        seq_note_on(&trk[tg % NTRK], nt, vel);
+}
 static volatile int16_t sw_pxv, sw_pxf, sw_pxn;          /* (bt.c bt_sw_prox) PROX's closeness; its FAR / NEAR points (Q8) */
 static volatile uint8_t sw_pxon;                         /* .. a central's link gives it */
 static uint32_t ms_clock;                                /* (mod.c: the transport's samples) */
@@ -200,7 +235,7 @@ static __attribute__((noinline)) void sw_step(const track_t *t, const int32_t *m
         k += mask >> i & 1u;
     span = (int32_t)k * (2 + (t->p[P_E6] >= 64));
     if (!sm.src)                                         /* (none: a walk, mostly far) */
-        sm.wk = (int16_t)clamp(sm.wk + (int32_t)(r >> 20 & 4095u) - 2048, 0, 14000);
+        sm.wk = (int16_t)clamp(sm.wk + (int32_t)(r >> 18 & 16383u) - 8192 + (sm.wk < 9000 ? 1500 : 0), 0, 32767);   /* (alone: it roams FAR .. NEAR by itself) */
     sm.ak = (uint8_t)clamp(30 - __builtin_clz((len >> CTL_LOG2) | 1u), 2, 10);   /* (the decay: half the step) */
     sm.ash = (uint8_t)(6u - (sm.ri > 4u ? 4u : sm.ri));
     L->mv = (uint8_t)clamp((d < 0 ? -d : d) >> 5, 0, 255);   /* (moving: its tone opens) */
@@ -348,11 +383,12 @@ static __attribute__((noinline)) uint32_t sw_prep(struct sw_blk *b, uint32_t n)
     uint32_t i, v, now = fm1_ticks(), ref = 0, rlv = 0, any = 0, ext = 0, nd = 0, nv = SW_N, len, pos, hit;
     int32_t pl, fm, img, dft, ocv = clamp(p[P_E6], 0, 127), ocs, ch, near = -1, mp[SWS_N], md;
     int32_t fg;
+    uint32_t tg = (uint32_t)p[P_E3] >= 2u && (uint32_t)p[P_E3] - 2u != ain_tr % NTRK ? (uint32_t)p[P_E3] - 2u : NTRK, nl = 0;   /* (MODE >Tn: the notes' track) */
     sw_rnd += now;                                       /* (the interrupt's own jitter: entropy) */
     for (i = 0; i < 4u; i++)                             /* (V10.6v) the knobs where a new device sent them, ~1.5 s */
         sw_ko[i] = (int16_t)(sw_ko[i] + ((sw_kt[i] - sw_ko[i]) >> 9));
     pl = clamp(p[P_E1] + (sw_ko[0] >> 8), 0, 127);
-    fm = clamp(p[P_E2] + (sw_ko[1] >> 8), 0, 127) * 6;
+    fm = clamp(p[P_E2] + (sw_ko[1] >> 8), 0, 127) * 80;
     img = clamp(p[P_E4] + (sw_ko[2] >> 8), 0, 127);
     dft = clamp(p[P_E5] + (sw_ko[3] >> 8), 0, 127);
     ocs = ocv < 64 ? ocv / 16 : 2 + (ocv - 64) * 6 / 63;   /* (V10.6v: octaves 0..3 more; degrees 2..8) */
@@ -392,8 +428,31 @@ static __attribute__((noinline)) uint32_t sw_prep(struct sw_blk *b, uint32_t n)
         hit = len >= n && pos % len < n;                 /* (a step of the grid in this block) */
         if (hit)
             sw_step(t, mp, len, nv);
+        nl = (len >> CTL_LOG2) * (uint32_t)(160 - pl) >> 6;   /* (a note's blocks: PLUCK 0 2.5 steps .. half a step) */
     }
     ch = clamp(p[P_E7], 0, 127) * md >> 7;               /* (V10.6z6: CHAOS the ceiling, the depth moves it) */
+    if ((sw_wv = (uint8_t)clamp(p[P_MORPH], 0, 8)) != 0u) {   /* WAVE: the formula's cycle into the tables */
+        uint32_t tt = ((uint32_t)sm.c << 1) + (nd << 11) + (uint32_t)sw_tj + (nv < SW_N ? (uint32_t)(sw[nv].jit & 255) : 0u);
+        int32_t dv = 44 + (nd ? clamp(near - sw_lmin, 0, 32) : 0), aux = 0;
+        sw_tj = (int16_t)(sw_tj - (sw_tj >> 8) - (sw_tj > 0));
+        if (!sw_ti) {                                    /* (V10.8.38) a turn of the tables begins (16 blocks): the formula's
+                                                         * time and its drive held for it (a whole cycle of one moment: no
+                                                         * stairs between its points); the tables' level, as the voices
+                                                         * read them, toward the sine's (its RMS 23170: x 0.5 .. 8, a
+                                                         * formula's own level whatever its moment; the peaks cut) */
+            uint32_t e = 0;
+            for (i = 0; i < SWT_N; i++)
+                e += (uint32_t)((sw_tab[0][i] >> 3) * (sw_tab[0][i] >> 3));
+            sw_tq = (int16_t)clamp((SW_TRMS << 10) / (int32_t)(form_isqrt(e >> 6) | 1u), 512, 8191);
+            sw_tt = tt;
+            sw_dv = (uint8_t)dv;
+        }
+        sw_tg = (int16_t)(sw_tg + ((sw_tq - sw_tg) >> 4));
+        for (i = 0; i < 4u; i++, sw_ti = (uint8_t)((sw_ti + 1u) % SWT_N))
+            for (v = 0; v < 2u; v++)
+                sw_tab[v][sw_ti] = (int16_t)(sw_tab[v][sw_ti] + ((softclip(lofi_float(SW_WF[sw_wv - 1u], sw_tt + (v << 12), (uint32_t)sw_ti << 7, &aux) * sw_dv >> 5) - sw_tab[v][sw_ti]) >> 3));
+        sw_tab[0][SWT_N] = sw_tab[0][0], sw_tab[1][SWT_N] = sw_tab[1][0];
+    }
     b->slf = ch * 6;
     b->xm = ch > 24 ? (ch - 24) * 12 : 0, fg = ch > 64 && ch <= 100 ? 4096 + (ch - 64) * 64 : 0;   /* (CHAOS: */
     b->rm = ch > 100 ? (ch - 100) * 8 / 9 : 0;             /* the chain's depth, the fold's 1..1.6, the ring's 0..3/4) */
@@ -405,6 +464,8 @@ static __attribute__((noinline)) uint32_t sw_prep(struct sw_blk *b, uint32_t n)
         int32_t lv, tgt, det = 0, nt, fx = ch > 64 ? (ch - 64) * 12 : 0, fmv = fm;
         b->a0[v] = b->da[v] = b->nz[v] = 0;
         b->fv[v] = fg;
+        if (swn[v].nt && (tg >= NTRK || !--swn[v].cnt))   /* (MODE >Tn: its note's end; the mode left: all of them) */
+            sw_note(v, 0, 0, 0, 0);
         if (v == SW_N) {                                 /* (V10.6z6) the lead: sw_step's accent and sustain, a vibrato,
                                                           * TONE NOISE MOD as the morph has them */
             lv = mp[SWS_TONE];
@@ -420,6 +481,11 @@ static __attribute__((noinline)) uint32_t sw_prep(struct sw_blk *b, uint32_t n)
             fmv += lv * 3;
             fx = md * 4;
             nt = d->nt;
+            if (tg < NTRK) {
+                if (hit && (sm.sus || d->acc))
+                    sw_note(v, tg, drum_track(&trk[tg]) ? 36u : (uint32_t)nt, 70u + (sm.mq * 57u >> 7), nl);
+                tgt = 0, d->acc = 0;
+            }
         } else {
             if (!d->id)
                 continue;
@@ -433,11 +499,11 @@ static __attribute__((noinline)) uint32_t sw_prep(struct sw_blk *b, uint32_t n)
             tgt = tgt * (192 - sm.mq / 2) >> 8;          /* (V10.6z6: a bed under the lead, lower near) */
             if (d->hit && hit) {                         /* a hit (V10.6z6: on the grid): its accent, FM, image, drift, octave */
                 uint32_t r = sw_rand();
-                d->hit = 0;
+                d->hit = 2;                               /* (2: struck this block, MODE >Tn's note below) */
                 d->acc = tgt * (1 + pl / 32);
                 d->fme = 32767;
                 d->pan = img ? 16384 + ((int32_t)(r & 0xFFFFu) - 32768) * img / 254 : d->ch == 37u ? 6000 : d->ch == 39u ? 26767 : 16384;
-                d->dr = dft ? (int32_t)((r >> 16) % 65u - 32u) * dft / 64 : 0;
+                d->dr = dft ? (int32_t)((r >> 16) % 65u - 32u) * dft / 21 : 0;   /* (V10.8.38: wider, a fifth at half the knob, an octave whole) */
                 d->oct = ocs ? (uint8_t)((d->oct + 1u) % (uint32_t)(ocs + (ocv < 64))) : 0;   /* (V10.6v: a walk of ocs places) */
                 d->rj = ch > 48 && (int32_t)((r >> 9) & 127u) < (ch - 48) * 2 ? (uint8_t)((r >> 3) % 6u) : 0xFFu;   /* (CHAOS) */
             }
@@ -446,16 +512,24 @@ static __attribute__((noinline)) uint32_t sw_prep(struct sw_blk *b, uint32_t n)
             det = det / 32 + (int32_t)((d->jit * (int32_t)((now >> 18) & 7u)) >> 9);   /* (+ jitter) */
             nt = ocv < 64 ? (int32_t)d->note + 12 * d->oct : scale_steps(t, d->note, d->oct % ocs);   /* (V10.6v: the scale's) */
             d->nt = (uint8_t)clamp(nt, 0, 127);
+            if (d->hit == 2u) {
+                d->hit = 0;
+                if (tg < NTRK && d->id != SW_SELF)
+                    sw_note(v, tg, drum_track(&trk[tg]) ? 37u + v : d->nt, 40u + (uint32_t)clamp((lv - sw_lmin) * 3, 0, 87), nl);
+            }
             sh = d->in < 255u ? 7u : age > 6u * SW_TPS && d->id != SW_SELF ? 10u : 3u;   /* (V10.6v: a swell in, a long fade out) */
+            if (!d->in && d->id != SW_SELF) sw_tj = 8192;   /* (WAVE: a device just come, a jump of its time) */
             d->in = (uint8_t)(d->in + (d->in < 255u && (sw_tick & 1u)));
             tgt = tgt * (127 - pl) / 127;
+            if (tg < NTRK)
+                tgt = 0, d->acc = 0;
         }
         det += d->dr;                                    /* (+ drift; the lead's grace) */
-        d->dr -= d->dr / 16 + (d->dr > 0) - (d->dr < 0);   /* (the drift glides back) */
+        d->dr -= d->dr / (v == SW_N ? 16 : 64) + (d->dr > 0) - (d->dr < 0);   /* (the drift glides back: a device's ~0.2 s, the lead's grace fast) */
         nt += sw_key;
         d->inc = pitch_inc((uint32_t)clamp(nt * 16 + det, 0, 2047));
         d->acc -= (d->acc >> dk) + (d->acc > 0);         /* (down to 0: a pluck fast, the drone slow) */
-        d->fme -= d->fme >> 5;
+        d->fme -= (d->fme - 12000) >> 6;                  /* (the FM stays: over a third of it under the hit's) */
         if (d->mv) d->mv--;
         b->a0[v] = d->amp;
         d->amp += (tgt + d->acc - d->amp) >> sh;
@@ -476,8 +550,10 @@ static __attribute__((noinline)) void ain_swarm(uint32_t n)
 {
     struct sw_blk b;
     uint32_t i, v, nr = sm.nr;
+    int32_t wt;
     if (!(sw_on = (uint8_t)(sw_prep(&b, n) != 0u)))
         return;
+    wt = sw_wv ? SW_WT[sw_wv - 1u] : 32;
     for (i = 0; i < n; i++) {
         int32_t l = 0, r = 0, so = (sw_prev * b.slf) >> 6, yp = 0, ns;   /* (CHAOS: a chain, each voice by the one before;
                                                          * the first by none: no loop, never noise) */
@@ -491,7 +567,14 @@ static __attribute__((noinline)) void ain_swarm(uint32_t n)
                 continue;
             mo = (d->w[k] * (int32_t)(65536u - f) + d->w[(k + 1u) & 7u] * (int32_t)f) >> 8;   /* (Q15: its bytes) */
             ph = d->ph + (uint32_t)((mo * b.fe[v]) << 4) + (uint32_t)(so << 6) + ((uint32_t)(yp * b.xm) << 4);
-            x = osc_sine(ph);
+            if (sw_wv) {                                 /* (WAVE: the formula's cycle, its two tables) */
+                uint32_t ti = ph >> 26;
+                int32_t tf = (int32_t)(ph >> 11 & 0x7FFFu), a = sw_tab[0][ti], c = sw_tab[1][ti];
+                a += ((sw_tab[0][ti + 1u] - a) * tf) >> 15;
+                c += ((sw_tab[1][ti + 1u] - c) * tf) >> 15;
+                x = clamp(((a + (((c - a) * (d->w[1] + 128)) >> 8)) * sw_tg) >> 10, -32767, 32767);   /* (its level: the sine's) */
+            } else
+                x = osc_sine(ph);
             if (d->sh)                                   /* (V10.6v) its shape: the sine driven, .. a square */
                 x = clamp((x * (32 + d->sh / 2)) >> 5, -32767, 32767);
             if (b.fv[v]) {                               /* (CHAOS; V10.6z6 the lead's TONE) a wavefold */
@@ -513,8 +596,8 @@ static __attribute__((noinline)) void ain_swarm(uint32_t n)
             d->ph += d->inc;
             d->pm += b.pmi[v];
         }
-        sw_l[i] = l;
-        sw_r[i] = r;
+        sw_l[i] = l = (l * wt) >> 5;                     /* (V10.8.38: WAVE's level, the sine's 32: as it was) */
+        sw_r[i] = r = (r * wt) >> 5;
         sw_prev = (l + r) >> 1;
     }
     sm.nr = nr;
@@ -523,7 +606,7 @@ static void (*const volatile AIN_SWARM)(uint32_t) = ain_swarm;   /* (mod.c macro
 /* SWARM's knobs on the INPUT pages (the stored values the same slots, 0..127; PLAY as it is) */
 static const param_desc_t SW_DESC[8] = {
     {"SOURCE", F_ENUM, 0, AIN_N - 1, AIN_IN1, N_AIN_SRC}, {"PLUCK", F_PCT, 0, 127, 0, 0}, {"FM", F_PCT, 0, 127, 0, 0},
-    {"MODE", F_ENUM, 0, 1, 0, N_AIN_PLAY}, {"IMAGE", F_PCT, 0, 127, 0, 0}, {"DRIFT", F_PCT, 0, 127, 0, 0},
+    {"MODE", F_ENUM, 0, 7, 0, N_AIN_PLAY}, {"IMAGE", F_PCT, 0, 127, 0, 0}, {"DRIFT", F_PCT, 0, 127, 0, 0},
     {"OCTAVE", F_PCT, 0, 127, 0, 0}, {"CHAOS", F_PCT, 0, 127, 0, 0}};   /* (V10.6v: CHAOS in SELF's place) */
 static const param_desc_t *input_desc(const track_t *t, uint32_t k) { return t->p[P_E0] == AIN_SW && k < 8u ? &SW_DESC[k] : 0; }
 

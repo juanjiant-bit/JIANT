@@ -43,6 +43,21 @@ static __attribute__((noinline)) int32_t kt_cut(uint32_t m, int32_t cut, int32_t
         cut = 13905 + (((cut - 13905) * 219 + 32768) >> 16) * 3589 / 12;
     return cut;
 }
+/* (V10.8.38) KEY TRK NOTE on the part's LP and HP: the resonance's peak sits off the cutoff by the damping (LP below, HP
+ * above: f0 sqrt(1 - k^2 / 2), a quarter of a semitone at RES 120, a semitone at 105), so the cut moves by what brings
+ * the peak onto the note: 3589 / 2 x -log2(1 - x), x = k^2 / 2 (three terms of its series), Q8 cut. BP rings at f0.
+ * The cut of LP HP BP after it */
+static __attribute__((noinline)) int32_t kt_res(int32_t cut, int32_t res, uint32_t ft)
+{
+    int32_t k = 8192 - res * 7600 / 127, x = (k * k) >> 13, x2;
+    if (x > 2458)
+        x = 2458;                                       /* (little resonance: no peak to place) */
+    x2 = (x * x) >> 12;
+    x = ((x + (x2 >> 1) + ((x2 * x) >> 12) / 3) * 2589) >> 12;
+    cut += ft == FT_LP ? x : ft == FT_HP ? -x : 0;
+    return cut + 2589 / SVF_G[clamp(cut, 0, 127 << 8) >> 8];   /* (tsvf_coef's g, Q12, cut short between the table's
+                                                         * points: half a unit of it back, a fifth of a semitone at 150 Hz) */
+}
 /* the TYPE a voice's own filter plays (ANALOG, LOFI): LP HP BP, or open (FT_COMB in svf_mode) under a part's TYPE */
 static inline uint32_t ft_voice(const int16_t *p)
 {

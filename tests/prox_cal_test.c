@@ -144,20 +144,9 @@ int main(void)
     ok &= mod_prox < 2000;
     bad += check("V10.6z8 AIR: the smoothed, held level still follows a move within ~4 s, both ways", ok);
     bt_up = 0; ui.menu = 0;
-    /* 6. (V10.6z8, a Discord user) GLO > SYSTEM 2 shows USB, TRS and BT; its knobs say where BT is edited, change nothing */
-    {
-        int16_t g[G_COUNT];
-        ui_power_on();
-        ok = nav_put(SEC_GLO, "MIDI");
-        frame();
-        memcpy(g, song.g, sizeof g);
-        for (i = 0; i < 4u; i++) {
-            ui_message("");
-            turn(EN_K1 + i, 1);
-            ok &= msg_is("EDIT: MENU > BLUETOOTH") && !memcmp(g, song.g, sizeof g) && !ui.menu;
-        }
-        bad += check("V10.6z8 GLO > SYSTEM 2: any knob says EDIT: MENU > BLUETOOTH and changes nothing", ok);
-    }
+    /* 6. (V10.8.38, the owner) GLO > SYSTEM 2 gone: no page of that name in GLO's chain */
+    ui_power_on();
+    bad += check("V10.8.38 GLO > SYSTEM 2 is gone from the chain", !nav_put(SEC_GLO, "MIDI") && !nav_put(SEC_GLO, "SYSTEM 2"));
     printf("prox cal: %s\n", bad ? "FAILED" : "all ok");
     return bad != 0;
 }

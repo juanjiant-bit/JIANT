@@ -573,7 +573,7 @@ static uint32_t large_kind(void)
     if (ui.home)
         return LK_TALL;
     g = cur_page()->graph;
-    return g == GR_BROWSE || g == GR_SLOTS || g == GR_USER || g == GR_PATS || g == GR_SONG || g == GR_ROLL ||
+    return g == GR_BROWSE || g == GR_SLOTS || g == GR_USER || 0 /* PHRASES gone */ || g == GR_SONG || g == GR_ROLL ||
            g == GR_CHANCE || g == GR_COMP || g == GR_EVENTS || g == GR_LYRIC || g == GR_LIVE ? LK_LABEL : LK_TALL;
 }
 /* the geometry of the page shown: the cards' height, the panel's top and height. (0.8.5) A lens page (lz_on): the
@@ -619,6 +619,7 @@ static int page_visible(uint32_t i)
     if (PAGES[i].graph == GR_SONG && (PAGES[i].fam == FAM_SEQ || (PAGES[i].title[0] == 'T' && PAGES[i].title[1] == 'I')))
         return 0;                                       /* (V10.8: TIMELINE, PARTS gone, the song mode's redesign) */
     if (PAGES[i].graph == GR_LIVE || PAGES[i].graph == GR_SHAPE || PAGES[i].graph == GR_GCOMP || PAGES[i].graph == GR_STAGE ||
+        PAGES[i].graph == GR_PATS ||                    /* (V10.8.38, the owner: PHRASES, BAR, SYSTEM 2 gone; their rows the index) */
         (PAGES[i].graph == GR_EUCLID && PAGES[i].id[0] == 0xFFu))   /* (V10.8.37: MUTATE's row, EVERY on EUCLID) */
         return 0;                                       /* (V10.8.3: GLO > LIVE, V10.8.20: SEQ > STRETCH, V10.8.21: GLO >
                                                          * G.COMP, V10.8.35: ENV > STAGE gone for the flash (the owner);
@@ -635,7 +636,7 @@ static int page_visible(uint32_t i)
         return trk_eng(TSEL) == ENGI_INPUT && TSEL->p[P_E0] == AIN_SW;
     if (PAGES[i].graph == GR_LYRIC || PAGES[i].graph == GR_LYRSTEP)
         return trk_engp(TSEL) == &ENG_FORMANT;
-    if (PAGES[i].graph == GR_PATS || PAGES[i].graph == GR_CHANCE)   /* (0.6.37) PHRASES, a step's CHANCE: out of the */
+    if (0 /* PHRASES gone */ || PAGES[i].graph == GR_CHANCE)   /* (0.6.37) PHRASES, a step's CHANCE: out of the */
         return !ui.home && ui.page == i;               /* SEQ pages' cycle (only where code put the screen) */
     if (PAGES[i].graph == GR_DXSND || PAGES[i].graph == GR_DXIMG)   /* (0.6.48: IMAGE; V10.49: STEREO a synth's too) */
         return trk_eng(TSEL) == ENGI_DRUM && !(PAGES[i].title[0] == 'K' && PAGES[i].title[3] == ' ') &&   /* (V10.7.63: KIT 3
@@ -747,7 +748,7 @@ static uint32_t fx_level(void)
 static uint32_t lens_level(void)                        /* SEQ: the level the page is drawn as */
 {
     uint32_t g = PAGES[ui.page].graph;
-    return g == GR_PATS || g == GR_SONG ? LV_PAT : g == GR_CHANCE ? LV_STEP : nav_lv();
+    return 0 /* PHRASES gone */ || g == GR_SONG ? LV_PAT : g == GR_CHANCE ? LV_STEP : nav_lv();
 }
 static int home_lz(void) { return (ui.home && !ui.menu && !dlg_on()) || gen_on(); }   /* (GEN: HOME's) */
 static uint32_t lz_on(void) { return ((lens_on() || save_on() || fx_on() || pd_on() || home_lz()) && !ui.layer && !name_on()) || (ui.menu | 2u) == 3u || (ui.layer && !ui.menu); }
@@ -1302,6 +1303,7 @@ static int seq_is_empty(const track_t *t)
  * RECALL (docs/TONIC-SONG-PLAN.md) brings a section back as it was stored instead. */
 enum { LOAD_SOUND = 1, LOAD_PAT = 2 };
 static uint8_t load_depth;       /* loads nest (an engine jump loads its first preset): the outer one counts */
+static uint8_t mix_k4;           /* (V10.8.38, the owner) GLO > MIXER's KNOB 4: 0 BPM, 1 the DJ FILTER (OCT+ there turns it) */
 static uint32_t pat_sig[NTRK];   /* steps_sig of the pattern the last pattern load put into each track: such
                                   * steps, untouched, are replaced by the next pattern without asking */
 static uint8_t pat_last[NTRK];   /* that pattern's list index + 1, 0 = none */
@@ -2055,7 +2057,7 @@ static uint32_t act_cols(void)                   /* the columns that are actions
     if (pg->graph == GR_LYRIC || pg->graph==GR_LYRSTEP) return 8u;
     if (pg->graph == GR_SONG)
         return 1u;                               /* (0.8.5) ADD a row (PLAY: the song) */
-    if (pg->graph == GR_PATS)
+    if (0 /* PHRASES gone */)
         return 2u;                               /* LOAD */
     if (pg->graph == GR_USER)
         return 14u;                              /* LOAD ERASE SAVE */
@@ -2075,7 +2077,7 @@ static uint32_t act_col(void)
     if (!ui.home && cur_page()->graph == GR_SONG) return 1u;
     if (!ui.home && (cur_page()->graph == GR_EVENTS || cur_page()->graph==GR_TRACKGEN)) return 5u;
     if (!ui.home && (cur_page()->graph == GR_LYRIC || cur_page()->graph==GR_LYRSTEP)) return 4u;
-    return !ui.home && cur_page()->graph == GR_PATS ? 2u : ui.act;
+    return !ui.home && 0 /* PHRASES gone */ ? 2u : ui.act;
 }
 
 static const char *act_name(uint32_t c)          /* column c's action (the footer hint) */
@@ -2093,7 +2095,7 @@ static const char *act_name(uint32_t c)          /* column c's action (the foote
     }
     if (cur_page()->graph == GR_SONG)                   /* (0.8.5) SAVE's lens: OCT+ adds a row (PLAY plays); PARTS: */
         return SONG_PARTS(cur_page()) ? "LOOP" : SONG_CLIPS(cur_page()) ? "GO" : SONG_TAKE(cur_page()) ? "NEW" : "ADD";   /* the part loops; CLIPS: the cell */
-    if (cur_page()->graph == GR_PATS)
+    if (0 /* PHRASES gone */)
         return "LOAD";
     if (cur_page()->graph == GR_USER)
         return UP_GO[(c + 2u) % 3u];
@@ -2124,7 +2126,7 @@ static int act_ready(void)
         return jam_len() != 0u;
     if (cur_page()->graph == GR_SONG)
         return !chain_busy() && chain_config.count < CHAIN_ROWS;
-    if (cur_page()->graph == GR_PATS)
+    if (0 /* PHRASES gone */)
         return pat_last[s] != pat_pick() + 1u || steps_sig(TSEL) != pat_sig[s];
     if (cur_page()->graph == GR_USER)
         return c == 3u ? !song.playing : up_used(ui.uslot) && (c == 1u || !song.playing);

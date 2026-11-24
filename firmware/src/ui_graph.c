@@ -1139,7 +1139,7 @@ static void graph_title(void)
  * a step, once motion.c keeps one; till then its records as marks at the roll's foot */
 static int seq_roll_view(const page_t *pg)
 {
-    return pg == &PAGES[ui.page] && lens_on() && pg->graph != GR_PATS && pg->graph != GR_SONG && pg->graph != GR_EUCLID;
+    return pg == &PAGES[ui.page] && lens_on() && 1 && pg->graph != GR_SONG && pg->graph != GR_EUCLID;
 }
 static int roll_view(const page_t *pg)
 {
@@ -1313,7 +1313,7 @@ static int drift_on(void)
            g != GR_ROLL && g != GR_COMP && g != GR_FUGUE && g != GR_LIVE &&   /* (0.8.3: LENTE's step, the
                                                          * heads; p2: LIVE's rails) */
            g != GR_STEPS && g != GR_CHANCE && g != GR_BROWSE && g != GR_USER && g != GR_SLOTS && g != GR_EVENTS &&
-           g != GR_SONG && g != GR_TOOLS && g != GR_PATS && g != GR_CLAY;
+           g != GR_SONG && g != GR_TOOLS && 1 && g != GR_CLAY;
 }
 static void graph_drift(void)
 {
@@ -2161,10 +2161,6 @@ static void draw_graph(void)
                 graph_grid(t, c);
             else
                 graph_roll(t, c);
-            break;
-        case GR_PATS:
-            cv_oy = 0;
-            graph_pats();
             break;
         case GR_FMOP:                                /* (0.6.10) FM6's operators: (0.9.6) the colony (ui_engvis.c), the operator */
         case GR_FMOP2:                               /* picked lit */

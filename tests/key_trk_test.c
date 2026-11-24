@@ -68,6 +68,27 @@ static double peak(int ty, int kt, int note, int cut, int res)
     }
     return 0;
 }
+/* (V10.8.38) the peak to a 64th of a semitone: about the coarse one, the loudest of a finer sweep */
+static double fine(int ty, int kt, int note, int cut, int res)
+{
+    track_t *t = &trk[0];
+    double c = peak(ty, kt, note, cut, res), best = 0, bf = c, f;
+    uint32_t b, i;
+    int32_t blk[CTL];
+    for (f = c / 1.03; f < c * 1.03; f *= 1.0009) {
+        double e = 0;
+        setup(ty, kt, note, cut, res);
+        for (b = 0; b < 96u; b++) {
+            for (i = 0; i < CTL; i++) blk[i] = (int32_t)(1000 * sin(2 * M_PI * f * (b * CTL + i) / 44100.0));
+            track_filter(t, blk, CTL, 0, t->p[P_FCUT], t->p[P_FRES]);
+            if (b >= 48u)
+                for (i = 0; i < CTL; i++) e += (double)blk[i] * blk[i];
+        }
+        if (e > best) { best = e; bf = f; }
+    }
+    kt_v[0] = 0;
+    return bf;
+}
 static int near(double a, double b, double semis) { return fabs(12 * log2(a / b)) <= semis; }
 int main(void)
 {
@@ -96,9 +117,31 @@ int main(void)
     }
     printf("key_trk: NOTE, CUT 40 .. 64 swept: %d steps (20 or 21 semitones)\n", n);
     if (n < 20 || n > 22) { printf("key_trk: NOTE's steps are not semitones FAIL\n"); fails++; }
-    a = peak(FT_LP, 3, 60, 77, 120);                    /* the resonance on a note of the chromatic scale */
+    a = fine(FT_LP, 3, 60, 77, 120);                    /* the resonance on a note of the chromatic scale */
     printf("key_trk: LP NOTE at C4, CUT 77: %.0f Hz (%.2f semitones from A4)\n", a, 12 * log2(a / 440.0));
-    if (fabs(12 * log2(a / 440.0) - floor(12 * log2(a / 440.0) + 0.5)) > 0.45) { printf("key_trk: NOTE's resonance out of tune FAIL\n"); fails++; }
+    if (fabs(12 * log2(a / 440.0) - floor(12 * log2(a / 440.0) + 0.5)) > 0.1) { printf("key_trk: NOTE's resonance out of tune FAIL\n"); fails++; }
+    {   /* (V10.8.38) NOTE: the peak of LP HP BP within a tenth of a semitone of the grid (RES 120 and 127, from 1 kHz up:
+         * the LP's sat a quarter of a semitone under it at RES 120, the HP's over; below, tsvf_coef's g in whole Q12
+         * units leaves up to a fifth of a semitone at 150 Hz, printed) */
+        static const uint8_t RS[2] = {120, 127}, NT[2] = {60, 72}, CT[2] = {75, 90};
+        static const char *const TN[3] = {"LP", "HP", "BP"};
+        int ty, r, q, w;
+        double worst = 0, low = 0, d;
+        for (ty = FT_LP; ty <= FT_BP; ty++) {
+            for (r = 0; r < 2; r++)
+                for (q = 0; q < 2; q++)
+                    for (w = 0; w < 2; w++) {
+                        a = 12 * log2(fine(ty, 3, NT[q], CT[w], RS[r]) / 440.0);
+                        d = fabs(a - floor(a + 0.5));
+                        if (d > worst) worst = d;
+                        if (d > 0.1) { printf("key_trk: %s NOTE RES %d note %d CUT %d: %.2f off the grid FAIL\n", TN[ty], RS[r], NT[q], CT[w], d); fails++; }
+                    }
+            a = 12 * log2(fine(ty, 3, 48, 60, 120) / 440.0);
+            d = fabs(a - floor(a + 0.5));
+            if (d > low) low = d;
+        }
+        printf("key_trk: NOTE's peak, LP HP BP: at most %.2f semitones off the grid (from 1 kHz up), %.2f at C3 CUT 60\n", worst, low);
+    }
     printf(fails ? "key_trk: %d FAILED\n" : "key_trk: all ok\n", fails);
     return fails != 0;
 }

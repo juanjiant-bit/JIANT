@@ -769,7 +769,7 @@ static const page_t PAGES[] = {
                                                          * (ui_input.c, ui_draw.c), OCT+ the punch-in editor */
     {"SCL", FAM_SCL, SC_TRACK, GR_SCALE, {P_ROOT, P_SCALE, P_QUANT, ID_ALLTR}},   /* (JIANT: ROOT, SCALE every melodic track's;
                                                          * 0.7.6: ALL TR, the global, where TRANS was: SCL 2 gone) */
-    {"CHORD", FAM_SCL, SC_TRACK, GR_NONE, {P_CHRD, P_CVOI, P_CSTR, 0xFF}},   /* (0.6.81) a key plays a chord (seq.c) */
+    {"CHORD", FAM_SCL, SC_TRACK, GR_NONE, {P_CHRD, P_CVOI, P_CSTR, P_TRANS}},   /* (V10.8.38, the owner: TRANS, KNOB 4) */   /* (0.6.81) a key plays a chord (seq.c) */
     {"HARMONY", FAM_SCL, SC_GLOBAL, GR_HARM, {G_HPROG, G_HLEN, G_HEVO, G_HSKIP}},   /* (V10.7.66, the owner) a progression
                                                          * every melodic sequence follows (seq.c hm_shift) */
     {"SCENE", FAM_SCL, SC_TRACK, GR_SCENE, {ID_SC0, ID_SC0 + 1u, ID_SC0 + 2u, ID_SC0 + 3u}},   /* (V10.25) the multitimbral
@@ -815,7 +815,7 @@ static const page_t PAGES[] = {
     {"GLOBAL", FAM_GLO, SC_GLOBAL, GR_NONE, {G_BPM, G_SWING, G_CLOCK, G_TUNE}},
     {"SYSTEM", FAM_GLO, SC_GLOBAL, GR_NONE, {G_TRKS, G_LOADP, G_ROUTE, G_INFO}},   /* (0.6.18) TRACKS 4 / 6; (0.6.30)
                                                          * LOAD ECO / LITE / FULL (the USB card: the header's icon) */
-    {"SYSTEM 2", FAM_GLO, SC_GLOBAL, GR_NONE, {G_MIDI, G_MIDI, G_MIDI, 0xFF}},   /* (V10.37) KNOB 3 Bluetooth's state */   /* (0.9.9-snd8) MIDI IN at a glance (ui_draw.c):
+    {"SYSTEM 2", FAM_GLO, SC_GLOBAL, GR_PATS, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (V10.8.38, the owner) gone from GLO: its row kept (the index) */   /* (V10.37) KNOB 3 Bluetooth's state */   /* (0.9.9-snd8) MIDI IN at a glance (ui_draw.c):
                                                          * KNOB 1 USB's state OFF WAIT BUS ENUM MIDI, KNOB 2 the TRS messages come in */
     {"KEY SPLIT", FAM_GLO, SC_GLOBAL, GR_SPLIT, {0xFF, 0xFF, 0xFF, 0xFF}},
     {"KEY SPLIT 2", FAM_GLO, SC_GLOBAL, GR_SPLIT2, {0xFF, 0xFF, 0xFF, 0xFF}},
@@ -870,7 +870,7 @@ static const page_t PAGES[] = {
                                                          * value (ui_input.c stage_knob; codex/coherence: LOOP, ENV DEST's) */
     {"SENDS", FAM_TRK, SC_TRACK, GR_TRK, {P_CHOR, P_DLY, P_REV, 0xFF}},   /* GLO > MIX: the track's sends (as FX > SENDS),
                                                          * the six tracks' as bars (ui_graph.c track_col6) */
-    {"BAR", FAM_SEQ, SC_TRACK, GR_STEPS, {0xFF, P_SLEN, 0xFF, 0xFF}},   /* (0.9.2) SEQ > BAR: the pattern's bars, KNOB 1
+    {"BAR", FAM_SEQ, SC_TRACK, GR_PATS, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (0.9.2) SEQ > BAR: the pattern's bars, KNOB 1
                                                          * the bar (the cursor at its place in it; was PRESETS on PATTERN's
                                                          * level), KNOB 2 LEN (ui_input.c edit_param) */
     {"MODES", FAM_SEQ, SC_TRACK, GR_EUCLID, {ID_EU0 + 4u, ID_EU0 + 5u, ID_EU0 + 6u, ID_EU0 + 7u}},   /* (V10.6) the four
@@ -914,7 +914,7 @@ static const page_t PAGES[] = {
 };
 #define SPLIT_PAGE(pg) ((uint32_t)((pg)->graph - GR_SPLIT) < 2u)
 #define FIT_PAGE(pg) ((pg)->graph == GR_STEPS && (pg)->id[1] == 0xFFu)   /* RHYTHM (BAR: KNOB 2 LEN) */
-#define BAR_PAGE(pg) ((pg)->graph == GR_STEPS && (pg)->id[1] == P_SLEN)
+#define BAR_PAGE(pg) 0                                   /* (V10.8.38, the owner) SEQ > BAR gone (its row kept: the index) */
 #define NPAGES (sizeof(PAGES) / sizeof(PAGES[0]))
 static uint8_t mod_ui_slot;      /* the MOD page: the matrix slot (0..3) KNOB 2..4 edit */
 static uint8_t ms_ui_step;       /* (JIANT) the MSEQ page: the step (0..15) KNOB 2 edits */
@@ -957,6 +957,7 @@ static __attribute__((noinline)) const param_desc_t *page_desc_v(uint32_t id, in
         return id == ID_LMODE ? &LFO_MODE_DESC : &LFO_PHASE_DESC;
     }
 }
+static uint8_t eu_hold;                                 /* (ui_euclid.c: OCT+ held on a page with a knob under it) */
 static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **valp)
 {
     uint32_t id = pg->id[slot];
@@ -964,8 +965,10 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
         *valp = 0;
         return 0;
     }
-    if (id == ID_GAIN || (id == P_E6 && pg->scope == SC_ENGINE && pg->fam == FAM_EDIT &&
-                          ENGINES[eng_idx(TSEL->eng_req)] == &ENG_WHEEL)) {   /* (V10.7.64) GAIN: ANALOG's MORE, WHEEL's
+    if (id == ID_GAIN || (pg->scope == SC_ENGINE && pg->fam == FAM_EDIT &&
+                          ((id == P_E6 && ENGINES[eng_idx(TSEL->eng_req)] == &ENG_WHEEL) ||
+                           (eu_hold && slot == 3u && pg->id[0] == P_E0)))) {   /* (V10.8.38, the owner) every engine's
+                                                         * EDIT 1, OCT+ held: KNOB 4 the track's GAIN (its card says so) */   /* (V10.7.64) GAIN: ANALOG's MORE, WHEEL's
                                                          * COLOR (DRIVE's place; their DRIVE off the panel, kept) */
         static const param_desc_t TGAIN_DESC = {"GAIN", F_INT, 0, 12, 0, 0};
         *valp = &trk_gain[(uint32_t)(TSEL - trk) % NTRK];

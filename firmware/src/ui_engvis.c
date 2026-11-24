@@ -1870,10 +1870,11 @@ static VX_SEG void vx_string(const track_t *t, const int32_t *A, int32_t en_home
  * between them FOLLOW (the matrix's source) and the gate's gain; the source over them */
 /* (SWARM) the swarm as it plays: each device heard a body at its side (its channel: L, both, R) and its note's height,
  * its size its level, lit on each advertisement (its rhythm), turning on a small orbit at its own period (the
- * clocks' polyrhythm seen), a line from the loudest to each other (the relation that detunes them); SWARM n above */
+ * clocks' polyrhythm seen); above, what it hears: ALONE, AIR n, PROX n (the devices); the FM-1's own voice dim, a ring on
+ * a device just come */
 static void vx_swarm(const int32_t *A)
 {
-    uint32_t v, now = fm1_ticks(), n = 0, ref = SW_N, rlv = 0;
+    uint32_t v, now = fm1_ticks();
     int32_t x0 = A[0] + 8, w = A[2] - 16, y0 = A[1] + 16, h = A[3] - 26, px[SW_N], py[SW_N], hl[SW_N];
     char b[10];
     if (w < 16 || h < 16)
@@ -1886,17 +1887,11 @@ static void vx_swarm(const int32_t *A)
         px[v] = -1;
         if (!d->id || d->amp < 8)
             continue;
-        n++;
         ph = (uint32_t)(((uint64_t)((now - d->last) % per) << 32) / per);   /* (its own clock's phase) */
         px[v] = x0 + w / 8 + d->pan * (w * 3 / 4) / 32767 + (osc_sine(ph) * 6 >> 15);   /* (its place: IMAGE's) */
         py[v] = y0 + h - 4 - clamp((int32_t)d->nt - 24, 0, 108) * (h - 8) / 108 + (osc_sine(ph + 0x40000000u) * 4 >> 15);
         hl[v] = clamp(((int32_t)d->lv - sw_lmin) * 255 / (int32_t)(((uint32_t)(sw_lmax - sw_lmin) & 127u) | 1u), 0, 255);
-        if (d->lv >= rlv)
-            rlv = d->lv, ref = v;
     }
-    for (v = 0; v < SW_N && ref < SW_N; v++)              /* the relations: the loudest to each other */
-        if (px[v] >= 0 && v != ref)
-            cv_line(px[ref], py[ref], px[v], py[v], ux_mix(T_MID, vk_heat(hl[v]), 35));
     for (v = 0; v < SW_N; v++) {
         const struct sw_dev *d = &sw[v];
         int32_t z;
@@ -1904,15 +1899,20 @@ static void vx_swarm(const int32_t *A)
         if (px[v] < 0)
             continue;
         z = clamp(3 + d->amp * 6 / 14000, 3, 9);
-        cv_rect(px[v] - z / 2, py[v] - z / 2, z, z, hit ? T_TEXT : vk_heat(hl[v]));
-        if (hit)                                         /* (an advertisement now: its ring) */
+        cv_rect(px[v] - z / 2, py[v] - z / 2, z, z, d->id == SW_SELF ? T_MID : hit ? T_TEXT : vk_heat(hl[v]));   /* (the FM-1's own: dim) */
+        if (hit || d->in < 96u)                          /* (an advertisement now, a device just come: its ring) */
             cv_frame(px[v] - z / 2 - 3, py[v] - z / 2 - 3, z + 6, z + 6, vk_heat(hl[v]));
     }
     heat_bar(x0, y0 + h + 7, sm.mq * w >> 7, w, 2, T_THEME);   /* (V10.6z6) FAR .. NEAR: the morph, under the floor
                                                          * (V10.7.7: cold to hot) */
-    if (!vx_small) {
-        str_cpy(b, "SWARM ", sizeof b);
-        fmt_int(b + 6, (int32_t)n);
+    if (!vx_small) {                                    /* (the owner: what it hears) ALONE (nothing: the FM-1's own
+                                                         * clocks), AIR n / PROX n: the devices */
+        static const char *const SRC[3] = {"ALONE", "AIR ", "PROX "};
+        str_cpy(b, SRC[sm.src % 3u], sizeof b);
+        if (sm.src)
+            fmt_int(b + str_len(b), (int32_t)sm.nd);
+        else if (bt_get() != 2u)                         /* (BLUETOOTH not AIR: it will hear no device) */
+            str_cpy(b, "AIR OFF", sizeof b);
         cv_text(A[0] + A[2] / 2 - 3 * (int32_t)str_len(b), A[1] + 2 - AF_X_CAP_Y, &AF_X, b, T_THEME);
     }
 }

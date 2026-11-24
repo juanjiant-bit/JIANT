@@ -210,20 +210,22 @@ static BTAPP_FN void sw_ui_knob_bt(const page_t *pg, uint32_t k, int32_t s)
     uint32_t q = pg->title[5] == ' ' ? 3u : 0u;
     if (k == 0u)
         sw_ui_side = s > 0;
+    else if (k + q - 1u == SWS_N)                       /* (SWARM 2's KNOB 4: WAVE, 0 the sine) */
+        TSEL->p[P_MORPH] = (int16_t)clamp(TSEL->p[P_MORPH] + (s > 0) - (s < 0), 0, 8);
     else if (k + q - 1u < SWS_N)
         sw_sv_put(TSEL, sw_ui_side, k + q - 1u, sw_sv(TSEL, sw_ui_side, k + q - 1u) + accel(EN_K1 + k, s, 127));
 }
 static BTAPP_FN void sw_ui_cards_bt(const page_t *pg)
 {
-    static const char *const LB[8] = {"RATE", "MOVE", "TONE", "NOISE", "MOD", "SELF", "AIR", "PROX"};
+    static const char *const LB[6] = {"RATE", "MOVE", "TONE", "NOISE", "MOD", "WAVE"};
     uint32_t q = pg->title[5] == ' ' ? 3u : 0u, c, i;
     char val[8];
     hot_gauge_column(0, "SIDE", sw_ui_side ? "NEAR" : "FAR", sw_ui_side ? 1000 : 0);
     for (c = 1; c < 4u; c++) {                          /* (RATE as the note, 1/1 .. 1/32; NOW the morph, by its source) */
-        int32_t v = (i = c + q - 1u) < SWS_N ? sw_sv(TSEL, sw_ui_side, i) : sm.mq;
+        int32_t v = (i = c + q - 1u) < SWS_N ? sw_sv(TSEL, sw_ui_side, i) : TSEL->p[P_MORPH] * 15;
         val[0] = '1', val[1] = '/';
-        fmt_int(val + (i ? 0 : 2), i ? v : 1 << ((uint32_t)v * 6u >> 7));
-        hot_gauge_column(c, LB[i < SWS_N ? i : 5u + sm.src % 3u], val, v * 1000 / 128);
+        fmt_int(val + (i ? 0 : 2), i == SWS_N ? v / 15 : i ? v : 1 << ((uint32_t)v * 6u >> 7));
+        hot_gauge_column(c, LB[i], val, v * 1000 / 128);
     }
 }
 static void sw_ui_knob(const page_t *pg, uint32_t k, int32_t s) { if (bt_hw_seg()) sw_ui_knob_bt(pg, k, s); }

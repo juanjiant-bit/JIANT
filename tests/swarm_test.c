@@ -77,7 +77,7 @@ static struct sw_dev *dev_of(uint32_t dev)              /* the voice of pkt's de
 }
 static void blocks(uint32_t n) { while (n--) { host_clock += CTL * 24000000u / 44100u; ain_swarm(CTL); } }
 /* (V10.6z6) the lead's notes: a block is an onset when sw_step re-struck it (its FM envelope 32767, one block down) */
-#define ONSET() (sw[SW_N].fme == 32767 - (32767 >> 5))
+#define ONSET() (sw[SW_N].fme == 32767 - ((32767 - 12000) >> 6))
 static int16_t (*curve)(uint32_t b);                    /* PROX's closeness at block b (0: none, AIR / the walk) */
 static uint32_t lead_run(uint32_t nb, uint8_t *nt, uint32_t *at, uint32_t max)   /* nb blocks; the onsets' notes, blocks */
 {

@@ -221,6 +221,8 @@ static __attribute__((noinline)) void tf_run(track_t *t, int32_t *out, uint32_t 
                 comb_p16[ti] = (int16_t)t->v[i].pitch_cur;
             }
         cut = kt_cut(kt_v[ti], cut, comb_p16[ti]);
+        if (kt_v[ti] == 3u)                             /* (V10.8.38) NOTE: the resonance's peak on the note */
+            cut = kt_res(cut, p[P_FRES], ft);
     }
     {
         uint32_t on = !(ft == FT_LP && fo == TF_DRY && cut >= (127 << 8) && !p[P_FRES]), was = tf_on[ti];

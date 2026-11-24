@@ -503,11 +503,13 @@ static void tracks_edit(uint32_t slot, int32_t steps)
     const param_desc_t *d;
     switch (slot) {
     case 3:                                             /* (V10.37) the tempo (was the DJ FILTER: LIVE > KEYS) */
-        song.g[G_BPM] = (int16_t)clamp(song.g[G_BPM] + accel(EN_K4, steps, 200), GP[G_BPM].min, GP[G_BPM].max);
-        ui.bpm_t = 40;
-        return;
-    case 4: {                                           /* (V10.45) LIVE > KEYS KNOB 4: the DJ FILTER (V10.37 sent it to the
-                                                         * tempo, MIXER's new KNOB 4); no acceleration across the middle */
+        if (!mix_k4) {
+            song.g[G_BPM] = (int16_t)clamp(song.g[G_BPM] + accel(EN_K4, steps, 200), GP[G_BPM].min, GP[G_BPM].max);
+            ui.bpm_t = 40;
+            return;
+        }
+        {                                               /* (V10.8.38, the owner) OCT+ on MIXER: KNOB 4 the DJ FILTER again
+                                                         * (V10.45's of LIVE > KEYS); no acceleration across the middle */
         int32_t v = song.g[G_DJF], to = clamp(v + accel(EN_K4, steps, 127), -64, 63);
         if ((v < 0 && to > 0) || (v > 0 && to < 0))
             to = 0;
@@ -1333,6 +1335,8 @@ static void edit_param(uint32_t slot, int32_t steps)
         eu_every(steps);
         return;
     }
+    if (eu_hold && slot == 3u && pg->id[0] == P_E0)       /* (V10.8.38) EDIT 1, OCT+ held: KNOB 4 the GAIN (page_desc) */
+        eu_hold = 2;
     if (eu_hold && slot == 1u && pg->id[0] == P_FTYPE) {   /* (V10.8.37) FILTER, OCT+ held: CUT's knob the KEY TRK */
         uint8_t *kp = &kt_v[song.sel % NTRK];
         *kp = (uint8_t)clamp((int32_t)*kp + steps, 0, 3);
@@ -1556,7 +1560,7 @@ static void edit_param(uint32_t slot, int32_t steps)
         }
     }
     if ((act_cols() >> slot) & 1u) {                      /* an action's knob picks it (right) or drops it (left); */
-        if (pg->graph != GR_PATS)                         /* OCT+ does it (act_do) */
+        if (1)                         /* OCT+ does it (act_do) */
             ui.act = steps > 0 ? (uint8_t)(slot + 1u) : ui.act == slot + 1u ? 0u : ui.act;
         return;
     }
@@ -1574,7 +1578,7 @@ sect:
             ui.uslot = (uint8_t)clamp((int32_t)ui.uslot + steps, 0, UP_SLOTS - 1);
         return;
     }
-    if (pg->graph == GR_PATS) {                          /* KNOB 1 the pattern */
+    if (0 /* PHRASES gone */) {                          /* KNOB 1 the pattern */
         if (slot == 0u)
             ui.ppick = (uint8_t)clamp((int32_t)pat_pick() + steps, 0, (int32_t)pat_count() - 1);
         return;
@@ -1632,10 +1636,6 @@ sect:
         int16_t *dst = &TSEL->p[P_M1DST + 3u * mod_ui_slot];
         *dst = (int16_t)mod_dst_turn(TSEL, *dst, steps);
         knob_cap(TSEL, P_M1DST + 3u * mod_ui_slot);
-        return;
-    }
-    if (pg->id[0] == G_MIDI && pg->scope == SC_GLOBAL) {   /* (V10.6z8, a Discord user) GLO > SYSTEM 2 shows, edits nothing */
-        ui_message("EDIT: MENU > BLUETOOTH");
         return;
     }
     d = page_desc(pg, slot, &vp);
@@ -1773,7 +1773,7 @@ static __attribute__((noinline)) void act_do(void)
         ui_message("ROW ADDED");
         return;
     }
-    if (cur_page()->graph == GR_PATS) {
+    if (0 /* PHRASES gone */) {
         if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
         if (pat_needs_confirm(TSEL))                      /* the user's steps: the dialog */
             confirm_open(CF_LOAD_PAT, song.sel);
@@ -2776,7 +2776,7 @@ static void ui_input_frame(void)
                 else ui_message("PROJECT CHANGED");
             } else if (dice_kind(kind)) {               /* (0.6.65) OK: the diced part stays */
                 ui_message(dk.msg);
-            } else if (kind == CF_LOAD_PAT) {
+            } else if (0 && kind == CF_LOAD_PAT) {   /* (V10.8.38: PHRASES gone) */
                 pat_load_ui(&trk[ui.confirm_trk % NTRK], pat_pick());
             } else if (kind == CF_CLEAR_COMP) {        /* (V10.7.62) every step component of the track */
                 track_t *t = &trk[ui.confirm_trk % NTRK];
@@ -2969,7 +2969,14 @@ static void ui_input_frame(void)
                                                          * variation, the one before (below: one place) */
                 break;
             }
-            if (b == B_OCTUP && !fm1_in.notes && !ui.home && !ui.menu && !ui.confirm && cur_page()->id[0] == P_FTYPE) {
+            if (b == B_OCTUP && !fm1_in.notes && !ui.home && !ui.menu && !ui.confirm && cur_page()->scope == SC_TRK) {
+                mix_k4 ^= 1u;                           /* (V10.8.38, the owner) MIXER: OCT+ turns KNOB 4 BPM <-> DJ FILTER */
+                ui.force = 1;
+                break;
+            }
+            if (b == B_OCTUP && !fm1_in.notes && !ui.home && !ui.menu && !ui.confirm &&
+                (cur_page()->id[0] == P_FTYPE || (cur_page()->id[0] == P_E0 && cur_page()->scope == SC_ENGINE))) {
+                ui.force = 1;                           /* (V10.8.38: EDIT 1's KNOB 4 the GAIN while held) */
                 eu_hold = 1;                            /* (V10.8.37) FILTER: OCT+'s octave when let go (held with CUT's
                                                          * knob: KEY TRK, no octave) */
                 break;
@@ -2997,9 +3004,10 @@ static void ui_input_frame(void)
                                                          * now, unless KNOB 4 turned under it (EVERY) or the page left */
         if (eu_hold == 1u && !ui.home && !ui.menu && !ui.confirm) {
             if (cur_page()->id[0] == ID_EU0) eu_pend = 7;
-            else if (cur_page()->id[0] == P_FTYPE) oct_key(B_OCTUP, ~0u);
+            else oct_key(B_OCTUP, ~0u);                 /* (FILTER, EDIT 1: the octave, nothing turned under it) */
         }
         eu_hold = 0;
+        ui.force = 1;
     }
     if (eu_pend) {
         eu_oct((eu_pend >> 1) & 1, eu_pend >> 2);
@@ -3017,7 +3025,7 @@ static void ui_input_frame(void)
     } else if (act_cols() && (oct & 2u)) {              /* action pages: OCT+ does the picked action, */
         act_do();
     } else if (act_cols() && (oct & 1u)) {              /* OCT- drops it, or (none picked) goes HOME; PHRASES: back to */
-        if (cur_page()->graph == GR_PATS && !ui.home)   /* the SEQ page it was opened on */
+        if (0 /* PHRASES gone */ && !ui.home)   /* the SEQ page it was opened on */
             nav_go(SEC_SEQ, nav_cur(), 0);
         else if (SONG_PARTS(cur_page()))                 /* (V10.6o) PARTS: back to the song */
             parts_song();
@@ -3113,7 +3121,7 @@ static void ui_input_frame(void)
             continue;
         }
         if (ui.home || pg->scope == SC_STEP || pg->scope == SC_TRK || page_desc(pg, k, &hv) ||
-            ((pg->graph == GR_USER || pg->graph == GR_MOD || pg->graph == GR_MSEQ || pg->graph == GR_PATS || BAR_PAGE(pg)) &&
+            ((pg->graph == GR_USER || pg->graph == GR_MOD || pg->graph == GR_MSEQ || 0 /* PHRASES gone */ || BAR_PAGE(pg)) &&
              k == 0u)
             || FIT_PAGE(pg) || SPLIT_PAGE(pg) || pg->graph == GR_SONG || pg->graph == GR_DXSND || pg->graph == GR_SWARM || pg->graph == GR_FOCUS ||
             pg->graph == GR_GCOMP || pg->graph == GR_LIVE) {   /* (not an empty column) */

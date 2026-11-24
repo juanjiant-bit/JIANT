@@ -77,7 +77,8 @@ enum { LV_PAT, LV_BAR, LV_STEP, LV_N };                 /* SEQ's pictures: the b
 /* (0.9.9-seq2, the approved mock-up) SEQ's chain in seven tabs: STEP . LENGTH (the PATTERN page, then TRACK) . MUTATE .
  * PLAYHEADS . STRETCH . COMP (COMP 2 after it, by SELECT as before) . AUTO (AUTOMATION, AUTO LIST). BAR and NOTE stay pages
  * (code puts them) but out of the chain, until the step held opens its own (the mock-up's slice 5) */
-static const nv_t CE_SEQ[] = {NV("STEP", 0, 0, LV_BAR), NV("PATTERN", "LENGTH", 1, LV_PAT), NV("RHYTHM", 0, 1, LV_PAT), NV("TRACK", 0, 1, LV_PAT),
+static const nv_t CE_SEQ[] = {NV("STEP", 0, 0, LV_BAR), NV("NOTE", 0, 0, LV_BAR),   /* (V10.8.38, the owner: NOTE back, FOCUS PITCH MOVE MICRO) */
+                              NV("PATTERN", "LENGTH", 1, LV_PAT), NV("RHYTHM", 0, 1, LV_PAT), NV("TRACK", 0, 1, LV_PAT),
                               NV("EUCLID", 0, 2, LV_PAT), NV("MODES", 0, 2, LV_PAT),   /* (V10.8.37: MUTATE's page gone, EVERY a tag on EUCLID) */
                               NV("PLAYHEADS", 0, 3, LV_PAT),
                               NV("COMP", "STEP FX", 4, LV_STEP), NV("COMP 2", "STEP FX 2", 4, LV_STEP), NV("AUTOMATION", 0, 5, LV_BAR),
@@ -101,7 +102,7 @@ static const ng_t CG_FX[] = {{"TRACK", "TRK"}, {"BUSES", "BUS"}, {"DELAY", "DLY"
 static const nv_t CE_GLO[] = {NV("MIXER", 0, 0, 0), NV("SENDS", 0, 0, 0),   /* (V10.8.3, the owner: LIVE's KEYS RAILS gone for the
                                                          * song mode's flash; JAM plays the sequences live) */
                               NV("GLOBAL", 0, 1, 1),   /* (V10.8.21, the owner: G.COMP gone for DRONE CLAY's flash) */
-                              NV("SYSTEM", 0, 1, 2), NV("SYSTEM 2", "MIDI", 1, 2), NV("KEY SPLIT", 0, 1, 2), NV("KEY SPLIT 2", 0, 1, 2)};   /* (V10.37) the performing pages first, the
+                              NV("SYSTEM", 0, 1, 2), NV("KEY SPLIT", 0, 1, 2), NV("KEY SPLIT 2", 0, 1, 2)};   /* (V10.37) the performing pages first, the
                                                          * settings (GLOBAL, SYSTEM) last */   /* (0.9.9-seq2f) the global lane; (p2) LIVE first
                                                          * (ui_live.c) */
 static const ng_t CG_GLO[] = {{"MIXER", "MIX"}, {"SETUP", 0}};   /* (codex/coherence: SETUP, the

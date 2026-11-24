@@ -831,7 +831,7 @@ static void foot_hint(char *a, char *b)
     uint32_t c = act_col();
     str_cpy(a, "OCT+ ", 8);
     str_cpy(a + 5, c ? act_name(c - 1u) : "--", 8);
-    str_cpy(b, ui.act && cur_page()->graph != GR_PATS ? "OCT- CANCEL" : "OCT- BACK", 16);
+    str_cpy(b, ui.act && 1 ? "OCT- CANCEL" : "OCT- BACK", 16);
 }
 
 /* the sound's name on the track: a user preset or the engine's preset (b holds 16) */
@@ -1467,7 +1467,8 @@ static void draw_columns(void)
         pf_column(1, "PAN", &TP[P_PAN], t->p[P_PAN], VAL(1u), param_icon(&TP[P_PAN], t->p[P_PAN]));
         pf_column(2, "MUTE", &TP[P_MUTE], t->p[P_MUTE], t->p[P_MUTE] ? T_ACCENT : VAL(2u), ICON_AUTO);   /* (codex/coherence: was
                                                          * REV, SENDS' beside it) */
-        pf_column(3, "BPM", &GP[G_BPM], song.g[G_BPM], VAL(3u), ICON_AUTO);   /* (V10.37) KNOB 4 the tempo, at hand (the DJ
+        pf_column(3, mix_k4 ? "DJ FILT" : "BPM", &GP[mix_k4 ? G_DJF : G_BPM], song.g[mix_k4 ? G_DJF : G_BPM], VAL(3u), ICON_AUTO);   /* (V10.8.38: OCT+ turns it) */
+   /* (V10.37) KNOB 4 the tempo, at hand (the DJ
                                                          * FILTER stays on LIVE > KEYS's KNOB 4) */
         return;
     }
@@ -1486,7 +1487,7 @@ static void draw_columns(void)
         hot_text_column(3, "LIST", N_LIST[list_get()]);
         return;
     }
-    if (cur_page()->graph == GR_PATS) {                  /* PAT, then LOAD (a GO button) */
+    if (0 /* PHRASES gone */) {                  /* PAT, then LOAD (a GO button) */
         uint32_t n = pat_count(), k = pat_pick();
         char tag[4], nm[13];
         pat_label(k, tag, nm);
@@ -1710,22 +1711,6 @@ static void draw_columns(void)
         }
         if (!d || !d->label || d->label[0] == '-') {
             empty_column(c);
-            continue;
-        }
-        if (cur_page()->id[c] == G_MIDI && cur_page()->scope == SC_GLOBAL) {
-            if (c == 2u) {                               /* (V10.37) KNOB 3: Bluetooth (MENU > SYSTEM > BT) */
-                str_cpy(val, bt_vname(bt_get()), 12);
-                unit_column(c, "BT", val, "", T_THEME);
-                continue;
-            }
-            if (c) {                                     /* (0.9.9-snd8) SYSTEM 2's KNOB 2: the TRS messages come in */
-                fmt_int(val, (int32_t)(um.msgs % 10000u));
-                unit_column(c, "TRS IN", val, "MSG", T_THEME);
-                continue;
-            }
-            str_cpy(val, !usb.up ? "OFF" : usb.config ? "MIDI" : usb.setups ? "ENUM" : usb.sof_seen ? "BUS" : "WAIT", 12);
-            unit = "USB";
-            unit_column(c, "USB", val, unit, T_THEME);
             continue;
         }
         if ((act_cols() >> c) & 1u) {
@@ -2047,13 +2032,6 @@ static void confirm_text(char *a, char *b)
         str_cpy(a + str_len(a), "?", 2);
         up_name(k, b);
         break;
-    case CF_LOAD_PAT: {
-        char tag[4];
-        str_cpy(a, "REPLACE T1 SEQUENCE?", 24);
-        a[9] = (char)('1' + k % NTRK);
-        pat_label(pat_pick(), tag, b);               /* with the pattern picked */
-        break;
-    }
     default:
         str_cpy(a, "CLEAR T1 SEQUENCE?", 24);     /* the header (T1..T4) is hidden */
         a[7] = (char)('1' + k % NTRK);
