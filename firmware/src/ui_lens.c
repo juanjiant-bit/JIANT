@@ -69,10 +69,12 @@ static const nv_t CE_DRM[] = {NV("EDIT 1", "KIT", 0, 0), NV("EDIT 2", "KIT 2", 0
                                                          * 13 -> 8; LEVELS' levels on SOUND, STEREO's IMAGE on FILTER, BUS's
                                                          * GLUE on KIT 2, PLAY's KEY MAP on SOUND 4) */
 static const ng_t CG_DRM[] = {{"KIT", 0}, {"SOUND", 0}, {"TONE", 0}};
+#if FELUCCA_FM4                                         /* (deadcode: DIGITAL retired, its chain never picked: nav_key) */
 static const nv_t CE_DIG[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("MORE", 0, 1, 1),
                               NV("PLAY", 0, 1, 1), NV("OP1 ENV", 0, 2, 2), NV("OP2 ENV", 0, 2, 2), NV("OP3 ENV", 0, 2, 2),
                               NV("OP4 ENV", 0, 2, 2), NV("OP LEVEL", 0, 2, 2)};
 static const ng_t CG_DIG[] = {{"SOUND", 0}, {"TONE", 0}, {"OPERATOR", "OPS"}};
+#endif
 enum { LV_PAT, LV_BAR, LV_STEP, LV_N };                 /* SEQ's pictures: the bars, the roll, the step large */
 /* (0.9.9-seq2, the approved mock-up) SEQ's chain in seven tabs: STEP . LENGTH (the PATTERN page, then TRACK) . MUTATE .
  * PLAYHEADS . STRETCH . COMP (COMP 2 after it, by SELECT as before) . AUTO (AUTOMATION, AUTO LIST). BAR and NOTE stay pages
@@ -136,7 +138,10 @@ static const ng_t CG_SAVE[] = {{"TOOLS", 0}, {"PROJECT", 0}, {"SOUND", 0}};
 static const ch_t CHAINS[NAV_KEYS] = {CH(CE_HOME, CG_HOME), CH(CE_SYN, CG_SYN), CH(CE_SEQ, CG_SEQ), CH(CE_FX, CG_FX),
                                       CH(CE_GLO, CG_GLO), CH(CE_ENV, CG_ENV), CH(CE_LFO, CG_LFO), CH(CE_SCL, CG_SCL),
                                       CH(CE_ARP, CG_ARP), CH(CE_SAVE, CG_SAVE), CH(CE_FM6, CG_FM6), CH(CE_DRM, CG_DRM),
-                                      CH(CE_DIG, CG_DIG)};
+#if FELUCCA_FM4
+                                      CH(CE_DIG, CG_DIG)
+#endif
+};
 /* the page each opens on at power-on (the mock-up's): SEQ its STEP, ENV its ENV, LFO its LFO, (p2) GLO its MIXER (LIVE's
  * pages before it: a GLO tap inside, rule 2), (V10.7.22) SAVE its TIMELINE (TOOLS before it); ui.nmem holds it ^ this */
 static const uint8_t NAV_DEF[NAV_KEYS] = {0, 0, 0, 0, 0, 0, 1, 0, 0, 2, 0, 0, 0};   /* (V10.8.3: GLO MIXER 0, LIVE gone) */   /* (V10.7.66: LFO its LFO, MACROS gone to FX) */   /* (V10.7.63: SAVE its PROJECTS) */   /* (V10.7.59: LFO its LFO, after MACROS) */   /* (V10.7.58: GLO MIXER 1, RAILS gone) */

@@ -1368,18 +1368,6 @@ static void edit_param(uint32_t slot, int32_t steps)
         else f->ivl = (int8_t)clamp((int32_t)f->ivl + d, -14, 14);
         return;
     }
-    if (pg->graph == GR_CHANCE) {
-        if (slot == 0u) cursor_set(ui.cursor + steps);
-        else if (slot == 1u || slot == 2u) {
-            if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
-            step_t *st = &TSEL->step[ui.cursor];
-            if (slot == 1u)
-                step_set_chance(st, (uint32_t)clamp((int32_t)step_chance(st) + steps, 0, 100));
-            else                                      /* RATCH x1..x4 */
-                step_set_ratchet(st, (uint32_t)clamp((int32_t)step_ratchet(st) + steps, 1, 4));
-        }
-        return;
-    }
     if (pg->graph == GR_DXSND) {                          /* EDIT > SOUND: the DRUM-X kit (ui_dx.c) */
         dx_knob(pg, slot, steps);
         return;
@@ -3123,8 +3111,7 @@ static void ui_input_frame(void)
         if (ui.home || pg->scope == SC_STEP || pg->scope == SC_TRK || page_desc(pg, k, &hv) ||
             ((pg->graph == GR_USER || pg->graph == GR_MOD || pg->graph == GR_MSEQ || 0 /* PHRASES gone */ || BAR_PAGE(pg)) &&
              k == 0u)
-            || FIT_PAGE(pg) || SPLIT_PAGE(pg) || pg->graph == GR_SONG || pg->graph == GR_DXSND || pg->graph == GR_SWARM || pg->graph == GR_FOCUS ||
-            pg->graph == GR_GCOMP || pg->graph == GR_LIVE) {   /* (not an empty column) */
+            || FIT_PAGE(pg) || SPLIT_PAGE(pg) || pg->graph == GR_SONG || pg->graph == GR_DXSND || pg->graph == GR_SWARM || pg->graph == GR_FOCUS) {   /* (not an empty column) */
             ui.hot_col = (uint8_t)k;
             ui.hot_t = 40, ui.knob_ms = fm1_ms;
         }

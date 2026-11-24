@@ -1777,8 +1777,7 @@ static int test_patterns(void)
     {   /* (V10.8.38, the owner: SEQ > PHRASES gone; its row keeps the table's index, never shown) */
         uint32_t i, n = 0;
         for (i = 0; i < NPAGES; i++)
-            n += (str_eq(PAGES[i].title, "PHRASES") || (str_eq(PAGES[i].title, "BAR") && PAGES[i].fam == FAM_SEQ) ||
-                  str_eq(PAGES[i].title, "SYSTEM 2")) && !page_visible(i);
+            n += PAGES[i].graph == GR_PATS && !PAGES[i].title[0] && !page_visible(i);   /* (deadcode: the rows without a title) */
         bad += check("V10.8.38 PHRASES, BAR and SYSTEM 2: their rows kept (the index), none of them a page", n == 3u);
     }
     (void)before; (void)t;
@@ -3985,11 +3984,12 @@ static int test_product_ux(void)
             ok &= !page_visible(i);
     bad += check("DIGITAL retired: engine 1 asked for loads FM6; the OP ENV / OP LEVEL pages never show", ok);
 #endif
-    ui_power_on(); go_page(GR_CHANCE); turn(EN_K2, -35);
+    ui_power_on(); step_set_chance(&TSEL->step[0], 65);   /* (deadcode: SEQ > CHANCE, a page no chain showed since 0.6.37, gone:
+                                                         * the step's chance itself) */
     bad += check("CHANCE is per step and starts at backward-compatible 100 percent", step_chance(&TSEL->step[0]) == 65 && step_chance(&TSEL->step[1]) == 100);
-    turn(EN_K2, -1000); ok = step_chance(&TSEL->step[0]) == 0;
-    turn(EN_K2, 1000); ok &= step_chance(&TSEL->step[0]) == 100;
-    bad += check("CHANCE controls clamp to 0..100 without changing adjacent steps", ok);
+    step_set_chance(&TSEL->step[0], 0); ok = step_chance(&TSEL->step[0]) == 0 && step_chance(&TSEL->step[1]) == 100;
+    step_set_chance(&TSEL->step[0], 100); ok &= step_chance(&TSEL->step[0]) == 100 && step_chance(&TSEL->step[1]) == 100;
+    bad += check("CHANCE set to 0 and to 100 without changing adjacent steps", ok);
     ui_power_on(); song.rec = 1; seq_start(); go_home();
     int16_t baseline = TSEL->p[P_E0]; turn(EN_K1, 1);
     bad += check("REC plus a sound knob records motion through the UI", motion_count(TSEL) == 1 && motion_enabled(TSEL));
@@ -5217,28 +5217,7 @@ static int test_bughunt_ui(void)
                  ok && !ui.confirm && !up_used(1));
     turn(EN_K1 + 2, 1); press(B_OCTUP);
     bad += check("  an empty slot: no dialog, EMPTY SLOT", !ui.confirm && msg_is("EMPTY SLOT"));
-    {   /* 4: CHANCE is not STEP: no grid, no key entry, no EDIT clear (its knobs only) */
-        uint32_t before;
-        step_t s0;
-        ui_power_on();
-        track_select(3); frame();                       /* T4 DRUM */
-        go_page(GR_CHANCE); frame();
-        before = lane_steps(TSEL, ui.lane);
-        tap_key(white(2));
-        bad += check("CHANCE on a DRUM track: no grid (title, LEDs), a white key toggles no hit",
-                     drum_track(TSEL) && !grid_on() && !keys_mode() && lane_steps(TSEL, ui.lane) == before);
-        ui_power_on(); go_page(GR_CHANCE); frame();
-        my_steps(TSEL);
-        s0 = TSEL->step[0];
-        tap_key(white(5)); frame();
-        ok = !memcmp(&s0, &TSEL->step[0], sizeof s0) && ui.cursor == 0u;
-        press(B_EDIT);
-        ok &= !memcmp(&s0, &TSEL->step[0], sizeof s0) && !msg_is("STEP CLEARED");
-        ui_power_on(); go_page(GR_CHANCE); frame();
-        s0 = TSEL->step[0];
-        turn(EN_K2, -10);                               /* (100 % by default) */
-        bad += check("CHANCE on a melodic track: a key writes no step, EDIT clears none; KNOB 2 the chance",
-                     ok && step_chance(&TSEL->step[0]) != step_chance(&s0));
+    {   /* 4: (deadcode: the CHANCE page's cases gone with the page) STEP: armed, a key writes */
         ui_power_on(); go_page(GR_ROLL); frame(); song.rec = 1;   /* (#133: armed, stopped) */
         tap_key(white(5)); frame();
         bad += check("  STEP still: armed, a key writes the cursor step", step_on(&TSEL->step[0]) || TSEL->step[0].n);
@@ -7866,10 +7845,8 @@ static int test_lente(void)
     track_select(0); frame();
     go_title("COMP 2"); frame();
     ok &= lens_level() == LV_STEP && seq_roll_view(cur_page());                     /* (a page put by code: its entry) */
-    go_page(GR_CHANCE); frame();
-    ok &= lens_level() == LV_STEP;
     press(B_SEQ); frames(32);
-    ok &= str_eq(cur_page()->title, "AUTOMATION");                                 /* (hidden CHANCE: from COMP's tab) */
+    ok &= str_eq(cur_page()->title, "AUTOMATION");                                 /* (from COMP's tab; deadcode: CHANCE's page gone) */
     go_title("NOTE"); frame();
     ok &= roll_view(cur_page()) && seq_roll_view(cur_page());                      /* (NOTE, out of the chain: the roll) */
     bad += check("0.9.2 SEQ from elsewhere: the page left, on any track (was per track); a page put by code brings its entry", ok);
@@ -8110,7 +8087,7 @@ static int test_foot_steps(void)
 
 static int test_seq_tools(void)
 {
-    static const uint8_t PG[7] = {GR_ROLL, GR_STEPS, GR_CHANCE, GR_MOTION, GR_FUGUE, GR_EUCLID, GR_COMP};   /* (V10.8.20: STRETCH gone) */
+    static const uint8_t PG[6] = {GR_ROLL, GR_STEPS, GR_MOTION, GR_FUGUE, GR_EUCLID, GR_COMP};   /* (deadcode: CHANCE's page gone) */   /* (V10.8.20: STRETCH gone) */
     static const uint8_t NOT[4] = {GR_PATS, GR_SONG, GR_TRK, 0};
     int bad = 0, ok, okc, flash;
     uint32_t i, k, a, b2, pg, seed;
@@ -8118,7 +8095,7 @@ static int test_seq_tools(void)
 
     /* where it opens: (0.8.3) every LENTE page; elsewhere SEQ held is a tap (SONG: SAVE held, G5) */
     ok = 1;
-    for (i = 0; i < 7u; i++) {
+    for (i = 0; i < 6u; i++) {
         ui_power_on();
         go_page(PG[i]); frame();
         pg = ui.page;
@@ -8127,7 +8104,7 @@ static int test_seq_tools(void)
         btn_up(B_SEQ); frame();
         ok &= !ui.layer && ui.page == pg && !ui.home;
     }
-    bad += check("SEQ TOOLS: SEQ held on every LENTE page (STEP .. COMP 2, CHANCE) opens the map (no SONG, the page stays)", ok);
+    bad += check("SEQ TOOLS: SEQ held on every LENTE page (STEP .. COMP 2) opens the map (no SONG, the page stays)", ok);
     ok = 1;
     for (i = 0; i < 4u; i++) {
         ui_power_on();

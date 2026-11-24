@@ -231,8 +231,8 @@ static __attribute__((noinline)) int16_t *mom_vp(uint32_t k, const param_desc_t 
             return 0;
         *d = home_param(k, &vp);
     } else {
-        if (FIT_PAGE(pg) || pg->scope == SC_STEP || pg->scope == SC_TRK || ((act_cols() >> k) & 1u) || g == GR_COMP || g == GR_GCOMP ||
-            g == GR_FUGUE || g == GR_CHANCE || g == GR_DXSND || g == GR_SWARM || g == GR_FOCUS ||
+        if (FIT_PAGE(pg) || pg->scope == SC_STEP || pg->scope == SC_TRK || ((act_cols() >> k) & 1u) || g == GR_COMP ||
+            g == GR_FUGUE || g == GR_DXSND || g == GR_SWARM || g == GR_FOCUS ||
             g == GR_EVENTS || g == GR_MOTION || g == GR_SONG || g == GR_BROWSE || g == GR_TOOLS || g == GR_SLOTS ||
             g == GR_USER || 0 /* PHRASES gone */ || DX_KIT3(pg) || fop_page(g) ||
             (k == 0u && (BAR_PAGE(pg) || g == GR_SLPIT || g == GR_MSEQ || g == GR_MOD)))

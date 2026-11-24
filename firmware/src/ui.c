@@ -574,7 +574,7 @@ static uint32_t large_kind(void)
         return LK_TALL;
     g = cur_page()->graph;
     return g == GR_BROWSE || g == GR_SLOTS || g == GR_USER || 0 /* PHRASES gone */ || g == GR_SONG || g == GR_ROLL ||
-           g == GR_CHANCE || g == GR_COMP || g == GR_EVENTS || g == GR_LYRIC || g == GR_LIVE ? LK_LABEL : LK_TALL;
+           g == GR_COMP || g == GR_EVENTS || g == GR_LYRIC ? LK_LABEL : LK_TALL;
 }
 /* the geometry of the page shown: the cards' height, the panel's top and height. (0.8.5) A lens page (lz_on): the
  * mock-up's (LZ_*), under its level tabs; a layer's map over it: the usual layout */
@@ -616,14 +616,11 @@ static uint32_t layer_btn(void);
  * LANES 2 a DRUM track's (its lane levels); SOUND / SOUND 2 a DRUM track's (DRUM-X: ui_dx.c) */
 static int page_visible(uint32_t i)
 {
-    if (PAGES[i].graph == GR_SONG && (PAGES[i].fam == FAM_SEQ || (PAGES[i].title[0] == 'T' && PAGES[i].title[1] == 'I')))
-        return 0;                                       /* (V10.8: TIMELINE, PARTS gone, the song mode's redesign) */
-    if (PAGES[i].graph == GR_LIVE || PAGES[i].graph == GR_SHAPE || PAGES[i].graph == GR_GCOMP || PAGES[i].graph == GR_STAGE ||
-        PAGES[i].graph == GR_PATS ||                    /* (V10.8.38, the owner: PHRASES, BAR, SYSTEM 2 gone; their rows the index) */
-        (PAGES[i].graph == GR_EUCLID && PAGES[i].id[0] == 0xFFu))   /* (V10.8.37: MUTATE's row, EVERY on EUCLID) */
-        return 0;                                       /* (V10.8.3: GLO > LIVE, V10.8.20: SEQ > STRETCH, V10.8.21: GLO >
-                                                         * G.COMP, V10.8.35: ENV > STAGE gone for the flash (the owner);
-                                                         * kept in the table: their index) */
+    if (!PAGES[i].title[0])                             /* (deadcode) a page gone from every chain: its row kept, no title
+                                                         * (params.c PAGES: TIMELINE, SEQ's SONG, KEYS, STRETCH, G.COMP, STAGE,
+                                                         * PHRASES, BAR, SYSTEM 2, MUTATE, CHANCE, KIT 3, KIT 4, STEREO, LEVELS,
+                                                         * the plain MORE) */
+        return 0;
     if (sys_load == LOAD_ECO && ((PAGES[i].graph == GR_SLCR || PAGES[i].graph == GR_SLPIT) ||
                                  (PAGES[i].fam == FAM_FX && PAGES[i].id[0] == G_CRATE)))
         return 0;                                       /* (0.6.30) LOAD ECO: no SLICER, no chorus: their pages gone */
@@ -636,26 +633,14 @@ static int page_visible(uint32_t i)
         return trk_eng(TSEL) == ENGI_INPUT && TSEL->p[P_E0] == AIN_SW;
     if (PAGES[i].graph == GR_LYRIC || PAGES[i].graph == GR_LYRSTEP)
         return trk_engp(TSEL) == &ENG_FORMANT;
-    if (0 /* PHRASES gone */ || PAGES[i].graph == GR_CHANCE)   /* (0.6.37) PHRASES, a step's CHANCE: out of the */
-        return !ui.home && ui.page == i;               /* SEQ pages' cycle (only where code put the screen) */
-    if (PAGES[i].graph == GR_DXSND || PAGES[i].graph == GR_DXIMG)   /* (0.6.48: IMAGE; V10.49: STEREO a synth's too) */
-        return trk_eng(TSEL) == ENGI_DRUM && !(PAGES[i].title[0] == 'K' && PAGES[i].title[3] == ' ') &&   /* (V10.7.63: KIT 3
-                                                         * BUS gone too: GLUE on KIT 2, HANDS the CLAP's SOUND 2) */
-               !(PAGES[i].title[0] == 'S' && PAGES[i].title[1] == 'T');   /* (V10.7.63: STEREO gone, its IMAGE on FILTER) */
+    if (PAGES[i].graph == GR_DXSND)                     /* (a kit's SOUND 1..4, X-MOD) */
+        return trk_eng(TSEL) == ENGI_DRUM;
     if (PAGES[i].fam == FAM_EDIT && PAGES[i].id[0] == P_VOICE && trk_eng(TSEL) == ENGI_DRUM)
         return 0;                                       /* (V10.7.63, the owner) PLAY not a kit's (POLY GLIDE PRIO): its
                                                          * KEY MAP on SOUND 4 */
-    if (PAGES[i].id[0] == P_LN0 || PAGES[i].id[0] == P_LN4)
-        return 0;                                       /* (V10.7.63: LEVELS gone, a sound's LEVEL on SOUND) */   /* (V10.7.62:
-                                                         * KIT 4 gone, its KEY MAP on PLAY; kept in the table: its index) */              /* (codex/coherence: a synth's IMAGE on PLAY 2) */
-    if (PAGES[i].scope == SC_TRACK && PAGES[i].id[0] >= P_LN0 && PAGES[i].id[0] <= P_LN7)
-        return trk_eng(TSEL) == ENGI_DRUM;
     if (PAGES[i].graph == GR_FOCUS)                     /* (0.8.5) FOCUS: a synth's (FM6: OPERATOR, DRUM: SOUND; V10.54 not INPUT's) */
         return trk_eng(TSEL) != ENGI_DRUM && trk_eng(TSEL) != ENGI_FM6 && trk_eng(TSEL) != ENGI_INPUT &&
                !(FELUCCA_FM4 && trk_eng(TSEL) == ENGI_DIGITAL);
-    if (PAGES[i].fam == FAM_EDIT && PAGES[i].id[0] == P_DETUNE)   /* (V10.7.64, the owner: fewer pages) the plain MORE
-                                                         * gone, its UNISON VEL on PLAY (kept in the table: its index) */
-        return 0;
     if (PAGES[i].graph >= GR_FMOP && PAGES[i].graph <= GR_FMENV)   /* (0.6.10) OPERATOR, OP ENV, OPERATOR 2: FM6's */
         return trk_eng(TSEL) == ENGI_FM6;
     if (PAGES[i].fam == FAM_EDIT && PAGES[i].id[0] == P_WRDEP)   /* (0.7.8) ROTOR: WHEEL's */
@@ -748,7 +733,7 @@ static uint32_t fx_level(void)
 static uint32_t lens_level(void)                        /* SEQ: the level the page is drawn as */
 {
     uint32_t g = PAGES[ui.page].graph;
-    return 0 /* PHRASES gone */ || g == GR_SONG ? LV_PAT : g == GR_CHANCE ? LV_STEP : nav_lv();
+    return g == GR_SONG ? LV_PAT : nav_lv();
 }
 static int home_lz(void) { return (ui.home && !ui.menu && !dlg_on()) || gen_on(); }   /* (GEN: HOME's) */
 static uint32_t lz_on(void) { return ((lens_on() || save_on() || fx_on() || pd_on() || home_lz()) && !ui.layer && !name_on()) || (ui.menu | 2u) == 3u || (ui.layer && !ui.menu); }
@@ -2034,7 +2019,7 @@ static void sw_ui_cards_bt(const page_t *pg);
 #define SONG_PARTS(pg) ((void)(pg), 0)   /* (V10.8: PARTS gone; was title P) */   /* (V10.6o) PARTS */
 #define SONG_CLIPS(pg) ((pg)->graph == GR_SONG && (pg)->title[0] == 'J')   /* (V10.6s) CLIPS; (V10.8.2) JAM */
 #define SONG_TAKE(pg) ((pg)->graph == GR_SONG && (pg)->title[0] == 'T' && (pg)->title[1] == 'A')   /* (V10.8.2) TAKE */
-#define DX_KIT3(pg) ((pg)->graph == GR_DXIMG && (pg)->title[0] == 'K')   /* (0.6.58) GR_DXIMG: KIT 3, or STEREO (IMAGE) */
+#define DX_KIT3(pg) ((void)(pg), 0)   /* (KIT 3 gone, V10.7.63) */ //   /* (0.6.58) GR_DXIMG: KIT 3, or STEREO (IMAGE) */
 static uint32_t dx_sig(void);
 
 /* ---------------------------------------------------- action pages --- */

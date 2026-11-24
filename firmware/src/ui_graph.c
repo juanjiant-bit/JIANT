@@ -1310,9 +1310,9 @@ static int drift_on(void)
         return 0;
     return !ui.home && !sys_load && !ANIM_OFF() && strip_kind() == SK_NONE && !roll_view(cur_page()) &&
            !seq_roll_view(cur_page()) &&
-           g != GR_ROLL && g != GR_COMP && g != GR_FUGUE && g != GR_LIVE &&   /* (0.8.3: LENTE's step, the
+           g != GR_ROLL && g != GR_COMP && g != GR_FUGUE &&   /* (0.8.3: LENTE's step, the
                                                          * heads; p2: LIVE's rails) */
-           g != GR_STEPS && g != GR_CHANCE && g != GR_BROWSE && g != GR_USER && g != GR_SLOTS && g != GR_EVENTS &&
+           g != GR_STEPS && g != GR_BROWSE && g != GR_USER && g != GR_SLOTS && g != GR_EVENTS &&
            g != GR_SONG && g != GR_TOOLS && 1 && g != GR_CLAY;
 }
 static void graph_drift(void)
@@ -1488,7 +1488,6 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
                       (uint16_t)motion.event[idx[i]].value)) * 16777619u;
         h = (h ^ (n + 1u) * 40503u ^ ev_row(n) * 2654435761u ^ ((uint32_t)ui.ev_step << 8 | ui.ev_id) * 104729u) * 16777619u;
     }
-    if (pg->graph == GR_CHANCE) h ^= ui.cursor * 40503u + step_chance(&t->step[ui.cursor]);
     if (pg->graph == GR_FUGUE) {                     /* (0.6.52) the heads, their settings, where they are */
         uint32_t ti = song.sel % NTRK, k;
         h = (h ^ (steps_hash(t) + (song.playing ? seq_src(t, t->seq_idx) : 0xFFFFu) * 31u + fg_ui * 7u)) * 16777619u;
@@ -1608,10 +1607,9 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
             }
         }
     }
-    if (pg->graph == GR_STEPS || pg->graph == GR_ROLL || pg->graph == GR_CHANCE || roll_view(pg) ||
+    if (pg->graph == GR_STEPS || pg->graph == GR_ROLL || roll_view(pg) ||
         seq_roll_view(pg)) {
-        uint32_t ph = song.playing ? seq_src(t, t->seq_idx) : 0xFFFFu, rl = roll_view(pg) || seq_roll_view(pg) ||
-                                                                          pg->graph == GR_CHANCE;
+        uint32_t ph = song.playing ? seq_src(t, t->seq_idx) : 0xFFFFu, rl = roll_view(pg) || seq_roll_view(pg);
         if (rl)                                      /* (V10.51) the playhead followed here (V10.47 did it in the drawing,
                                                       * which a playhead out of the bar shown never asked for: no redraw) */
             pr_follow_bar(t);
@@ -2155,7 +2153,6 @@ static void draw_graph(void)
             break;
         case GR_ROLL:
         case GR_TRACKGEN:
-        case GR_CHANCE:
             cv_oy = 0;
             if (drum_track(t))
                 graph_grid(t, c);

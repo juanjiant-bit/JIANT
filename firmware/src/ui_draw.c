@@ -1383,22 +1383,8 @@ static void draw_columns(void)
         draw_column(3, "INTVL", val, "DEG", f->rate ? VAL(3u) : T_DIM, (int32_t)(f->ivl + 14) * 1000 / 28, ICON_PITCH);
         return;
     }
-    if (cur_page()->graph == GR_GCOMP || cur_page()->graph == GR_COMP) {
+    if (cur_page()->graph == GR_COMP) {
         comp_columns();
-        return;
-    }
-    if (cur_page()->graph == GR_CHANCE) {              /* STEP CHANCE RATCH: the cursor step's, of all of it */
-        const step_t *cs = &TSEL->step[ui.cursor];
-        int rplays = cs->time == ST_NOTE && (cs->n || cs->hit);   /* RATCH does nothing on a REST, a TIE, empty: DIM */
-        fmt_int(val, (int32_t)ui.cursor + 1);
-        hot_text_column(0, "STEP", val);
-        fmt_int(val, (int32_t)step_chance(&TSEL->step[ui.cursor]));
-        hot_unit_column(1, "CHANCE", val, "%");   /* the die */
-        val[0] = 'x';                                  /* x1 .. x4 */
-        val[1] = (char)('0' + step_ratchet(&TSEL->step[ui.cursor]));
-        val[2] = 0;
-        text_column(2, "RATCH", val, rplays ? VAL(2u) : T_DIM);
-        empty_column(3);
         return;
     }
     if (cur_page()->graph == GR_EVENTS) {              /* AUTO LIST (ui_events.c): ROW STEP PARAM VALUE */

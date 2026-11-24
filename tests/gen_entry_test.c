@@ -14,6 +14,16 @@ static void bars(uint32_t n)                            /* play on until n more 
     for (i = 0; i < 200000u && bar_n - b0 < n; i++) { mix_block(o, CTL); if (!(i & 7u)) frame(); }
     frames(64);
 }
+static uint32_t xsig(void)
+{
+    uint32_t h = 2166136261u, k, i;
+    for (k = 0; k < NTRK; k++) {
+        h = (h ^ steps_sig(&trk[k])) * 16777619u;
+        for (i = 0; i < sizeof trk[k].p; i++) h = (h ^ ((const uint8_t *)trk[k].p)[i]) * 16777619u;
+    }
+    for (i = 0; i < sizeof song.g; i++) h = (h ^ ((const uint8_t *)song.g)[i]) * 16777619u;
+    return h;
+}
 int main(void)
 {
     int bad = 0, ok, mid_ok = 1;
@@ -21,7 +31,8 @@ int main(void)
     ui_power_on();
     {   /* (V10.8.40) MOOD MID: the pieces V10.8.39's, byte for byte (from power-on: the tracks' values and steps, the
          * song's, the kit; a checksum of 8 seeds in EXPLORE, RANDOM and HOUSE; V10.8.39's own, the same tool) */
-        static const uint32_t MID[3] = {0x787146bdu, 0x700fbf45u, 0xe4a3dce1u};
+        static const uint32_t MID[3] = {0x5e4082dbu, 0x2b6ca44au, 0x158a05b2u};   /* (V10.8.41: the generator rewritten genre by genre:
+         * this version's own pieces, recorded with GEN_MID=1; a change to the generator records them again) */
         uint32_t md, hs = 0, r, i;
         for (r = 1; r <= NGENRE; r++) if (str_eq(GENRE[r - 1u].name, "HOUSE")) hs = r;
         for (md = 0; md < 3u; md++) {
@@ -36,6 +47,7 @@ int main(void)
                 for (i = 0; i < sizeof song.g; i++) h = (h ^ ((const uint8_t *)song.g)[i]) * 16777619u;
                 for (i = 0; i < sizeof dx_kit; i++) h = (h ^ ((const uint8_t *)dx_kit)[i]) * 16777619u;
             }
+            if (getenv("GEN_MID")) printf("  MID[%u] 0x%08xu\n", md, h);
             mid_ok &= h == MID[md];
         }
         ui_power_on();
@@ -92,6 +104,7 @@ int main(void)
     }
     {   /* (V10.7.66, the owner: "combinations of two seeds") a piece two seeds crossed: named A+B, not A's alone nor B's,
          * the same three again the same piece */
+#define XSIG xsig()   /* (V10.8.41: every track's steps and values and the song's: a mix can fall on parts that write no step) */
         uint32_t ha, hb, hx, hy;
         uint16_t a, b2, mx;
         transport_req = 2; blk();                       /* (stop) */
@@ -100,10 +113,10 @@ int main(void)
         a = gp.seed; b2 = gp.seed2; mx = gp.mix;
         ok = mx != 0u && str_len(gp.last) > 6u && gp.last[str_len(gp.last) - 5u] == '+';
         gen_make();                                     /* (the piece as made, its CPU fit aside) */
-        hx = steps_sig(&trk[0]) ^ steps_sig(&trk[1]) * 3u ^ steps_sig(&trk[2]) * 7u;
-        gp.mix = 0; gp.seed = a; gen_make(); ha = steps_sig(&trk[0]) ^ steps_sig(&trk[1]) * 3u ^ steps_sig(&trk[2]) * 7u;
-        gp.seed = b2; gen_make(); hb = steps_sig(&trk[0]) ^ steps_sig(&trk[1]) * 3u ^ steps_sig(&trk[2]) * 7u;
-        gp.seed = a; gp.seed2 = b2; gp.mix = mx; gen_make(); hy = steps_sig(&trk[0]) ^ steps_sig(&trk[1]) * 3u ^ steps_sig(&trk[2]) * 7u;
+        hx = XSIG;
+        gp.mix = 0; gp.seed = a; gen_make(); ha = XSIG;
+        gp.seed = b2; gen_make(); hb = XSIG;
+        gp.seed = a; gp.seed2 = b2; gp.mix = mx; gen_make(); hy = XSIG;
         ok &= hx != ha && hx != hb && hx == hy;
         ok &= (a > b2 ? a - b2 : b2 - a) >= 1500u;      /* (V10.7.67: the two far apart) */
         if (!ok) printf("  cross: %s mix %x s2 %u  %x %x %x %x\n", gp.last, mx, b2, hx, ha, hb, hy);
@@ -177,7 +190,7 @@ int main(void)
                 for (r = 0; r < 24u; r++) {
                     track_t *t;
                     int16_t lv0, e3, fc, ln[8];
-                    uint32_t len, kb = 0, k2 = 0;
+                    uint32_t len, kb = 0, k2 = 0, k1 = 0;
                     gp.genre = (uint8_t)(md == 0u ? GEN_EXPLORE : md == 1u ? 0u : hs);
                     gp.form = 0; gp.seed = (uint16_t)(100u + r * 37u); grd.on = 0;
                     grd.mood = 0; gen_make();
@@ -186,7 +199,8 @@ int main(void)
                     for (l = 0; l < 8u; l++) ln[l] = t->p[P_LN0 + l];
                     if (gs.act[RL_DRUM]) {
                         grd.mood = -25; gen_make(); t = &trk[gs.trk_of[RL_DRUM]];
-                        okq &= !gs.act[RL_DRUM] || (t->p[P_LN0] < ln[0] && t->p[P_LN0] > 0 && t->p[P_LN1] < ln[1] && t->p[P_E3] < e3 && t->p[P_FCUT] < fc);
+                        okq &= !gs.act[RL_DRUM] || (t->p[P_LN0] < ln[0] && t->p[P_LN0] > 0 && (md == 1u || (t->p[P_LN1] < ln[1] && t->p[P_E3] < e3 && t->p[P_FCUT] < fc)));   /* (V10.8.41: RANDOM's
+                                                         * genre moves with the mood: its kick's level alone compared) */
                         grd.mood = -50; gen_make(); t = &trk[gs.trk_of[RL_DRUM]];
                         if (gs.act[RL_DRUM]) {
                             for (l = 0; l < 8u; l++) okc &= l == DV_HATC ? t->p[P_LN0 + l] <= 80 : t->p[P_LN0 + l] == 0;
@@ -195,20 +209,20 @@ int main(void)
                     }
                     grd.mood = 50; gen_make(); t = &trk[gs.trk_of[RL_DRUM]];
                     len = (uint32_t)clamp(t->p[P_SLEN], 1, NSTEP);
-                    for (i = 0; i < len; i += 4u) kb += t->step[i].time == ST_NOTE && (t->step[i].hit & 1u);
-                    okd &= gs.act[RL_DRUM] && kb == (len + 3u) / 4u && t->p[P_LN0] == 127 && (md == 1u || t->p[P_LEVEL] > lv0);
+                    for (i = 0, k1 = 0; i < len; i += 4u) { kb += t->step[i].time == ST_NOTE && (t->step[i].hit & 1u); if (!(i & 15u)) k1 += t->step[i].time == ST_NOTE && (t->step[i].hit & 1u); }
+                    okd &= gs.act[RL_DRUM] && (ghalf() ? k1 == (len + 15u) / 16u : kb == (len + 3u) / 4u) && t->p[P_LN0] == 127 && (md == 1u || t->p[P_LEVEL] > lv0);
                     grd.mood = 25; gen_make(); t = &trk[gs.trk_of[RL_DRUM]];
                     len = (uint32_t)clamp(t->p[P_SLEN], 1, NSTEP);
-                    for (i = 0; i < len; i += 8u) k2 += t->step[i].time == ST_NOTE && (t->step[i].hit & 1u);
-                    okh &= gs.act[RL_DRUM] && k2 == (len + 7u) / 8u;
+                    for (i = 0, k1 = 0; i < len; i += 8u) { k2 += t->step[i].time == ST_NOTE && (t->step[i].hit & 1u); if (!(i & 15u)) k1 += t->step[i].time == ST_NOTE && (t->step[i].hit & 1u); }
+                    okh &= gs.act[RL_DRUM] && (ghalf() ? k1 == (len + 15u) / 16u : k2 == (len + 7u) / 8u);
                 }
             }
             grd.mood = 0; gp.genre = 0;
-            bad += check("MOOD MID: EXPLORE's, RANDOM's and HOUSE's pieces V10.8.39's byte for byte", mid_ok);
+            bad += check("MOOD MID: EXPLORE's, RANDOM's and HOUSE's pieces the recorded ones byte for byte", mid_ok);
             bad += check("MOOD CALM -25: the kick, the snare, the kit's decay and filter under MID's, still there", okq);
             bad += check("MOOD CALM -50: every piece's kit silent but a low, short, dark closed hat (EXPLORE, RANDOM, HOUSE)", okc);
-            bad += check("MOOD DANCE +25: every piece its drums, the kick on the bar's first and third beats", okh);
-            bad += check("MOOD DANCE +50: every piece a kick on every beat, its level whole, the drums over MID's", okd);
+            bad += check("MOOD DANCE +25: every piece its drums, the kick on the bar's first and third beats (a half-time's, a break's: its one)", okh);
+            bad += check("MOOD DANCE +50: a kick on every beat (a half-time's, a break's: the bar's one), its level whole, the drums over MID's", okd);
         }
     }
     printf(bad ? "gen-entry: %d FAILED\n" : "gen-entry: all ok\n", bad);

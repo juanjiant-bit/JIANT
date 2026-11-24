@@ -734,6 +734,8 @@ static const param_desc_t EQ_DESC[4] __attribute__((section(".rodata.tape"))) = 
 static int16_t eq_v[4] __attribute__((section(".bss.tape")));   /* (out of the merged statics, as fx.c's djf) */
 static uint8_t lfo_ph_mem[NTRK];
 static int lfo_mode_of(const track_t *t) { return t->p[P_LPHASE] < 0; }   /* 1 FREE */
+/* (deadcode) a page no chain shows any more keeps its row (the index, its ids for the section's masks), its title
+ * empty: ui.c page_visible hides every page without one */
 static const page_t PAGES[] = {
     {"ENV", FAM_ENV, SC_TRACK, GR_ADSR, {P_ATK, P_DEC, P_SUS, P_REL}},
     {"ENV DEST", FAM_ENV, SC_TRACK, GR_NONE, {P_ED_FLT, P_ED_PIT, P_ED_SHP, P_ELOOP}},   /* JIANT 0.4: LOOP */
@@ -788,10 +790,10 @@ static const page_t PAGES[] = {
     {"MORE", FAM_EDIT, SC_TRACK, GR_NONE, {P_WRDEP, P_WDUST, 0xFF, 0xFF}},   /* (0.7.8) WHEEL: the rotor's depth, DUST */
     /* (JIANT 0.6.54) DRUM: the whole kit first (KIT = EDIT 1, KIT 2 = EDIT 2, KIT 3, X-MOD, FILTER), then a sound
      * (SOUND 1..4, KNOB 1 the sound on each), (0.6.58) then the volumes (LEVELS, LEVELS 2); (0.7.8) STEREO after X-MOD */
-    {"KIT 3", FAM_EDIT, SC_TRACK, GR_DXIMG, {0xFF, 0xFF, 0xFF, 0xFF}},     /* TONE's BP and FEEDBK (the kit's) */
-    {"KIT 4", FAM_EDIT, SC_TRACK, GR_DXIMG, {0xFF, 0xFF, 0xFF, 0xFF}}, /* KEY MAP (KNOB 2; V10.6o: ACOUST gone) */
+    {"" /* KIT 3 */, FAM_EDIT, SC_TRACK, GR_DXIMG, {0xFF, 0xFF, 0xFF, 0xFF}},     /* TONE's BP and FEEDBK (the kit's) */
+    {"" /* KIT 4 */, FAM_EDIT, SC_TRACK, GR_DXIMG, {0xFF, 0xFF, 0xFF, 0xFF}}, /* KEY MAP (KNOB 2; V10.6o: ACOUST gone) */
     {"X-MOD", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},     /* (JIANT 0.5.1) the kit's LFO on MORPH, RAND */
-    {"STEREO", FAM_EDIT, SC_TRACK, GR_DXIMG, {P_DXIMG, 0xFF, 0xFF, 0xFF}}, /* (0.6.58) IMAGE: the kit's stereo placings; (0.7.8)
+    {"" /* STEREO */, FAM_EDIT, SC_TRACK, GR_DXIMG, {P_DXIMG, 0xFF, 0xFF, 0xFF}}, /* (0.6.58) IMAGE: the kit's stereo placings; (0.7.8)
                                                          * with the kit's pages, before the sounds (the volumes last) */
     {"OPERATOR", FAM_EDIT, SC_TRACK, GR_FMOP, {0xFF, 0xFF, 0xFF, 0xFF}},    /* FM6 only: KNOB 1 the operator, then its */
     {"OP ENV", FAM_EDIT, SC_TRACK, GR_FMENV, {0xFF, 0xFF, 0xFF, 0xFF}},     /* bytes of the track's patch (ui_fm6op.c): */
@@ -803,8 +805,8 @@ static const page_t PAGES[] = {
     {"SOUND 2", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},
     {"SOUND 3", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (JIANT 0.4) MODE, the pitch modulation, DRIVE */
     {"SOUND 4", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (JIANT 0.6.54) LAYER, FEEDBK, SEND */
-    {"LEVELS", FAM_EDIT, SC_TRACK, GR_NONE, {P_LN0, P_LN1, P_LN2, P_LN3}},   /* DRUM only: the sounds' levels (was LANES) */
-    {"LEVELS 2", FAM_EDIT, SC_TRACK, GR_NONE, {P_LN4, P_LN5, P_LN6, P_LN7}},
+    {"" /* LEVELS */, FAM_EDIT, SC_TRACK, GR_NONE, {P_LN0, P_LN1, P_LN2, P_LN3}},   /* DRUM only: the sounds' levels (was LANES) */
+    {"" /* LEVELS 2 */, FAM_EDIT, SC_TRACK, GR_NONE, {P_LN4, P_LN5, P_LN6, P_LN7}},
     {"OP1 ENV", FAM_EDIT, SC_TRACK, GR_ADSR, {P_FM1_ATK, P_FM1_DEC, P_FM1_SUS, P_FM1_REL}},
     {"OP2 ENV", FAM_EDIT, SC_TRACK, GR_ADSR, {P_FM2_ATK, P_FM2_DEC, P_FM2_SUS, P_FM2_REL}},
     {"OP3 ENV", FAM_EDIT, SC_TRACK, GR_ADSR, {P_FM3_ATK, P_FM3_DEC, P_FM3_SUS, P_FM3_REL}},
@@ -815,15 +817,15 @@ static const page_t PAGES[] = {
     {"GLOBAL", FAM_GLO, SC_GLOBAL, GR_NONE, {G_BPM, G_SWING, G_CLOCK, G_TUNE}},
     {"SYSTEM", FAM_GLO, SC_GLOBAL, GR_NONE, {G_TRKS, G_LOADP, G_ROUTE, G_INFO}},   /* (0.6.18) TRACKS 4 / 6; (0.6.30)
                                                          * LOAD ECO / LITE / FULL (the USB card: the header's icon) */
-    {"SYSTEM 2", FAM_GLO, SC_GLOBAL, GR_PATS, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (V10.8.38, the owner) gone from GLO: its row kept (the index) */   /* (V10.37) KNOB 3 Bluetooth's state */   /* (0.9.9-snd8) MIDI IN at a glance (ui_draw.c):
+    {"" /* SYSTEM 2 */, FAM_GLO, SC_GLOBAL, GR_PATS, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (V10.8.38, the owner) gone from GLO: its row kept (the index) */   /* (V10.37) KNOB 3 Bluetooth's state */   /* (0.9.9-snd8) MIDI IN at a glance (ui_draw.c):
                                                          * KNOB 1 USB's state OFF WAIT BUS ENUM MIDI, KNOB 2 the TRS messages come in */
     {"KEY SPLIT", FAM_GLO, SC_GLOBAL, GR_SPLIT, {0xFF, 0xFF, 0xFF, 0xFF}},
     {"KEY SPLIT 2", FAM_GLO, SC_GLOBAL, GR_SPLIT2, {0xFF, 0xFF, 0xFF, 0xFF}},
     {"LYRIC STEP", FAM_SEQ, SC_TRACK, GR_LYRSTEP, {0xFF,0xFF,0xFF,0xFF}},
     {"TRACK GEN", FAM_SEQ, SC_TRACK, GR_TRACKGEN, {0xFF,0xFF,0xFF,0xFF}},   /* (codex/coherence: was GENERATE, beside HOME's GENE) */
-    {"G.COMP", FAM_GLO, SC_GLOBAL, GR_GCOMP, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (0.9.9-seq2f) the global lane's step: ACTION
+    {"" /* G.COMP */, FAM_GLO, SC_GLOBAL, GR_GCOMP, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (0.9.9-seq2f) the global lane's step: ACTION
                                                          * LENGTH CONDITION VALUE (ui_input.c gco_knob) */
-    {"G.COMP 2", FAM_GLO, SC_GLOBAL, GR_GCOMP, {0xFF, 0xFF, 0xFF, 0xFF}},   /* .. its TRACKS, MONO / POLY (codex/coherence:
+    {"" /* G.COMP 2 */, FAM_GLO, SC_GLOBAL, GR_GCOMP, {0xFF, 0xFF, 0xFF, 0xFF}},   /* .. its TRACKS, MONO / POLY (codex/coherence:
                                                          * G.COMP, was COMPS, SEQ > COMP's name and an S) */
     {"PRESETS", FAM_SAVE, SC_GLOBAL, GR_BROWSE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* browser: PRESETS knob / KNOB 1 */
     {"USER", FAM_SAVE, SC_GLOBAL, GR_USER, {0xFF, 0xFF, 0xFF, 0xFF}},       /* user presets: SLOT LOAD ERASE SAVE */
@@ -842,7 +844,7 @@ static const page_t PAGES[] = {
     {"STEP", FAM_SEQ, SC_STEP, GR_ROLL, {0, 1, 2, 3}},
     {"PATTERN", FAM_SEQ, SC_TRACK, GR_STEPS, {P_SLEN, P_SDIV, P_SSWING, P_SGATE}},
     {"NOTE", FAM_SEQ, SC_STEP, GR_ROLL, {4, 5, 6, 9}},   /* (0.6.81) the piano roll's edits: FOCUS PITCH MOVE; (0.6.92) MICRO */
-    {"STRETCH", FAM_SEQ, SC_TRACK, GR_SHAPE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (0.6.85) STRETCH REPEAT NUDGE (0.6.92: on the turn) ROTATE */
+    {"" /* STRETCH */, FAM_SEQ, SC_TRACK, GR_SHAPE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (0.6.85) STRETCH REPEAT NUDGE (0.6.92: on the turn) ROTATE */
     {"COMP", FAM_SEQ, SC_STEP, GR_COMP, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (0.6.39) STEP TYPE and its two values */
     {"COMP 2", FAM_SEQ, SC_STEP, GR_COMP, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (0.6.82) the step's second component, EVERY */
     {"PLAYHEADS", FAM_SEQ, SC_TRACK, GR_FUGUE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (0.6.52) three more playheads (fugue.c; was FUGUE) */
@@ -851,37 +853,37 @@ static const page_t PAGES[] = {
      * as it was: PATTERN (PATTERN STRETCH PLAYHEADS TRACK MUTATE), BAR (STEP NOTE AUTOMATION AUTO LIST), STEP (NOTE
      * COMP COMP 2); SELECT zooms, a SEQ tap the level's next set */
     {"TRACK", FAM_SEQ, SC_TRACK, GR_STEPS, {P_POFS, P_TCHAN, P_HVEL, P_HRQ}},   /* (0.6.92) PITCH CHANCE HUMAN REC Q */
-    {"PHRASES", FAM_SEQ, SC_GLOBAL, GR_PATS, {0xFF, 0xFF, 0xFF, 0xFF}},    /* pattern loader (ui.c pat_load); 0.6.37: hidden */
+    {"" /* PHRASES */, FAM_SEQ, SC_GLOBAL, GR_PATS, {0xFF, 0xFF, 0xFF, 0xFF}},    /* pattern loader (ui.c pat_load); 0.6.37: hidden */
     {"MIXER", FAM_TRK, SC_TRK, GR_TRK, {0, 1, 2, 3}},   /* GLO button; LEVEL PAN REV, (0.9.1) the DJ FILTER (was MUTE) */
-    {"SONG", FAM_SEQ, SC_GLOBAL, GR_SONG, {0xFF, 0xFF, 0xFF, 0xFF}},
-    {"CHANCE", FAM_SEQ, SC_STEP, GR_CHANCE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* a step's CHANCE RATCH; 0.6.37: hidden */
+    {"" /* SONG */, FAM_SEQ, SC_GLOBAL, GR_SONG, {0xFF, 0xFF, 0xFF, 0xFF}},
+    {"" /* CHANCE */, FAM_SEQ, SC_STEP, GR_CHANCE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* a step's CHANCE RATCH; 0.6.37: hidden */
     {"AUTOMATION", FAM_SEQ, SC_TRACK, GR_MOTION, {0xFF, 0xFF, 0xFF, 0xFF}},
     {"AUTO LIST", FAM_SEQ, SC_TRACK, GR_EVENTS, {0xFF, 0xFF, 0xFF, 0xFF}},   /* 1.1.5: the locks and events, edited */
     {"EUCLID", FAM_SEQ, SC_TRACK, GR_EUCLID, {ID_EU0, ID_EU0 + 1u, ID_EU0 + 2u, ID_EU0 + 3u}},   /* (V10.6, MUTATE's place)
                                                          * HITS STEPS ROTATE, LANE / VARY (ui_euclid.c) */
     /* (0.8.5) LENTE everywhere (ui_lens.c): pages the mock-up added, appended (the table's order is no one's index) */
-    {"MORE", FAM_EDIT, SC_TRACK, GR_NONE, {P_DETUNE, P_TVEL, 0xFF, 0xFF}},   /* (V10.7.60: was PLAY 2's ALLOC UNISON VEL PRIO) */   /* ALLOC, UNISON's detune (in TP since
+    {"" /* MORE */, FAM_EDIT, SC_TRACK, GR_NONE, {P_DETUNE, P_TVEL, 0xFF, 0xFF}},   /* (V10.7.60: was PLAY 2's ALLOC UNISON VEL PRIO) */   /* ALLOC, UNISON's detune (in TP since
                                                          * Felucca, on no page until 0.8.5), (after V10.7.2) VEL,
                                                          * (codex/coherence) IMAGE, the voices across (POLY; V10.49's STEREO
                                                          * page gone; was VOICE 2) */
     {"FOCUS", FAM_EDIT, SC_TRACK, GR_FOCUS, {0xFF, 0xFF, 0xFF, 0xFF}},   /* EDIT's detail on a synth: PARAM (E1..E8), its
                                                          * VALUE, the MOD slot aimed at it: SRC AMT (ui_input.c focus_knob) */
-    {"STAGE", FAM_ENV, SC_TRACK, GR_STAGE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* ENV's detail: STAGE (ATK DEC SUS REL), its
+    {"" /* STAGE */, FAM_ENV, SC_TRACK, GR_STAGE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* ENV's detail: STAGE (ATK DEC SUS REL), its
                                                          * value (ui_input.c stage_knob; codex/coherence: LOOP, ENV DEST's) */
     {"SENDS", FAM_TRK, SC_TRACK, GR_TRK, {P_CHOR, P_DLY, P_REV, 0xFF}},   /* GLO > MIX: the track's sends (as FX > SENDS),
                                                          * the six tracks' as bars (ui_graph.c track_col6) */
-    {"BAR", FAM_SEQ, SC_TRACK, GR_PATS, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (0.9.2) SEQ > BAR: the pattern's bars, KNOB 1
+    {"" /* BAR */, FAM_SEQ, SC_TRACK, GR_PATS, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (0.9.2) SEQ > BAR: the pattern's bars, KNOB 1
                                                          * the bar (the cursor at its place in it; was PRESETS on PATTERN's
                                                          * level), KNOB 2 LEN (ui_input.c edit_param) */
     {"MODES", FAM_SEQ, SC_TRACK, GR_EUCLID, {ID_EU0 + 4u, ID_EU0 + 5u, ID_EU0 + 6u, ID_EU0 + 7u}},   /* (V10.6) the four
                                                          * modes' amounts */
     {"LFO 2", FAM_LFO, SC_TRACK, GR_LFO, {ID_LPHS, 0xFF, 0xFF, 0xFF}},   /* (0.9.18) PHASE: where TRIG starts (FREE: dimmed) */
-    {"KEYS", FAM_GLO, SC_GLOBAL, GR_LIVE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (p2, main 0.9.11) GLO > LIVE: the keys a board of
+    {"" /* KEYS */, FAM_GLO, SC_GLOBAL, GR_LIVE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (p2, main 0.9.11) GLO > LIVE: the keys a board of
                                                          * live modifiers (ui_live.c, seq_live.c); (V10.7.58, the owner) shown as RAILS in GLO, the
                                                          * old RAILS page gone (the two were nearly the same) */
-    {"TIMELINE", FAM_SAVE, SC_GLOBAL, GR_SONG, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (add15) the song as lanes (was ARRANGE 2): a row's tracks, the section each
+    {"" /* TIMELINE */, FAM_SAVE, SC_GLOBAL, GR_SONG, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (add15) the song as lanes (was ARRANGE 2): a row's tracks, the section each
                                                          * plays from (song_chain.c row_src; ui_input.c song_trk_knob) */
-    {"MUTATE", FAM_SEQ, SC_TRACK, GR_EUCLID, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (V10.8.37: out of the chain, its row kept: the index; EVERY on EUCLID, OCT+ held + KNOB 4) */
+    {"" /* MUTATE */, FAM_SEQ, SC_TRACK, GR_EUCLID, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (V10.8.37: out of the chain, its row kept: the index; EVERY on EUCLID, OCT+ held + KNOB 4) */
     {"ENV 2", FAM_ENV, SC_TRACK, GR_ADSR, {P_E2ATK, P_E2DEC, P_E2SUS, P_E2REL}},   /* (V10.22) a second ADSR, a MOD
                                                          * source (SRC ENV2) */   /* (V10.16) EUCLID's
                                                          * mutations on the bar: EVERY AMOUNT MODE WHAT */

@@ -588,6 +588,42 @@ def build_app():
             print(f"divisions: {nd} by a constant turned into multiplies (DIV_FNS)", flush=True)
         print(f"strings: {n} shared with a longer one ({saved} B)", flush=True)
         ir = re.sub(r'^(@"?([\w.]+)"? = [^\n]*? constant [^\n]*?)(, align (\d+))$', const, ir, flags=re.M)
+        # (deadcode) the sound's recorded constants keep their places when a UI function goes: the order the compiler
+        # first meets a constant in can change with it, never the sound's own. 'r' (.rodata): the recorded ones in the
+        # recorded order among themselves; 'c' (the merged pools, a slot a constant): each at its recorded slot, the
+        # UI's constants of the pool round them in their order (the identity when nothing moved; the link checks it)
+        lines = ir.split("\n")
+        at = {m[1]: i for i, ln in enumerate(lines) for m in [re.match(r'@"?([\w.]+)"? = ', ln)] if m}
+        ro = sorted((off, name) for off, flag, name in rows if flag == "r" and name in at)
+        for i, t in zip(sorted(at[n] for _, n in ro), [lines[at[n]] for _, n in ro]):
+            lines[i] = t
+        rec = {name: off for off, flag, name in rows if flag == "c"}
+        for size in (4, 8, 16, 32):
+            pool = []
+            for i, ln in enumerate(lines):
+                m = re.match(r'@"?([\w.]+)"? = (?:internal|private) unnamed_addr constant (\[[^\]]*(?:\][^\]]*)*?\]|i\d+) ', ln)
+                if m and not m[1].startswith(".str") and ' section "' not in ln and ir_bytes(m[2]) == size and \
+                   "@" not in re.sub(r'c"[^"]*"', "", ln[m.end():]):
+                    pool.append((i, m[1]))
+            mine = [n for _, n in pool if n in rec]
+            if not mine:
+                continue
+            first = min(mine, key=rec.get)
+            base = rec[first] - size * sum(1 for _, n in pool[:[n for _, n in pool].index(first)] if n not in rec)
+            slot = {n: (rec[n] - base) // size for n in mine}
+            if len(set(slot.values())) != len(mine) or min(slot.values()) < 0 or max(slot.values()) >= len(pool) or \
+               any((rec[n] - base) % size for n in mine):
+                continue
+            out, ui_c = [None] * len(pool), [n for _, n in pool if n not in rec]
+            for n, k in slot.items():
+                out[k] = n
+            for k in range(len(out)):
+                if out[k] is None:
+                    out[k] = ui_c.pop(0)
+            texts = {n: lines[i] for i, n in pool}
+            for (i, _), n in zip(pool, out):
+                lines[i] = texts[n]
+        ir = "\n".join(lines)
         (OUT / "felucca_hot.ll").write_text(ir)
         tc("cc", *cf, "-Xclang", "-disable-llvm-optzns", "-c", OUT / "felucca_hot.ll", "-o", OUT / "felucca.o")
         return aligns
