@@ -226,7 +226,7 @@ jobs:
           # (studio) JIANT Studio: install, edit, the screen, the emulator and recording for JIANT FM and JIANT BYTE in one
           # page (web/studio; it shows JIANT BYTE's tools from /JIANT-BYTE/, the same origin)
           mkdir -p build/pages/studio
-          cp web/studio/index.html web/studio/studio.js web/studio/studio-lib.js web/studio/daw.js web/studio/recorder-worklet.js web/fm1backup.js build/pages/studio/
+          cp web/studio/index.html web/studio/studio.js web/studio/studio-lib.js web/studio/daw.js web/studio/recorder-worklet.js web/studio/learn.js web/studio/learn-fm.json web/studio/learn-byte.json web/fm1backup.js build/pages/studio/
           cp -r web/studio/img build/pages/studio/img
           # (studio) FM-1 Rescue's builder and base firmware for Studio's Rescue tab; its own page at rescue/
           mkdir -p build/pages/studio/rescue/base build/pages/rescue
