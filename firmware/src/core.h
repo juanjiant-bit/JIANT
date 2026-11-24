@@ -369,12 +369,21 @@ static int analog_from_chip(uint32_t engine, int16_t *e)
     return 1;
 }
 /* (V10.7.36) engine 11 was NOISE until V10.7.35, WEST since: a sound of NOISE -> WEST's values, e its P_E0..P_E7 in
- * place ({MODE COLOR FREQ PEAK TRK DENSE DRIFT CRUSH} -> {FOLD SYMM MOD RATIO GATE DECAY RES DUST}). NOISE was a noise
- * source through a filter, its level the ADSR's: its noise modes become DUST (ANLG's white noise 127, DUST's impulses
- * 96: the core silent), the gate a low-pass alone (GATE 0) held open as far as FREQ was (less for a pink or brown
- * COLOR: DECAY 88..127), RES its PEAK; the register tones (LFSR, META) a folded, modulated tone (FOLD 90, RATIO 0.5 or
- * 1.41, DECAY 127). TRK DRIFT CRUSH have no place. Projects (project.c proj_phys_gone: those without PROJ_PHYS 3),
- * user presets (upreset.c up_migrate: those without UP_WEST_MARK). Not idempotent: the callers mark what they did */
+ * place ({MODE COLOR FREQ PEAK TRK DENSE DRIFT CRUSH} -> {FOLD SYMM MOD RATIO GATE DECAY RES DUST}). (V10.8.28, the
+ * owner) META's register tones become DUST's METAL (the same sequence: LEN's eighth), folded a little; ANLG, DUST and
+ * LFSR the noise (DUST 95, the impulses 70); the gate a low-pass alone held open (GATE 0, DECAY 127), RES half the
+ * PEAK. Projects (project.c proj_phys_gone: those without PROJ_PHYS 3), user presets (upreset.c up_migrate: those
+ * without UP_WEST_MARK). Not idempotent: the callers mark what they did */
+static void west_from_noise(int16_t *e)
+{
+    int32_t meta = e[0] == 3, len = e[5], res = e[3] >> 1;
+    e[0] = meta ? 40 : 0;
+    e[1] = e[2] = e[4] = 0;
+    e[3] = 1;
+    e[5] = 127;
+    e[6] = (int16_t)res;
+    e[7] = (int16_t)(meta ? 96 + ((len >> 4) << 2) : e[7] == 1 ? 70 : 95);
+}
 
 /* SAMPLE SET 4 was PERC, the GM-mapped drum kit (tools/gen_samples.py); retired after 1.0.2: its index stays
  * (SET / GRAIN SRC 4 is an alias of PIANO; 5..7, once USR1..3, clamp to it). A sound that selected it is the DRUM engine with

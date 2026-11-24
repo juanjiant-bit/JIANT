@@ -25,9 +25,11 @@
  *          semitones an octave of light) and the VCA. Past 80 a held note keeps the LED lit (the ADSR's level, all
  *          of it at 127): it sustains.
  *   RES    the gate's filter resonance, bounded (Q up to ~3: a pinged gate rings down in pitch, the bongo's knock).
- *   DUST   noise into the gate: 1..72 random impulses (crackle, 1 .. 600 a second) that also flash the cell (the dust
- *          pings it: ghost notes, drops); 72..96 the core fades out (the impulses alone); 96..127 hiss comes in (white
- *          noise, at 127 full) and the impulses get denser (to ~2000 a second). 0: none at all.
+ *   DUST   (V10.8.28, the owner: the crackle gone) 1..95 white noise into the folder with the core, so it folds and
+ *          gates with it (fused into the timbre, not beside it), and from 48 on some of it straight to the gate too
+ *          (air); the core never fades. 96..127 METAL: instead of the noise, one of eight short register sequences, a
+ *          period of it a period of the key (NOISE's META, Leo Kuroshita's, below), into the folder with the core
+ *          at half: a metallic tone. 0: none at all.
  * The track's FLT moves the gate's ceiling (CUT, the matrix's CUT, LIFE's), SHP the fold, PIT the pitch; velocity
  * lights the cell brighter (the strike), folds harder and opens the ceiling. The ceiling follows the key by half.
  *
@@ -46,6 +48,19 @@ static const char *const N_WEST_RATIO[] = {"0.5", "1", "1.41", "1.5", "1.73", "2
                                            "0.5T", "1T", "1.41T", "1.5T", "1.73T", "2T", "2.5T", "2.76T",
                                            "3T", "3.5T", "4T", "5T", "5.40T", "6T", "7T", "8T"};
 static const uint16_t WEST_RATIO[16] = {128, 256, 362, 384, 443, 512, 640, 706, 768, 896, 1024, 1280, 1383, 1536, 1792, 2048};
+/* (V10.8.28) DUST's METAL, NOISE's META as Leo Kuroshita wrote it (eng_noise.c until V10.7.35): one period of a register's output bit (bit i of the words, from the state 1), its length,
+ * and the levels of a 1 and a 0 (no DC, the larger at 16384). 7-bit taps 0x60 and 0x78, the 15-bit
+ * register with its feedback from bits 0 and 6 (period 93), 6-bit 0x30 and 0x2D, 5-bit, 4-bit, 3-bit */
+static const struct { uint32_t w[4]; uint8_t len; int16_t hi, lo; } NOISE_SEQ[8] = {
+    {{0xD13C50C1u, 0x91C2F95Cu, 0xA58DED6Cu, 0x01FD533Bu}, 127, 16128, -16384},
+    {{0xDBD165F1u, 0x9E46A1FDu, 0x84C15692u, 0x019B1CEBu}, 127, 16128, -16384},
+    {{0x41008001u, 0x00492402u, 0x00824824u, 0x00000000u}, 93, 16384, -3404},
+    {{0x27179461u, 0x03F566EDu, 0x00000000u, 0x00000000u}, 63, 15872, -16384},
+    {{0x75A6C487u, 0x02FCA8CFu, 0x00000000u, 0x00000000u}, 63, 15872, -16384},
+    {{0x05763E69u, 0x00000000u, 0x00000000u, 0x00000000u}, 31, 15360, -16384},
+    {{0x00000F59u, 0x00000000u, 0x00000000u, 0x00000000u}, 15, 14336, -16384},
+    {{0x0000001Du, 0x00000000u, 0x00000000u, 0x00000000u}, 7, 12288, -16384},
+};
 /* phase increment of pitch p (1/16 semitone) past the table's top, up to one step a sample (NOISE's, kept here:
  * eng_animal.c uses it) */
 static uint32_t noise_inc(int32_t p)
@@ -145,17 +160,17 @@ static void west_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
     int32_t md = clamp(p[P_E2], 0, 127), gate = clamp(p[P_E4], 0, 127), rt = clamp(p[P_E3], 0, 31);
     int32_t dec = clamp(p[P_E5], 0, 127), dust = clamp(p[P_E7], 0, 127), vel = v->vel, tri = rt >> 4;
     int32_t ic1 = v->s[0], ic2 = v->s[1], strk = v->s[2] & 15, gq = (int32_t)((uint32_t)v->s[2] >> 4), dq = v->s[3];
-    int32_t pend = 0, dc = v->s[4], dark = v->s[5], ga = v->s[6];
+    int32_t dc = v->s[4], dark = v->s[5], ga = v->s[6];
     int32_t xg0 = v->s[7], F0 = 0, fv = -1;
     uint32_t p0, cph = v->ph[0], mph = v->ph[1], inc = m->inc, off = (uint32_t)clamp(p[P_E1], 0, 127) << 22;
     uint32_t minc = (inc >> 8) * WEST_RATIO[rt & 15], dep = (uint32_t)(md * md * 13) >> 1;   /* (state in locals:
                                                          * out[] may alias v->s[]) */
     uint32_t r = 1753000000u / (inc | 1u), i = 0;      /* r: ~18 kHz / the note */
-    int32_t rng = (int32_t)v->ph[2], kd = 8192 - clamp(p[P_E6], 0, 127) * 6800 / 127, ks, hold = 0, osc = 32767, hiss = 0;
+    int32_t rng = (int32_t)v->ph[2], kd = 8192 - clamp(p[P_E6], 0, 127) * 6800 / 127, ks, hold = 0, nmix = 0, air = 0, sel = -1;
     ks = kd < 5461 ? kd * 3 >> 1 : 8192;               /* (V10.7.41, the owner: RES 100 broke on the peaks) past RES ~43 the
                                                          * gate's input lowered with its resonance (x0.25 at 127): its ring kept
                                                          * inside the gate's product (it wrapped 32 bits) */
-    int32_t thr = 0, kick = dust * 200, fdep = (127 - gate) * 520, vdep = gate * 520, gcap, fg, ceil, flo, kf, k0;
+    int32_t fdep = (127 - gate) * 520, vdep = gate * 520, gcap, fg, ceil, flo, kf, k0;
     int32_t am = md > 100 ? (md - 100) * 600 : 0;
     {   /* FOLD (+ SHP, velocity), squared: 0 .. 2016 (Q8 over x1) */
         int32_t f = clamp((p[P_E0] << 8) + m->shape - (64 << 8) + (vel - 64) * 40, 0, 127 << 8);
@@ -180,16 +195,11 @@ static void west_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
     kf = (k0 * 15) >> 5;
     if (v->gate && dec > 80)                            /* held: the LED lit by the ADSR */
         hold = mulq15((dec - 80) * 697, m->envq15);
-    if (dust) {                                         /* DUST: the impulses' rate 2^(e8 / 256) a second */
-        int32_t e8 = dust <= 72 ? dust * 33 : dust <= 96 ? 2376 : 2376 + (dust - 96) * 15;
-        uint32_t rate = 1u << (e8 >> 8);
-        rate += (rate * (uint32_t)(e8 & 255)) >> 8;
-        thr = (int32_t)((rate * 97391u) >> 16) << vsh;  /* per 2^16 of a sample */
-        osc = dust <= 72 ? 32767 : dust >= 96 ? 0 : (96 - dust) * 1365;
-        hiss = dust > 96 ? (dust - 96) * 1057 : 0;
-        if (vsh)                                        /* (V10.7.56: white noise at half the rate: its power in half the
-                                                         * band, -3 dB to stay as loud under 11 kHz) */
-            hiss = (hiss * 23170) >> 15;
+    if (dust >= 96)                                     /* METAL: the register sequence (NOISE_SEQ) */
+        sel = (dust - 96) >> 2;
+    else if (dust) {                                    /* the noise into the folder, the air past 48 */
+        nmix = dust * 172;
+        air = dust > 48 ? (dust - 48) * 400 : 0;
     }
     p0 = ((uint32_t)xg0 << 7) + off;                    /* (F0 read when needed: fv -1) */
     while (i < n) {
@@ -223,7 +233,8 @@ static void west_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
         dd = len == WS_SUB ? (dt - dq) >> 4 : (dt - dq) / (int32_t)len;
         for (; i < end; i++) {
             int32_t y = 0, v1, v2, v3;
-            if (osc) {                                  /* (DUST past 96: the core gone, none of it run) */
+            uint32_t q = 0;
+            {
                 int32_t x, ms = 0, xg, d, F1;
                 uint32_t ph = cph, p1;
                 if (dep) {
@@ -233,6 +244,13 @@ static void west_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
                     ph += (uint32_t)ms * (uint32_t)dq;
                 }
                 x = tri ? osc_tri(ph + 0x40000000u) : sine_i(ph);
+                if (sel >= 0) {                         /* METAL: the sequence's step at the key's phase, the core half */
+                    uint32_t j = ((cph >> 16) * NOISE_SEQ[sel].len) >> 16;
+                    x = (x >> 1) + ((NOISE_SEQ[sel].w[j >> 5] >> (j & 31u)) & 1u ? NOISE_SEQ[sel].hi : NOISE_SEQ[sel].lo);
+                } else if (nmix) {
+                    q = noise32(&rng);
+                    x += mulq15((int32_t)(q >> 16) - 32768, nmix);
+                }
                 gq += dg;
                 xg = x * (gq >> 8);                     /* the folder's input: Q23, a quarter turn at 1 */
                 p1 = ((uint32_t)xg << 7) + off;
@@ -254,19 +272,10 @@ static void west_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
                     y = mulq15(y, 32767 - am + mulq15(am, ms));
                 dc += ((y << 8) - dc) >> (9u - vsh);    /* (~14 Hz: SYMM's DC gone within ~12 ms) */
                 y -= dc >> 8;
-                if (osc != 32767)
-                    y = mulq15(y, osc);
             }
             cph += inc;
-            if (dust) {
-                uint32_t q = noise32(&rng);
-                if (hiss)
-                    y += mulq15((int32_t)(q >> 16) - 32768, hiss);
-                if ((int32_t)(q & 0xFFFFu) < thr) {     /* an impulse, random size and sign */
-                    int32_t a = 8192 + (int32_t)((q >> 18) & 0x7FFFu);
-                    y += (q & 0x20000u) ? a : -a;
-                    pend += (a * kick) >> 16;
-                }
+            if (air) {                                  /* the air: the same noise's other half, past the folder */
+                y += mulq15((int32_t)(q & 0xFFFFu) - 32768, air);
                 y = clamp(y, -65535, 65535);
             }
             /* the gate's low-pass (dsp.c tsvf_lp, rounded: no DC walk at low cutoffs), at half level (the sums of
@@ -286,11 +295,6 @@ static void west_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
         ga = lv;
         gq = g;
         dq = dt;
-        if (pend) {                                     /* the dust's flashes on the cell */
-            li = west_exp2n(dark >> 8) + pend;
-            dark = west_log2n(li > 32767 ? 32767 : li);
-            pend = 0;
-        }
     }
     v->s[0] = ic1;
     v->s[1] = ic2;
@@ -310,23 +314,23 @@ static void west_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
  * basses, leads, drones (WEST_ORDER: those first). (V10.7.37) revoiced for the vactrol and the folds: the struck ones
  * leave their tails to the cell (REL long: the ADSR only ends them), the held ones (DECAY past 80) sustain */
 static const preset_t WEST_PRESETS[] = {
-    {"WIND", {0, 0, 0, 1, 0, 112, 100, 120}, {90, 90, 110, 90}, 0, TAG(FX), FX(0, 30, 20, 80), PAT(5),
+    {"WIND", {0, 0, 0, 1, 0, 112, 100, 95}, {90, 90, 110, 90}, 0, TAG(FX), FX(0, 30, 20, 80), PAT(5),
      MODS(MMOD(1, PS_MODW, PD_E(6), 30), P_LWAVE, LW_DRIFT, P_LRATE, 20, P_LD_FLT, 30)},   /* MODW: it howls, gusts */
     /* the dust flashes the cell: drops of the note, each its own height and place */
-    {"RAIN", {30, 0, 0, 1, 64, 26, 70, 56}, {0, 64, 127, 50}, 0, TAG(FX), FX(0, 0, 20, 70), PAT(5),
+    {"RAIN", {30, 0, 0, 1, 64, 26, 70, 70}, {0, 64, 127, 50}, 0, TAG(FX), FX(0, 0, 20, 70), PAT(5),
      MODS(MMOD(1, PS_RAND, PD_CUT, 30), MMOD(2, PS_RAND, PD_PAN, 40))},
     /* a folded zap: ENV 2 drops it an octave into the note, RAND its ratio */
     {"ARCADE", {100, 40, 50, 16, 80, 56, 30, 0}, {0, 80, 0, 50}, 0, TAG(FX), FX(0, 0, 10, 20), PAT(3),
      MODS(MENV2(0, 40, 0, 30), MMOD(1, PS_ENV2, PD_PITCH, 63), MMOD(2, PS_RAND, PD_E(3), 20))},
-    /* clangorous: a triangle core at a bar's second mode, folded hard, the dust's grit */
-    {"METAL", {85, 30, 75, 23, 96, 76, 30, 6}, {0, 75, 127, 70}, 10, TAG(FX), FX(0, 20, 30, 45), PAT(7),
+    /* clangorous: a triangle core at a bar's second mode, folded hard with DUST's METAL (V10.8.28: NOISE's META 93) */
+    {"METAL", {85, 30, 75, 23, 96, 76, 30, 104}, {0, 75, 127, 70}, 10, TAG(FX), FX(0, 20, 30, 45), PAT(7),
      MODS(MMOD(1, PS_VEL, PD_CUT, 20))},
-    {"SEA", {0, 0, 0, 1, 0, 104, 30, 118}, {100, 90, 120, 110}, 0, TAG(FX), FX(0, 20, 20, 80), PAT(5),
+    {"SEA", {0, 0, 0, 1, 0, 104, 30, 95}, {100, 90, 120, 110}, 0, TAG(FX), FX(0, 20, 20, 80), PAT(5),
      MODS(P_LRATE, 10, P_LD_FLT, 20, P_LD_AMP, 30)},
-    {"HISS PAD", {20, 0, 0, 1, 30, 120, 60, 112}, {80, 90, 105, 100}, 0, TAG(PAD), FX(0, 40, 30, 85), PAT(5),
+    {"HISS PAD", {20, 0, 0, 1, 30, 120, 60, 90}, {80, 90, 105, 100}, 0, TAG(PAD), FX(0, 40, 30, 85), PAT(5),
      BREATHE(24, 0, 1), MODS(MMOD(1, PS_AT, PD_E(6), 30))},
-    {"INIT NOISE", {0, 0, 0, 1, 127, 127, 0, 127}, {0, 64, 57, 20}, 0, TAG(FX), FX(0, 0, 0, 0)},
-    {"TAPE AIR", {0, 0, 0, 1, 20, 100, 20, 104}, {90, 90, 115, 110}, 0, TAG(FX), FX(0, 30, 25, 70), PAT(5),
+    {"INIT NOISE", {0, 0, 0, 1, 127, 127, 0, 95}, {0, 64, 57, 20}, 0, TAG(FX), FX(0, 0, 0, 0)},
+    {"TAPE AIR", {0, 0, 0, 1, 20, 100, 20, 80}, {90, 90, 115, 110}, 0, TAG(FX), FX(0, 30, 25, 70), PAT(5),
      MODS(P_LWAVE, LW_DRIFT, P_LRATE, -1, P_LD_FLT, 10)},
     /* (V10.7.36, revoiced V10.7.37) the west coast. A sine core folded, the gate pinged: the classic pluck */
     {"WEST PLUCK", {52, 12, 0, 1, 64, 68, 30, 0}, {0, 64, 127, 80}, 0, TAG(PLUCK), FX(0, 0, 25, 30), PAT(3)},

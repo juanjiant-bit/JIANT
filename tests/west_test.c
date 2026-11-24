@@ -17,12 +17,12 @@
  *    (RATIO's second bank) at FOLD 0 a triangle (odd harmonics, the 3rd ~1/9), folded brighter; the folds integrated:
  *    a high note folded hard leaves little energy where its harmonics would alias.
  * 4. velocity: 127 is louder and brighter than 40 (the fold and the ceiling).
- * 5. DUST 0 adds no noise: the same note with two noise seeds renders bit for bit the same; DUST 30 differs; DUST 127
- *    with the core gone still sounds (a noise patch), broadband.
+ * 5. DUST 0 adds no noise: the same note with two noise seeds renders bit for bit the same; DUST 30 differs; DUST 95
+ *    (the noise folded with the core, the air) broadband; DUST 127 (METAL) no noise at all, sounding, bright.
  * 6. determinism: a note from silence renders the same samples again; FLT (the track's CUT) moves the ceiling, SHP the
  *    fold, as LIFE and the matrix move them.
  * 7. NOISE projects: a project of before WEST (phys 2) with a NOISE track (each of NOISE's eight presets' values) opens
- *    with west_from_noise's values, its motion on the EDIT values gone, phys 3; a second pass changes nothing; a project
+ *    with west_from_noise's values (V10.8.28: META as DUST's METAL), its motion kept, phys 3; a second pass changes nothing; a project
  *    of today (phys 3) is never touched. Each migrated sound is bounded and sounds.
  * 8. cost: host instructions a sample and voice where the host counts them (macOS), else ns, against ANALOG's heaviest
  *    preset measured the same way: WEST's heaviest corner at most 1.25 x (8 voices fit as other engines' do).
@@ -508,7 +508,7 @@ static void dust(void)
     render_seeded(e, 987654321u, b, n);
     same30 = !memcmp(a, b, n * sizeof *a);
     check("DUST 0: two noise seeds, the same samples (no noise at all); DUST 30: they differ", same0 && !same30);
-    e[7] = 127;                                          /* the core gone: hiss and impulses through the open gate */
+    e[7] = 95;                                           /* (V10.8.28) the most noise: into the folder and the air */
     e[5] = 127;
     nz = render_seeded(e, 777u, a, n);
     for (i = 0; i < NFFT; i++)
@@ -516,9 +516,18 @@ static void dust(void)
     spectrum(y, ps);
     for (i = 2, lo = hi = 0; i < NFFT / 2; i++)
         *(i < NFFT * 2000u / FS ? &lo : &hi) += ps[i];
-    snprintf(what, sizeof what, "DUST 127: a noise patch (%u of %u samples sound), broadband (%.2f of it above 2 kHz)", nz, n,
+    snprintf(what, sizeof what, "DUST 95: the core and the noise (%u of %u samples sound), broadband (%.2f of it above 2 kHz)", nz, n,
              hi / (lo + hi + 1e-30));
-    check(what, nz > n * 9 / 10 && hi / (lo + hi + 1e-30) > 0.2);
+    check(what, nz > n * 9 / 10 && hi / (lo + hi + 1e-30) > 0.05);
+    e[7] = 127;                                          /* METAL: a register sequence, no noise: the seeds the same */
+    render_seeded(e, 12345u, a, n);
+    nz = render_seeded(e, 987654321u, b, n);
+    same30 = !memcmp(a, b, n * sizeof *a);
+    note_render(e, 60, 100, y, NFFT, 0);
+    spectrum(y, ps);
+    snprintf(what, sizeof what, "DUST 127 METAL: no noise (two seeds the same), sounding (%u of %u), the centroid at harmonic %.2f",
+             nz, n, centroid(ps, hz_of_note(60)));
+    check(what, same30 && nz > n * 9 / 10 && centroid(ps, hz_of_note(60)) > 2.0);
 }
 
 /* ---------------------------------------------------- 6. determinism, macros --- */
@@ -591,7 +600,9 @@ static void projects(void)
         q.motion.event[0].place = 2u << 6; q.motion.event[0].param = P_E0 + 2; q.motion.event[0].value = 30;   /* T3 FREQ */
         q.motion.event[1].place = 2u << 6; q.motion.event[1].param = P_LEVEL; q.motion.event[1].value = 90;   /* T3 LEVEL */
         q.motion.event[2].place = 0u << 6; q.motion.event[2].param = P_E0 + 2; q.motion.event[2].value = 30;  /* T1's E */
-        memcpy(want, NOISE_E[k], sizeof want);           /* (V10.7.66: NOISE's values and motion kept as they were) */
+        memcpy(want, NOISE_E[k], sizeof want);           /* (V10.8.28: NOISE's values as west_from_noise makes them, the
+                                                         * motion kept) */
+        west_from_noise(want);
         proj_phys_gone(&q);
         ok &= !memcmp(&q.t[2].p[P_E0], want, sizeof want) && q.phys == PROJ_PHYS && q.t[2].engine == ENGI_WEST &&
               q.t[2].preset == k && !memcmp(&q.t[0].p[P_E0], NOISE_E[k], sizeof NOISE_E[k]) && q.motion.count == 3;
@@ -604,9 +615,9 @@ static void projects(void)
             sounds &= rms(y, FS / 4) > 0.01;
         }
     }
-    check("NOISE projects (phys 2): kept as they were (V10.7.66), phys 3; twice the same",
+    check("NOISE projects (phys 2): west_from_noise's values (META as METAL), phys 3; twice the same",
           ok);
-    check("  each of NOISE's eight sounds as kept: bounded and sounding", sounds);
+    check("  each of NOISE's eight sounds as mapped: bounded and sounding", sounds);
     memset(&q, 0, sizeof q);
     q.phys = PROJ_PHYS;
     q.t[2].engine = ENGI_WEST;

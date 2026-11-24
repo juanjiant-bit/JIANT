@@ -329,7 +329,11 @@ static void proj_phys_gone(project_t *q)
             d->preset = 0;
         hit = 1;
     }
-    if (q->phys < PROJ_PHYS) {                          /* (V10.7.36: engine 11 was NOISE; V10.7.66: its sound kept) */
+    if (q->phys < PROJ_PHYS) {                          /* (V10.7.36: engine 11 was NOISE; V10.8.28: its sound as near
+                                                         * as WEST's DUST gets: core.h west_from_noise) */
+        for (k = 0; k < NTRK; k++)
+            if (q->t[k].engine == ENGI_WEST)
+                west_from_noise(&q->t[k].p[P_E0]);
         q->phys = PROJ_PHYS;
         hit = 1;
     }

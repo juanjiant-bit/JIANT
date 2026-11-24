@@ -1111,6 +1111,7 @@ static void dximg_hit(uint32_t note, int16_t img, int64_t *el, int64_t *er, int6
     uint32_t b, i, k;
     track_t *t;
     ui_power_on();
+    rev_clear();                                         /* (V10.8.28: no earlier test's reverb tail in the far side) */
     t = &trk[0];
     song.master_q12 = 4096;
     for (k = 1; k < NTRK; k++) trk[k].p[P_MUTE] = 1;

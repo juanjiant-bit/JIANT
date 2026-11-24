@@ -98,6 +98,13 @@ static void up_migrate(up_rec_t *r)
         r->packed[UP_VEL_AT] = UP_VEL_MARK;
     }
     if (r->ver >= 4u && r->np <= UP_WEST_AT && r->packed[UP_WEST_AT] != UP_WEST_MARK) {   /* (V10.7.36) NOISE -> WEST */
+        if (r->engine == ENGI_WEST && P_E0 + 8u <= r->np) {   /* (V10.8.28: its sound as near as DUST gets) */
+            int16_t e[8];
+            uint32_t i;
+            for (i = 0; i < 8u; i++) e[i] = up_value(r, P_E0 + i);
+            west_from_noise(e);
+            for (i = 0; i < 8u; i++) up_set_value(r, P_E0 + i, e[i]);
+        }
         r->packed[UP_WEST_AT] = UP_WEST_MARK;
     }
 }
