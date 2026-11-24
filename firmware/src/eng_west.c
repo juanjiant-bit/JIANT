@@ -73,23 +73,6 @@ static uint32_t noise_inc(int32_t p)
     inc = pitch_inc((uint32_t)clamp(p, 0, 2047));
     return sh && inc >= 0x80000000u >> (sh - 1u) ? 0xFFFFFFFFu : inc << sh;
 }
-/* the integer square root (NOISE's, kept here: voice.c's LP24 tf_lp24 uses it) */
-static uint32_t isqrt32(uint32_t x)
-{
-    uint32_t r = 0, b = 1u << 30;
-    while (b > x)
-        b >>= 2;
-    while (b) {
-        if (x >= r + b) {
-            x -= r + b;
-            r = (r >> 1) + b;
-        } else {
-            r >>= 1;
-        }
-        b >>= 2;
-    }
-    return r;
-}
 #define WS_SUB 16u                                      /* the vactrol's step (samples) */
 #define WL_DARK (15 << 20)                              /* the cell's darkness at its darkest (Q20 octaves): shut */
 /* 2^-x, x Q12 octaves (>= 0), Q15 (a quadratic between the octaves) */

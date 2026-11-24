@@ -250,6 +250,7 @@ static void up_values(const up_rec_t *r, int16_t *v)   /* mapped and clamped for
     for (i = 0; i < P_COUNT; i++)
         def[i] = param_store_def(r->engine, i);
     up_params(r, v, def);
+    if (v[P_FTYPE] > 4) v[P_FTYPE] = 0;        /* (V10.8.35: MS20 and LP24 gone: LP) */
     for (i = 0; i < P_COUNT; i++)
         v[i] = (int16_t)param_fit(param_desc_of(r->engine, i), v[i]);   /* (a retired KIT: the kit it plays) */
 }

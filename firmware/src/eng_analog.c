@@ -20,20 +20,20 @@ static const param_desc_t *analog_desc(const track_t *t, uint32_t k) { return k 
  * note and CUT (+-32 semitones about it), RES its feedback (voice.c track_comb).
  * (0.9.9-snd1) COMB- the same comb with its feedback negative: odd harmonics, hollow (its line half as long: the note
  * where COMB's is). FT_POST(ft): a TYPE the part's (voice.c tf_run), every engine's own filter open under it */
-enum { FT_LP, FT_HP, FT_BP, FT_COMB, FT_COMBN, FT_MS20, FT_LP24, FT_N };   /* (snd1: MS20, voice.c tf_ms20; V10.22: LP24,
-                                                         * voice.c tf_lp24) */
+enum { FT_LP, FT_HP, FT_BP, FT_COMB, FT_COMBN, FT_N };   /* (V10.8.35, the owner: MS20 (5) and LP24 (6) gone, not far
+                                                         * enough from LP for their flash: a stored 5 or 6 plays LP) */
 #define FT_IS_COMB(ft) ((ft) == FT_COMB || (ft) == FT_COMBN)
 #define FT_POST(ft) ((ft) >= FT_COMB)
 /* the TYPE stored, in range (was & 3: a value past the last read as another TYPE) */
 static inline uint32_t ft_of(const int16_t *p)
 {
-    return (uint32_t)clamp(p[P_FTYPE], 0, FT_N - 1);
+    return (uint32_t)p[P_FTYPE] < FT_N ? (uint32_t)p[P_FTYPE] : FT_LP;   /* (V10.8.35: past the last, MS20's and LP24's: LP) */
 }
 /* the TYPE a voice's own filter plays (ANALOG, LOFI): LP HP BP, or open (FT_COMB in svf_mode) under a part's TYPE */
 static inline uint32_t ft_voice(const int16_t *p)
 {
     uint32_t f = (uint16_t)p[P_FTYPE];                  /* (a stray negative one: open, as a part's) */
-    return f < FT_COMB ? f : FT_COMB;
+    return f < FT_COMB ? f : f < FT_N ? FT_COMB : FT_LP;   /* (V10.8.35: MS20's and LP24's numbers: its own LP) */
 }
 static inline int32_t svf_mode(const tsvf_t *c, int32_t in, int32_t *ic1, int32_t *ic2, uint32_t ft, int32_t k)
 {

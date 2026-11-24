@@ -38,7 +38,7 @@ FUNCS = ["analog_render", "digital_render", "digital_render_legacy", "digital_re
          "formant_word_render", "formant_block",           # (JIANT 0.8.5) VOICE singing words (eng_formant.c, sing.c)
          "djf_block",                                      # (0.9.1) the master DJ FILTER (fx.c), while it is off the middle
          "eq_block",                                       # (p9) the master EQ (fx.c), while a band is off 0
-         "track_comb", "tf_run", "tf_ms20"]                 # (0.9.9-snd1) the FILTER after the voices: COMB / COMB-, the SVF, MS20
+         "track_comb", "tf_run"]                            # (0.9.9-snd1) the FILTER after the voices: COMB / COMB-, the SVF (V10.8.35: MS20 gone)
 # built only with FELUCCA_FM4=1 (DIGITAL, src/eng_digital.c; not in the default build, so not in BUDGET): absent,
 # they are skipped; present, checked against these (their budget lines until the engine was retired in 1.0)
 OPTIONAL = {"digital_render": 12, "digital_render_legacy": 333, "digital_render_custom": 558,

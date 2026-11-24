@@ -1278,17 +1278,6 @@ static void draw_columns(void)
         }
         return;
     }
-    if (cur_page()->graph == GR_STAGE) {               /* (0.8.5) ENV > STAGE: the stage, its value (codex/coherence: LOOP
-                                                         * on ENV DEST alone) */
-        uint32_t id = P_ATK + (ui.stage & 3u);
-        int16_t *vp = &TSEL->p[id];
-        hot_gauge_column(0, "STAGE", TP[id].label, (int32_t)(ui.stage & 3u) * 1000 / 3);
-        card_mot_of(vp);
-        pf_column(1, TP[id].label, &TP[id], *vp, VAL(1u), ICON_NONE);
-        empty_column(2);
-        text_column(3, "", "", T_DIM);
-        return;
-    }
     if (cur_page()->graph == GR_DXSND) {               /* EDIT > SOUND (ui_dx.c) */
         dx_cards(cur_page());
         return;
@@ -1809,8 +1798,8 @@ static __attribute__((noinline)) void spl_seg(int32_t x0, int32_t y0, int32_t x1
 /* the six threads' edges (px; the screen's centre + 170 px at k * 60 + 23 degrees) */
 BTAPP_RO static const int16_t SPL_E[12] = {277, 186, 141, 289, -16, 222, -37, 54, 99, -49, 256, 18};
 /* the threads at ms (< SPL_IN; the screen in two bands): quadratics from the edges bowed 30 px aside, eased out onto
- * the logo's start (the Bluetooth segment's room: without it, the screen dark that while) */
-BTAPP_FN static void spl_threads(uint32_t ms)
+ * the logo's start (V10.8.35: in the image again, its edges still the Bluetooth segment's: without it, the screen dark that while) */
+static __attribute__((noinline)) void spl_threads(uint32_t ms)
 {
     int32_t k, j, sx = 34 * 16, sy = (SPL_SY + 6 + 101) * 16, u = 256 - (int32_t)(ms * 256u / SPL_IN), e = 256 - u * u / 256 * u / 256;
     for (j = 0; j < 2; j++) {

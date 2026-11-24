@@ -78,7 +78,7 @@ enum { LV_PAT, LV_BAR, LV_STEP, LV_N };                 /* SEQ's pictures: the b
  * PLAYHEADS . STRETCH . COMP (COMP 2 after it, by SELECT as before) . AUTO (AUTOMATION, AUTO LIST). BAR and NOTE stay pages
  * (code puts them) but out of the chain, until the step held opens its own (the mock-up's slice 5) */
 static const nv_t CE_SEQ[] = {NV("STEP", 0, 0, LV_BAR), NV("PATTERN", "LENGTH", 1, LV_PAT), NV("RHYTHM", 0, 1, LV_PAT), NV("TRACK", 0, 1, LV_PAT),
-                              NV("EUCLID", 0, 2, LV_PAT), NV("MODES", 0, 2, LV_PAT),
+                              NV("EUCLID", 0, 2, LV_PAT), NV("MODES", 0, 2, LV_PAT), NV("MUTATE", 0, 2, LV_PAT),   /* (V10.8.35) */
                               NV("PLAYHEADS", 0, 3, LV_PAT),
                               NV("COMP", "STEP FX", 4, LV_STEP), NV("COMP 2", "STEP FX 2", 4, LV_STEP), NV("AUTOMATION", 0, 5, LV_BAR),
                               NV("AUTO LIST", 0, 5, LV_BAR), NV("LYRIC STEP",0,5,LV_BAR),NV("TRACK GEN",0,6,LV_BAR),
@@ -106,11 +106,11 @@ static const nv_t CE_GLO[] = {NV("MIXER", 0, 0, 0), NV("SENDS", 0, 0, 0),   /* (
                                                          * (ui_live.c) */
 static const ng_t CG_GLO[] = {{"MIXER", "MIX"}, {"SETUP", 0}};   /* (codex/coherence: SETUP, the
                                                          * settings in one group: GLOBAL, SYSTEM, SYSTEM 2, KEY SPLIT) */   /* (five tabs of 44 px in the labels' face) */
-static const nv_t CE_ENV[] = {NV("ENV", 0, 0, 1), NV("ENV DEST", 0, 0, 1), NV("ENV 2", 0, 0, 1), NV("STAGE", 0, 1, 2)};   /* (V10.8.16, the owner: TRACKS, the six
+static const nv_t CE_ENV[] = {NV("ENV", 0, 0, 1), NV("ENV DEST", 0, 0, 1), NV("ENV 2", 0, 0, 1)};   /* (V10.8.35, the owner: STAGE gone) */   /* (V10.8.16, the owner: TRACKS, the six
                                                          * envelopes together, gone for ENV's layers' room) */   /* (V10.22: ENV 2) (codex/coherence) the track's pages first;
                                                          * TRACKS, the six tracks' envelopes at a glance (ENV's knobs), last
                                                          * (TRACKS DEST, ENV DEST's twin, gone) */
-static const ng_t CG_ENV[] = {{"ENV", 0}, {"STAGE", 0}};
+static const ng_t CG_ENV[] = {{"ENV", 0}};
 static const nv_t CE_LFO[] = {NV("MOD", 0, 0, 0), NV("LFO", 0, 1, 1), NV("LFO 2", 0, 1, 1), NV("LFO DEST", 0, 1, 1),
                               NV("MSEQ", "MOD SEQ", 2, 2), NV("MSEQ 2", "MOD SEQ 2", 2, 2)};   /* (0.9.18: LFO 2, PHASE) */
 static const ng_t CG_LFO[] = {{"MODULATION", "MOD"}, {"LFO", 0}, {"MOD SEQUENCE", "MOD SEQ"}};   /* (V10.7.59: MOD SEQ) */
@@ -385,6 +385,8 @@ static __attribute__((noinline)) const char *nav_page_name(void)
         return b;
     }
     str_cpy(b, v->nm ? v->nm : v->t, 24);
+    if (sec == SEC_SEQ && b[0] == 'M' && b[1] == 'O' && !drum_track(TSEL))   /* (V10.8.35) MODES a melodic track's MELODY */
+        return "MELODY";
     if (sec == SEC_EDIT && v->g == 0u && !v->nm && PAGES[ui.page].scope == SC_ENGINE) {   /* (EDIT 1 . OSC) */
         const char *pt = trk_engp(TSEL)->page_title[PAGES[ui.page].id[0] != P_E0];
         if (trk_eng(TSEL) == ENGI_ANALOG)              /* (codex/coherence) EDIT . OSC: ANALOG has no EDIT 2 */

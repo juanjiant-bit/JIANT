@@ -53,8 +53,8 @@ static struct {
     uint8_t rq[NTRK], rk[NTRK];                         /* a request: rq moved on, of kind rk (LQ_*) */
     /* ISR */
     lv_mod_t cur[NTRK];
-    uint8_t act, rs[NTRK], rem[NTRK];         /* modified (a bit a track); rq seen; PING going down; RATE's
-                                                         * remainder */
+    uint8_t act, rs[NTRK], rem[NTRK], pd[NTRK];   /* modified (a bit a track); rq seen; RATE's remainder; (V10.8.35)
+                                                         * PING going down */
     uint8_t pfo[NTRK], pfa;                             /* the FX layer's 1/2 TEMPO / LOOP on it last block; a bit a track */
     uint16_t gidx[NTRK];                                /* the ghost: its step, samples into it */
     uint32_t gpos[NTRK];
@@ -69,8 +69,8 @@ static int lv_phase0(const lv_mod_t *m) { return !(m->rate | m->cut | (m->fl & 6
  * step), its direction (seq_tick takes it as a JUMP component's: a component's own JUMP first) */
 static __attribute__((noinline)) uint32_t live_next(const track_t *t, uint32_t len)
 {
-    uint32_t ti = trk_index(t), n = lv.cur[ti].cut, lo = 0;   /* (V10.8.12: forward only; REV, PING, RND, GIRO gone
-                                                         * with GLO > LIVE) */
+    uint32_t ti = trk_index(t), n = lv.cur[ti].cut, lo = 0, d = LF_DIR(lv.cur[ti].fl);   /* (V10.8.35: REV, PING, RND
+                                                         * back, SEQ > STEP FX's black keys; GIRO still gone) */
     int32_t r = (int32_t)(t->seq_idx % len), w;
     if (!n || n >= len)
         n = len;
@@ -80,7 +80,24 @@ static __attribute__((noinline)) uint32_t live_next(const track_t *t, uint32_t l
     r -= (int32_t)lo;
     if (r < 0)
         r += (int32_t)len;
-    r = r >= w || r + 1 >= w ? 0 : r + 1;               /* (outside the window: it enters at its start) */
+    if (r >= w)                                         /* (outside the window: it enters at its start / end) */
+        r = d == LVD_REV ? w : -1;
+    if (d == LVD_REV)
+        r = r <= 0 ? w - 1 : r - 1;
+    else if (d == LVD_PING) {
+        if (w < 2)
+            r = 0;
+        else if ((r += lv.pd[ti] ? -1 : 1) >= w) {
+            r = w - 2;
+            lv.pd[ti] = 1;
+        } else if (r < 0) {
+            r = 1;
+            lv.pd[ti] = 0;
+        }
+    } else if (d == LVD_RND)
+        r = (int32_t)(rng() % n);
+    else
+        r = r + 1 >= w ? 0 : r + 1;
     r += (int32_t)lo;
     return (uint32_t)(r >= (int32_t)len ? r - (int32_t)len : r);
 }
@@ -121,7 +138,17 @@ static __attribute__((noinline)) uint32_t live_adv(track_t *t, uint32_t n, uint3
     return x;
 }
 
-/* (V10.8.12: THIN, RATCH, OCT gone with GLO > LIVE: the FX layer's 1/2 TEMPO and LOOP set none of them) */
+/* (V10.8.12: RATCH, OCT gone with GLO > LIVE) (V10.8.35: THIN back) (step_rolls) THIN: the step playing kept silent
+ * this time; the same steps on the same loop every PLAY */
+static int live_drop(const track_t *t)
+{
+    uint32_t ti = trk_index(t), h;
+    if (!LV_ON(ti) || !lv.cur[ti].drop)
+        return 0;
+    h = ((ti << 6 | t->seq_idx) + (uint32_t)t->loops * 65539u) * 0x9E3779B1u;
+    h = (h ^ h >> 15) * 0x9E3779B1u;
+    return ((h >> 16) * 100u) >> 16 < lv.cur[ti].drop;
+}
 /* (rec_note, rec_release) a modified track's playhead and ghost swapped: recording at the ghost's place */
 static int live_swap(track_t *t)
 {

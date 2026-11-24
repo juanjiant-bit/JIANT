@@ -26,43 +26,11 @@ static void env_mini(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t 
         py = yy;
     }
 }
-static void graph_stage(const track_t *t)
-{
-    static const char *const SN[4] = {"ATTACK", "DECAY", "SUSTAIN", "RELEASE"};
-    uint32_t sg = ui.stage & 3u, id = P_ATK + sg;
-    int32_t a = 2 + t->p[P_ATK] * 56 / 127, d = 3 + t->p[P_DEC] * 56 / 127, r = 3 + t->p[P_REL] * 56 / 127;
-    int32_t x0 = 10, x1 = x0 + a, x2 = x1 + d, x3 = 226 - r, sx[5] = {x0, x1, x2, x3, 226}, x, py = 0;
-    int32_t s = t->p[P_SUS] * 1000 / 127, v = t->p[id] * 1000 / 127;
-    const char *u = "";
-    char b[24];
-    cv_rect(sx[sg], 4, sx[sg + 1u] - sx[sg], 40, T_TINT);   /* the stage picked, on the whole envelope */
-    env_mini(t, 10, 6, 216, 36, T_MID, 1);
-    for (x = 0; x <= 216; x++) {                        /* its own shape, large: up, down to SUS, held, down to 0 */
-        int32_t q = x * 1000 / 216, e = 1000 - (int32_t)((int64_t)(1000 - q) * (1000 - q) * (1000 - q) / 1000000), y;
-        y = sg == 0u ? q : sg == 1u ? 1000 - (1000 - s) * e / 1000 : sg == 2u ? s : s - s * e / 1000;
-        if (sg == 0u)                                   /* (ATK: slow or fast as it is) */
-            y = 1000 - (int32_t)((int64_t)(1000 - q) * (1000 - q) / 1000) * (1000 - v / 2) / 1000 - (1000 - q) * v / 2000;
-        y = 122 - y * 66 / 1000;
-        if (x)
-            cv_line_t(10 + x - 1, py, 10 + x, y, heat_y(y, 56, 122, T_THEME), 2);
-        py = y;
-    }
-    cv_rect(10, 124, 217, 1, T_RAISE);
-    ed_cap(10, 50, SN[sg], T_THEME);
-    param_format(&TP[id], t->p[id], b, &u);
-    str_cpy(b + str_len(b), u, 24 - str_len(b));
-    cv_text_r(226, 50 - AF_X_CAP_Y, &AF_X, b, T_TEXT, T_SURF);
-    cv_text(10, 128 - AF_X_CAP_Y, &AF_X, "0", T_DIM);
-    cv_text_r(226, 128 - AF_X_CAP_Y, &AF_X, sg == 2u ? "HELD" : b, T_DIM, T_SURF);
-}
 /* the lens's panel for ENV's page pg (1), else 0 (its own) */
 static int graph_env_lz(const track_t *t, const page_t *pg)
 {
-    if (pg->graph == GR_STAGE)
-        graph_stage(t);
-    else
-        return 0;
-    return 1;
+    (void)t; (void)pg;                                  /* (V10.8.35: STAGE, its only one, gone) */
+    return 0;
 }
 
 /* LFO . MOD  MOD: the matrix as a net, the sources down the left (those a slot reads lit), a curve from each slot's

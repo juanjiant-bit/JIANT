@@ -322,6 +322,10 @@ static void proj_phys_gone(project_t *q)
                                                          * retired engine's track ANALOG's first preset, its motion as
                                                          * it was) */
         proj_trk_t *d = &q->t[k];
+        if (d->p[P_FTYPE] > 4) {                        /* (V10.8.35: the filter TYPEs MS20 and LP24 gone: LP) */
+            d->p[P_FTYPE] = 0;
+            hit = 1;
+        }
         if (!eng_gone(d->engine))
             continue;
         d->engine = ENGI_PHYS_TO;                       /* (V10.7.66: its values as they were, ANALOG's ranges) */

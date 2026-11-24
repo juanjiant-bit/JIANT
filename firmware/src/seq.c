@@ -2012,6 +2012,8 @@ static volatile uint8_t seq_fill;
 static int step_rolls(const track_t *t, const step_t *s)
 {
     uint32_t c = trk_chance(t, s);
+    if (live_drop(t))                               /* (V10.8.35) LIVE THIN (seq_live.c) */
+        return 0;
     return c >= 100u || rng() % 100u < c;
 }
 /* (0.9.9-seq2d) STEP COMPONENTS v2 (core.h CA_* CC_*). Component k's CONDITION on step s this pass (t->loops: the

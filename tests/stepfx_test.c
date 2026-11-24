@@ -168,6 +168,62 @@ int main(void)
         stop_transport(); frame(); live.mode = 0;
         bad += check("SONG mode, no rows: PLAY plays the loop (not ADD A SONG ROW)", ok);
     }
+    {   /* (V10.8.35, the owner: LIVE back, compact) STEP FX's black keys: the live modifiers on the selected track, held;
+         * let go, back in phase on the ghost; the steps never touched */
+        uint32_t bk[9], k, a, b, n, d, ph;
+        step_t was[16];
+        for (k = 0; k < 27u; k++) if (key_black(k) && key_place(k) < 9u) bk[key_place(k)] = k;
+        stop_transport(); frame();
+        track_select(0); go_title("COMP"); frame();
+        memcpy(was, trk[0].step, sizeof was);
+        transport_req = 1; ui_input();
+        steps(3);
+        ph = (trk[0].seq_idx + 16u - trk[1].seq_idx % 16u) % 16u;   /* (T2 untouched: T1's phase against it) */
+        fm1_in.notes |= 1u << bk[3]; frame();           /* REVERSE */
+        ok = msg_is("REVERSE") && lv.want[0].fl == (LVD_REV << 1);
+        steps(2);
+        a = trk[0].seq_idx; steps(1); b = trk[0].seq_idx;
+        ok &= LV_ON(0) && b == (a + 15u) % 16u;         /* (backwards) */
+        fm1_in.notes = 0; frame();
+        steps(2);
+        ok &= !LV_ON(0) && (trk[0].seq_idx + 16u - trk[1].seq_idx % 16u) % 16u == ph;   /* (back in phase: on the ghost) */
+        a = trk[0].seq_idx; steps(1);
+        ok &= trk[0].seq_idx == (a + 1u) % 16u;
+        fm1_in.notes |= 1u << bk[0]; frame();           /* RATE x2 */
+        ok &= msg_is("RATE x2") && lv.want[0].rate == 2;
+        steps(8);
+        ok &= LV_ON(0) && lv.cur[0].rate == 2;
+        fm1_in.notes = 0; frame(); steps(2);
+        ok &= !LV_ON(0) && (trk[0].seq_idx + 16u - trk[1].seq_idx % 16u) % 16u == ph;
+        fm1_in.notes |= 1u << bk[6]; frame();           /* THIN: about half the steps silent */
+        steps(2);
+        ok &= lv.cur[0].drop == 50u;
+        for (k = n = d = 0; k < 64u; k++) { n++; d += (uint32_t)live_drop(&trk[0]); steps(1); }
+        ok &= d >= 16u && d <= 48u;
+        fm1_in.notes = 0; frame(); steps(2);
+        ok &= !LV_ON(0) && !live_drop(&trk[0]);
+        fm1_in.notes |= 1u << bk[4]; frame(); steps(2);  /* PING-PONG, then RANDOM over it: the last direction */
+        ok &= LF_DIR(lv.cur[0].fl) == LVD_PING;
+        fm1_in.notes |= 1u << bk[5]; frame(); steps(2);
+        ok &= LF_DIR(lv.cur[0].fl) == LVD_RND;
+        track_select(1); frame(); steps(2);             /* another track picked: the one before let go */
+        ok &= !LV_ON(0);
+        fm1_in.notes = 0; frame(); steps(2);
+        track_select(0); frame();
+        a = trk[0].seq_idx;
+        fm1_in.notes |= 1u << bk[8]; frame();           /* GIRO +: a step skipped */
+        ok &= msg_is("GIRO +");
+        steps(1);
+        ok &= trk[0].seq_idx == (a + 2u) % 16u || trk[0].seq_idx == (a + 3u) % 16u;
+        fm1_in.notes = 0; frame();
+        go_title("STEP"); frame();                       /* off STEP FX: the keys nothing */
+        fm1_in.notes |= 1u << bk[3]; frame(); steps(2);
+        ok &= !LV_ON(0) && !lv.want[0].fl;
+        fm1_in.notes = 0; frame();
+        ok &= !memcmp(was, trk[0].step, sizeof was);
+        stop_transport(); frame();
+        bad += check("LIVE compact: STEP FX's black keys REVERSE, RATE x2, THIN, PING-PONG / RANDOM held; let go in phase; GIRO; the steps untouched", ok);
+    }
     if (bad) printf("stepfx: %d failed\n", bad);
     else printf("stepfx: all passed\n");
     return bad != 0;

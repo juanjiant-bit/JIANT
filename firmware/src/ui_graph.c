@@ -1455,8 +1455,6 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
         h ^= (mod_ui_slot + 1u) * 40503u;
     if (pg->graph == GR_FOCUS)                       /* (0.8.5) EDIT > FOCUS: the parameter */
         h ^= (ui.focus + 1u) * 2246822519u;
-    if (pg->graph == GR_STAGE)                       /* .. ENV > STAGE: the stage */
-        h ^= (ui.stage + 1u) * 3266489917u;
     if (pd_on()) {                                   /* .. a lens of ui_lens.c: its level */
         h ^= (pd_level() + 1u) * 668265263u;
         if (pd_cur() == PD_MOD && pg->graph != GR_MSEQ)   /* (V10.8.16: ENV's TRACKS gone, its term with it) (MOD's pulse,

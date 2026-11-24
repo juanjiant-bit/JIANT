@@ -530,8 +530,9 @@ static const grecipe_t RECIPE[SR_N] = {
     /* ---- (0.9.9-gen1) the archetypes the genres lacked */
     /* EBM (V10.6p, the owner: "a modular's analog basses, slightly detuned"): FAT BASS's two oscillators (two saws, two
      * squares one time in three) ~9 cents apart, the second an octave under (or a fourth, a fifth: GEN's consonant
-     * INT), the MS20 filter, short, its envelope on it (the accents open it further), driven */
-    [SR_EBMBASS]  = {{{EG_A, 14}, {EG_A, 14}, NO_}, GR(0, 7), GR(32, 47), GR(8, 31), GR(8, 23), GR(48, 71), GR(40, 63), GR4(28, 47), GFT(5, 0), GWV(0, 1, 0), 0, GDC(28, 0), V_LEGATO},
+     * INT), the LP filter resonant (V10.8.35: was the MS20, gone), short, its envelope on it (the accents open it
+     * further), driven harder */
+    [SR_EBMBASS]  = {{{EG_A, 14}, {EG_A, 14}, NO_}, GR(0, 7), GR(32, 47), GR(8, 31), GR(8, 23), GR(48, 71), GR(56, 79), GR4(28, 47), GFT(0, 0), GWV(0, 1, 0), 0, GDC(40, 0), V_LEGATO},
     /* trap's 808: a sine's long boom, gliding (the SLIDEs), driven */
     [SR_808]      = {{{EG_A, 7}, {EG_A, 2}, NO_}, GR(0, 7), GR(88, 111), GR(0, 15), GR(32, 47), GR(56, 79), GR(0, 7), GR4(0, 7), GFT(0, 48), GWV(3, 3, 1), 0, GDC(36, 0), V_LEGATO},
     /* jazz, bossa, boom bap: an upright's triangle, plucked */

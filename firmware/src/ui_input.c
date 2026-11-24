@@ -673,6 +673,45 @@ static void sfx_keys(void)
     hc_trk = (uint8_t)song.sel;
     hc_act = w < 16u ? SFX_KA[w] : 0u;
 }
+/* (V10.8.35, the owner: LIVE back, compact) STEP FX's black keys 1..7 held: the selected track's live modifiers (seq_live.c:
+ * how the sequencer walks, never the steps; let go, back in phase on its ghost): RATE x2, x3/2, x2/3, REVERSE, PING-PONG,
+ * RANDOM, THIN (half the steps silent); several at once add up (the last rate, the last direction); in on the 1/16.
+ * Black keys 8 / 9 pressed: GIRO, the playhead a step back / on (it stays there: the other key, or PLAY again, back) */
+static const char LVK_NM[9][10] = {"RATE x2", "RATE x3/2", "RATE x2/3", "REVERSE", "PING-PONG", "RANDOM", "THIN", "GIRO -",
+                                   "GIRO +"};
+static uint16_t lvk_held;
+static uint8_t lvk_trk;
+static void lvk_keys(uint32_t on)
+{
+    static const int8_t KR[3] = {2, 1, -1};
+    uint32_t k, p, held = 0, kk[9] = {0}, len = (uint32_t)clamp(TSEL->p[P_SLEN], 1, NSTEP);
+    lv_mod_t m = {0};
+    for (k = 0; on && k < 27u; k++)
+        if (((fm1_in.notes >> k) & 1u) && key_black(k) && (p = key_place(k)) < 9u) {
+            held |= 1u << p;
+            kk[p] = k;
+            if (p < 3u) m.rate = KR[p];
+            else if (p < 6u) m.fl = (uint8_t)((p - 2u) << 1);
+            else if (p == 6u) m.drop = 50;
+        }
+    if (held == lvk_held && (!held || lvk_trk == song.sel))
+        return;
+    for (k = 0; k < 9u; k++)
+        if ((held & ~(uint32_t)lvk_held) >> k & 1u) {
+            ui_message(LVK_NM[k]);
+            bn_set(LVK_NM[k], kk[k], 1);
+            if (k >= 7u && song.playing)                 /* GIRO: the step after this one a step back / on */
+                TSEL->jump_to = (uint8_t)((TSEL->seq_idx + (k - 7u) * 2u) % len + 1u);
+        }
+    if ((lvk_held & 0x7Fu) && lvk_trk != song.sel)      /* (another track picked: the one before let go) */
+        memset(&lv.want[lvk_trk % NTRK], 0, sizeof m), lv.rq[lvk_trk % NTRK]++;
+    lvk_held = (uint16_t)held;
+    lvk_trk = (uint8_t)song.sel;
+    lv.want[song.sel % NTRK] = m;
+    lv.r16 |= (uint8_t)(1u << song.sel % NTRK);
+    lv.rq[song.sel % NTRK]++;                            /* (live_q: it goes in on the next 1/16) */
+    lv.busy = 1;
+}
 static void comp_keys(uint32_t pressed)                 /* (V10.8.9: the black keys PG UP / DN only; the white keys hold */
 {                                                       /* components, sfx_keys; PRESETS picks the step) */
     uint32_t k, p;
@@ -1336,16 +1375,6 @@ static void edit_param(uint32_t slot, int32_t steps)
     }
     if (pg->graph == GR_FOCUS) {                          /* (0.8.5) EDIT > FOCUS */
         focus_knob(slot, steps);
-        return;
-    }
-    if (pg->graph == GR_STAGE && slot < 2u) {             /* (0.8.5) ENV > STAGE: the stage, its value */
-        if (slot == 0u)
-            ui.stage = (uint8_t)clamp((int32_t)(ui.stage & 3u) + (steps > 0 ? 1 : -1), 0, 3);
-        else {
-            uint32_t id = P_ATK + (ui.stage & 3u);
-            TSEL->p[id] = (int16_t)param_turn(&TP[id], TSEL->p[id], accel(EN_K1 + 1u, steps, 127));
-            knob_cap(TSEL, id);
-        }
         return;
     }
     if(pg->graph==GR_LYRSTEP) {
@@ -2435,6 +2464,7 @@ static void ui_input(void)
     ui_input_frame();
     if (mxn_s) mx_banner();                             /* (V10.8.22) the value turned, its route in full */
     if (!ui_preview_ok() && (preview_req || preview_left)) preview_req = PREVIEW_CANCEL;
+    eu_tick();                                          /* (V10.8.35) EUCLID's MUTATE, on the bar */
     gen_tick();                                         /* (V10.7.66) GEN on the bar, ENTRY BUILD */
     scale_link();                                       /* (JIANT 0.4) one scale for every melodic track (after the
                                                          * frame's edits) */
@@ -2921,7 +2951,8 @@ static void ui_input_frame(void)
                 break;
             }
             if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_EUCLID) {   /* (V10.6) EUCLID / MODES: */
-                eu_oct(b == B_OCTUP);                    /* OCT+ a new variation, OCT- the one before */
+                eu_oct(b == B_OCTUP, cur_page()->id[0] != ID_EU0 + 4u);   /* (V10.8.35) EUCLID, MUTATE: OCT+ mutates,
+                                                         * OCT- the anchor; MODES / MELODY: a new variation, the one before */
                 break;
             }
             oct_key(b, both);                           /* (V10.6z4: a note held, the expression keys) */
@@ -2981,6 +3012,7 @@ static void ui_input_frame(void)
         sfx_keys();
     else
         hc_act = 0, sfx_key = 16;
+    lvk_keys((uint32_t)ckeys_on());                     /* (V10.8.35) .. its black keys, the live modifiers */
     if (ckeys_on()) {                            /* (seq2g) SEQ > COMP: the keys pick the step */
         comp_keys(notes);
     } else if (skeys_on()) {                            /* (V10.6o) PARTS, TIMELINE: theirs */
@@ -3051,7 +3083,7 @@ static void ui_input_frame(void)
         if (ui.home || pg->scope == SC_STEP || pg->scope == SC_TRK || page_desc(pg, k, &hv) ||
             ((pg->graph == GR_USER || pg->graph == GR_MOD || pg->graph == GR_MSEQ || pg->graph == GR_PATS || BAR_PAGE(pg)) &&
              k == 0u)
-            || FIT_PAGE(pg) || SPLIT_PAGE(pg) || pg->graph == GR_SONG || pg->graph == GR_DXSND || pg->graph == GR_SWARM || pg->graph == GR_FOCUS || pg->graph == GR_STAGE ||
+            || FIT_PAGE(pg) || SPLIT_PAGE(pg) || pg->graph == GR_SONG || pg->graph == GR_DXSND || pg->graph == GR_SWARM || pg->graph == GR_FOCUS ||
             pg->graph == GR_GCOMP || pg->graph == GR_LIVE) {   /* (not an empty column) */
             ui.hot_col = (uint8_t)k;
             ui.hot_t = 40, ui.knob_ms = fm1_ms;

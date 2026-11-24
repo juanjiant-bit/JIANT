@@ -166,74 +166,6 @@ static __attribute__((noinline)) void tf_sides(uint32_t ti, const tsvf_t *c, int
 static uint8_t tf_on[NTRK], tf_ft[NTRK];        /* the SVF in the chain the last block; the TYPE playing (0.6.71: a
                                                  * byte a track, not a bit: two cores write two tracks at once) */
 static uint8_t tf_cmb[NTRK];                    /* (0.6.81) the COMB ran the last block (its line live) */
-/* (0.9.9-snd1) TYPE MS20, the owner's "more aggressive filter, the Korg MS-20's": a 2-pole low-pass whose resonance is a
- * positive feedback through a diode-like clip (the Sallen-Key's, the MS-20's: screaming, and controlled, the clip
- * setting how loud it can ring). Here the trapezoidal SVF (dsp.c) held at damping 2 (no resonance of its own: the
- * MS-20's soft knee at RES 0) and its band-pass fed back into the input through softclip (half full scale): its small-
- * signal damping 2 - kn, RES exponential to it (2 .. 0.03: Q 0.5 .. 33, a scream at the top that still dies out when
- * the part is silent: no whistle left on its own), a hot input clipped in the loop (the MS-20's growl). The clip's feedback a sample late (explicit: the
- * linear part stable, the clip bounded: bounded however it is driven). CUT, LFO / ENV DEST FILTER as the SVF's; on
- * ANALOG and LOFI the part's (their own filter open), at ANALOG's CUT RES (E4 E5) */
-static uint8_t tf_ms[NTRK];                     /* (snd1) MS20 ran the last block (its state live) */
-static int32_t ms_s[NTRK][3];                   /* .. its state: the SVF's ic1 ic2, the band-pass a sample back */
-static __attribute__((noinline)) void tf_ms20(uint32_t ti, int32_t *out, uint32_t n, int32_t cut, int32_t res)
-{
-    int32_t ic1 = ms_s[ti][0], ic2 = ms_s[ti][1], bp = ms_s[ti][2], r = clamp(res, 0, 127), kn, xq;
-    uint32_t i;
-    tsvf_t c;
-    if (!tf_ms[ti]) {                                   /* in: from rest at the input (no step) */
-        ic1 = bp = 0;
-        ic2 = out[0];
-    }
-    tsvf_coef_k(&c, cut, 8192);
-    xq = r * 1536 / 127;                                /* the damping left 2 x 2^-(6 RES / 127): 2 .. 0.03 (Q 0.5 .. 33) */
-    kn = 8192 - (((8192 * (65536 - ((xq & 255) << 7))) >> 16) >> (xq >> 8));   /* Q12 */
-    for (i = 0; i < n; i++) {
-        int32_t x = clamp(out[i] + ((kn * softclip(bp * 2)) >> 13), -60000, 60000);   /* the diode's feedback */
-        int32_t v3 = x - ic2, v1 = (c.a1 * ic1 + c.a2 * v3) >> 13, v2 = ic2 + ((c.a2 * ic1 + c.a3 * v3) >> 13);
-        ic1 = clamp(2 * v1 - ic1, -150000, 150000);
-        ic2 = clamp(2 * v2 - ic2, -150000, 150000);
-        bp = v1;
-        out[i] = soft_knee(v2 - (v2 >> 2), 16000);      /* (3/4: its ring about the dry's level, under full scale) */
-    }
-    ms_s[ti][0] = ic1;
-    ms_s[ti][1] = ic2;
-    ms_s[ti][2] = bp;
-    tf_ms[ti] = 1;
-}
-/* (V10.22) TYPE LP24 (a tester: "a 24 dB/oct ladder filter"): two of the SVF's low-passes in a row, 4 poles, the first
- * plain (damping 2), RES on the second (its peak, the ladder's), a soft knee after it; CUT, LFO / ENV DEST FILTER as the
- * SVF's; on ANALOG and LOFI the part's at their CUT RES (their own filter open), as MS20 */
-static uint8_t tf_l24[NTRK];                    /* LP24 ran the last block (its state live) */
-static int32_t l24_s[NTRK][4];                  /* .. its two stages' ic1 ic2 */
-static __attribute__((noinline)) void tf_lp24(uint32_t ti, int32_t *out, uint32_t n, int32_t cut, int32_t res)
-{
-    int32_t a1 = l24_s[ti][0], a2 = l24_s[ti][1], b1 = l24_s[ti][2], b2 = l24_s[ti][3];
-    uint32_t i;
-    tsvf_t c1, c2;
-    if (!tf_l24[ti]) {                                  /* in: from rest at the input (no step) */
-        a1 = b1 = 0;
-        a2 = b2 = out[0];
-    }
-    tsvf_coef_k(&c1, cut, 8192);
-    tsvf_coef(&c2, cut, clamp(res, 0, 127));
-    for (i = 0; i < n; i++) {
-        int32_t v3 = out[i] - a2, v1 = (c1.a1 * a1 + c1.a2 * v3) >> 13, v2 = a2 + ((c1.a2 * a1 + c1.a3 * v3) >> 13);
-        a1 = clamp(2 * v1 - a1, -150000, 150000);
-        a2 = clamp(2 * v2 - a2, -150000, 150000);
-        v3 = v2 - b2;
-        v1 = (c2.a1 * b1 + c2.a2 * v3) >> 13;
-        v2 = b2 + ((c2.a2 * b1 + c2.a3 * v3) >> 13);
-        b1 = clamp(2 * v1 - b1, -150000, 150000);
-        b2 = clamp(2 * v2 - b2, -150000, 150000);
-        out[i] = soft_knee(v2, 30000);
-    }
-    l24_s[ti][0] = a1;
-    l24_s[ti][1] = a2;
-    l24_s[ti][2] = b1;
-    l24_s[ti][3] = b2;
-    tf_l24[ti] = 1;
-}
 static uint8_t tf_xb[NTRK], tf_fo[NTRK];        /* (0.6.81) a TYPE's crossfade: its blocks left, the TYPE from (TF_DRY:
                                                  * no filter) */
 #define TF_XB (256u / CTL)                      /* (~5 ms: one block's fade between two filters was a tick) */
@@ -248,9 +180,9 @@ static __attribute__((noinline)) void tf_run(track_t *t, int32_t *out, uint32_t 
     const int16_t *p = t->p;
     uint32_t ti = (uint32_t)(t - trk) % NTRK, i;
     int32_t cut = ccut << 8, envq = 0, ic1 = tf_ic1[ti], ic2 = tf_ic2[ti], k;   /* (snd1: ccut, P_FCUT but on
-                                                         * ANALOG, whose own filter returned above but for MS20) */
+                                                         * ANALOG, whose own filter returned above) */
     tsvf_t c;
-    if (own && ft != FT_MS20 && ft != FT_LP24 && !FT_IS_COMB(ft))
+    if (own && !FT_IS_COMB(ft))
         return;
     if (t->engine == ENGI_DRUM)
         envq = (uint16_t)drum_env(t) + 1;                   /* (gen6d: the kit's ENV, its voices held at full) */
@@ -277,14 +209,6 @@ static __attribute__((noinline)) void tf_run(track_t *t, int32_t *out, uint32_t 
             cut = (127 << 8) - span > 0 ? (127 << 8) - span : 0;
     }
     cut += ((mulq15(t->lfo_val, t->lfo_fade) * p[P_LD_FLT]) >> 7) + ((envq * p[P_ED_FLT]) >> 7);
-    if (ft == FT_MS20) {
-        tf_ms20(ti, out, n, cut, cres);
-        return;
-    }
-    if (ft == FT_LP24) {                                /* (V10.22) */
-        tf_lp24(ti, out, n, cut, cres);
-        return;
-    }
     {
         uint32_t on = !(ft == FT_LP && fo == TF_DRY && cut >= (127 << 8) && !p[P_FRES]), was = tf_on[ti];
         if (!on && !was)
@@ -344,8 +268,6 @@ static __attribute__((noinline)) void track_filter(track_t *t, int32_t *out, uin
     if (!tf_xb[ti]) {
         tf_run(t, out, n, ft, TF_DRY, 0, 0, own, ccut, cres);
         tf_cmb[ti] = FT_IS_COMB(ft);
-        tf_ms[ti] = ft == FT_MS20;
-        tf_l24[ti] = ft == FT_LP24;
         return;
     }
     if (n > CTL)
@@ -366,8 +288,6 @@ static __attribute__((noinline)) void track_filter(track_t *t, int32_t *out, uin
     }
     if (!--tf_xb[ti]) {
         tf_cmb[ti] = FT_IS_COMB(ft);
-        tf_ms[ti] = ft == FT_MS20;
-        tf_l24[ti] = ft == FT_LP24;
     }
 }
 
