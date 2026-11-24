@@ -45,6 +45,8 @@ def local(path):
         if rest.startswith("webapp/editor/"):
             f = repo / "web" / rest[len("webapp/editor/"):]
             return f.read_bytes() if f.is_file() else None
+        if site == "/JIANT/" and rest == "studio/fm1backup.js":       # (the installer's and the editor's, beside Studio)
+            return (FM / "web" / "fm1backup.js").read_bytes()
         if site == "/JIANT/" and rest.startswith("studio/"):
             f = HERE / (rest[len("studio/"):] or "index.html")
             return f.read_bytes() if f.is_file() else None

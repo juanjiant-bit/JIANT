@@ -10,6 +10,7 @@
 // same on their own.
 import { scrDecode, scrEncode, wavFile, zipStored, midiFile, SCR } from "./studio-lib.js";
 import { Daw } from "./daw.js";
+import { captureBackup, restoreBackup, readBackup, songsNotRestored, BACKUP_IDS, bkU32, bkR32, bkCrc, bkPack, bkUnpack } from "./fm1backup.js";
 
 const $ = (id) => document.getElementById(id);
 const QS = new URLSearchParams(location.search);
@@ -18,6 +19,18 @@ const MOCK = QS.get("mock") === "1";
 /* ------------------------------------------------------------------------------------------------- the words */
 const TEXT = {
   es: {
+    vProj: "Proyectos", projTitle: "Proyectos y backups",
+    projLead: "Tus proyectos y backups. Un backup guarda todo (la música actual, las canciones con sus secciones, los sonidos de usuario y los ajustes) en este navegador y, si querés, en un archivo. Restaurarlo lo devuelve al aparato tal cual. Funciona con la FM-1 conectada o con el emulador.",
+    bkNow: "Hacer backup ahora", bkImport: "Importar archivo…", bkAlsoFile: "Descargar también el archivo", bkLibTitle: "Backups", bkLibHelp: "Guardados en este navegador (no se suben a ningún lado). Descargá los importantes: si se borran los datos del navegador, se pierden.",
+    bkEmpty: "Todavía no hay backups. «Hacer backup ahora» guarda el primero.", bkDownload: "Descargar", bkRestore: "Restaurar", bkDelete: "Borrar",
+    bkWorking: "Haciendo el backup… ", bkRestoring: "Restaurando… ", bkDone: "Backup guardado: %s", bkRestored: "Backup restaurado en %s", bkRestoredBut: "Restaurado; estas canciones no entraron en este firmware: %s",
+    bkFail: "No se pudo: %s", bkNoDev: "Conectá la FM-1 (Inicio › Buscar) o prendé el emulador.", bkConfirm: "¿Restaurar «%s» en %s? Reemplaza la música actual, las canciones, los sonidos de usuario y los ajustes. No desconectes el USB.",
+    bkDelConfirm: "¿Borrar «%s» de este navegador?", bkOther: "Backup de otro firmware: se restaura con su propio editor", bkImported: "Importado: %s", bkBadFile: "Ese archivo no es un backup de JIANT",
+    bkMusic: "música actual", bkSongs: "%n canciones", bkSections: "%n secciones", bkTarget: "el emulador",
+    slotsTitle: "Proyectos A–D", slotsHelp: "Las cuatro ranuras de proyecto del aparato. Cargar trae el proyecto a la música actual; Guardar escribe la música actual en la ranura.",
+    slotsRead: "Leer ranuras", slotUsed: "con proyecto", slotEmpty: "vacía", slotUnknown: "sin leer", slotLoad: "Cargar", slotSave: "Guardar acá",
+    slotLoadConfirm: "¿Cargar el proyecto %s? Reemplaza la música actual (guardala antes si la querés).", slotSaveConfirm: "¿Guardar la música actual en %s? Reemplaza el proyecto que tiene.",
+    slotLoaded: "Proyecto %s cargado", slotSaved: "Música actual guardada en %s",
     vDocs: "Manuales", docsLeadFm: "Todo para aprender JIANT FM: el manual interactivo (tocá cualquier control del FM-1 y mirá qué hace), el manual completo y las dos hojas de ayuda para tener a mano.",
     docsLeadByte: "Todo para aprender JIANT BYTE: el manual interactivo, el manual completo y sus hojas de ayuda. Lo que todavía no está publicado dice «en camino».",
     docInter: "Manual interactivo", docInterText: "El FM-1 dibujado: tocá un control y mirá qué hace solo, mantenido y en combinación, con la pantalla a la que lleva. Tutorial paso a paso, buscador de comandos y recetas.",
@@ -110,6 +123,18 @@ const TEXT = {
     foot: "JIANT Studio, de Juan Jiant",
   },
   en: {
+    vProj: "Projects", projTitle: "Projects and backups",
+    projLead: "Your projects and backups. A backup keeps everything (the current music, the songs and their sections, the user sounds and the settings) in this browser and, if you want, in a file. Restoring it puts it back on the device as it was. Works with the FM-1 connected or with the emulator.",
+    bkNow: "Back up now", bkImport: "Import a file…", bkAlsoFile: "Also download the file", bkLibTitle: "Backups", bkLibHelp: "Kept in this browser (nothing is uploaded). Download the ones that matter: clearing the browser's data loses them.",
+    bkEmpty: "No backups yet. “Back up now” keeps the first.", bkDownload: "Download", bkRestore: "Restore", bkDelete: "Delete",
+    bkWorking: "Backing up… ", bkRestoring: "Restoring… ", bkDone: "Backup kept: %s", bkRestored: "Backup restored on %s", bkRestoredBut: "Restored; these songs did not fit this firmware: %s",
+    bkFail: "Could not: %s", bkNoDev: "Connect the FM-1 (Home › Find) or switch the emulator on.", bkConfirm: "Restore “%s” on %s? It replaces the current music, the songs, the user sounds and the settings. Keep USB connected.",
+    bkDelConfirm: "Delete “%s” from this browser?", bkOther: "Another firmware's backup: restore it with its own editor", bkImported: "Imported: %s", bkBadFile: "That file is not a JIANT backup",
+    bkMusic: "current music", bkSongs: "%n songs", bkSections: "%n sections", bkTarget: "the emulator",
+    slotsTitle: "Projects A–D", slotsHelp: "The device's four project slots. Load brings a project into the current music; Save writes the current music into the slot.",
+    slotsRead: "Read the slots", slotUsed: "holds a project", slotEmpty: "empty", slotUnknown: "not read", slotLoad: "Load", slotSave: "Save here",
+    slotLoadConfirm: "Load project %s? It replaces the current music (save it first if you want it).", slotSaveConfirm: "Save the current music into %s? It replaces the project there.",
+    slotLoaded: "Project %s loaded", slotSaved: "Current music saved into %s",
     vDocs: "Manuals", docsLeadFm: "Everything to learn JIANT FM: the interactive manual (touch any control of the FM-1 and see what it does), the full manual and the two cheat sheets to keep at hand.",
     docsLeadByte: "Everything to learn JIANT BYTE: the interactive manual, the full manual and its cheat sheets. What is not published yet says “on its way”.",
     docInter: "Interactive manual", docInterText: "The FM-1 drawn: touch a control to see what it does alone, held and in combination, with the screen it leads to. A step-by-step tutorial, a command search and recipes.",
@@ -244,9 +269,9 @@ function unframe(d) {
 /* one request at a time, each matched by its command (the device answers in order); pushes (79) to onPush */
 class Link {
   constructor(output, onPush) { this.output = output; this.onPush = onPush; this.q = []; this.cur = null; this.lastSent = 0; this.closed = false; }
-  request(cmd, args = [], timeout = 600) {
+  request(cmd, args = [], timeout = 600, match = null) {
     if (this.closed) return Promise.reject(new Error("closed"));
-    return new Promise((res, rej) => { this.q.push({ cmd, args, res, rej, timeout }); this.pump(); });
+    return new Promise((res, rej) => { this.q.push({ cmd, args, res, rej, timeout, match }); this.pump(); });
   }
   pump() {
     if (this.cur || !this.q.length || this.closed) return;
@@ -265,7 +290,7 @@ class Link {
     const f = unframe(data);
     if (!f) return;
     if (f.cmd === CMD.SCREEN_DATA) { this.onPush(f); return; }
-    if (this.cur && f.cmd === this.cur.cmd && (f.cmd !== CMD.SCREEN || f.a[0] === this.cur.args[0])) this.finish(f.a);
+    if (this.cur && f.cmd === this.cur.cmd && (f.cmd !== CMD.SCREEN || f.a[0] === this.cur.args[0]) && (!this.cur.match || this.cur.match(f.a))) this.finish(f.a);
   }
   close() { this.closed = true; for (const c of [this.cur, ...this.q].filter(Boolean)) { clearTimeout(c.timer); c.rej(new Error("closed")); } this.cur = null; this.q = []; }
 }
@@ -340,9 +365,9 @@ $("find").addEventListener("click", find);
 $("forget").addEventListener("click", () => { letGo(); state.found = ""; render(); });
 
 /* -------------------------------------------------------------------- install safety: the jiant-midi channel */
-let busyUntil = 0, busyTimer = 0;
+let busyUntil = 0, busyTimer = 0, midiBc = null;
 try {
-  const bc = new BroadcastChannel("jiant-midi");
+  const bc = midiBc = new BroadcastChannel("jiant-midi");
   bc.onmessage = (e) => {
     const m = e.data || {};
     if (m.type === "who") bc.postMessage({ type: "studio", connected: !!state.dev });
@@ -360,7 +385,7 @@ try {
 } catch (_) {}
 
 /* ------------------------------------------------------------------------------------- views, firmware, target */
-const VIEWS = ["home", "install", "editor", "screen", "emu", "rec", "docs", "ports"];
+const VIEWS = ["home", "install", "editor", "screen", "emu", "rec", "proj", "docs", "ports"];
 function go(view, push = true) {
   if (!VIEWS.includes(view)) view = "home";
   state.view = view;
@@ -942,6 +967,178 @@ $("f-devices").addEventListener("load", () => {
 });
 $("devtryclose").addEventListener("click", () => { $("devtry").hidden = true; $("f-devices").src = "about:blank"; });
 
+/* ------------------------------------------------------------------------------------- projects and backups */
+/* By hand: the device's project slots A-D (9 PROJECT: 0 load, 1 save, 2 query) and complete backups (65-67, fm1backup.js:
+ * the installer's and the editor's), from the FM-1 or the emulator (its editor handler answers the same). Backups are
+ * kept in this browser (IndexedDB) and, if asked, downloaded; restoring one tells the other tools on jiant-midi to let go
+ * of the FM-1 first (as the installer does) */
+const proj = { slots: [null, null, null, null], working: false, list: [], emuLink: null };
+const SLOT = ["A", "B", "C", "D"];
+function projLink() {
+  if (state.target === "fm1") return state.dev ? { link: state.dev.link, name: devName(state.dev) } : null;
+  if (!emuOn()) return null;
+  if (!proj.emuLink || proj.emuLink.closed) {
+    const m = emuMidi(), input = [...m.inputs.values()][0], output = [...m.outputs.values()][0];
+    const link = proj.emuLink = new Link(output, () => {});
+    input.addEventListener("midimessage", (e) => link.receive(e.data));
+  }
+  return { link: proj.emuLink, name: t("bkTarget") };
+}
+/* fm1backup.js's request ([cmd, args], {timeout, retries, match}) over a Link */
+const bkRequest = (link) => async ([cmd, args], o = {}) => {
+  for (let k = 0; ; k++) {
+    try { return await link.request(cmd, args, o.timeout || 1200, o.match || null); }
+    catch (e) { if (e.message !== "timeout" || k >= (o.retries || 0)) throw new Error(e.message === "timeout" ? "timeout" : e.message); }
+  }
+};
+/* the library: IndexedDB (a memory list where it is not allowed) */
+const bkDb = (() => {
+  let db = null, mem = [], memId = 1;
+  const open = () => db || (db = new Promise((res) => {
+    try {
+      const r = indexedDB.open("jiant-studio", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("backups", { keyPath: "id", autoIncrement: true });
+      r.onsuccess = () => res(r.result); r.onerror = () => res(null);
+    } catch (_) { res(null); }
+  }));
+  const tx = async (mode, f) => { const d = await open(); if (!d) return null;
+    return new Promise((res, rej) => { const st = d.transaction("backups", mode).objectStore("backups"), r = f(st); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); };
+  return {
+    async all() { const a = await tx("readonly", (st) => st.getAll()); return (a || mem).slice().sort((x, y) => y.created.localeCompare(x.created)); },
+    async put(b) { const id = await tx("readwrite", (st) => st.put(b)); if (id == null) { if (!b.id) b.id = memId++; mem = mem.filter((x) => x.id !== b.id).concat(b); return b.id; } return id; },
+    async del(id) { const r = await tx("readwrite", (st) => st.delete(id)); if (r === null) mem = mem.filter((x) => x.id !== id); },
+  };
+})();
+/* what a backup holds, in a line: the current music, the songs (6 x 4 sections from id 40), its size */
+function bkSummary(file) {
+  const objs = file.objects || [], size = objs.reduce((n, o) => n + (o.size || 0), 0);
+  const songs = new Map();
+  for (const o of objs) if (o.id >= 40 && o.size) { const n = ((o.id - 40) >> 2) + 1; songs.set(n, (songs.get(n) || 0) + 1); }
+  const secs = [...songs.values()].reduce((a, b) => a + b, 0);
+  const parts = [];
+  if (objs.find((o) => o.id === 0 && o.size)) parts.push(t("bkMusic"));
+  if (songs.size) parts.push(`${t("bkSongs").replace("%n", songs.size)} (${t("bkSections").replace("%n", secs)})`);
+  parts.push(`${(size / 1024).toFixed(1)} KB`);
+  return parts.join(" · ");
+}
+const bkJiant = (file) => { try { readBackup(file); return true; } catch (_) { return false; } };
+const stamp = (d) => d.toLocaleString(lang === "es" ? "es-AR" : "en-GB", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const fileName = (b) => `${(b.name || "backup").replace(/[^\w.-]+/g, "_")}.json`;
+function download(blob, name) { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+function projSay(s) { $("projstat").textContent = s; }
+function progress(done, total) { $("bkprog").hidden = !total; $("bkbar").style.width = total ? `${Math.round(done / total * 100)}%` : "0"; }
+/* the other tools let go (the editor in its frame, other tabs), the screen stops, then f; then they may come back */
+async function exclusive(f) {
+  proj.working = true; renderProj();
+  try { midiBc && midiBc.postMessage({ type: "installer", busy: true }); } catch (_) {}
+  screenStop();
+  await new Promise((r) => setTimeout(r, 400));
+  try { return await f(); }
+  finally {
+    try { midiBc && midiBc.postMessage({ type: "installer", busy: false }); } catch (_) {}
+    proj.working = false; progress(0, 0); renderProj();
+  }
+}
+async function backupNow() {
+  const L = projLink();
+  if (!L) { projSay(t("bkNoDev")); return; }
+  await exclusive(async () => {
+    try {
+      projSay(t("bkWorking"));
+      const fw = state.target === "emu" ? `${state.fw === "byte" ? "JIANT BYTE" : "JIANT FM"} (emulator)` : L.name;
+      let file;
+      try { file = await captureBackup(bkRequest(L.link), fw, (d, n) => { progress(d, n); projSay(t("bkWorking") + `${Math.round(d / n * 100)} %`); }); }
+      catch (e) {   // (another firmware's list of objects: kept whole, restored with its own editor)
+        if (!/manifest|archive object/i.test(e.message)) throw e;
+        file = await captureBackup(bkRequest(L.link), fw, (d, n) => progress(d, n), { complete: true });
+      }
+      const now = new Date(), b = { name: `${fw} · ${stamp(now)}`, created: now.toISOString(), fw: state.fw, firmware: fw, summary: bkSummary(file), file };
+      b.id = await bkDb.put(b);
+      if ($("bkdl").checked) download(new Blob([JSON.stringify(file)], { type: "application/json" }), fileName(b));
+      projSay(t("bkDone").replace("%s", b.name));
+    } catch (e) { projSay(t("bkFail").replace("%s", e.message)); }
+    await loadList();
+  });
+}
+async function restore(b) {
+  const L = projLink();
+  if (!L) { projSay(t("bkNoDev")); return; }
+  if (!confirm(t("bkConfirm").replace("%s", b.name).replace("%s", L.name))) return;
+  await exclusive(async () => {
+    try {
+      projSay(t("bkRestoring"));
+      const r = await restoreBackup(bkRequest(L.link), b.file, (d, n) => { progress(d, n); projSay(t("bkRestoring") + `${Math.round(d / n * 100)} %`); });
+      const lost = songsNotRestored(r.notRestored);
+      projSay(lost.length ? t("bkRestoredBut").replace("%s", lost.join(", ")) : t("bkRestored").replace("%s", L.name));
+    } catch (e) { projSay(t("bkFail").replace("%s", e.message)); }
+  });
+}
+async function loadList() { proj.list = await bkDb.all(); renderProj(); }
+$("bkgo").addEventListener("click", backupNow);
+$("bkimport").addEventListener("click", () => $("bkfile").click());
+$("bkfile").addEventListener("change", async () => {
+  const f = $("bkfile").files[0]; $("bkfile").value = "";
+  if (!f) return;
+  try {
+    const file = JSON.parse(await f.text());
+    if (!file || file.format !== "felucca-backup" || !Array.isArray(file.objects)) throw new Error(t("bkBadFile"));
+    const b = { name: f.name.replace(/\.json$/i, ""), created: file.created || new Date().toISOString(), fw: /BYTE/i.test(file.firmware || "") ? "byte" : "fm",
+      firmware: file.firmware || "", summary: bkSummary(file), file };
+    await bkDb.put(b); projSay(t("bkImported").replace("%s", b.name));
+  } catch (e) { projSay(t("bkFail").replace("%s", e.message)); }
+  loadList();
+});
+/* the slots: read on demand (a query each), Load and Save after asking */
+async function readSlots() {
+  const L = projLink();
+  if (!L) { projSay(t("bkNoDev")); return; }
+  for (let k = 0; k < 4; k++) {
+    try { const a = await L.link.request(9, [2, k], 1500, (r) => r[1] === k); proj.slots[k] = !!a[2]; } catch (_) { proj.slots[k] = null; }
+  }
+  renderProj();
+}
+async function slotDo(k, op) {
+  const L = projLink();
+  if (!L) { projSay(t("bkNoDev")); return; }
+  if (!confirm(t(op ? "slotSaveConfirm" : "slotLoadConfirm").replace("%s", SLOT[k]))) return;
+  await exclusive(async () => {
+    try {
+      const a = await L.link.request(9, [op, k], op ? 6000 : 3000, (r) => r[0] === op && r[1] === k);
+      if (op === 0 && !a[2]) throw new Error(t("slotEmpty"));
+      projSay(t(op ? "slotSaved" : "slotLoaded").replace("%s", SLOT[k]));
+      if (op) proj.slots[k] = true;
+    } catch (e) { projSay(t("bkFail").replace("%s", e.message)); }
+  });
+}
+$("slotsread").addEventListener("click", readSlots);
+function renderProj() {
+  if (!$("v-proj")) return;
+  const can = !!projLink() && !state.busy && !proj.working;
+  $("bkgo").disabled = !can; $("slotsread").disabled = !can; $("bkimport").disabled = proj.working;
+  $("slotshelp").textContent = t("slotsHelp");
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const btn = (k, cls, f, dis) => { const b = el("button", "btn" + (cls ? " " + cls : ""), t(k)); b.type = "button"; b.disabled = !!dis; b.addEventListener("click", f); return b; };
+  $("slots").replaceChildren(...SLOT.map((n, k) => {
+    const v = proj.slots[k], c = el("div", "slot" + (v ? " used" : ""));
+    const row = el("div", "row");
+    row.append(btn("slotLoad", "", () => slotDo(k, 0), !can || v === false), btn("slotSave", "ghost", () => slotDo(k, 1), !can));
+    c.append(el("b", null, n), el("span", "st", t(v == null ? "slotUnknown" : v ? "slotUsed" : "slotEmpty")), row);
+    return c;
+  }));
+  const list = proj.list.filter((b) => (b.fw || "fm") === state.fw);
+  $("bklist").replaceChildren(...(list.length ? list.map((b) => {
+    const r = el("div", "bkrow"), name = el("input"); name.value = b.name; name.setAttribute("aria-label", "name");
+    name.addEventListener("change", () => { b.name = name.value.trim() || b.name; bkDb.put(b); });
+    const left = el("div"); left.append(name, el("div", "when", `${stamp(new Date(b.created))} · ${b.firmware || ""}`));
+    const ok = bkJiant(b.file);
+    const acts = el("div", "acts");
+    acts.append(btn("bkDownload", "ghost", () => download(new Blob([JSON.stringify(b.file)], { type: "application/json" }), fileName(b))),
+      btn("bkRestore", "", () => restore(b), !can || !ok), btn("bkDelete", "ghost", async () => { if (confirm(t("bkDelConfirm").replace("%s", b.name))) { await bkDb.del(b.id); loadList(); } }));
+    r.append(left, el("div", "what", ok ? b.summary : `${b.summary} · ${t("bkOther")}`), acts);
+    return r;
+  }) : [el("p", "bkempty", t("bkEmpty"))]));
+}
+
 /* ------------------------------------------------------------------------------------------------ manuals */
 /* each firmware's manuals on its own site (same origin): the interactive manual (here, in a frame, or a tab), the full
  * manual in HTML (tools/gen_manual_html.py), the two cheat sheets (picture and PDF) and, for JIANT FM, what's new, the
@@ -1062,6 +1259,7 @@ function render() {
   if (state.view === "rec" && !rec.on) { renderAudioInputs(); renderMidiInputs(); }
   renderTakes();
   if (state.view === "ports") renderPorts();
+  if (state.view === "proj") renderProj();
   if (state.view === "docs" && docsFor !== state.fw + lang) { docsFor = state.fw + lang; renderDocs(); }
 }
 
@@ -1170,10 +1368,40 @@ function mockAccess() {
     rect(8, 34, 52, 44, acc); rect(64, 34, 52, 44, rgb(60, 56, 80)); rect(120, 34, 52, 44, rgb(60, 56, 80)); rect(176, 34, 56, 44, rgb(60, 56, 80));
     for (let i = 0; i < 120; i++) fb[(120 + Math.round(30 * Math.sin(i / 9))) * 240 + 60 + i] = acc;
   };
+  // its projects (A and C saved) and its archive (backups: the current music, the settings, the song index, two songs)
+  const slots = [true, false, true, false];
+  const arch = new Map(BACKUP_IDS.map((id) => {
+    const n = { 0: 520, 1: 140, 10: 64, 40: 300, 41: 300, 44: 280 }[id] || 0;
+    return [id, Uint8Array.from({ length: n }, (_, i) => (i * 7 + id * 13) & 255)];
+  }));
+  const puts = new Map();
   const output = { id: "mock-out", name: "JIANT", type: "output", state: "connected", send(d) {
     const f = unframe(Uint8Array.from(d));
     if (!f) return;
     last = Date.now();
+    if (f.cmd === 9) {                                          // PROJECT: 0 load, 1 save, 2 query
+      const [op, k] = f.a;
+      if (op === 1) slots[k] = true;
+      setTimeout(() => deliver(frame(9, [op, k, slots[k] ? 1 : 0])), op === 1 ? 300 : 20);
+      return;
+    }
+    if (f.cmd === 65) {                                         // BACKUP_LIST
+      deliver(frame(65, [1, 0, arch.size, ...[...arch].flatMap(([id, b]) => [id, ...bkU32(b.length), ...bkU32(b.length ? bkCrc(b) : 0)])]));
+      return;
+    }
+    if (f.cmd === 66) {                                         // BACKUP_GET: id, offset, count
+      const id = f.a[0], off = bkR32(f.a, 1), n = f.a[6] | f.a[7] << 7, b = arch.get(id);
+      deliver(frame(66, [id, 0, ...bkU32(off), n & 127, n >> 7, ...bkPack(b.subarray(off, off + n))]));
+      return;
+    }
+    if (f.cmd === 67) {                                         // BACKUP_PUT: begin, data, commit
+      const [op, id] = f.a;
+      if (op === 0) puts.set(id, new Uint8Array(bkR32(f.a, 2)));
+      else if (op === 1) { const off = bkR32(f.a, 2), body = f.a.slice(7), n = Math.min(256, puts.get(id).length - off); puts.get(id).set(bkUnpack(body, n), off); }
+      else if (op === 2) arch.set(id, puts.get(id));
+      deliver(frame(67, [op, id, 0]));
+      return;
+    }
     if (f.cmd === CMD.INFO) {
       const s = (x) => [...x].map((c) => c.charCodeAt(0)).concat(0);
       const eng = kind === "byte" ? ["ANALOG", "-", "PHASE", "MATH", "WAVE", "DRUM"] : ["ANALOG", "-", "PHASE", "MATH", "DRUM", "FM6"];   // (FM has MATH too)
@@ -1207,4 +1435,5 @@ go(QS.get("view") || (VIEWS.includes(fromHash) ? fromHash : state.view), false);
 window.addEventListener("hashchange", () => { const h = location.hash.replace(/^#/, ""); if (VIEWS.includes(h) && h !== state.view) go(h, false); });
 if (MOCK || QS.has("screen")) find().then(() => { if (QS.has("screen") && state.dev) { screenStart(); } });
 /* (for the tests) */
-window.jiantStudio = { emuMidi, state, find, letGo, screenStart, screenStop, recStart, recStop, setFw, setTarget, go, rec, scr };
+loadList();
+window.jiantStudio = { proj, bkDb, emuMidi, state, find, letGo, screenStart, screenStop, recStart, recStop, setFw, setTarget, go, rec, scr };

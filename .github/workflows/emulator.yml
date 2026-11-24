@@ -226,7 +226,7 @@ jobs:
           # (studio) JIANT Studio: install, edit, the screen, the emulator and recording for JIANT FM and JIANT BYTE in one
           # page (web/studio; it shows JIANT BYTE's tools from /JIANT-BYTE/, the same origin)
           mkdir -p build/pages/studio
-          cp web/studio/index.html web/studio/studio.js web/studio/studio-lib.js web/studio/daw.js web/studio/recorder-worklet.js build/pages/studio/
+          cp web/studio/index.html web/studio/studio.js web/studio/studio-lib.js web/studio/daw.js web/studio/recorder-worklet.js web/fm1backup.js build/pages/studio/
           cp -r web/studio/img build/pages/studio/img
           # (0.9.11) old and mistyped links (/installer/, /webapp/, a link with ":1:1" stuck to it) to the page they meant
           cp web/404.html build/pages/404.html

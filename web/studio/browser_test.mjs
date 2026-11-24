@@ -97,6 +97,24 @@ try {
     ok(r.imgs.length === 3 && r.imgs.every((w) => w > 0) && r.thumbs === 3 && r.manuals === 5 && open,
       `other devices: ${r.imgs.length} ports with their shots, the plugin's 3, ${r.manuals} manuals in HTML, a shot opens large`);
   }
+  /* projects and backups, by hand, on the simulated FM-1: the slots read, one saved; a backup kept in the browser,
+     its summary, restored */
+  {
+    const q = await page("?mock=1#proj", { width: 1280, height: 900 });
+    q.on("dialog", (d) => d.accept());
+    await q.waitForTimeout(800);
+    await q.click('nav.views [data-go="proj"]'); await q.waitForTimeout(400);
+    await q.click("#slotsread"); await q.waitForTimeout(800);
+    const before = await q.$$eval("#slots .slot .st", (x) => x.map((e) => e.textContent));
+    await q.click("#slots .slot:nth-child(2) .btn.ghost"); await q.waitForTimeout(1500);
+    const afterB = await q.$eval("#slots .slot:nth-child(2) .st", (e) => e.textContent);
+    await q.uncheck("#bkdl"); await q.click("#bkgo"); await q.waitForTimeout(4000);
+    const rows = await q.$$eval("#bklist .bkrow", (x) => x.map((e) => e.querySelector(".what").textContent));
+    await q.click("#bklist .bkrow .acts .btn:not(.ghost)"); await q.waitForTimeout(5000);
+    const stat = await q.textContent("#projstat");
+    ok(before[0] !== before[1] && afterB === before[0] && rows.length === 1 && /2 (songs|canciones)/.test(rows[0]) && /(restored|restaurado)/i.test(stat),
+      `projects: slots read (${before.join(", ")}), B saved; a backup kept (${rows[0]}), restored: "${stat}"`);
+  }
   /* the manuals: JIANT FM's (the interactive manual opens here), JIANT BYTE's (what its site lacks says so) */
   {
     const m = await page("#docs", { width: 1280, height: 900 });
