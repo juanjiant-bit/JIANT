@@ -95,6 +95,7 @@ footer a{color:var(--dim)}
 <ul><li><a href="#essential">Comandos esenciales</a></li>
 <li><a href="#contenido">Contenido</a></li>
 <li><a href="#que-hay-de-nuevo-en-esta-version">Qué hay de nuevo en esta versión</a><ul>
+<li><a href="#lo-nuevo-en-v10835-desde-v10821">Lo nuevo en V10.8.35 (desde V10.8.21)</a></li>
 <li><a href="#lo-nuevo-en-v10821-desde-v10781">Lo nuevo en V10.8.21 (desde V10.7.81)</a></li>
 <li><a href="#lo-nuevo-en-v10781-desde-v10716">Lo nuevo en V10.7.81 (desde V10.7.16)</a></li>
 <li><a href="#desde-v106c">Desde V10.6c</a></li>
@@ -146,7 +147,8 @@ footer a{color:var(--dim)}
 <li><a href="#grabacion-en-vivo">Grabación en vivo</a></li>
 <li><a href="#paginas-de-patron">Páginas de patrón</a></li>
 <li><a href="#euclid-y-modes-v106">EUCLID y MODES (V10.6)</a></li>
-<li><a href="#mutate-v1016">MUTATE (V10.16)</a></li>
+<li><a href="#mutate-v1016-compacto-desde-v10835">MUTATE (V10.16; compacto desde V10.8.35)</a></li>
+<li><a href="#drone-clay-seq-clay-v10821">DRONE CLAY (SEQ › CLAY, V10.8.21)</a></li>
 <li><a href="#parameter-locks">Parameter locks</a></li>
 <li><a href="#copiar-y-pegar-099-seq2h">Copiar y pegar (0.9.9-seq2h)</a></li>
 <li><a href="#escala">Escala</a></li>
@@ -189,7 +191,7 @@ footer a{color:var(--dim)}
 </ul>
 </li>
 <li><a href="#11-tocar-en-vivo">11. Tocar en vivo</a><ul>
-<li><a href="#secuencias-en-vivo-glo-live-0911">Secuencias en vivo: GLO › LIVE (0.9.11)</a></li>
+<li><a href="#secuencias-en-vivo-las-teclas-negras-de-seq-step-fx-v10835">Secuencias en vivo: las teclas negras de SEQ › STEP FX (V10.8.35)</a></li>
 <li><a href="#fx-punch-in-mantene-fx">FX punch-in (mantené FX)</a></li>
 <li><a href="#mutes-y-solos">Mutes y solos</a></li>
 <li><a href="#capas-en-vivo-y-el-tema">Capas en vivo y el tema</a></li>
@@ -223,10 +225,10 @@ footer a{color:var(--dim)}
 <li><a href="#14-midi-y-usb">14. MIDI y USB</a><ul>
 <li><a href="#scene-una-tecla-toca-toda-la-banda-v1024">SCENE: una tecla toca toda la banda (V10.24)</a></li>
 <li><a href="#midi-por-bluetooth-y-prox-v1013v1020">MIDI por Bluetooth y PROX (V10.13–V10.20)</a></li>
-<li><a href="#usb-host-un-teclado-enchufado-directo-v1041-experimental">USB HOST: un teclado enchufado directo (V10.41, experimental)</a></li>
+<li><a href="#usb-host-un-teclado-o-una-interfaz-de-audio-enchufados-directo-v1041-experimental">USB HOST: un teclado o una interfaz de audio enchufados directo (V10.41, experimental)</a></li>
 <li><a href="#midi-learn-0912">MIDI LEARN (0.9.12)</a></li>
 <li><a href="#stems-071">Stems (0.7.1)</a></li>
-<li><a href="#entrada-de-audio-usb-075-version-de-prueba">Entrada de audio USB (0.7.5, versión de prueba)</a></li>
+<li><a href="#audio-de-afuera-la-entrada-usb-y-el-motor-ext">Audio de afuera: la entrada USB y el motor EXT</a></li>
 <li><a href="#stems-con-una-voz-080-version-de-prueba">Stems con una voz (0.8.0, versión de prueba)</a></li>
 </ul>
 </li>
@@ -252,7 +254,8 @@ footer a{color:var(--dim)}
 <p class="lead">Todo JIANT FM en una página: cada botón, perilla y mensaje con el nombre que muestra el aparato. Si leés un solo capítulo, que sea <a href="#12-guardar-y-cargar">Guardar y cargar</a>.</p>
 <div class="bar"><a class="btn go" href="https://juanjiant-bit.github.io/JIANT/studio/">Abrir JIANT Studio</a><a class="btn" href="manual.html">English</a><a class="btn" href="whats-new-v10.8.21.es.html">Lo nuevo en V10.8.21</a><a class="btn" href="https://juanjiant-bit.github.io/JIANT/manual/">Manual interactivo</a><a class="btn" href="manual.es.html" download>Descargar</a></div></section>
 <h1 id="jiant-fm-manual-de-usuario">JIANT FM — Manual de usuario</h1>
-<p><strong>JIANT FM V10.8.21 para el M-VAVE FM-1</strong></p>
+<p><strong>JIANT FM V10.8.35 para el M-VAVE FM-1</strong> (la versión pública es la V10.8.21; de la V10.8.22 a la V10.8.35 son betas:
+lo que cambió en ellas está en <a href="#lo-nuevo-en-v10835-desde-v10821">Lo nuevo en V10.8.35</a>)</p>
 <blockquote>
 <p><em>English version: <a href="manual.html">English manual</a>.</em></p>
 </blockquote>
@@ -321,6 +324,39 @@ versión pública) o de antes: <a href="#qué-hay-de-nuevo-en-esta-versión">Qu�
 </ul>
 <hr />
 <h2 id="que-hay-de-nuevo-en-esta-version">Qué hay de nuevo en esta versión</h2>
+<h3 id="lo-nuevo-en-v10835-desde-v10821">Lo nuevo en V10.8.35 (desde V10.8.21)</h3>
+<p>Las betas V10.8.22 a V10.8.35 en una lista. Donde un capítulo de abajo todavía describe la pantalla anterior, vale esta lista.</p>
+<ul>
+<li><strong>DRONE CLAY, completo</strong> (V10.8.27–V10.8.31; ver <a href="#drone-clay-seq--clay-v10821">DRONE CLAY</a>): cada modulador tiene su
+  propio <strong>RATE</strong> sobre la grilla del compás (1/64 … 4BAR, con puntillo, tresillos y polirritmos), el drone tiene
+  <strong>PITCH</strong> (−24 … +36 semitonos), los golpes (KICK, SNARE, HAT…) son una batería en cualquier motor, y las páginas son
+  cuatro: <strong>DRONE CLAY · CLAY MOD · CLAY RHYTHM · CLAY TIME</strong>. Debajo del osciloscopio, una barra fina por modulador
+  muestra lo que suma ahora. Un modulador con <strong>AMOUNT 0</strong> no golpea nada, y con <strong>RATE HOLD</strong> el drone nunca se vuelve
+  a atacar. <strong>Las teclas tocan gestos</strong> (las blancas) y <strong>el grado del drone</strong> (las últimas siete); <strong>RUN</strong> tiene
+  cuatro valores: SONG, FREE, SONG NOKEY, FREE NOKEY.</li>
+<li><strong>WEST › DUST</strong> (V10.8.28): de 1 a 95 es ruido blanco que entra al plegador junto con el núcleo (se pliega y pasa
+  por la compuerta con él: queda dentro del timbre, no al lado); de 96 a 127 es <strong>METAL</strong>, un tono metálico en vez del
+  ruido. Ya no crepita.</li>
+<li><strong>MUTATE volvió, compacto</strong> (V10.8.35): <strong>SEQ › MUTATE</strong> tiene una sola perilla, <strong>EVERY</strong> (OFF, 1, 2, 4, 8 compases).
+  En EUCLID o MUTATE, <strong>OCT+</strong> muta ahora y <strong>OCT−</strong> vuelve al ancla. Ver <a href="#mutate-v1016-compacto-desde-v10835">MUTATE</a>.</li>
+<li><strong>LIVE volvió, compacto</strong> (V10.8.35): en <strong>SEQ › STEP FX</strong>, las <strong>teclas negras 1–9</strong> modifican en vivo cómo camina
+  la secuencia de la pista elegida: RATE x2, x3/2, x2/3, REVERSE, PING-PONG, RANDOM, THIN, GIRO − y GIRO +. Ver
+  <a href="#secuencias-en-vivo-las-teclas-negras-de-seq--step-fx-v10835">Secuencias en vivo</a>.</li>
+<li><strong>EUCLID</strong> (V10.8.35): en una pista melódica la <strong>KNOB 4 es ROLE</strong> (MELODY, CHORDS, BASS, ARP) y la página MODES se
+  llama <strong>MELODY</strong> (CONTOUR, RANGE, MOTIF, VARY). El dibujo es un solo anillo de puntos.</li>
+<li><strong>FILTER</strong> (V10.8.35): los tipos <strong>MS20</strong> y <strong>LP24</strong> ya no están (TYPE: LP, HP, BP, COMB, COMB-). Un proyecto o un
+  preset de usuario que los usaba abre con LP.</li>
+<li><strong>ENV › STAGE</strong> ya no está (V10.8.35): la cadena de ENV es ENV · ENV DEST · ENV 2. LOOP sigue en ENV DEST.</li>
+<li><strong>FX › PUNCH IN</strong> (V10.8.27, V10.8.33): se fue la página PUNCH LANE y el dibujo del carril; el carril de punch-in
+  sigue existiendo (lo graba REC y lo usa el generador).</li>
+<li><strong>MOD</strong> (V10.8.22): al girar SRC o DEST de un slot la pantalla dice la ruta entera, con nombres completos
+  ("LFO &gt; FILTER CUTOFF"; E1–E8 con el nombre que les da el motor), también con HELP OFF.</li>
+<li><strong>DRUM-X</strong> (V10.8.32): las fórmulas MATH usadas como moduladores de FM suenan limpias, sin escalones.</li>
+<li><strong>GENERATOR</strong> (V10.8.34): doce progresiones más, la sección de contraste con su propia progresión y su propio
+  registro, motivos con un salto característico, más pregunta y respuesta, y un diálogo entre el lead y el arpegio.</li>
+<li><strong>JIANT Studio y el editor</strong> (V10.8.23–V10.8.26, V10.8.33): el espejo de la pantalla del FM-1 (manda solo las filas
+  que cambiaron), y el FM-1 avisa en qué sección, página y capa estás, para la guía en vivo de Studio.</li>
+</ul>
 <h3 id="lo-nuevo-en-v10821-desde-v10781">Lo nuevo en V10.8.21 (desde V10.7.81)</h3>
 <p>Las betas V10.8.1 a V10.8.20 en una lista. Donde un capítulo de abajo todavía describe la pantalla anterior, vale esta lista.</p>
 <ul>
@@ -354,7 +390,7 @@ versión pública) o de antes: <a href="#qué-hay-de-nuevo-en-esta-versión">Qu�
   (la salida se abre cuando el audio ya arrancó y sube de a poco).</li>
 <li><strong>Quitado para hacer lugar</strong>: GLO › LIVE, SEQ › STRETCH, MUTATE, el dado de secuencia (SEQ + SELECT; el de sonido
   sigue), GLO › GLOBAL COMP, ENV › TRACKS y las ayudas de enseñanza de una sola vez. Los proyectos viejos abren: sus
-  ajustes se conservan y se ignoran.</li>
+  ajustes se conservan y se ignoran. (MUTATE y LIVE volvieron, compactos, en V10.8.35: ver arriba.)</li>
 </ul>
 <h3 id="lo-nuevo-en-v10781-desde-v10716">Lo nuevo en V10.7.81 (desde V10.7.16)</h3>
 <p>Las betas V10.7.17 a V10.7.80 en una lista. Donde un capítulo de abajo todavía describe la pantalla vieja, vale esta lista.</p>
@@ -550,7 +586,7 @@ Guardá tus archivos WAV.</p>
 </tr>
 <tr>
 <td><strong>ENV</strong></td>
-<td>La sección ENV: desde otro lado, la última página mostrada (al encender, ENV); adentro, el grupo siguiente: <strong>TRACKS → ENV → STAGE</strong>, en ronda.</td>
+<td>La sección ENV: desde otro lado, la última página mostrada (al encender, ENV); adentro recorre sus páginas: <strong>ENV → ENV DEST → ENV 2</strong> (V10.8.35; TRACKS se fue en V10.8.16 y STAGE en V10.8.35).</td>
 <td>(sin capa)</td>
 </tr>
 <tr>
@@ -590,7 +626,7 @@ Guardá tus archivos WAV.</p>
 </tr>
 <tr>
 <td><strong>SEQ</strong></td>
-<td>La sección SEQ: desde otro lado, la última página mostrada (al encender STEP, el piano roll); adentro el grupo siguiente (V10.6): <strong>STEP → LENGTH → EUCLID → PLAYHEADS → STRETCH → COMP → AUTO → GENERATE</strong>, en ronda.</td>
+<td>La sección SEQ: desde otro lado, la última página mostrada (al encender STEP, el piano roll); adentro el grupo siguiente (V10.8.35): <strong>STEP → PATTERN → EUCLID → PLAYHEADS → STEP FX → AUTO → TRACK GEN → DRONE CLAY</strong>, en ronda.</td>
 <td>Capa <strong>SEQ TOOLS</strong> (en todas las páginas SEQ); G5 CLR STEP.</td>
 </tr>
 <tr>
@@ -914,8 +950,8 @@ la misma de la 0.9.1, con sus perillas y su dibujo (los que dibujaban las lentes
 </tr>
 <tr>
 <td><strong>SEQ</strong></td>
-<td>(V10.6) <strong>STEP</strong>: STEP — <strong>LENGTH</strong>: LENGTH · RHYTHM · TRACK — <strong>EUCLID</strong>: EUCLID · MODES · MUTATE — <strong>PLAYHEADS</strong>: PLAYHEADS — <strong>STRETCH</strong>: STRETCH — <strong>COMP</strong>: COMP · COMP 2 — <strong>AUTO</strong>: AUTOMATION · AUTO LIST · LYRIC STEP (VOICE) — <strong>GENERATE</strong>: GENERATE</td>
-<td>15</td>
+<td>(V10.8.35) <strong>STEP</strong>: STEP — <strong>PATTERN</strong>: LENGTH · RHYTHM · TRACK — <strong>EUCLID</strong>: EUCLID · MODES (en una pista melódica: MELODY) · MUTATE — <strong>PLAYHEADS</strong>: PLAYHEADS — <strong>STEP FX</strong>: STEP FX · STEP FX 2 — <strong>AUTO</strong>: AUTOMATION · AUTO LIST · LYRIC STEP (VOICE) — <strong>TRACK GEN</strong>: TRACK GEN — <strong>DRONE CLAY</strong>: DRONE CLAY · CLAY MOD · CLAY RHYTHM · CLAY TIME</td>
+<td>18</td>
 </tr>
 <tr>
 <td><strong>FX</strong></td>
@@ -929,8 +965,8 @@ la misma de la 0.9.1, con sus perillas y su dibujo (los que dibujaban las lentes
 </tr>
 <tr>
 <td><strong>ENV</strong></td>
-<td><strong>TRACKS</strong>: TRACKS · TRACKS DEST — <strong>ENV</strong>: ENV · ENV DEST · ENV 2 — <strong>STAGE</strong>: STAGE</td>
-<td>6</td>
+<td>(V10.8.35) <strong>ENV</strong>: ENV · ENV DEST · ENV 2</td>
+<td>3</td>
 </tr>
 <tr>
 <td><strong>LFO</strong></td>
@@ -977,10 +1013,9 @@ nivel PROJECT) y <strong>PROJECTS</strong> (el nivel LIBRARY); EDIT 1 / EDIT 2 d
 <li><strong>ENV</strong> › <strong>TRACKS</strong> / <strong>TRACKS DEST</strong>: las envolventes de las seis pistas como mosaicos (la seleccionada teñida, con su nivel actual
   como punto; DEST: FILTER, PITCH y SHAPE como barras debajo de cada una); las perillas son de la pista seleccionada —
   <strong>ALGORITHM</strong> elige la pista. <strong>ENV</strong>: la envolvente grande / las columnas de ENV DEST, como antes.
-  <strong>STAGE</strong>: KNOB 1 elige la etapa (ATK DEC SUS REL), KNOB 2 la ajusta, KNOB 3 LOOP; la
-  envolvente entera con la etapa sombreada sobre la curva propia de la etapa, grande, y su tiempo.</li>
-<li><strong>GLO</strong> › <strong>LIVE</strong> (0.9.11): MANO, las teclas como botonera de modificadores en vivo sobre las seis secuencias, y
-  RIELES, las seis secuencias como carriles con sus cabezales y fantasmas (<a href="#secuencias-en-vivo-glo--live-0911">11</a>).</li>
+  (TRACKS y TRACKS DEST se fueron en V10.8.16; <strong>STAGE</strong> en V10.8.35: LOOP está en ENV DEST.)</li>
+<li><strong>GLO</strong> › <strong>LIVE</strong> (0.9.11; MANO y RIELES) se fue en V10.8.3; sus modificadores en vivo están desde V10.8.35 en las
+  teclas negras de SEQ › STEP FX (<a href="#secuencias-en-vivo-las-teclas-negras-de-seq--step-fx-v10835">11</a>).</li>
 <li><strong>GLO</strong> › <strong>MIX</strong>: las seis pistas como tiras (MIXER: LEVEL con el vúmetro, PAN, REV; <strong>SENDS</strong>, nueva: DIST,
   CHORUS, DLY y REV de cada pista como cuatro barras, las perillas de la pista seleccionada). <strong>GLOBAL</strong>: el compás de
   semicorcheas, como antes. <strong>SYSTEM</strong>: las pistas que suenan como fichas, los tres ajustes de LOAD (encendido el
@@ -1042,13 +1077,6 @@ violeta, con el nombre violeta, y dice <strong>OCT+</strong>; apretá OCT+ para 
 <td>DEC</td>
 <td>SUS</td>
 <td>REL</td>
-</tr>
-<tr>
-<td>STAGE (0.8.5)</td>
-<td>STAGE (ATK DEC SUS REL)</td>
-<td>su valor</td>
-<td>LOOP</td>
-<td>—</td>
 </tr>
 </tbody>
 </table></div>
@@ -1963,13 +1991,13 @@ borra. (LFO + SELECT tira el LFO de la pista, con KEEP / CANCEL: ver los dados.)
 <hr />
 <h2 id="4-motores">4. Motores</h2>
 <p>Doce motores, todos de síntesis, sin samples: ANALOG, FM6, PHASE, <strong>MATH</strong> (LOFI hasta la V10.6e), VOICE, WHEEL,
-NOISE, DRUM-X, ANIMAL, <strong>STRING</strong> (una cuerda pulsada, golpeada o frotada, y el feedback de guitarra), <strong>ADD</strong>
+<strong>WEST</strong> (en el lugar de NOISE desde V10.7.37), DRUM-X, ANIMAL, <strong>STRING</strong> (una cuerda pulsada, golpeada o frotada, y el feedback de guitarra), <strong>ADD</strong>
 (aditiva) y <strong>EXT</strong> (señales externas: la entrada de audio USB, o SWARM, el Bluetooth de alrededor). Cualquier motor
 puede ir en cualquier pista. Elegilos con <strong>PRESETS</strong>
 (una sola lista con todos los motores) o con KNOB 2 (ENG) en SAVE &gt; PRESETS. También figuran las cuatro perillas de
 HOME de cada pista.</p>
 <p><strong>El orden</strong> (V10.6e): PRESETS, KNOB 2 (ENG) y las listas del editor web muestran los motores así: <strong>DRUM-X, ANALOG,
-PHASE, FM6, VOICE, ANIMAL</strong> (las pistas al encender, T1–T6), y después MATH, WHEEL, NOISE, STRING, ADD, EXT. Solo cambió el
+PHASE, FM6, VOICE, ANIMAL</strong> (las pistas al encender, T1–T6), y después MATH, WHEEL, WEST, STRING, ADD, EXT. Solo cambió el
 orden que ves: los proyectos, presets de usuario, favoritos y backups nombran los motores por su número, que no cambia,
 así que todo lo guardado antes carga igual. PROGRAM CHANGE conserva los números de la 0.9.8 (ver <a href="#14-midi-y-usb">14</a>).</p>
 <p><strong>Cambios suaves</strong>: pasar una pista a otro motor apaga el anterior de a poco (unos 12 ms) y lo que estés sosteniendo
@@ -2023,10 +2051,10 @@ click; las notas siguen.</p>
 <td>REG, PERC, DRIVE, ROTOR</td>
 </tr>
 <tr>
-<td><strong>NOISE</strong></td>
-<td>MODE, COLOR, FREQ, PEAK</td>
-<td>TRK, DENSE, DRIFT, CRUSH</td>
-<td>FREQ, PEAK, COLOR, REL</td>
+<td><strong>WEST</strong> (V10.7.37)</td>
+<td>FOLD, SKEW, MOD, RATIO</td>
+<td>GATE, DECAY, RES, DUST</td>
+<td>FOLD, MOD, DECAY, DUST</td>
 </tr>
 <tr>
 <td><strong>DRUM</strong> (DRUM-X)</td>
@@ -2054,7 +2082,7 @@ click; las notas siguen.</p>
 </tr>
 <tr>
 <td><strong>EXT</strong> (V10.6d)</td>
-<td>SOURCE (IN 1, IN 2, 1+2, STEREO, SWARM), GAIN, GATE, PLAY</td>
+<td>SOURCE (IN 1, IN 2, 1+2, STEREO, SWARM), GAIN, GATE, MODE (THRU, KEYS)</td>
 <td>WIDTH, RING, BITS, RATE</td>
 <td>(SWARM: los suyos, ver <a href="#ext--swarm-una-melodía-según-qué-tan-cerca-estás-v106z6">EXT › SWARM</a>)</td>
 </tr>
@@ -2102,7 +2130,17 @@ click; las notas siguen.</p>
   3SLOW), click de tecla, drive, ROTOR (OFF, SLOW, FAST). EDIT &gt; <strong>ROTOR</strong> (solo WHEEL): <strong>DEPTH</strong> (cuánto gira el
   parlante rotativo: 100 % como antes, 0 % quieto) y <strong>DUST</strong> (0–100 %: el crujido y el siseo de un órgano viejo mientras
   suena).</li>
-<li><strong>NOISE</strong>: ruido coloreado y metálico. MODE: ANLG, DUST, LFSR, META (DUST es solo el crepitar: con DENS en 0 igual crepita suave). PEAK es su propia resonancia.</li>
+<li><strong>WEST</strong> (V10.7.37, en el lugar de NOISE): síntesis de la costa oeste. Un oscilador complejo (un núcleo seno, o
+  triángulo con los RATIO terminados en <strong>T</strong>) modulado en fase por un segundo oscilador (<strong>MOD</strong> la profundidad,
+  <strong>RATIO</strong> su relación con la nota: 0.5 … 8), que entra a un plegador de onda (<strong>FOLD</strong> cuánto se pliega, <strong>SKEW</strong>
+  pliegues asimétricos: armónicos pares) y de ahí a una compuerta pasabajos (<strong>GATE</strong>: 0 solo pasabajos, 64 las dos
+  cosas, 127 solo volumen; <strong>DECAY</strong> cuánto tarda en apagarse el golpe, y arriba de 80 la nota mantenida se sostiene;
+  <strong>RES</strong> la resonancia de la compuerta). Cada nota es un golpe: un pluck, un bongó, una campana.
+  <strong>DUST</strong> (V10.8.28): <strong>0</strong> nada; <strong>1–95</strong> ruido blanco que entra al plegador junto con el núcleo, así se pliega y
+  pasa por la compuerta con él (queda fundido en el timbre), y desde 48 una parte va también directo a la compuerta
+  (aire); <strong>96–127</strong> es <strong>METAL</strong>: en vez del ruido, un tono metálico afinado a la nota (los registros META del NOISE
+  de antes) que entra al plegador con el núcleo a la mitad. Un proyecto o preset de usuario hecho con NOISE abre como
+  WEST en un sonido de DUST.</li>
 <li><strong>DRUM</strong>: DRUM-X, ver <a href="#5-drum-x">5</a>.</li>
 <li><strong>ANIMAL</strong>: cantos de animales con modelos físicos, ver <a href="#animal-083">ANIMAL</a> más abajo.</li>
 </ul>
@@ -2384,7 +2422,7 @@ solo mientras la pista suena:</p>
 14 KB de flash para los seis, 1,4 KB de RAM (el pool); cada página no cuesta más dibujarla que la de EDIT de ANALOG con
 su ser; nada en el sonido.</p>
 <h3 id="ext-swarm-una-melodia-segun-que-tan-cerca-estas-v106z6">EXT › SWARM: una melodía según qué tan cerca estás (V10.6z6)</h3>
-<p><strong>EXT</strong> (motor 15) toca una señal externa; su <strong>SOURCE</strong> <strong>SWARM</strong> hace el sonido con el Bluetooth que rodea al FM-1 en
+<p><strong>EXT</strong> (motor 15) toca una señal externa (la entrada de audio: ver <a href="#audio-de-afuera-la-entrada-usb-y-el-motor-ext">Audio de afuera</a>); su <strong>SOURCE</strong> <strong>SWARM</strong> hace el sonido con el Bluetooth que rodea al FM-1 en
 vez de la entrada de audio USB. Desde V10.6z6 SWARM es una <strong>melodía</strong>, no sólo un pedal: una voz <strong>lead</strong> toca notas
 sobre la grilla del tempo, y <strong>qué tan cerca está algo</strong> decide qué toca y cómo suena. Los dispositivos que se oyen
 alrededor (MENU › SYSTEM › BLUETOOTH <strong>AIR</strong>) siguen siendo voces propias por debajo, un colchón más bajo.</p>
@@ -2485,7 +2523,7 @@ de cada dispositivo (V10.6v) también tiñe al lead: el más cercano le da su re
 <p><strong>La pantalla.</strong> EDIT 1 / 2 y las páginas SWARM muestran el enjambre (cada dispositivo un cuadrado en su nota, en su
 lugar de la imagen) con una barra debajo: el morph, FAR a la izquierda, NEAR a la derecha.</p>
 <h3 id="filter-todos-los-motores">FILTER (todos los motores)</h3>
-<p>EDIT &gt; <strong>FILTER</strong>: <strong>TYPE</strong> LP, HP, BP, <strong>COMB</strong>, <strong>COMB-</strong>, <strong>MS20</strong> o <strong>LP24</strong> (V10.22: un pasabajos de 24 dB/oct, dos etapas en serie, RES en la segunda). COMB y COMB- son un filtro peine afinado a la nota que tocás; CUT lo mueve, RES es
+<p>EDIT &gt; <strong>FILTER</strong>: <strong>TYPE</strong> LP, HP, BP, <strong>COMB</strong> o <strong>COMB-</strong> (V10.8.35: MS20 y LP24 ya no están; un proyecto o preset que los usaba abre con LP. COMB y COMB- son un filtro peine afinado a la nota que tocás; CUT lo mueve, RES es
 cuánto resuena), <strong>CUT</strong>, <strong>RES</strong>, y KNOB 4: en ANALOG su propio DRIVE, en todos los demás motores el DIST de la
 pista. En ANALOG el filtro es por voz; en MATH la página de filtro maneja su filtro por voz; en los demás es un filtro
 sobre la pista que sigue a LFO DEST / ENV DEST FILTER.</p>
@@ -2495,12 +2533,6 @@ desde un color corto (25 ms) hasta ~9 s, cerca de la auto-oscilación arriba de 
 mantiene la resonancia acotada y un pasabajos de amortiguación en el lazo (que se abre con RES) apaga primero los
 agudos, como una cuerda. <strong>COMB</strong> (realimentación positiva) suena metálico, tipo flanger; <strong>COMB-</strong> (negativa) deja
 solo los armónicos impares: hueco, tipo clarinete, a la misma altura.</p>
-<p><strong>MS20</strong> (0.9.9-snd1): un pasabajos de 2 polos agresivo, a la manera del Korg MS-20: su resonancia vuelve por un
-recorte tipo diodo, así que grita con RES alto pero queda controlado (el recorte fija cuán fuerte puede sonar, y una
-entrada caliente gruñe en vez de reventar); RES es exponencial (suave en 0, muy filoso en el último tramo, y la
-resonancia igual se apaga cuando la parte queda en silencio). Las mismas perillas: CUT (con LFO / ENV DEST FILTER),
-RES y el drive de la KNOB 4. En ANALOG y MATH el MS20 (como los peines) es el filtro de la pista después de las voces:
-su propio filtro se abre. LP, HP y BP suenan exactamente igual que antes.</p>
 <p>El <strong>CHORUS</strong> (0.9.9-snd2) es más liviano: su LFO se lee cada 64 muestras (16, 8, 4 en los RATE más rápidos) y las
 tres voces se deslizan entre esos puntos, en vez de tres senos por muestra; suena igual (-63 dB de diferencia con el de
 antes en el valor por defecto).</p>
@@ -2712,10 +2744,10 @@ niveles (PATRÓN ↔ COMPÁS ↔ PASO, la LENTE de la 0.8.3) y el toque recorrí
 dibujos son los mismos, solo es nuevo el camino entre ellas. Los compases del patrón (hasta cuatro, con LEN 64) se
 dibujan como celdas chicas: el que editás teñido de violeta con su número en violeta, el número del que suena en
 naranja, un compás más allá de LEN oscuro.
-(V10.6 y después) La cadena es <strong>STEP · LENGTH · RHYTHM · TRACK · EUCLID · MODES · MUTATE · PLAYHEADS · STRETCH · COMP
-· COMP 2 · AUTOMATION · AUTO LIST · LYRIC STEP · GENERATE</strong>, en ocho pestañas (STEP · LEN · EUCL · HEAD · STR · COMP ·
-AUTO · GEN): EUCLID y MODES, bajo <strong>EUCL</strong>, están donde estaban MUTATE y MUTATE 2 (MUTATE volvió dentro de EUCLID, V10.16).
-LYRIC STEP aparece solo en una pista VOICE, GENERATE solo donde el generador de pista puede escribir la pista.</p>
+(V10.8.35) La cadena es <strong>STEP · LENGTH · RHYTHM · TRACK · EUCLID · MODES (MELODY en una pista melódica) · MUTATE ·
+PLAYHEADS · STEP FX · STEP FX 2 · AUTOMATION · AUTO LIST · LYRIC STEP · TRACK GEN · DRONE CLAY · CLAY MOD · CLAY RHYTHM ·
+CLAY TIME</strong>, en ocho pestañas (STEP · PAT · EUCL · HEAD · SFX · AUTO · GEN · CLAY). STRETCH se fue en V10.8.20.
+LYRIC STEP aparece solo en una pista VOICE, TRACK GEN solo donde el generador de pista puede escribir la pista.</p>
 <div class="tw"><table>
 <thead>
 <tr>
@@ -2971,11 +3003,9 @@ timing. Una nota tocada justo en el primer instante después de PLAY va al paso 
   guarda con la sección; los cabezales arrancan y paran con el transporte.</li>
 </ul>
 <h3 id="euclid-y-modes-v106">EUCLID y MODES (V10.6)</h3>
-<p>(V10.6) <strong>MUTATE ya no está</strong> (sus páginas MUTATE y MUTATE 2, los cambios cada N compases, ORBIT / DRIFT, KEEP y el
-ancla, REVERT y <strong>BACK TO BEFORE MUTATE?</strong>, GLO + A4 FREEZE, GLO + B4 REVERT ALL, SEQ + D5 REVERT, la mirada para
-arriba y el anillo de HOME). En su lugar en la cadena de SEQ, después de TRACK, hay dos páginas con su propia pestaña,
-<strong>EUCLID</strong> (<strong>EUCL</strong>): <strong>EUCLID</strong> escribe el patrón de la pista elegida como un ritmo euclidiano y <strong>MODES</strong> le suma
-cosas. La ayuda de la página: <strong>TURN A KNOB: A PATTERN</strong> · <strong>OCT+ NEW  OCT− BEFORE</strong>.</p>
+<p>Bajo la pestaña <strong>EUCLID</strong> (<strong>EUCL</strong>) de la cadena de SEQ, después de TRACK, hay tres páginas: <strong>EUCLID</strong> escribe el
+patrón de la pista elegida como un ritmo euclidiano, <strong>MODES</strong> (en una pista melódica se llama <strong>MELODY</strong>) le suma
+cosas, y <strong>MUTATE</strong> (V10.8.35) lo hace cambiar solo cada tantos compases.</p>
 <p><strong>EUCLID en un minuto</strong></p>
 <p>Batería (una pista DRUM-X):</p>
 <ol>
@@ -2986,16 +3016,18 @@ cosas. La ayuda de la página: <strong>TURN A KNOB: A PATTERN</strong> · <stron
 <li>Para retocar un sonido, <strong>KNOB 4</strong> a su carril (BD SD CP CH OH TM RS CB): HITS, STEPS y ROTATE escriben ahora solo
    ese carril.</li>
 <li><strong>SELECT</strong> un paso a la derecha, <strong>MODES</strong>: <strong>ACCENT</strong>, <strong>GHOST</strong>, <strong>RATCHET</strong>, <strong>VARY</strong>.</li>
-<li><strong>OCT+</strong> una variación nueva, <strong>OCT−</strong> la de antes. Para deshacer: <strong>GLO + G4</strong>, o mantené <strong>REC</strong> solo y soltalo.</li>
+<li>En MODES, <strong>OCT+</strong> una variación nueva, <strong>OCT−</strong> la de antes. En EUCLID (V10.8.35), <strong>OCT+</strong> muta el patrón ahora y
+   <strong>OCT−</strong> vuelve a lo que marcaste con las perillas. Para deshacer: <strong>GLO + G4</strong>, o mantené <strong>REC</strong> solo y soltalo.</li>
 </ol>
 <p>Melódica (cualquier otra pista):</p>
 <ol>
 <li>Poné primero la tonalidad en <strong>SCL</strong> (ROOT, una SCALE que no sea CHR): la pantalla dice <strong>SCL</strong>. O dejalo: EUCLID
    encuentra la tonalidad de las otras pistas (<strong>FROM T<em>n</em></strong>), y si no, elige una (<strong>NEW KEY</strong>).</li>
 <li><strong>SEQ › EUCLID</strong>: <strong>KNOB 1 HITS</strong> (exactamente esa cantidad de notas), <strong>KNOB 2 STEPS</strong>, <strong>KNOB 3 ROTATE</strong>,
-   <strong>KNOB 4 VARY</strong>.</li>
-<li><strong>MODES</strong>: <strong>MOTION</strong> (0 una nota pedal, más alto saltos más grandes), <strong>HARMONY</strong> (acordes en los tiempos fuertes),
-   OCTAVE, SLIDE.</li>
+   <strong>KNOB 4 ROLE</strong> (V10.8.35): qué toca la pista, <strong>MELODY</strong>, <strong>CHORDS</strong>, <strong>BASS</strong> o <strong>ARP</strong>.</li>
+<li><strong>MELODY</strong> (la página MODES de una pista melódica): <strong>CONTOUR</strong> (la forma de la melodía: WALK, UP, DOWN, ARCH, WAVE,
+   LEAP, RANDOM), <strong>RANGE</strong> (2–15 notas), <strong>MOTIF</strong> (OFF, 2, 3, 4, 8: un motivo que se repite como secuencia) y
+   <strong>VARY</strong>.</li>
 <li>OCT+ / OCT− y el deshacer, como arriba. Pará antes el tema: mientras suena un tema la página dice SONG PLAYS: STOP IT TO EDIT.</li>
 </ol>
 <div class="tw"><table>
@@ -3032,7 +3064,7 @@ cosas. La ayuda de la página: <strong>TURN A KNOB: A PATTERN</strong> · <stron
 <td>HITS</td>
 <td>STEPS (2–64)</td>
 <td>ROTATE</td>
-<td>VARY (0–100)</td>
+<td>ROLE (MELODY CHORDS BASS ARP; V10.8.35)</td>
 </tr>
 <tr>
 <td>MODES</td>
@@ -3043,19 +3075,28 @@ cosas. La ayuda de la página: <strong>TURN A KNOB: A PATTERN</strong> · <stron
 <td>VARY</td>
 </tr>
 <tr>
-<td>MODES</td>
+<td>MELODY (MODES en una pista melódica)</td>
 <td>melódica</td>
-<td>MOTION</td>
-<td>HARMONY</td>
-<td>OCTAVE</td>
-<td>SLIDE</td>
+<td>CONTOUR (WALK UP DOWN ARCH WAVE LEAP RANDOM)</td>
+<td>RANGE (2–15)</td>
+<td>MOTIF (OFF 2 3 4 8)</td>
+<td>VARY (0–100)</td>
+</tr>
+<tr>
+<td>MUTATE (V10.8.35)</td>
+<td>todas</td>
+<td>EVERY (OFF, 1 BAR, 2 BARS, 4 BARS, 8 BARS)</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
 </tr>
 </tbody>
 </table></div>
 <ul>
-<li><strong>El dibujo</strong> (V10.24): en DRUM-X cada carril es un anillo (BD afuera), sus golpes en su color de calor (pocos
-  violeta, muchos amarillo); el carril elegido brilla, los otros quedan apagados (ALL: todos). Debajo del anillo, las
-  vueltas de VARY (A A′ A″ B), la que suena subrayada.</li>
+<li><strong>El dibujo</strong> (V10.8.35): un solo anillo de puntos, el ciclo de STEPS de la vuelta que suena: los golpes en el color
+  de la pista (un acento más grande), el paso que suena en blanco y la marca de ROTATE afuera de su primer paso. En
+  DRUM-X muestra el carril elegido (con ALL, un paso que toca cualquier carril). Los anillos concéntricos, la lista de
+  carriles, el roll y las vueltas de VARY del dibujo anterior ya no están.</li>
 <li><strong>HITS, STEPS, ROTATE</strong>: los golpes se reparten tan parejo como dejan los pasos (un ritmo euclidiano) y ROTATE los
   gira. En DRUM-X <strong>cada uno de los ocho sonidos tiene los suyos</strong> HITS, STEPS y ROTATE (LANE elige cuál editan las
   perillas); el largo del patrón es el mínimo común de sus largos, hasta 64.</li>
@@ -3071,8 +3112,10 @@ cosas. La ayuda de la página: <strong>TURN A KNOB: A PATTERN</strong> · <stron
     repiten).</li>
 <li><strong>MODES</strong>: cuatro cantidades (0 = apagado) que le suman a lo que se genera. DRUM-X: <strong>ACCENT</strong> (un segundo
   euclidiano, de acentos), <strong>GHOST</strong> (golpes suaves en el medio), <strong>RATCHET</strong> (algunos golpes x2 / x4), <strong>VARY</strong>.
-  Melódica: <strong>MOTION</strong> (cuánto se mueve la melodía: 0 una nota pedal, más alto saltos más grandes), <strong>HARMONY</strong>
-  (acordes de la escala en los tiempos fuertes), <strong>OCTAVE</strong> (saltos de octava), <strong>SLIDE</strong> (slides).</li>
+  Melódica (la página se llama <strong>MELODY</strong>): <strong>CONTOUR</strong> (WALK, UP, DOWN, ARCH, WAVE, LEAP, RANDOM), <strong>RANGE</strong> (2–15
+  notas), <strong>MOTIF</strong> (OFF, 2, 3, 4, 8: se repite como secuencia) y <strong>VARY</strong>.</li>
+<li><strong>ROLE</strong> (V10.7.67; en la KNOB 4 de EUCLID desde V10.8.35): <strong>MELODY</strong>, <strong>CHORDS</strong>, <strong>BASS</strong> o <strong>ARP</strong>, sobre la
+  armonía que tocan las otras pistas melódicas, compás por compás; si no, la de la tonalidad (SCL › HARMONY la mueve).</li>
 <li><strong>VARY</strong> afloja la grilla pareja: algunos golpes se corren de uno a tres pasos (hacia el contratiempo, más en la
   segunda mitad, así le contesta a la primera); en una pista melódica, notas que se sostienen sobre el hueco que les
   sigue. (V10.7: VARY solo corre golpes, ya no agrega una anacrusa ni saca golpes, así que <strong>HITS es exactamente la
@@ -3088,8 +3131,7 @@ cosas. La ayuda de la página: <strong>TURN A KNOB: A PATTERN</strong> · <stron
 <li><strong>Todo en 0 por defecto</strong> (V10.28): EUCLID arranca sin HITS (DRUM-X: DENSITY 0), con MODES y VARY en 0, para
   armar desde cero.</li>
 <li><strong>Si la pista ya tiene una secuencia</strong> (grabada, editada o de una canción del generador; no un patrón de fábrica
-  sin tocar), EUCLID <strong>la transforma con las mismas notas</strong>: VARY corre sus golpes y respeta sus notas largas; MOTION
-  cambia el orden de sus notas, OCTAVE las salta de octava. Girar HITS, STEPS o ROTATE pasa al ritmo euclidiano pero
+  sin tocar), EUCLID <strong>la transforma con las mismas notas</strong>: VARY corre sus golpes y respeta sus notas largas. Girar HITS, STEPS o ROTATE pasa al ritmo euclidiano pero
   sigue usando tus notas (la pantalla dice <strong>YOUR SEQ</strong> / <strong>YOUR NOTES</strong>). En DRUM-X usa solo los carriles que
   tenía la secuencia.</li>
 <li><strong>EUCLID es reversible</strong> (V10.31): guarda tu secuencia completa (notas, acordes, velocidades, componentes,
@@ -3101,19 +3143,105 @@ cosas. La ayuda de la página: <strong>TURN A KNOB: A PATTERN</strong> · <stron
   y una tónica nuevas (<strong>NEW KEY</strong>). La melodía se queda en el registro que tenía la pista al primer giro (una pista
   vacía: alrededor de C4).</li>
 <li><strong>En vivo</strong>: girar una perilla vuelve a escribir todo el patrón de la pista, al instante (su automatización queda).
-  Un gesto nuevo después de dos segundos es un punto de UNDO (<strong>GLO + G4</strong>). <strong>OCT+</strong> una variación nueva (los mismos
-  ajustes de ritmo, notas y detalles nuevos), <strong>OCT−</strong> la variación de antes. Mientras suena un tema la página dice
-  <strong>SONG PLAYS: STOP IT TO EDIT</strong>.</li>
-<li><strong>La pantalla</strong>: un anillo con los pasos del patrón (DRUM-X: el carril elegido; los golpes encendidos, los acentos
-  más grandes, los ghosts chiquitos, los ratchets enmarcados) y el cabezal dando la vuelta. DRUM-X: los ocho carriles
-  como filas, con sus HITS / STEPS a la derecha; melódica: la tonalidad (tónica y escala) adentro del anillo y las
-  notas como un pequeño roll a la derecha, con de dónde salió la tonalidad. MODES muestra el mismo patrón, así ves
-  cómo lo cambia cada cantidad.</li>
+  Un gesto nuevo después de dos segundos es un punto de UNDO (<strong>GLO + G4</strong>). En <strong>MODES / MELODY</strong>, <strong>OCT+</strong> es una
+  variación nueva (NEW VARIATION: los mismos ajustes, notas y detalles nuevos) y <strong>OCT−</strong> la de antes (VARIATION
+  BEFORE). En <strong>EUCLID</strong> y <strong>MUTATE</strong> (V10.8.35), <strong>OCT+</strong> muta ahora (MUTATED) y <strong>OCT−</strong> vuelve al ancla (ANCHOR).
+  Mientras suena un tema la página dice <strong>SONG PLAYS: STOP IT TO EDIT</strong>.</li>
 <li>Los ajustes de EUCLID y MODES viven en la RAM durante la sesión; el patrón en sí se guarda con el proyecto como
   cualquier patrón.</li>
 </ul>
-<h3 id="mutate-v1016">MUTATE (V10.16)</h3>
-<p><em>Se sacó en V10.8.20 para hacer lugar a DRONE CLAY. Los proyectos viejos conservan sus ajustes de MUTATE, sin uso. Para música que evoluciona, usá <strong>DRONE CLAY</strong> (SEQ › CLAY), el <strong>GENERATOR</strong> y el modo canción (HOME › JAM).</em></p>
+<h3 id="mutate-v1016-compacto-desde-v10835">MUTATE (V10.16; compacto desde V10.8.35)</h3>
+<p><em>MUTATE se sacó en V10.8.20 y volvió en V10.8.35, reducido a lo esencial.</em></p>
+<p><strong>SEQ › MUTATE</strong> (la tercera página de la pestaña EUCL) tiene una sola perilla: <strong>KNOB 1 EVERY</strong> — OFF, 1 BAR, 2 BARS,
+4 BARS u 8 BARS. Con EVERY prendido y el transporte sonando, el patrón de EUCLID de esa pista <strong>muta solo</strong> cada tantos
+compases: el cambio se calcula en el último tiempo y el patrón nuevo entra en el compás siguiente.</p>
+<ul>
+<li><strong>El ancla</strong> es lo que marcaste con las perillas de EUCLID y MODES / MELODY (cada vez que girás una, el ancla es
+  eso). Cada mutación parte <strong>del ancla</strong>, no de la mutación anterior: el patrón orbita alrededor de lo que armaste y
+  nunca se va lejos.</li>
+<li><strong>Qué cambia</strong>: siempre una semilla nueva (en una melodía, una parte de las notas del ancla cruzadas con notas
+  nuevas), y según el azar HITS (DENSITY), ROTATE y las cantidades de MODES / MELODY. <strong>Cuánto</strong>: tanto como diga
+  <strong>VARY</strong> (como mínimo un cuarto). En DRUM-X con un carril elegido en LANE, muta ese carril.</li>
+<li><strong>A mano</strong>: en EUCLID o en MUTATE, <strong>OCT+</strong> hace una mutación ahora (MUTATED) y <strong>OCT−</strong> vuelve al ancla (ANCHOR).</li>
+<li>No muta mientras suena una canción (la cadena de ARRANGE); parado, arranca de nuevo desde el principio.</li>
+<li>Los ajustes de V10.16 que ya no están: AMOUNT, MODE y WHAT, y el dibujo de su página. Los proyectos viejos abren
+  igual.</li>
+</ul>
+<h3 id="drone-clay-seq-clay-v10821">DRONE CLAY (SEQ › CLAY, V10.8.21)</h3>
+<p>Un secuenciador por pista, traído de JIANT BYTE: un <strong>drone</strong> muy grave con la voz que tenga la pista, y <strong>cuatro
+moduladores</strong> que golpean gestos sobre cualquier parámetro del sonido, cada uno a su propio ritmo. Son cuatro páginas
+bajo la pestaña <strong>CLAY</strong> de SEQ (V10.8.27):</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Página</th>
+<th>KNOB 1</th>
+<th>KNOB 2</th>
+<th>KNOB 3</th>
+<th>KNOB 4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DRONE CLAY</td>
+<td>CLAY (OFF / ON)</td>
+<td>DRONE (la nota: la tónica de la pista en la octava 0–3)</td>
+<td>PITCH (−24 … +36 semitonos)</td>
+<td>RATE (HOLD, 1/64 … 4BAR, con puntillo, tresillos, 1/5 1/10 1/20 1/7 1/14 1/28)</td>
+</tr>
+<tr>
+<td>CLAY MOD</td>
+<td>MOD (1–4)</td>
+<td>DEST</td>
+<td>SHAPE</td>
+<td>AMOUNT</td>
+</tr>
+<tr>
+<td>CLAY RHYTHM</td>
+<td>MOD (1–4)</td>
+<td>RATE (1/64 … 4BAR…)</td>
+<td>EUCLID</td>
+<td>DECAY</td>
+</tr>
+<tr>
+<td>CLAY TIME</td>
+<td>RUN (SONG, FREE, SONG NOKEY, FREE NOKEY)</td>
+<td>SEED</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>El drone</strong>: una nota muy grave (de C0 a C3 sobre la ROOT de la pista) que se mantiene. <strong>RATE HOLD</strong> la sostiene
+  sin volver a atacarla nunca (V10.8.30); cualquier otro RATE la vuelve a atacar en cada paso de esa figura, con el
+  transporte. En una pista DRUM el drone es el bombo del kit.</li>
+<li><strong>Los moduladores</strong>: KNOB 1 <strong>MOD</strong> elige cuál de los cuatro editan las otras perillas (el mismo en CLAY MOD y CLAY
+  RHYTHM). <strong>DEST</strong> es a dónde va (OFF, PITCH, CUTOFF, SHAPE, VOLUME, PAN, DIST, CHORUS, DELAY, REVERB, LFO RATE,
+  VIBRATO, las ocho perillas EDIT del motor por su nombre, VOICE CUT, LEVEL), <strong>SHAPE</strong> qué gesto golpea, <strong>AMOUNT</strong>
+  cuánto. En CLAY RHYTHM, <strong>RATE</strong> es la grilla propia de ese modulador (V10.8.27), <strong>EUCLID</strong> en qué pasos de esa
+  grilla golpea ("--" ninguno, FUSE dos ritmos sorteados con SEED y fundidos, 1/1 todos, y después 1/4 … 7/8, 3/16 …
+  9/16, 5/12, 7/12 y los polirritmos 2/5 … 5/13) y <strong>DECAY</strong> cuánto dura cada golpe antes de soltarse.</li>
+<li><strong>Las formas (SHAPE)</strong>: primero los <strong>golpes</strong> (KICK, SNARE, HAT, OPEN HAT, CLAP, RIM, TOM, ZAP, BITHAT, NOISE DN,
+  SWELL, CRASH), después las <strong>tablas</strong> (SINE, S&amp;H, DRIFT, SPRING, STAIRS, BOUNCE…), los <strong>gestos</strong> (RAMP UP, RAMP DN,
+  TRI, GATE, ENV UP, ENV DN, RISER, STUTTER…), las <strong>notas</strong> (ARP UP / DN / UPDN / RND, CHORD m, CHORD M, SUS4, m7,
+  CLUSTER, +OCT, +5TH, GLIDE DN: notas de verdad sobre la escala, dos octavas arriba del drone) y <strong>FM x1/2 … x7</strong>.
+  Los golpes son una batería en cualquier motor (V10.8.27); en una pista DRUM tocan los pads del kit.</li>
+<li><strong>AMOUNT 0 no golpea</strong> (V10.8.30): un modulador con AMOUNT en 0 no hace nada, tampoco vuelve a atacar el drone.</li>
+<li><strong>Las barras</strong> (V10.8.29): debajo del osciloscopio, una barra fina por modulador va desde el centro hasta lo que
+  suma en este momento; la del MOD que editan las perillas, en el color de la pista. Un modulador sin DEST no tiene
+  barra.</li>
+<li><strong>RUN</strong>: <strong>SONG</strong> corre mientras suena el transporte; <strong>FREE</strong> corre siempre, también parado. <strong>SEED</strong> cambia la
+  variación (los ritmos FUSE).</li>
+<li><strong>Las teclas</strong> (V10.8.31): con CLAY ON, mientras el drone corre, las <strong>teclas blancas</strong> (las doce primeras, de F3 a
+  C5) no tocan notas: golpean un gesto sobre el MOD elegido, con la fuerza con que tocás, y dura lo que diga su
+  DECAY. <strong>OCT−</strong> y <strong>OCT+</strong> eligen de qué grupo: 0 los golpes, +1 las tablas, +2 los gestos, −1 las notas, −2 las FM.
+  Las <strong>últimas siete teclas</strong> (de C#5 a G5) eligen el <strong>grado</strong> del drone sobre la escala de la pista. Las demás
+  teclas negras no hacen nada. En una pista DRUM las blancas son los pads del kit. Para que las teclas toquen notas
+  como siempre, poné <strong>RUN</strong> en <strong>SONG NOKEY</strong> o <strong>FREE NOKEY</strong>.</li>
+<li>En MONO / LEGATO el drone le cede la voz a los pasos; un punch-in de tiempo o de afinación lo reinicia desde su
+  primer golpe. Se guarda con el proyecto.</li>
+</ul>
 <h3 id="parameter-locks">Parameter locks</h3>
 <p>En <strong>SEQ &gt; STEP</strong> (el grupo BAR), <strong>mantené un paso</strong> (una tecla de la grilla, o la nota que estás entrando en el roll) y girá una
 perilla: ese paso recibe su propio valor del parámetro que esa perilla edita en la última página de sonido que
@@ -3499,7 +3627,7 @@ dejar de ser ese sonido. Algunos:</p>
 <tr>
 <td><strong>EBM BASS</strong></td>
 <td>EBM, DARKWAVE, MINIMAL SYNTH</td>
-<td>ANALOG cuadrada por el filtro <strong>MS20</strong>, corto, envolvente, drive</td>
+<td>ANALOG cuadrada por el filtro <strong>LP</strong> con resonancia (V10.8.35; antes el MS20), corto, envolvente, drive</td>
 </tr>
 <tr>
 <td><strong>808</strong></td>
@@ -3993,7 +4121,9 @@ pequeña curva de respuesta donde iría la barra.
     PHASE FREE abre como MODE FREE.)</li>
 <li><strong>Matriz MOD</strong>: 4 slots por pista (KNOB 1 elige el slot).</li>
 <li>Fuentes: OFF, LFO, ENV, VEL, KEY, RAND, MODW (MIDI CC1), AT (aftertouch), EXPR (CC11), <strong>M1–M4</strong>, <strong>STEP</strong> (MSEQ), <strong>NOISE</strong> (un vagar aleatorio suave, un valor nuevo cada
-    ~46 ms: un temblor vivo sobre el filtro, el paneo, un envío).</li>
+    ~46 ms: un temblor vivo sobre el filtro, el paneo, un envío), PROX (V10.14), <strong>ENV2</strong> (V10.22), <strong>IN ENV</strong> (V10.54: el
+    volumen de lo que entra por la entrada de audio, ver <a href="#audio-de-afuera-la-entrada-usb-y-el-motor-ext">Audio de afuera</a>),
+    <strong>T1 ENV – T6 ENV</strong> (el volumen de otra pista) y <strong>OCT+ / OCT−</strong> (V10.7.22: las teclas de expresión).</li>
 <li>Destinos: PITCH, CUT, SHP, AMP, PAN, DIST, CHO, DLY, REV, RATE (velocidad del LFO), VIB, <strong>E1–E8</strong> (las perillas
     EDIT propias del motor, mostradas por nombre), <strong>CLIP</strong> y <strong>PNCH</strong> (el master), y (0.7.0) los buses de FX: <strong>D.TIM D.FB
     D.TON D.MIX</strong> (DELAY TIME, FDBK, TONE, MIX), <strong>R.SIZ R.DMP</strong> (REVERB SIZE, DAMP), <strong>C.RAT C.DEP</strong> (CHORUS RATE,
@@ -4017,45 +4147,107 @@ pequeña curva de respuesta donde iría la barra.
 </ul>
 <hr />
 <h2 id="11-tocar-en-vivo">11. Tocar en vivo</h2>
-<h3 id="secuencias-en-vivo-glo-live-0911">Secuencias en vivo: GLO › LIVE (0.9.11)</h3>
-<p><em>Se sacó en V10.8.3. Tocá las secuencias en vivo desde <strong>HOME › JAM</strong> (A–D por pista) y los componentes de paso desde <strong>SEQ › STEP FX</strong> (manteniendo una tecla).</em></p>
-<h3 id="fx-punch-in-mantene-fx">FX punch-in (mantené FX)</h3>
-<p>Efectos que actúan mientras mantenés su tecla y vuelven exactamente atrás cuando la soltás. <strong>FX &gt; PUNCH</strong> (0.6.99)
-es su secuenciador: el carril que los graba. <strong>LEN</strong> su largo, 1 … 64 pasos; <strong>RES</strong> el paso, 1/8, 1/16 o 1/32 de
-tiempo (64 pasos de 1/16 son cuatro compases, de 1/32 dos, de 1/8 ocho); el KNOB 3 dice qué está haciendo (REC
-mientras graba, PLAY mientras suena, si no cuántos pasos tienen un efecto); <strong>CLEAR</strong> (KNOB 4 y OCT+) lo vacía. La
-página dibuja las celdas del carril con el color de cada efecto y el cabezal encima, el nombre del último efecto y
-las pistas sobre las que actúa (ALL, SYN, DRM). Para grabar: REC armado y tocando (no en una canción), mantené FX y
-la tecla del efecto; los pasos que pasa lo reciben; <strong>G5</strong> sostenido borra por donde pasa el cabezal. Se guarda con
-la sección.</p>
+<h3 id="secuencias-en-vivo-las-teclas-negras-de-seq-step-fx-v10835">Secuencias en vivo: las teclas negras de SEQ › STEP FX (V10.8.35)</h3>
+<p><em>GLO › LIVE (0.9.11) se sacó en V10.8.3; sus modificadores volvieron en V10.8.35, compactos, a las teclas negras de
+SEQ › STEP FX. Las cuatro secuencias A–D de cada pista se tocan desde <strong>HOME › JAM</strong>.</em></p>
+<p>En <strong>SEQ › STEP FX</strong> (y STEP FX 2) las teclas blancas mantienen componentes de paso; las <strong>teclas negras 1 a 9</strong>,
+contadas desde la izquierda, cambian <strong>cómo camina el secuenciador</strong> de la pista elegida, nunca los pasos:</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Tecla negra</th>
+<th>Qué hace</th>
+<th>Cómo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>RATE x2</strong> (el doble de rápido)</td>
+<td>mantenida</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>RATE x3/2</strong></td>
+<td>mantenida</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>RATE x2/3</strong></td>
+<td>mantenida</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>REVERSE</strong> (para atrás)</td>
+<td>mantenida</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>PING-PONG</strong> (ida y vuelta)</td>
+<td>mantenida</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>RANDOM</strong> (pasos al azar)</td>
+<td>mantenida</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>THIN</strong> (la mitad de los pasos en silencio)</td>
+<td>mantenida</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>GIRO −</strong> (el cabezal un paso atrás)</td>
+<td>un toque</td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>GIRO +</strong> (el cabezal un paso adelante)</td>
+<td>un toque</td>
+</tr>
+</tbody>
+</table></div>
 <ul>
-<li><strong>Sobre el audio</strong>: REPEAT 1/8, 1/16, 1/32 (F3 G3 A3), LPF (B3), HPF (C4). REPEAT arranca en la siguiente 1/16
-  mientras suena. Por debajo de unos 81 BPM, REPEAT 1/8 es demasiado largo para su buffer y aparece atenuado.</li>
+<li>Las mantenidas entran en el próximo 1/16 y, al soltar, la pista <strong>vuelve en fase</strong>: cae donde habría estado si no
+  hubieras tocado nada. Varias a la vez se suman (vale el último RATE y la última dirección).</li>
+<li><strong>GIRO</strong> queda puesto: la otra tecla lo deshace, o PLAY otra vez.</li>
+<li>Nada de esto se guarda ni cambia la secuencia escrita. Un cartel dice el nombre de cada una al apretarla.</li>
+<li>Las teclas negras 10 y 11 siguen siendo página anterior / siguiente.</li>
+</ul>
+<h3 id="fx-punch-in-mantene-fx">FX punch-in (mantené FX)</h3>
+<p>Efectos que actúan mientras mantenés su tecla y vuelven exactamente atrás cuando la soltás. Los del audio trabajan
+sobre el master: toda la mezcla, también lo que entra por una pista EXT. Este es el mapa de fábrica (V10.7.59); el
+<strong>editor de punch-in</strong> (OCT+ en <strong>FX › PUNCH IN</strong>) deja cambiar qué hace cada tecla.</p>
+<ul>
+<li><strong>Sobre el audio</strong> (teclas blancas de la izquierda): <strong>REPEAT 1/8, 1/16, 1/32</strong> (F3 G3 A3): un stutter de lo último
+  que sonó; <strong>REVERSE</strong> (B3): cada tramo, el anterior al revés; <strong>FREEZE</strong> (C4): la reverb queda congelada (no le entra
+  nada nuevo y su SIZE va al máximo). En las negras: <strong>TAPE STOP</strong> (A#4): la mezcla se frena como una cinta hasta el
+  silencio; <strong>PITCH UP / PITCH DOWN</strong> (C#5 D#5): la afinación de la mezcla sube o baja 12 semitonos a lo largo de un
+  compás y se queda ahí; <strong>STRETCH</strong> (F#5): graba medio tiempo y lo toca el doble de lento a la misma altura, en
+  ronda. REPEAT, REVERSE, TAPE STOP y STRETCH entran en la siguiente 1/16 mientras suena; de los que usan el buffer
+  suena el último que apretaste. Por debajo de unos 81 BPM, REPEAT 1/8 graba con menos calidad (lo-fi), y muy lento
+  aparece atenuado.</li>
 <li><strong>Sobre las notas</strong>: OCT− / OCT+ (D4 E4), 1/2 TEMPO (F4), DEC− (corto, punteado) / DEC+ (largo) (G4 A4), STUTTER
   1/8 / 1/16 (B4 C5), ATK+ (ataques lentos, baterías incluidas) (D5), ARP (E5; en una pista DRUM, un fill nuevo en cada
-  pulsación), RANDOM (F5). Entran en la siguiente 1/16. <strong>A#4</strong> elige a qué pistas afectan: ALL, SYN (sintes) o DRM
-  (baterías); el encabezado lo muestra.</li>
+  pulsación), RANDOM (F5). Entran en la siguiente 1/16 y actúan sobre todas las pistas. <strong>G#4 LOOP 3</strong>: cada pista
+  repite sus últimos 3 pasos mientras lo mantenés; al soltar vuelve a donde habría estado.</li>
 <li><strong>Perillas</strong> con FX mantenido: <strong>FILTER</strong> (izquierda pasa-bajos, derecha pasa-altos), <strong>CRUSH</strong>, <strong>THROW</strong> (manda la
-  mezcla seca al delay y la reverb), <strong>DEPTH</strong> (el nivel del REPEAT). (0.9.9-snd2) Mientras THROW manda, y 12 s
-  después (su cola), las repeticiones del delay pasan por una banda, al estilo de un eco de cinta: un corte de graves en
-  ~180 Hz y un pasabajos en ~4,8 kHz que se cierra hasta ~3 kHz cuanto más FEEDBK y más todavía (~1,8 kHz) en la cola:
-  un loop de batería tirado al delay suena a ecos y no a una nube de ruido de hats y caja (cada pasada pierde el ruido
-  mucho más rápido que las notas). El delay sin THROW queda como antes.</li>
+  mezcla seca al delay y la reverb), <strong>DEPTH</strong> (el nivel de los efectos de buffer). (0.9.9-snd2) Mientras THROW manda,
+  y 12 s después (su cola), las repeticiones del delay pasan por una banda, al estilo de un eco de cinta: un corte de
+  graves en ~180 Hz y un pasabajos en ~4,8 kHz que se cierra hasta ~3 kHz cuanto más FEEDBK y más todavía (~1,8 kHz)
+  en la cola: un loop de batería tirado al delay suena a ecos y no a una nube de ruido de hats y caja. El delay sin
+  THROW queda como antes.</li>
 <li><strong>Teclas negras 1–6</strong>: mutean T1–T6 mientras las mantenés (no se guarda).</li>
-<li>(0.9.9-snd2) <strong>G5 CLR AUTO</strong> (con su nombre en el mapa): FX + G5 vacía el carril de punch-in (su automatización) y
-  nada más, parado o tocando; grabando, sigue borrando solo donde pasa el cursor. La KNOB 4 de FX &gt; PUNCH también es
-  <strong>CLR AUTO</strong> (lo mismo, con un diálogo), y la línea del carril en la página PUNCH va en letras grandes.</li>
-<li>(0.9.9-snd2) <strong>G#4 LOOP 3</strong>, <strong>C#5 LOOP 5</strong>, <strong>D#5 LOOP 7</strong>: mientras los mantenés, cada pista (de las que elige A#4)
-  repite sus últimos 3, 5 o 7 pasos (desde el paso que suena cuando entra, en el próximo 1/16), sin alinearse al compás:
-  loops impares que giran contra el 4/4. Al soltar, cada pista vuelve a donde habría estado. <strong>F#5 GLITCH</strong> (de la
-  0.9.18): el master cortado en los 1/16, cada uno en vivo, repetido, al revés, una octava arriba o abajo, con gate,
-  saltando o triturado, según su lugar en un ciclo de 2 compases (siempre igual, así que tiene groove); acá con sus
-  valores por defecto.</li>
+<li><strong>G5 CLR AUTO</strong>: FX + G5 vacía el carril de punch-in (su automatización) y nada más, parado o tocando; grabando,
+  borra solo donde pasa el cabezal.</li>
 </ul>
 <p><strong>El carril de punch-in</strong>: cada sección tiene un carril de 64 pasos de 1/16 (4 compases). Con <strong>REC armado y sonando</strong>
-(no durante un tema), los <strong>efectos de nota (D4–F5)</strong> que mantenés se graban en él, uno por paso (REPEAT, LPF, HPF y
-los mutes no se graban). Mantené <strong>FX + G5</strong> mientras suena para borrar por donde pasa el cabezal; parado, FX + G5
-borra todo el carril. <strong>REC mantenido + FX</strong> también lo borra (junto con la automatización de FX de la pista).</p>
+(no durante un tema), los <strong>efectos de nota (D4–F5)</strong> que mantenés se graban en él, uno por paso (los del audio y los
+mutes no se graban). Mantené <strong>FX + G5</strong> mientras suena para borrar por donde pasa el cabezal; parado, FX + G5
+borra todo el carril. <strong>REC mantenido + FX</strong> también lo borra (junto con la automatización de FX de la pista). Se
+guarda con la sección. La página que lo dibujaba (FX › PUNCH, con LEN, RES y las celdas del carril) ya no está
+(V10.8.27, V10.8.33): <strong>FX › PUNCH IN</strong> tiene en sus perillas los macros M1–M4 y abre el editor con OCT+.</p>
 <p><strong>Traba</strong>: mantené FX hasta que se abra su mapa y soltalo sin tocar nada: la capa FX queda abierta (<strong>[FX] LOCKED</strong>),
 como las macros con LFO; las teclas tocan los efectos (momentáneos: apretada suena, soltada se apaga), las perillas son
 las macros del FX y OCT− es ALL OFF, con las dos manos libres. Apretá <strong>FX</strong> otra vez para destrabar (los efectos
@@ -4714,14 +4906,18 @@ que tocás llega a la vez a todas las pistas con rol, cada una a su manera, todo
   los tapa: no hace falta tener un celular en la mano. En la fila BLUETOOTH (AIR) apretá <strong>OCT+</strong> y calibrá FAR (lejos) y
   NEAR (la mano encima) como arriba. Necesita algunos dispositivos Bluetooth cerca; sin ninguno queda en 0.</li>
 </ul>
-<h3 id="usb-host-un-teclado-enchufado-directo-v1041-experimental">USB HOST: un teclado enchufado directo (V10.41, experimental)</h3>
+<h3 id="usb-host-un-teclado-o-una-interfaz-de-audio-enchufados-directo-v1041-experimental">USB HOST: un teclado o una interfaz de audio enchufados directo (V10.41, experimental)</h3>
 <p>MENU › SYSTEM › USB › <strong>HOST</strong> y cerrá el MENU: el puerto USB del FM-1 pasa a ser el host de un teclado o controlador
 USB-MIDI class compliant (sin computadora en el medio), solo o detrás de un hub. Lo que toca le llega al FM-1 igual que
 por USB-MIDI: notas, CC, program change, bend, el clock y start / stop (CLOCK USB +BT), MIDI LEARN y MAP.
 - <strong>Alimentación</strong>: el FM-1 no alimenta el puerto. Usá un teclado con su propia fuente, o poné un <strong>hub USB
   alimentado</strong> entre los dos.
-- Mensajes: USB HOST: PLUG A MIDI KEYBOARD, USB MIDI KEYBOARD READY, NOT A USB MIDI KEYBOARD (un dispositivo sin entrada
-  MIDI para el FM-1), LOW SPEED: NOT SUPPORTED, USB KEYBOARD LOST (se reconecta solo).
+- <strong>Una interfaz de audio</strong> (V10.53): si lo que enchufás es una interfaz de audio USB class compliant (audio class
+  1.0, 16 bits, 44,1 kHz o, desde V10.57, 48 kHz), su entrada es la entrada de audio del FM-1: la toma una pista con
+  el motor <strong>EXT</strong> (ver <a href="#audio-de-afuera-la-entrada-usb-y-el-motor-ext">Audio de afuera</a>).
+- Mensajes: USB HOST: PLUG A MIDI KEYBOARD, USB MIDI KEYBOARD READY, USB AUDIO IN READY: USE INPUT (una interfaz de
+  audio), NOT USB MIDI OR AUDIO 16BIT 44.1-48K (un dispositivo que no sirve para ninguna de las dos cosas), LOW SPEED:
+  NOT SUPPORTED, USB DEVICE LOST (se reconecta solo).
 - Con HOST activo no hay USB hacia la computadora: ni editor, ni stems, ni MIDI a la compu. Cualquier otro valor de USB
   lo apaga. HOST nunca se guarda: el FM-1 siempre prende como dispositivo USB, así el instalador y el editor siempre
   funcionan.
@@ -4789,28 +4985,103 @@ por USB-MIDI: notas, CC, program change, bend, el clock y start / stop (CLOCK US
   completa MIX (el master tal como lo toca el FM-1), todas del mismo largo, estéreo 16 bits 44.1 kHz, en un ZIP: T1.wav ..
   T6.wav y MIX.wav (una pista en silencio no se incluye). Más rápido que el tiempo real, sin límites del USB y sin tocar
   el equipo.</p>
-<h3 id="entrada-de-audio-usb-075-version-de-prueba">Entrada de audio USB (0.7.5, versión de prueba)</h3>
-<p><strong>MENU &gt; SYSTEM &gt; USB &gt; IN+OUT</strong> hace que el FM-1 sea, además de entrada, una salida de audio USB de la computadora o
-el celular: el equipo se vuelve a enumerar (como con STEMS, la consola serie se apaga) y el host ve "JIANT FM" como
-parlante, estéreo, 16 bits, 44.1 kHz. Lo que el host le mande entra por la <strong>última pista</strong> (T6, o T4 con TRACKS 4) y
-se mezcla como el sonido de esa pista:</p>
+<h3 id="audio-de-afuera-la-entrada-usb-y-el-motor-ext">Audio de afuera: la entrada USB y el motor EXT</h3>
+<p>El FM-1 no solo suena: también escucha. Una voz, una guitarra, otro sinte o un loop de la computadora entran como una
+pista más y pasan por todo lo que hace JIANT: filtro, peines, lo-fi, SLICER, punch-ins, efectos, y además pueden
+modular a las otras pistas.</p>
+<p><strong>1. Cómo entra el audio.</strong> Hay tres caminos; en los tres la entrada es estéreo (IN 1 la izquierda, IN 2 la derecha).</p>
 <ul>
-<li>su <strong>LEVEL</strong> fija el nivel de la entrada, su <strong>PAN</strong> funciona como balance, sus envíos de <strong>CHORUS, DELAY y REVERB</strong>
-  llevan la entrada a los efectos (desde la suma de izquierda y derecha), el <strong>DUCK</strong> la atenúa, su <strong>MUTE</strong> y la capa
-  de mutes la silencian;</li>
-<li>el motor propio de la pista sigue sonando (con el patrón vacío queda solo la entrada); su DIST y su filtro no se
-  aplican a la entrada;</li>
-<li>lo que se graba por USB es el master estéreo, como con STEREO, con la entrada incluida.</li>
+<li><strong>Desde la computadora o el celular: MENU › SYSTEM › USB › IN+OUT</strong> (0.7.5). El FM-1 se vuelve a enumerar (la
+  consola serie se apaga) y el host ve "JIANT FM" además como <strong>parlante</strong> USB, estéreo, 16 bits, 44,1 kHz. Elegí el
+  FM-1 como salida en la configuración de sonido del host (o en el DAW o la app), poné 44,1 kHz y reproducí. El FM-1
+  sigue el reloj del host (~3,6 ms de retardo); si el host deja de mandar, la entrada se apaga suave y vuelve cuando
+  retoma. Algunos sistemas ponen como salida por defecto al dispositivo USB recién conectado: por eso IN+OUT es una
+  opción aparte y no viene activada.</li>
+<li><strong>Desde una interfaz de audio USB enchufada al FM-1: MENU › SYSTEM › USB › HOST</strong> (V10.53). Una interfaz class
+  compliant de 16 bits a 44,1 kHz (o 48 kHz desde V10.57: el FM-1 la convierte), con una o dos entradas. La pantalla
+  dice <strong>USB AUDIO IN READY: USE INPUT</strong>. El FM-1 no alimenta el puerto: la interfaz necesita su propia fuente o un hub
+  alimentado. Mientras HOST está activo no hay USB hacia la computadora (ni editor, ni grabación por USB), y HOST no
+  se guarda: al encender hay que volver a elegirlo.</li>
+<li><strong>Con STEMS+IN</strong> (la app del celular, ver más abajo): el micrófono del celular entra y vuelve grabado en su canal.</li>
 </ul>
-<p>Elegí el FM-1 como salida en la configuración de sonido del host (o en el DAW o la app), poné 44.1 kHz y reproducí.
-El FM-1 sigue el reloj del host (lee el audio un poco más rápido o más lento, con ~3.6 ms de retardo); si el host deja
-de mandar, la entrada se apaga suave y vuelve cuando retoma. Algunos sistemas ponen como salida por defecto al
-dispositivo USB recién conectado: por eso IN+OUT es una opción aparte y no viene activada. Versión de prueba: contanos
-cómo anda con tu computadora o tu celular.</p>
+<p><strong>2. Una pista EXT la hace sonar.</strong> Desde V10.56 la entrada <strong>solo suena donde una pista con el motor EXT la toma</strong>
+(antes entraba sola por la última pista; se cambió porque una app que monitorea lo que graba devolvía la salida del
+FM-1 y se armaba un lazo). Elegí una pista, y con <strong>PRESETS</strong> andá a los sonidos de EXT: <strong>IN 1, IN 2, IN 1+2, STEREO
+IN, MIC GATE, SPACE IN, TRANCE GATE, RING IN, CRUSH IN</strong>. Sus dos páginas de EDIT se llaman <strong>INPUT</strong> y <strong>COLOR</strong>:</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Página</th>
+<th>KNOB 1</th>
+<th>KNOB 2</th>
+<th>KNOB 3</th>
+<th>KNOB 4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>INPUT</td>
+<td><strong>SOURCE</strong>: IN 1, IN 2, 1+2 (las dos sumadas, mono), STEREO (la imagen entera), SWARM</td>
+<td><strong>GAIN</strong>: 64 = como llega, 127 = +12 dB</td>
+<td><strong>GATE</strong>: compuerta de ruido (0 apagada)</td>
+<td><strong>MODE</strong>: THRU o KEYS</td>
+</tr>
+<tr>
+<td>COLOR</td>
+<td><strong>WIDTH</strong>: el ancho del estéreo (SOURCE STEREO, MODE THRU)</td>
+<td><strong>RING</strong>: modulación en anillo (MODE KEYS)</td>
+<td><strong>BITS</strong>: menos resolución</td>
+<td><strong>RATE</strong>: muestras sostenidas, de 1 a 32</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>La pantalla muestra las dos entradas como medidores (encendidas las que toma SOURCE), el nivel de GATE cruzándolos
+  y, entre ellos, el nivel de IN ENV.</li>
+<li><strong>GATE</strong> abre cuando la entrada supera su nivel y cierra cuando baja de tres cuartos de él: saca el ruido de fondo
+  entre frases.</li>
+<li><strong>Dos pistas EXT</strong> pueden tomar IN 1 y IN 2 cada una, con su propia cadena: un micrófono y una guitarra, por
+  ejemplo.</li>
+<li>Después, como cualquier pista: <strong>FILTER, DIST, LEVEL, PAN, los envíos, MUTE y la matriz MOD</strong>. En STEREO, el DIST
+  además angosta un poco la imagen.</li>
+<li>SOURCE <strong>SWARM</strong> no es la entrada de audio: es el instrumento de Bluetooth (ver
+  <a href="#ext--swarm-una-melodía-según-qué-tan-cerca-estás-v106z6">EXT › SWARM</a>). SWARM y una entrada USB en otra pista
+  pueden sonar juntas.</li>
+</ul>
+<p><strong>3. THRU y KEYS; RING.</strong> Con <strong>MODE THRU</strong> la entrada suena siempre. Con <strong>MODE KEYS</strong> solo suena mientras suena una
+nota, con la envolvente de la pista (ENV: ATK, DEC, SUS, REL): las teclas y los pasos del secuenciador la abren y la
+cierran. Programá pasos de 1/16 con DEC corto y un pad sostenido que entra se vuelve un trance gate al tempo; una voz
+se vuelve percusión. En KEYS, <strong>RING</strong> multiplica la entrada por un seno afinado a la nota que tocás: modulación en
+anillo que sigue las teclas, de metálica a robótica. (En KEYS la entrada suena en mono.)</p>
+<p><strong>4. FILTER y los peines.</strong> EDIT › FILTER de la pista EXT filtra la entrada: <strong>LP, HP, BP</strong> con CUT y RES, y <strong>COMB /
+COMB-</strong>, un peine con realimentación afinado a la nota más nueva que tocó la pista (ver
+<a href="#filter-todos-los-motores">FILTER</a>). Con COMB y RES alta, un ruido o una voz resuenan como una cuerda en la nota
+que toques; COMB- suena más hueco. Mové CUT con el LFO, la envolvente o IN ENV para que el filtro respire.</p>
+<p><strong>5. Lo-fi: BITS, RATE, DIST.</strong> BITS baja la resolución (grano, ruido de cuantización); RATE sostiene cada muestra
+hasta 32 veces (aliasing, el sonido de un sampler viejo); el DIST de la pista (FX › DIST) satura.</p>
+<p><strong>6. Stutter: el SLICER.</strong> En <strong>FX › SL BUS</strong> prendé la pista EXT (y FX si querés cortar también los retornos) para
+que pase por el <a href="#slicer-uno-solo-en-un-bus">SLICER</a>. <strong>MODE GATE</strong> la corta en patrones (PAT 1–16); <strong>MODE STUT</strong>
+graba los pasos que suenan y repite el último en los otros: un stutter al tempo, con <strong>RATE</strong> de 1/8 a 32T y <strong>DEPTH</strong>
+el nivel de la repetición. <strong>SL PITCH</strong> afina cada repetición con una secuencia de 16 pasos. Con LOAD ECO no hay
+SLICER.</p>
+<p><strong>7. Punch-in de audio.</strong> Mantené <strong>FX</strong> y tocá las teclas: REPEAT, REVERSE, FREEZE, TAPE STOP, PITCH UP / DOWN y
+STRETCH actúan sobre toda la mezcla, tu entrada incluida, y al soltar vuelve todo. Con FX mantenido las perillas son
+FILTER, CRUSH, THROW y DEPTH. Ver <a href="#fx-punch-in-mantené-fx">FX punch-in</a>.</p>
+<p><strong>8. Los envíos y THROW.</strong> Los envíos de la pista EXT (FX › SENDS) mandan la entrada a CHORUS, DELAY y REVERB, los
+mismos buses que usan los sintes. <strong>THROW</strong> (FX mantenido, KNOB 3) tira la mezcla seca al delay y la reverb mientras
+lo girás, como en el dub.</p>
+<p><strong>9. La entrada como modulador: IN ENV.</strong> En la matriz (LFO › MOD), la fuente <strong>IN ENV</strong> es el volumen de lo que entra
+(sube al instante, baja en unos 50 ms; mira las dos entradas). Mandala a cualquier destino de cualquier pista: CUT,
+PITCH, AMP, PAN, un envío. Funciona aunque ninguna pista esté sonando la entrada: puede ser solo un controlador. Con
+cantidad negativa hace ducking: los sintes bajan cuando hablás. (En el código y en JIANT Studio esta fuente se llama
+también FOLLOW.) Las fuentes <strong>T1 ENV – T6 ENV</strong> hacen lo mismo con el volumen de otra pista.</p>
+<p><strong>10. Grabar.</strong> Lo que se graba por USB incluye la entrada tal como la mezcló su pista: <strong>IN+OUT</strong> manda al host el
+master estéreo; <strong>STEMS+IN</strong> manda cada pista por separado, el retorno de efectos y la voz en dos canales propios
+(ver abajo). Con una interfaz en el puerto HOST no hay audio USB hacia la computadora: grabá por la salida de audio.</p>
 <h3 id="stems-con-una-voz-080-version-de-prueba">Stems con una voz (0.8.0, versión de prueba)</h3>
 <p><strong>MENU &gt; SYSTEM &gt; USB &gt; STEMS+IN</strong> es STEMS e IN+OUT juntos, para la app del celular: el micrófono del celular va al
-FM-1, entra en la <strong>última pista</strong> como la entrada de IN+OUT (su LEVEL, PAN, MUTE y sus envíos de CHORUS, DELAY y
-REVERB: tu voz por los efectos de esa pista) y vuelven <strong>10 canales</strong>: T1–T6, el retorno de efectos L R, después <strong>la
+FM-1, entra en la <strong>última pista</strong> (su LEVEL, PAN, MUTE y sus envíos de CHORUS, DELAY y
+REVERB: tu voz por los efectos de esa pista; si alguna pista tiene el motor EXT, entra por esa en vez de la última) y vuelven <strong>10 canales</strong>: T1–T6, el retorno de efectos L R, después <strong>la
 voz como la mezcló la pista</strong> y <strong>la voz como llegó</strong>. La voz tiene un canal propio (no está en el stem de la pista),
 así la app la corre hacia atrás según la latencia de ida y vuelta y la voz cae a tiempo con lo que escuchaste; el
 segundo canal de voz es la referencia contra la que la app mide esa latencia. La parte de la voz en el retorno de

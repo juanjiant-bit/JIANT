@@ -95,6 +95,7 @@ footer a{color:var(--dim)}
 <ul><li><a href="#essential">Essential commands</a></li>
 <li><a href="#contents">Contents</a></li>
 <li><a href="#whats-new-in-this-version">What's new in this version</a><ul>
+<li><a href="#new-in-v10835-since-v10821">New in V10.8.35 (since V10.8.21)</a></li>
 <li><a href="#new-in-v10821-since-v10781">New in V10.8.21 (since V10.7.81)</a></li>
 <li><a href="#new-in-v10781-since-v10716">New in V10.7.81 (since V10.7.16)</a></li>
 <li><a href="#since-v106c">Since V10.6c</a></li>
@@ -146,7 +147,8 @@ footer a{color:var(--dim)}
 <li><a href="#live-recording">Live recording</a></li>
 <li><a href="#pattern-pages">Pattern pages</a></li>
 <li><a href="#euclid-and-modes-v106">EUCLID and MODES (V10.6)</a></li>
-<li><a href="#mutate-v1016">MUTATE (V10.16)</a></li>
+<li><a href="#mutate-v1016-compact-since-v10835">MUTATE (V10.16; compact since V10.8.35)</a></li>
+<li><a href="#drone-clay-seq-clay-v10821">DRONE CLAY (SEQ › CLAY, V10.8.21)</a></li>
 <li><a href="#parameter-locks">Parameter locks</a></li>
 <li><a href="#copy-and-paste-099-seq2h">Copy and paste (0.9.9-seq2h)</a></li>
 <li><a href="#scale">Scale</a></li>
@@ -189,7 +191,7 @@ footer a{color:var(--dim)}
 </ul>
 </li>
 <li><a href="#11-performance">11. Performance</a><ul>
-<li><a href="#live-sequences-glo-live-0911">Live sequences: GLO › LIVE (0.9.11)</a></li>
+<li><a href="#live-sequences-the-black-keys-of-seq-step-fx-v10835">Live sequences: the black keys of SEQ › STEP FX (V10.8.35)</a></li>
 <li><a href="#punch-in-fx-hold-fx">Punch-in FX (hold FX)</a></li>
 <li><a href="#mutes-and-solos">Mutes and solos</a></li>
 <li><a href="#live-layers-and-the-song">Live layers and the song</a></li>
@@ -223,10 +225,10 @@ footer a{color:var(--dim)}
 <li><a href="#14-midi-and-usb">14. MIDI and USB</a><ul>
 <li><a href="#scene-one-key-plays-the-whole-band-v1024">SCENE: one key plays the whole band (V10.24)</a></li>
 <li><a href="#bluetooth-midi-and-prox-v1013v1020">Bluetooth MIDI and PROX (V10.13–V10.20)</a></li>
-<li><a href="#usb-host-a-keyboard-straight-in-v1041-experimental">USB HOST: a keyboard straight in (V10.41, experimental)</a></li>
+<li><a href="#usb-host-a-keyboard-or-an-audio-interface-straight-in-v1041-experimental">USB HOST: a keyboard or an audio interface straight in (V10.41, experimental)</a></li>
 <li><a href="#midi-learn-0912">MIDI LEARN (0.9.12)</a></li>
 <li><a href="#stems-071">Stems (0.7.1)</a></li>
-<li><a href="#usb-audio-in-075-test-version">USB audio in (0.7.5, test version)</a></li>
+<li><a href="#sound-from-outside-the-usb-input-and-the-ext-engine">Sound from outside: the USB input and the EXT engine</a></li>
 <li><a href="#stems-with-a-voice-080-test-version">Stems with a voice (0.8.0, test version)</a></li>
 </ul>
 </li>
@@ -252,7 +254,8 @@ footer a{color:var(--dim)}
 <p class="lead">All of JIANT FM on one page: every button, knob and message named as the device shows it. If you read one chapter, read <a href="#12-saving-and-loading">Saving and loading</a>.</p>
 <div class="bar"><a class="btn go" href="https://juanjiant-bit.github.io/JIANT/studio/">Open JIANT Studio</a><a class="btn" href="manual.es.html">Español</a><a class="btn" href="whats-new-v10.8.21.html">What's new in V10.8.21</a><a class="btn" href="https://juanjiant-bit.github.io/JIANT/manual/">Interactive manual</a><a class="btn" href="manual.html" download>Download</a></div></section>
 <h1 id="jiant-fm-user-manual">JIANT FM — User Manual</h1>
-<p><strong>JIANT FM V10.8.21 for the M-VAVE FM-1</strong></p>
+<p><strong>JIANT FM V10.8.35 for the M-VAVE FM-1</strong> (the public version is V10.8.21; V10.8.22 to V10.8.35 are betas: what
+changed in them is in <a href="#new-in-v10835-since-v10821">New in V10.8.35</a>)</p>
 <blockquote>
 <p><em>Versión en español: <a href="manual.es.html">manual en español</a>.</em></p>
 </blockquote>
@@ -321,6 +324,38 @@ public version) or earlier: <a href="#whats-new-in-this-version">What's new in t
 </ul>
 <hr />
 <h2 id="whats-new-in-this-version">What's new in this version</h2>
+<h3 id="new-in-v10835-since-v10821">New in V10.8.35 (since V10.8.21)</h3>
+<p>The betas V10.8.22 to V10.8.35 in one list. Where a chapter below still describes the earlier screen, this list is right.</p>
+<ul>
+<li><strong>DRONE CLAY, complete</strong> (V10.8.27–V10.8.31; see <a href="#drone-clay-seq--clay-v10821">DRONE CLAY</a>): each modulator has its
+  own <strong>RATE</strong> on the bar's grid (1/64 … 4BAR, dotted, triplets and polyrhythms), the drone has <strong>PITCH</strong> (−24 … +36
+  semitones), the hits (KICK, SNARE, HAT…) are a drum on any engine, and there are four pages: <strong>DRONE CLAY · CLAY MOD
+  · CLAY RHYTHM · CLAY TIME</strong>. Under the scope, a thin bar a modulator shows what it adds now. A modulator at
+  <strong>AMOUNT 0</strong> strikes nothing, and at <strong>RATE HOLD</strong> the drone is never struck again. <strong>The keys play gestures</strong> (the
+  whites) and <strong>the drone's degree</strong> (the last seven); <strong>RUN</strong> has four values: SONG, FREE, SONG NOKEY, FREE NOKEY.</li>
+<li><strong>WEST › DUST</strong> (V10.8.28): 1 to 95 is white noise going into the folder with the core (it folds and passes the gate
+  with it: inside the timbre, not beside it); 96 to 127 is <strong>METAL</strong>, a metallic tone instead of the noise. It no
+  longer crackles.</li>
+<li><strong>MUTATE is back, compact</strong> (V10.8.35): <strong>SEQ › MUTATE</strong> has one knob, <strong>EVERY</strong> (OFF, 1, 2, 4, 8 bars). On EUCLID or
+  MUTATE, <strong>OCT+</strong> mutates now and <strong>OCT−</strong> goes back to the anchor. See <a href="#mutate-v1016-compact-since-v10835">MUTATE</a>.</li>
+<li><strong>LIVE is back, compact</strong> (V10.8.35): on <strong>SEQ › STEP FX</strong>, the <strong>black keys 1–9</strong> change live how the selected
+  track's sequence walks: RATE x2, x3/2, x2/3, REVERSE, PING-PONG, RANDOM, THIN, GIRO − and GIRO +. See
+  <a href="#live-sequences-the-black-keys-of-seq--step-fx-v10835">Live sequences</a>.</li>
+<li><strong>EUCLID</strong> (V10.8.35): on a melodic track <strong>KNOB 4 is ROLE</strong> (MELODY, CHORDS, BASS, ARP) and the MODES page is named
+  <strong>MELODY</strong> (CONTOUR, RANGE, MOTIF, VARY). The picture is one ring of dots.</li>
+<li><strong>FILTER</strong> (V10.8.35): the types <strong>MS20</strong> and <strong>LP24</strong> are gone (TYPE: LP, HP, BP, COMB, COMB-). A project or a user
+  preset that used them opens with LP.</li>
+<li><strong>ENV › STAGE</strong> is gone (V10.8.35): ENV's chain is ENV · ENV DEST · ENV 2. LOOP stays on ENV DEST.</li>
+<li><strong>FX › PUNCH IN</strong> (V10.8.27, V10.8.33): the PUNCH LANE page and the lane's picture are gone; the punch-in lane itself
+  stays (REC records it, the generator uses it).</li>
+<li><strong>MOD</strong> (V10.8.22): turning a slot's SRC or DEST shows the whole route in full names ("LFO &gt; FILTER CUTOFF"; E1–E8
+  by the engine's own names), with HELP OFF too.</li>
+<li><strong>DRUM-X</strong> (V10.8.32): the MATH formulas used as FM modulators sound clean, without steps.</li>
+<li><strong>GENERATOR</strong> (V10.8.34): twelve more progressions, the contrast section with a progression and a register of its
+  own, motifs with a signature leap, more call and response, and a dialogue between the lead and the arp.</li>
+<li><strong>JIANT Studio and the editor</strong> (V10.8.23–V10.8.26, V10.8.33): the FM-1's screen mirror (only the rows that changed
+  are sent), and the FM-1 tells which section, page and layer you are on, for Studio's live guide.</li>
+</ul>
 <h3 id="new-in-v10821-since-v10781">New in V10.8.21 (since V10.7.81)</h3>
 <p>The betas V10.8.1 to V10.8.20 in one list. Where a chapter below still describes the older screen, this list wins.</p>
 <ul>
@@ -351,7 +386,7 @@ public version) or earlier: <a href="#whats-new-in-this-version">What's new in t
 <li><strong>Power-on</strong>: the boot "Six threads" with the signature drawn smooth and the version shown; the <strong>click at power-on</strong>
   is gone (the output opens after the audio has started, then fades in).</li>
 <li><strong>Removed for room</strong>: GLO › LIVE, SEQ › STRETCH, MUTATE, the sequence dice (SEQ + SELECT; the sound dice stays), GLO ›
-  GLOBAL COMP, ENV › TRACKS and the one-time teaching hints. Old projects open: their settings are kept and ignored.</li>
+  GLOBAL COMP, ENV › TRACKS and the one-time teaching hints. Old projects open: their settings are kept and ignored. (MUTATE and LIVE came back, compact, in V10.8.35: see above.)</li>
 </ul>
 <h3 id="new-in-v10781-since-v10716">New in V10.7.81 (since V10.7.16)</h3>
 <p>The betas V10.7.17 to V10.7.80 in one list. Where a chapter below still describes the older screen, this list wins.</p>
@@ -538,7 +573,7 @@ files.</p>
 </tr>
 <tr>
 <td><strong>ENV</strong></td>
-<td>The ENV section: from elsewhere the page last shown (at power-on ENV); inside, the next group: <strong>TRACKS → ENV → STAGE</strong>, round.</td>
+<td>The ENV section: from elsewhere the page last shown (at power-on ENV); inside it walks its pages: <strong>ENV → ENV DEST → ENV 2</strong> (V10.8.35; TRACKS went in V10.8.16, STAGE in V10.8.35).</td>
 <td>(no layer)</td>
 </tr>
 <tr>
@@ -578,7 +613,7 @@ files.</p>
 </tr>
 <tr>
 <td><strong>SEQ</strong></td>
-<td>The SEQ section: from elsewhere the page last shown (at power-on STEP, the piano roll); inside the next group (V10.6): <strong>STEP → LENGTH → EUCLID → PLAYHEADS → STRETCH → COMP → AUTO → GENERATE</strong>, round.</td>
+<td>The SEQ section: from elsewhere the page last shown (at power-on STEP, the piano roll); inside the next group (V10.8.35): <strong>STEP → PATTERN → EUCLID → PLAYHEADS → STEP FX → AUTO → TRACK GEN → DRONE CLAY</strong>, round.</td>
 <td><strong>SEQ TOOLS</strong> layer (on every SEQ page); G5 CLR STEP.</td>
 </tr>
 <tr>
@@ -895,8 +930,8 @@ it was in 0.9.1, with its knobs and its picture (the ones 0.8.5's lenses drew).<
 </tr>
 <tr>
 <td><strong>SEQ</strong></td>
-<td>(V10.6) <strong>STEP</strong>: STEP — <strong>LENGTH</strong>: LENGTH · RHYTHM · TRACK — <strong>EUCLID</strong>: EUCLID · MODES · MUTATE — <strong>PLAYHEADS</strong>: PLAYHEADS — <strong>STRETCH</strong>: STRETCH — <strong>COMP</strong>: COMP · COMP 2 — <strong>AUTO</strong>: AUTOMATION · AUTO LIST · LYRIC STEP (VOICE) — <strong>GENERATE</strong>: GENERATE</td>
-<td>15</td>
+<td>(V10.8.35) <strong>STEP</strong>: STEP — <strong>PATTERN</strong>: LENGTH · RHYTHM · TRACK — <strong>EUCLID</strong>: EUCLID · MODES (on a melodic track: MELODY) · MUTATE — <strong>PLAYHEADS</strong>: PLAYHEADS — <strong>STEP FX</strong>: STEP FX · STEP FX 2 — <strong>AUTO</strong>: AUTOMATION · AUTO LIST · LYRIC STEP (VOICE) — <strong>TRACK GEN</strong>: TRACK GEN — <strong>DRONE CLAY</strong>: DRONE CLAY · CLAY MOD · CLAY RHYTHM · CLAY TIME</td>
+<td>18</td>
 </tr>
 <tr>
 <td><strong>FX</strong></td>
@@ -910,8 +945,8 @@ it was in 0.9.1, with its knobs and its picture (the ones 0.8.5's lenses drew).<
 </tr>
 <tr>
 <td><strong>ENV</strong></td>
-<td><strong>TRACKS</strong>: TRACKS · TRACKS DEST — <strong>ENV</strong>: ENV · ENV DEST · ENV 2 — <strong>STAGE</strong>: STAGE</td>
-<td>6</td>
+<td>(V10.8.35) <strong>ENV</strong>: ENV · ENV DEST · ENV 2</td>
+<td>3</td>
 </tr>
 <tr>
 <td><strong>LFO</strong></td>
@@ -957,11 +992,10 @@ the bars with KNOB 1 the bar and KNOB 2 LEN.</p>
   (<strong>T2 CUT+62</strong>).</li>
 <li><strong>ENV</strong> › <strong>TRACKS</strong> / <strong>TRACKS DEST</strong>: the six tracks' envelopes as tiles (the selected one tinted with its level now a dot; DEST:
   FILTER, PITCH and SHAPE as bars under each), the knobs the selected track's — <strong>ALGORITHM</strong> picks the
-  track. <strong>ENV</strong>: the envelope large / ENV DEST's columns, as before. <strong>STAGE</strong>: KNOB 1 picks the stage (ATK DEC
-  SUS REL), KNOB 2 sets it, KNOB 3 LOOP; the whole envelope with the stage shaded over the stage's own
-  curve, large, and its time.</li>
-<li><strong>GLO</strong> › <strong>LIVE</strong> (0.9.11): MANO, the keys as a board of live modifiers over the six sequences, and RIELES, the six
-  sequences as rails with their playheads and ghosts (<a href="#live-sequences-glo--live-0911">11</a>).</li>
+  track. <strong>ENV</strong>: the envelope large / ENV DEST's columns, as before.
+  (TRACKS and TRACKS DEST went in V10.8.16; <strong>STAGE</strong> in V10.8.35: LOOP is on ENV DEST.)</li>
+<li><strong>GLO</strong> › <strong>LIVE</strong> (0.9.11; MANO and RIELES) went in V10.8.3; since V10.8.35 its live modifiers are on the black keys
+  of SEQ › STEP FX (<a href="#live-sequences-the-black-keys-of-seq--step-fx-v10835">11</a>).</li>
 <li><strong>GLO</strong> › <strong>MIX</strong>: the six tracks as strips (MIXER: LEVEL with the meter, PAN, REV; <strong>SENDS</strong>, new: each track's
   DIST, CHORUS, DLY and REV as four bars, the knobs the selected track's). <strong>GLOBAL</strong>: the bar of sixteenths, as before.
   <strong>SYSTEM</strong>: the tracks that play as chips, LOAD's three settings (the one set lit), MIDI's route, the CPU load over the
@@ -1020,13 +1054,6 @@ the bars with KNOB 1 the bar and KNOB 2 LEN.</p>
 <td>DEC</td>
 <td>SUS</td>
 <td>REL</td>
-</tr>
-<tr>
-<td>STAGE (0.8.5)</td>
-<td>STAGE (ATK DEC SUS REL)</td>
-<td>its value</td>
-<td>LOOP</td>
-<td>—</td>
 </tr>
 </tbody>
 </table></div>
@@ -1942,13 +1969,13 @@ keep controlling the macros on every page) until you press LFO again. F3 rolls n
 (LFO + SELECT rolls the track's LFO, with KEEP / CANCEL: see the dice.)</p>
 <hr />
 <h2 id="4-engines">4. Engines</h2>
-<p>Twelve engines, all synthesis, no samples: ANALOG, FM6, PHASE, <strong>MATH</strong> (LOFI until V10.6e), VOICE, WHEEL, NOISE,
-DRUM-X, ANIMAL, <strong>STRING</strong> (a plucked, struck or bowed string, and guitar feedback), <strong>ADD</strong> (additive) and <strong>EXT</strong>
+<p>Twelve engines, all synthesis, no samples: ANALOG, FM6, PHASE, <strong>MATH</strong> (LOFI until V10.6e), VOICE, WHEEL, <strong>WEST</strong>
+(in NOISE's place since V10.7.37), DRUM-X, ANIMAL, <strong>STRING</strong> (a plucked, struck or bowed string, and guitar feedback), <strong>ADD</strong> (additive) and <strong>EXT</strong>
 (external signals: the USB audio input, or SWARM, the Bluetooth around it). Any engine can go on any track. Pick them
 with <strong>PRESETS</strong> (one list over every engine) or with KNOB 2 (ENG) on SAVE &gt; PRESETS. Each track's four HOME knobs are
 listed too.</p>
 <p><strong>The order</strong> (V10.6e): PRESETS, KNOB 2 (ENG) and the web editor's lists show the engines as <strong>DRUM-X, ANALOG, PHASE,
-FM6, VOICE, ANIMAL</strong> (the tracks at power-on, T1–T6), then MATH, WHEEL, NOISE, STRING, ADD, EXT. Only the order you see
+FM6, VOICE, ANIMAL</strong> (the tracks at power-on, T1–T6), then MATH, WHEEL, WEST, STRING, ADD, EXT. Only the order you see
 changed: projects, user presets, favourites and backups name engines by their numbers, which stay, so everything saved
 before loads as it was. PROGRAM CHANGE keeps 0.9.8's numbers (see <a href="#14-midi-and-usb">14</a>).</p>
 <p><strong>Smooth changes</strong>: switching a track to another engine fades the old one out (about 12 ms) and what you are holding
@@ -2001,10 +2028,10 @@ before loads as it was. PROGRAM CHANGE keeps 0.9.8's numbers (see <a href="#14-m
 <td>REG, PERC, DRIVE, ROTOR</td>
 </tr>
 <tr>
-<td><strong>NOISE</strong></td>
-<td>MODE, COLOR, FREQ, PEAK</td>
-<td>TRK, DENSE, DRIFT, CRUSH</td>
-<td>FREQ, PEAK, COLOR, REL</td>
+<td><strong>WEST</strong> (V10.7.37)</td>
+<td>FOLD, SKEW, MOD, RATIO</td>
+<td>GATE, DECAY, RES, DUST</td>
+<td>FOLD, MOD, DECAY, DUST</td>
 </tr>
 <tr>
 <td><strong>DRUM</strong> (DRUM-X)</td>
@@ -2032,7 +2059,7 @@ before loads as it was. PROGRAM CHANGE keeps 0.9.8's numbers (see <a href="#14-m
 </tr>
 <tr>
 <td><strong>EXT</strong> (V10.6d)</td>
-<td>SOURCE (IN 1, IN 2, 1+2, STEREO, SWARM), GAIN, GATE, PLAY</td>
+<td>SOURCE (IN 1, IN 2, 1+2, STEREO, SWARM), GAIN, GATE, MODE (THRU, KEYS)</td>
 <td>WIDTH, RING, BITS, RATE</td>
 <td>(SWARM: its own, see <a href="#ext--swarm-a-melody-from-how-near-you-are-v106z6">EXT › SWARM</a>)</td>
 </tr>
@@ -2076,7 +2103,16 @@ before loads as it was. PROGRAM CHANGE keeps 0.9.8's numbers (see <a href="#14-m
 <li><strong>WHEEL</strong>: a drawbar organ: registrations (REG), percussion (PERC: OFF, 2ND, 3RD, 2SOFT, 3SOFT, 2SLOW, 3SLOW),
   key click, drive, ROTOR (OFF, SLOW, FAST). EDIT &gt; <strong>ROTOR</strong> (WHEEL only): <strong>DEPTH</strong> (how much the rotary speaker
   swirls: 100 % as before, 0 % a still speaker) and <strong>DUST</strong> (0–100 %: an old organ's crackle and hiss while it plays).</li>
-<li><strong>NOISE</strong>: coloured and metallic noise. MODE: ANLG, DUST, LFSR, META (DUST is only the crackle: at DENS 0 it still crackles softly). PEAK is its own resonance.</li>
+<li><strong>WEST</strong> (V10.7.37, in NOISE's place): west-coast synthesis. A complex oscillator (a sine core, or a triangle with
+  the RATIOs ending in <strong>T</strong>) phase-modulated by a second oscillator (<strong>MOD</strong> its depth, <strong>RATIO</strong> its ratio to the
+  note: 0.5 … 8), into a wavefolder (<strong>FOLD</strong> how far it folds, <strong>SKEW</strong> asymmetric folds: even harmonics) and then a
+  low-pass gate (<strong>GATE</strong>: 0 a low-pass alone, 64 both, 127 a level alone; <strong>DECAY</strong> how long the strike takes to die
+  away, and past 80 a held note sustains; <strong>RES</strong> the gate's resonance). Every note is a strike: a pluck, a bongo, a
+  bell.
+  <strong>DUST</strong> (V10.8.28): <strong>0</strong> none; <strong>1–95</strong> white noise into the folder with the core, so it folds and passes the gate
+  with it (fused into the timbre), and from 48 on some of it straight to the gate too (air); <strong>96–127</strong> is <strong>METAL</strong>:
+  instead of the noise, a metallic tone tuned to the note (the earlier NOISE engine's META registers) into the folder
+  with the core at half. A project or a user preset made with NOISE opens as WEST in a DUST sound.</li>
 <li><strong>DRUM</strong>: DRUM-X, see <a href="#5-drum-x">5</a>.</li>
 <li><strong>ANIMAL</strong>: animal calls from physical models, see <a href="#animal-083">ANIMAL</a> below.</li>
 </ul>
@@ -2345,7 +2381,7 @@ beings), in the same thermal line art, the bichos' face shared with DRUM-X's bei
 for the six, 1.4 KB of RAM (the pool); each page draws no dearer than ANALOG's EDIT page with its being did; nothing
 in the sound.</p>
 <h3 id="ext-swarm-a-melody-from-how-near-you-are-v106z6">EXT › SWARM: a melody from how near you are (V10.6z6)</h3>
-<p><strong>EXT</strong> (engine 15) plays an external signal; its <strong>SOURCE</strong> <strong>SWARM</strong> makes the sound out of the Bluetooth around the
+<p><strong>EXT</strong> (engine 15) plays an external signal (the audio input: see <a href="#sound-from-outside-the-usb-input-and-the-ext-engine">Sound from outside</a>); its <strong>SOURCE</strong> <strong>SWARM</strong> makes the sound out of the Bluetooth around the
 FM-1 instead of the USB audio input. Since V10.6z6 SWARM is a <strong>melody</strong>, not only a drone: a <strong>lead</strong> voice plays notes
 on the tempo's grid, and <strong>how near something is</strong> decides what it plays and how it sounds. The devices heard around
 (MENU › SYSTEM › BLUETOOTH <strong>AIR</strong>) are still voices of their own underneath, a quieter bed.</p>
@@ -2445,7 +2481,7 @@ lead too: the nearest one gives it its FM ratio and depth.</p>
 <p><strong>The screen.</strong> EDIT 1 / 2 and the SWARM pages show the swarm (each device a square at its note, its place in the
 image) with a bar under it: the morph, FAR left, NEAR right.</p>
 <h3 id="filter-every-engine">FILTER (every engine)</h3>
-<p>EDIT &gt; <strong>FILTER</strong>: <strong>TYPE</strong> LP, HP, BP, <strong>COMB</strong>, <strong>COMB-</strong>, <strong>MS20</strong> or <strong>LP24</strong> (V10.22: a 24 dB/oct low-pass, two poles in series, RES on the second). COMB and COMB- are a comb tuned to the note you play; CUT moves it, RES is how much
+<p>EDIT &gt; <strong>FILTER</strong>: <strong>TYPE</strong> LP, HP, BP, <strong>COMB</strong> or <strong>COMB-</strong> (V10.8.35: MS20 and LP24 are gone; a project or a preset that used them opens with LP. COMB and COMB- are a comb tuned to the note you play; CUT moves it, RES is how much
 it rings), <strong>CUT</strong>, <strong>RES</strong>, and KNOB 4: on ANALOG its own DRIVE, on every other engine the track's DIST. On ANALOG
 the filter is per voice; on MATH the filter page drives its per-voice filter; on the others it is a filter on the
 track that follows LFO DEST / ENV DEST FILTER.</p>
@@ -2455,12 +2491,6 @@ short colour (25 ms) up to ~9 s near self-oscillation at the top; a soft clip in
 and a damping low-pass in the loop (opening with RES) lets the highs die first, like a string. <strong>COMB</strong> (positive
 feedback) is metallic and flanger-like; <strong>COMB-</strong> (negative) keeps only the odd harmonics: hollow, clarinet-like, at
 the same pitch.</p>
-<p><strong>MS20</strong> (0.9.9-snd1): an aggressive 2-pole low-pass after the Korg MS-20: its resonance is fed back through a
-diode-like clip, so it screams at high RES but stays under control (the clip sets how loud it can ring, and a hot
-input growls instead of blowing up); RES is exponential (soft at 0, very sharp in the last part of its travel, and the
-ring still dies out when the part goes silent). Same knobs: CUT (with LFO / ENV DEST FILTER), RES, and the drive of
-KNOB 4. On ANALOG and MATH the MS20 (like the combs) is the track's filter after the voices: their own filter opens.
-LP, HP and BP sound exactly as before.</p>
 <p><strong>CHORUS</strong> (0.9.9-snd2) is lighter: its LFO is read every 64 samples (16, 8, 4 at the fastest RATEs) and the three
 voices glide between, instead of three sines every sample; it sounds the same (-63 dB from before at the default).</p>
 <p><strong>DELAY DRIVE</strong> (0.9.9-snd2; DLY 3 KNOB 3, the page's free knob; 0–100): a soft saturation inside the delay's
@@ -2666,10 +2696,10 @@ groups, <strong>PATT · TRACK · BAR · STEP · AUTO</strong>, the one you are o
 tap went round each level's sets: the pages and their pictures are the same, only the way between them is new. The
 pattern's bars (up to four, at LEN 64) are drawn as small cells: the bar you edit tinted violet with its number violet,
 the number of the bar playing orange, a bar past LEN dark.
-(V10.6 and after) The chain is <strong>STEP · LENGTH · RHYTHM · TRACK · EUCLID · MODES · MUTATE · PLAYHEADS · STRETCH · COMP ·
-COMP 2 · AUTOMATION · AUTO LIST · LYRIC STEP · GENERATE</strong>, in eight tabs (STEP · LEN · EUCL · HEAD · STR · COMP · AUTO ·
-GEN): EUCLID and MODES, under <strong>EUCL</strong>, are where MUTATE and MUTATE 2 were (MUTATE came back inside EUCLID, V10.16).
-LYRIC STEP shows only on a VOICE track, GENERATE only where the track generator can write the track.</p>
+(V10.8.35) The chain is <strong>STEP · LENGTH · RHYTHM · TRACK · EUCLID · MODES (MELODY on a melodic track) · MUTATE ·
+PLAYHEADS · STEP FX · STEP FX 2 · AUTOMATION · AUTO LIST · LYRIC STEP · TRACK GEN · DRONE CLAY · CLAY MOD · CLAY RHYTHM ·
+CLAY TIME</strong>, in eight tabs (STEP · PAT · EUCL · HEAD · SFX · AUTO · GEN · CLAY). STRETCH went in V10.8.20.
+LYRIC STEP shows only on a VOICE track, TRACK GEN only where the track generator can write the track.</p>
 <div class="tw"><table>
 <thead>
 <tr>
@@ -2914,11 +2944,9 @@ to the last step).</p>
   G5</strong> (DEL REC; until 0.9.1 EDIT) deletes it.</li>
 </ul>
 <h3 id="euclid-and-modes-v106">EUCLID and MODES (V10.6)</h3>
-<p>(V10.6) <strong>MUTATE is gone</strong> (its pages MUTATE and MUTATE 2, the changes every N bars, ORBIT / DRIFT, KEEP and the
-anchor, REVERT and <strong>BACK TO BEFORE MUTATE?</strong>, GLO + A4 FREEZE, GLO + B4 REVERT ALL, SEQ + D5 REVERT, HOME's look up
-and ring). In its place in the SEQ chain, after TRACK, two pages under a tab of their own, <strong>EUCLID</strong> (<strong>EUCL</strong>):
-<strong>EUCLID</strong> writes the selected track's pattern as a euclidean rhythm, <strong>MODES</strong> adds to it. The page's hint:
-<strong>TURN A KNOB: A PATTERN</strong> · <strong>OCT+ NEW  OCT− BEFORE</strong>.</p>
+<p>Under the <strong>EUCLID</strong> (<strong>EUCL</strong>) tab of the SEQ chain, after TRACK, there are three pages: <strong>EUCLID</strong> writes the
+selected track's pattern as a euclidean rhythm, <strong>MODES</strong> (named <strong>MELODY</strong> on a melodic track) adds to it, and
+<strong>MUTATE</strong> (V10.8.35) makes it change by itself every few bars.</p>
 <p><strong>EUCLID in one minute</strong></p>
 <p>Drums (a DRUM-X track):</p>
 <ol>
@@ -2929,15 +2957,17 @@ and ring). In its place in the SEQ chain, after TRACK, two pages under a tab of 
 <li>To tweak one sound, <strong>KNOB 4</strong> to its lane (BD SD CP CH OH TM RS CB): HITS, STEPS and ROTATE now write that lane
    only.</li>
 <li><strong>SELECT</strong> one detent right, <strong>MODES</strong>: <strong>ACCENT</strong>, <strong>GHOST</strong>, <strong>RATCHET</strong>, <strong>VARY</strong>.</li>
-<li><strong>OCT+</strong> a new variation, <strong>OCT−</strong> the one before. To undo: <strong>GLO + G4</strong>, or hold <strong>REC</strong> alone and let go.</li>
+<li>On MODES, <strong>OCT+</strong> a new variation, <strong>OCT−</strong> the one before. On EUCLID (V10.8.35), <strong>OCT+</strong> mutates the pattern now
+   and <strong>OCT−</strong> goes back to what the knobs dialled. To undo: <strong>GLO + G4</strong>, or hold <strong>REC</strong> alone and let go.</li>
 </ol>
 <p>Melodic (any other track):</p>
 <ol>
 <li>Set the key first on <strong>SCL</strong> (ROOT, a SCALE other than CHR): the screen says <strong>SCL</strong>. Or leave it: EUCLID finds the
    key of the other tracks (<strong>FROM T<em>n</em></strong>), else picks one (<strong>NEW KEY</strong>).</li>
-<li><strong>SEQ › EUCLID</strong>: <strong>KNOB 1 HITS</strong> (exactly that many notes), <strong>KNOB 2 STEPS</strong>, <strong>KNOB 3 ROTATE</strong>, <strong>KNOB 4 VARY</strong>.</li>
-<li><strong>MODES</strong>: <strong>MOTION</strong> (0 a pedal note, higher bigger leaps), <strong>HARMONY</strong> (chords on the strong beats), OCTAVE,
-   SLIDE.</li>
+<li><strong>SEQ › EUCLID</strong>: <strong>KNOB 1 HITS</strong> (exactly that many notes), <strong>KNOB 2 STEPS</strong>, <strong>KNOB 3 ROTATE</strong>, <strong>KNOB 4 ROLE</strong>
+   (V10.8.35): what the track plays, <strong>MELODY</strong>, <strong>CHORDS</strong>, <strong>BASS</strong> or <strong>ARP</strong>.</li>
+<li><strong>MELODY</strong> (a melodic track's MODES page): <strong>CONTOUR</strong> (the melody's shape: WALK, UP, DOWN, ARCH, WAVE, LEAP,
+   RANDOM), <strong>RANGE</strong> (2–15 notes), <strong>MOTIF</strong> (OFF, 2, 3, 4, 8: a motif repeated as a sequence) and <strong>VARY</strong>.</li>
 <li>OCT+ / OCT− and the undo as above. Stop a song first: while a song plays the page says SONG PLAYS: STOP IT TO EDIT.</li>
 </ol>
 <div class="tw"><table>
@@ -2974,7 +3004,7 @@ and ring). In its place in the SEQ chain, after TRACK, two pages under a tab of 
 <td>HITS</td>
 <td>STEPS (2–64)</td>
 <td>ROTATE</td>
-<td>VARY (0–100)</td>
+<td>ROLE (MELODY CHORDS BASS ARP; V10.8.35)</td>
 </tr>
 <tr>
 <td>MODES</td>
@@ -2985,19 +3015,28 @@ and ring). In its place in the SEQ chain, after TRACK, two pages under a tab of 
 <td>VARY</td>
 </tr>
 <tr>
-<td>MODES</td>
+<td>MELODY (MODES on a melodic track)</td>
 <td>melodic</td>
-<td>MOTION</td>
-<td>HARMONY</td>
-<td>OCTAVE</td>
-<td>SLIDE</td>
+<td>CONTOUR (WALK UP DOWN ARCH WAVE LEAP RANDOM)</td>
+<td>RANGE (2–15)</td>
+<td>MOTIF (OFF 2 3 4 8)</td>
+<td>VARY (0–100)</td>
+</tr>
+<tr>
+<td>MUTATE (V10.8.35)</td>
+<td>any</td>
+<td>EVERY (OFF, 1 BAR, 2 BARS, 4 BARS, 8 BARS)</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
 </tr>
 </tbody>
 </table></div>
 <ul>
-<li><strong>The picture</strong> (V10.24): on DRUM-X each lane is a ring (BD outside), its hits in its heat colour (few violet, many
-  yellow); the lane picked bright, the others dimmed (ALL: all bright). Under the ring, VARY's turns (A A′ A″ B), the
-  one playing underlined.</li>
+<li><strong>The picture</strong> (V10.8.35): one ring of dots, the cycle of STEPS at the turn playing: the hits in the track's
+  colour (an accent larger), the step playing white, and ROTATE's mark outside its first step. On DRUM-X it shows the
+  lane picked (ALL: a step any lane hits). The earlier picture's concentric lanes, their list, the roll and VARY's
+  turns are gone.</li>
 <li><strong>HITS, STEPS, ROTATE</strong>: the hits spread as evenly as the steps allow (a euclidean rhythm), ROTATE turns them round.
   On DRUM-X <strong>each of the eight sounds has its own</strong> HITS, STEPS and ROTATE (LANE picks the one the knobs edit); the
   pattern's length is their least common length, up to 64.</li>
@@ -3012,9 +3051,11 @@ and ring). In its place in the SEQ chain, after TRACK, two pages under a tab of 
     exactly as they were (if the lane's STEPS make the pattern longer, least common multiple up to 64, the others
     repeat).</li>
 <li><strong>MODES</strong>: four amounts (0 = off) that add to what is generated. DRUM-X: <strong>ACCENT</strong> (a second euclid, of accents),
-  <strong>GHOST</strong> (soft hits between), <strong>RATCHET</strong> (some hits x2 / x4), <strong>VARY</strong>. Melodic: <strong>MOTION</strong> (how far the melody
-  moves: 0 a pedal note, higher bigger leaps), <strong>HARMONY</strong> (chords of the scale on the strong beats), <strong>OCTAVE</strong>
-  (octave jumps), <strong>SLIDE</strong> (slides).</li>
+  <strong>GHOST</strong> (soft hits between), <strong>RATCHET</strong> (some hits x2 / x4), <strong>VARY</strong>.
+  Melodic (the page is named <strong>MELODY</strong>): <strong>CONTOUR</strong> (WALK, UP, DOWN, ARCH, WAVE, LEAP, RANDOM), <strong>RANGE</strong> (2–15
+  notes), <strong>MOTIF</strong> (OFF, 2, 3, 4, 8: repeated as a sequence) and <strong>VARY</strong>.</li>
+<li><strong>ROLE</strong> (V10.7.67; on EUCLID's KNOB 4 since V10.8.35): <strong>MELODY</strong>, <strong>CHORDS</strong>, <strong>BASS</strong> or <strong>ARP</strong>, on the harmony
+  the other melodic tracks play, bar by bar; else the key's (SCL › HARMONY moves it).</li>
 <li><strong>VARY</strong> loosens the even grid: some hits move one to three steps (towards the offbeat, more in the second half, so
   it answers the first); on a melodic track, notes held over the gap after them. (V10.7: VARY only moves hits, it no
   longer adds a pickup or leaves a hit out, so <strong>HITS is exactly the number of hits / notes that sound</strong>: HITS 3, three
@@ -3029,8 +3070,7 @@ and ring). In its place in the SEQ chain, after TRACK, two pages under a tab of 
 <li><strong>All at 0 by default</strong> (V10.28): EUCLID starts with no HITS (DRUM-X: DENSITY 0), MODES and VARY at 0, to build
   from nothing.</li>
 <li><strong>When the track already has a sequence</strong> (recorded, edited, or a generator song; not an untouched factory
-  pattern), EUCLID <strong>transforms it with the same notes</strong>: VARY moves its hits and keeps its held notes; MOTION
-  reorders its notes, OCTAVE jumps them. Turning HITS, STEPS or ROTATE switches to the euclidean rhythm but still uses
+  pattern), EUCLID <strong>transforms it with the same notes</strong>: VARY moves its hits and keeps its held notes. Turning HITS, STEPS or ROTATE switches to the euclidean rhythm but still uses
   your notes (the screen says <strong>YOUR SEQ</strong> / <strong>YOUR NOTES</strong>). On DRUM-X only the lanes the sequence had.</li>
 <li><strong>EUCLID is reversible</strong> (V10.31): it keeps your whole sequence (notes, chords, velocities, components, micro
   timing) and gives it back as it was when everything is at rest again (VARY and MODES 0, your own rhythm) or when
@@ -3040,17 +3080,103 @@ and ring). In its place in the SEQ chain, after TRACK, two pages under a tab of 
   else in the key the other tracks' notes fit best (<strong>FROM T<em>n</em></strong>); else a new scale and root (<strong>NEW KEY</strong>). The melody
   keeps the register the track had at the first turn (an empty track: around C4).</li>
 <li><strong>Live</strong>: turning a knob writes the track's whole pattern again, at once (its automation stays). A new gesture
-  after two seconds is an UNDO point (<strong>GLO + G4</strong>). <strong>OCT+</strong> a new variation (the same rhythm settings, new notes and
-  details), <strong>OCT−</strong> the variation before. While a song plays the page says <strong>SONG PLAYS: STOP IT TO EDIT</strong>.</li>
-<li><strong>The screen</strong>: a ring of the pattern's steps (DRUM-X: the lane picked; hits lit, accents bigger, ghosts small,
-  ratchets framed) and the playhead going round it. DRUM-X: the eight lanes as rows, their HITS / STEPS at the right;
-  melodic: the key (root and scale) inside the ring and the notes as a small roll at the right, with where the key came
-  from. MODES shows the same pattern, so you see each amount change it.</li>
+  after two seconds is an UNDO point (<strong>GLO + G4</strong>). On <strong>MODES / MELODY</strong>, <strong>OCT+</strong> is a new variation (NEW VARIATION: the same
+  settings, new notes and details) and <strong>OCT−</strong> the one before (VARIATION BEFORE). On <strong>EUCLID</strong> and <strong>MUTATE</strong>
+  (V10.8.35), <strong>OCT+</strong> mutates now (MUTATED) and <strong>OCT−</strong> goes back to the anchor (ANCHOR). While a song plays the page
+  says <strong>SONG PLAYS: STOP IT TO EDIT</strong>.</li>
 <li>The EUCLID and MODES settings live in RAM for the session; the pattern itself is saved with the project like any
   pattern.</li>
 </ul>
-<h3 id="mutate-v1016">MUTATE (V10.16)</h3>
-<p><em>Removed in V10.8.20 to make room for DRONE CLAY. Old projects keep their MUTATE settings, unused. For music that keeps evolving, use <strong>DRONE CLAY</strong> (SEQ › CLAY), the <strong>GENERATOR</strong> and the song mode (HOME › JAM).</em></p>
+<h3 id="mutate-v1016-compact-since-v10835">MUTATE (V10.16; compact since V10.8.35)</h3>
+<p><em>MUTATE was removed in V10.8.20 and came back in V10.8.35, reduced to its essentials.</em></p>
+<p><strong>SEQ › MUTATE</strong> (the third page of the EUCL tab) has one knob: <strong>KNOB 1 EVERY</strong> — OFF, 1 BAR, 2 BARS, 4 BARS or 8 BARS.
+With EVERY on and the transport playing, that track's EUCLID pattern <strong>mutates by itself</strong> every so many bars: the
+change is worked out in the last beat and the new pattern comes in on the next bar.</p>
+<ul>
+<li><strong>The anchor</strong> is what you dialled with the knobs of EUCLID and MODES / MELODY (each time you turn one, that is the
+  anchor). Every mutation starts <strong>from the anchor</strong>, not from the mutation before: the pattern orbits what you built
+  and never drifts far.</li>
+<li><strong>What changes</strong>: always a new seed (on a melody, some of the anchor's notes crossed with new ones), and by chance
+  HITS (DENSITY), ROTATE and the amounts of MODES / MELODY. <strong>How far</strong>: as far as <strong>VARY</strong> says (a quarter at least).
+  On DRUM-X with a lane picked on LANE, that lane mutates.</li>
+<li><strong>By hand</strong>: on EUCLID or MUTATE, <strong>OCT+</strong> makes a mutation now (MUTATED) and <strong>OCT−</strong> goes back to the anchor
+  (ANCHOR).</li>
+<li>It does not mutate while a song plays (ARRANGE's chain); stopped, it starts from the top again.</li>
+<li>V10.16's settings that are gone: AMOUNT, MODE and WHAT, and its page's picture. Old projects open all the same.</li>
+</ul>
+<h3 id="drone-clay-seq-clay-v10821">DRONE CLAY (SEQ › CLAY, V10.8.21)</h3>
+<p>A sequencer per track, from JIANT BYTE: a very low <strong>drone</strong> in whatever voice the track has, and <strong>four modulators</strong>
+that strike gestures on any parameter of the sound, each at its own rhythm. Four pages under SEQ's <strong>CLAY</strong> tab
+(V10.8.27):</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Page</th>
+<th>KNOB 1</th>
+<th>KNOB 2</th>
+<th>KNOB 3</th>
+<th>KNOB 4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DRONE CLAY</td>
+<td>CLAY (OFF / ON)</td>
+<td>DRONE (the note: the track's root in octave 0–3)</td>
+<td>PITCH (−24 … +36 semitones)</td>
+<td>RATE (HOLD, 1/64 … 4BAR, dotted, triplets, 1/5 1/10 1/20 1/7 1/14 1/28)</td>
+</tr>
+<tr>
+<td>CLAY MOD</td>
+<td>MOD (1–4)</td>
+<td>DEST</td>
+<td>SHAPE</td>
+<td>AMOUNT</td>
+</tr>
+<tr>
+<td>CLAY RHYTHM</td>
+<td>MOD (1–4)</td>
+<td>RATE (1/64 … 4BAR…)</td>
+<td>EUCLID</td>
+<td>DECAY</td>
+</tr>
+<tr>
+<td>CLAY TIME</td>
+<td>RUN (SONG, FREE, SONG NOKEY, FREE NOKEY)</td>
+<td>SEED</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>The drone</strong>: a very low note (C0 to C3 on the track's ROOT) that is held. <strong>RATE HOLD</strong> holds it and never strikes
+  it again (V10.8.30); any other RATE strikes it again on each step of that value, with the transport. On a DRUM
+  track the drone is the kit's kick.</li>
+<li><strong>The modulators</strong>: KNOB 1 <strong>MOD</strong> picks which of the four the other knobs edit (the same one on CLAY MOD and CLAY
+  RHYTHM). <strong>DEST</strong> is where it goes (OFF, PITCH, CUTOFF, SHAPE, VOLUME, PAN, DIST, CHORUS, DELAY, REVERB, LFO RATE,
+  VIBRATO, the engine's eight EDIT knobs by name, VOICE CUT, LEVEL), <strong>SHAPE</strong> the gesture it strikes, <strong>AMOUNT</strong> how
+  much. On CLAY RHYTHM, <strong>RATE</strong> is that modulator's own grid (V10.8.27), <strong>EUCLID</strong> the steps of that grid it strikes
+  on ("--" none, FUSE two rhythms drawn from SEED and joined, 1/1 every step, then 1/4 … 7/8, 3/16 … 9/16, 5/12, 7/12
+  and the polyrhythms 2/5 … 5/13) and <strong>DECAY</strong> how long each strike lasts before it lets go.</li>
+<li><strong>The shapes (SHAPE)</strong>: the <strong>hits</strong> first (KICK, SNARE, HAT, OPEN HAT, CLAP, RIM, TOM, ZAP, BITHAT, NOISE DN, SWELL,
+  CRASH), then the <strong>tables</strong> (SINE, S&amp;H, DRIFT, SPRING, STAIRS, BOUNCE…), the <strong>gestures</strong> (RAMP UP, RAMP DN, TRI,
+  GATE, ENV UP, ENV DN, RISER, STUTTER…), the <strong>notes</strong> (ARP UP / DN / UPDN / RND, CHORD m, CHORD M, SUS4, m7, CLUSTER,
+  +OCT, +5TH, GLIDE DN: real notes on the scale, two octaves over the drone) and <strong>FM x1/2 … x7</strong>. The hits are a drum
+  on any engine (V10.8.27); on a DRUM track they play the kit's pads.</li>
+<li><strong>AMOUNT 0 strikes nothing</strong> (V10.8.30): a modulator at AMOUNT 0 does nothing, and does not re-strike the drone.</li>
+<li><strong>The bars</strong> (V10.8.29): under the scope, a thin bar a modulator runs from the middle to what it adds right now;
+  the bar of the MOD the knobs edit is in the track's colour. A modulator without a DEST has no bar.</li>
+<li><strong>RUN</strong>: <strong>SONG</strong> runs while the transport plays; <strong>FREE</strong> runs always, stopped too. <strong>SEED</strong> changes the variation
+  (the FUSE rhythms).</li>
+<li><strong>The keys</strong> (V10.8.31): with CLAY ON, while the drone runs, the <strong>white keys</strong> (the first twelve, F3 to C5) play no
+  notes: they strike a gesture on the MOD picked, as hard as you play, for as long as its DECAY says. <strong>OCT−</strong> and
+  <strong>OCT+</strong> pick the group: 0 the hits, +1 the tables, +2 the gestures, −1 the notes, −2 the FM ones. The <strong>last seven
+  keys</strong> (C#5 to G5) pick the drone's <strong>degree</strong> on the track's scale. The other black keys do nothing. On a DRUM track
+  the whites are the kit's pads. For the keys to play notes as usual, set <strong>RUN</strong> to <strong>SONG NOKEY</strong> or <strong>FREE NOKEY</strong>.</li>
+<li>In MONO / LEGATO the drone gives the voice to the steps; a punch-in on time or pitch restarts it from its first
+  hit. Saved with the project.</li>
+</ul>
 <h3 id="parameter-locks">Parameter locks</h3>
 <p>On <strong>SEQ &gt; STEP</strong> (the BAR group), <strong>hold a step</strong> (a grid key, or the note being entered on the roll) and turn a knob: that step gets
 its own value of the parameter that knob edits on the sound page you visited last. Tap EDIT while holding the step to
@@ -3417,7 +3543,7 @@ filter, each with a small random range so two seeds differ but stay the sound. S
 <tr>
 <td><strong>EBM BASS</strong></td>
 <td>EBM, DARKWAVE, MINIMAL SYNTH</td>
-<td>ANALOG square through the <strong>MS20</strong> filter, short, envelope, drive</td>
+<td>ANALOG square through the resonant <strong>LP</strong> filter (V10.8.35; the MS20 before), short, envelope, drive</td>
 </tr>
 <tr>
 <td><strong>808</strong></td>
@@ -3881,7 +4007,9 @@ curve where the bar would be.
     still faded in again on every phrase; projects keep their mode: PHASE FREE opens as MODE FREE.)</li>
 <li><strong>MOD matrix</strong>: 4 slots per track (KNOB 1 picks the slot).</li>
 <li>Sources: OFF, LFO, ENV, VEL, KEY, RAND, MODW (MIDI CC1), AT (aftertouch), EXPR (CC11), <strong>M1–M4</strong>, <strong>STEP</strong> (MSEQ), <strong>NOISE</strong> (a smooth random wander, a new value about every 46 ms: a living wobble on
-    the filter, the pan, a send).</li>
+    the filter, the pan, a send), PROX (V10.14), <strong>ENV2</strong> (V10.22), <strong>IN ENV</strong> (V10.54: the level of what comes in on the
+    audio input, see <a href="#sound-from-outside-the-usb-input-and-the-ext-engine">Sound from outside</a>), <strong>T1 ENV – T6 ENV</strong>
+    (another track's level) and <strong>OCT+ / OCT−</strong> (V10.7.22: the expression keys).</li>
 <li>Destinations: PITCH, CUT, SHP, AMP, PAN, DIST, CHO, DLY, REV, RATE (LFO rate), VIB, <strong>E1–E8</strong> (the engine's own
     EDIT knobs, shown by name), <strong>CLIP</strong> and <strong>PNCH</strong> (the master), and (0.7.0) the FX buses: <strong>D.TIM D.FB D.TON D.MIX</strong>
     (DELAY TIME, FDBK, TONE, MIX), <strong>R.SIZ R.DMP</strong> (REVERB SIZE, DAMP), <strong>C.RAT C.DEP</strong> (CHORUS RATE, DEPTH). AMT 64 at a
@@ -3901,42 +4029,105 @@ curve where the bar would be.
 </ul>
 <hr />
 <h2 id="11-performance">11. Performance</h2>
-<h3 id="live-sequences-glo-live-0911">Live sequences: GLO › LIVE (0.9.11)</h3>
-<p><em>Removed in V10.8.3. Play the sequences live from <strong>HOME › JAM</strong> (A–D per track) and the step components from <strong>SEQ › STEP FX</strong> (hold a key).</em></p>
-<h3 id="punch-in-fx-hold-fx">Punch-in FX (hold FX)</h3>
-<p>Effects that act while their key is held and go back exactly when you let go. <strong>FX &gt; PUNCH</strong> (0.6.99) is their
-sequencer: the lane that records them. <strong>LEN</strong> its length, 1 … 64 steps; <strong>RES</strong> the step, 1/8, 1/16 or 1/32 of a
-beat (64 steps of 1/16 are four bars, of 1/32 two, of 1/8 eight); KNOB 3 says what it is doing (REC while recording,
-PLAY while it plays, else how many steps hold an effect); <strong>CLEAR</strong> (KNOB 4, then OCT+) empties it. The page draws
-the lane's cells in the effects' colours with the playhead on them, the last effect's name and the tracks it acts
-on (ALL, SYN, DRM). To record: REC armed and playing (not in a song), hold FX and the effect's key; the steps it
-passes get it; <strong>G5</strong> held erases where the playhead passes. Saved with the section.</p>
+<h3 id="live-sequences-the-black-keys-of-seq-step-fx-v10835">Live sequences: the black keys of SEQ › STEP FX (V10.8.35)</h3>
+<p><em>GLO › LIVE (0.9.11) was removed in V10.8.3; its modifiers came back in V10.8.35, compact, on the black keys of SEQ ›
+STEP FX. Each track's four sequences A–D are played from <strong>HOME › JAM</strong>.</em></p>
+<p>On <strong>SEQ › STEP FX</strong> (and STEP FX 2) the white keys hold step components; the <strong>black keys 1 to 9</strong>, counted from the
+left, change <strong>how the sequencer walks</strong> the selected track, never the steps:</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Black key</th>
+<th>What it does</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>RATE x2</strong> (twice as fast)</td>
+<td>held</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>RATE x3/2</strong></td>
+<td>held</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>RATE x2/3</strong></td>
+<td>held</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>REVERSE</strong> (backwards)</td>
+<td>held</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>PING-PONG</strong> (there and back)</td>
+<td>held</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>RANDOM</strong> (steps at random)</td>
+<td>held</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>THIN</strong> (half the steps silent)</td>
+<td>held</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>GIRO −</strong> (the playhead a step back)</td>
+<td>a press</td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>GIRO +</strong> (the playhead a step on)</td>
+<td>a press</td>
+</tr>
+</tbody>
+</table></div>
 <ul>
-<li><strong>On the audio</strong>: REPEAT 1/8, 1/16, 1/32 (F3 G3 A3), LPF (B3), HPF (C4). REPEAT starts on the next 1/16 while
-  playing. Below about 81 BPM, REPEAT 1/8 is too long for its buffer and is shown dimmed.</li>
+<li>The held ones come in on the next 1/16 and, let go, the track is <strong>back in phase</strong>: it lands where it would have
+  been had you touched nothing. Several at once add up (the last RATE and the last direction count).</li>
+<li><strong>GIRO</strong> stays: the other key undoes it, or PLAY again.</li>
+<li>None of this is saved or changes the written sequence. A banner names each one as you press it.</li>
+<li>The black keys 10 and 11 are still page back / on.</li>
+</ul>
+<h3 id="punch-in-fx-hold-fx">Punch-in FX (hold FX)</h3>
+<p>Effects that act while their key is held and go back exactly when you let go. The audio ones work on the master: the
+whole mix, what comes in on an EXT track too. This is the factory map (V10.7.59); the <strong>punch-in editor</strong> (OCT+ on
+<strong>FX › PUNCH IN</strong>) lets you change what each key does.</p>
+<ul>
+<li><strong>On the audio</strong> (the white keys at the left): <strong>REPEAT 1/8, 1/16, 1/32</strong> (F3 G3 A3): a stutter of what just
+  played; <strong>REVERSE</strong> (B3): each stretch, the one before it backwards; <strong>FREEZE</strong> (C4): the reverb frozen (nothing new
+  goes into it and its SIZE goes to the top). On the blacks: <strong>TAPE STOP</strong> (A#4): the mix slows down like a tape to
+  silence; <strong>PITCH UP / PITCH DOWN</strong> (C#5 D#5): the mix's pitch ramps 12 semitones up or down over a bar and stays
+  there; <strong>STRETCH</strong> (F#5): half a beat recorded, then played twice as slow at its own pitch, round and round. REPEAT,
+  REVERSE, TAPE STOP and STRETCH come in on the next 1/16 while playing; of the buffer effects the last one pressed
+  plays. Below about 81 BPM, REPEAT 1/8 records at a lower quality (lo-fi), and much slower it is shown dimmed.</li>
 <li><strong>On the notes</strong>: OCT− / OCT+ (D4 E4), 1/2 TEMPO (F4), DEC− (short, plucky) / DEC+ (long) (G4 A4), STUTTER 1/8 / 1/16
   (B4 C5), ATK+ (slow attacks, drums too) (D5), ARP (E5; on a DRUM track a new fill every press), RANDOM (F5). They come
-  in on the next 1/16. <strong>A#4</strong> chooses which tracks they touch: ALL, SYN (synths) or DRM (drums); the header shows it.</li>
+  in on the next 1/16 and act on every track. <strong>G#4 LOOP 3</strong>: every track repeats its last 3 steps while held; let go
+  and it is back where it would have been.</li>
 <li><strong>Knobs</strong> while FX is held: <strong>FILTER</strong> (left low-pass, right high-pass), <strong>CRUSH</strong>, <strong>THROW</strong> (sends the dry mix into
-  the delay and reverb), <strong>DEPTH</strong> (the REPEAT's level). (0.9.9-snd2) While THROW sends, and for 12 s after (its tail),
-  the delay's repeats go through a band, tape-echo style: a low cut at ~180 Hz and a low-pass at ~4.8 kHz that closes
-  to ~3 kHz as FEEDBK goes up and further (~1.8 kHz) over the tail: a thrown drum loop rings out as echoes instead of a
-  wash of hats and snare noise (each pass loses the noise much faster than the notes). The delay without THROW is as
-  before.</li>
+  the delay and reverb), <strong>DEPTH</strong> (the buffer effects' level). (0.9.9-snd2) While THROW sends, and for 12 s after (its
+  tail), the delay's repeats go through a band, tape-echo style: a low cut at ~180 Hz and a low-pass at ~4.8 kHz that
+  closes to ~3 kHz as FEEDBK goes up and further (~1.8 kHz) over the tail: a thrown drum loop rings out as echoes
+  instead of a wash of hats and snare noise. The delay without THROW is as before.</li>
 <li><strong>Black keys 1–6</strong>: mute T1–T6 while held (not saved).</li>
-<li>(0.9.9-snd2) <strong>G5 CLR AUTO</strong> (named on the map): FX + G5 empties the punch-in lane (its automation) and nothing
-  else, stopped or playing; while recording it still erases only where the playhead passes. FX &gt; PUNCH's KNOB 4 is
-  <strong>CLR AUTO</strong> too (the same, with a dialog), and the PUNCH page's lane line is in the large letters.</li>
-<li>(0.9.9-snd2) <strong>G#4 LOOP 3</strong>, <strong>C#5 LOOP 5</strong>, <strong>D#5 LOOP 7</strong>: while held, every track (of those A#4 picks) repeats
-  its last 3, 5 or 7 steps (from the step playing when it comes in, on the next 1/16), not on the bar: odd loops that
-  turn against the 4/4. Let go and each track is back where it would have been. <strong>F#5 GLITCH</strong> (from 0.9.18): the
-  master cut on the 1/16s, each one live, repeated, reversed, an octave up or down, gated, skipping or crushed, by its
-  place in a 2-bar cycle (the same every time, so it grooves); here at its default settings.</li>
+<li><strong>G5 CLR AUTO</strong>: FX + G5 empties the punch-in lane (its automation) and nothing else, stopped or playing; while
+  recording it erases only where the playhead passes.</li>
 </ul>
 <p><strong>The punch-in lane</strong>: each section has a lane of 64 steps of 1/16 (4 bars). With <strong>REC armed and playing</strong> (not
-during a song), the <strong>note effects (D4–F5)</strong> you hold are recorded into it, one per step (REPEAT, LPF, HPF and the mutes
-are not recorded). Hold <strong>FX + G5</strong> while playing to erase where the play head passes; stopped, FX + G5 erases the whole
-lane. <strong>REC held + FX</strong> also clears it (along with the track's FX automation).</p>
+during a song), the <strong>note effects (D4–F5)</strong> you hold are recorded into it, one per step (the audio ones and the mutes
+are not recorded). Hold <strong>FX + G5</strong> while playing to erase where the playhead passes; stopped, FX + G5 erases the whole
+lane. <strong>REC held + FX</strong> also clears it (along with the track's FX automation). Saved with the section. The page that
+drew it (FX › PUNCH, with LEN, RES and the lane's cells) is gone (V10.8.27, V10.8.33): <strong>FX › PUNCH IN</strong> has the
+macros M1–M4 on its knobs and opens the editor with OCT+.</p>
 <p><strong>Lock</strong>: hold FX until its map opens and let go without touching anything: the FX layer stays open (<strong>[FX]
 LOCKED</strong>), as the macros do with LFO; the keys play the effects (momentary: held on, let go off), the knobs are FX's
 macros and OCT− is ALL OFF, with both hands free. Press <strong>FX</strong> again to unlock (latched effects you left on stay on). Held with keys or knobs, FX
@@ -4574,14 +4765,18 @@ you play reaches all the tracks with a role at once, each in its own way, all fr
   hand. On the BLUETOOTH row (AIR) press <strong>OCT+</strong>, calibrate FAR (away) and NEAR (hand on it) as above. It needs some
   Bluetooth devices nearby; with none it stays at 0.</li>
 </ul>
-<h3 id="usb-host-a-keyboard-straight-in-v1041-experimental">USB HOST: a keyboard straight in (V10.41, experimental)</h3>
+<h3 id="usb-host-a-keyboard-or-an-audio-interface-straight-in-v1041-experimental">USB HOST: a keyboard or an audio interface straight in (V10.41, experimental)</h3>
 <p>MENU › SYSTEM › USB › <strong>HOST</strong>, then close the MENU: the FM-1's USB port becomes the host of a class compliant USB-MIDI
 keyboard or controller (no computer in between), alone or behind a hub. What it plays reaches the FM-1 as USB-MIDI
 does: notes, CC, program change, bend, the clock and start / stop (CLOCK USB +BT), MIDI LEARN and MAP.
 - <strong>Power</strong>: the FM-1 does not power the port. Use a keyboard with its own power supply, or put a <strong>powered USB hub</strong>
   between them.
-- Messages: USB HOST: PLUG A MIDI KEYBOARD, USB MIDI KEYBOARD READY, NOT A USB MIDI KEYBOARD (a device without MIDI
-  input for the FM-1), LOW SPEED: NOT SUPPORTED, USB KEYBOARD LOST (it reconnects by itself).
+- <strong>An audio interface</strong> (V10.53): if what you plug in is a class compliant USB audio interface (audio class 1.0,
+  16 bit, 44.1 kHz or, since V10.57, 48 kHz), its input is the FM-1's audio input: a track with the <strong>EXT</strong> engine
+  takes it (see <a href="#sound-from-outside-the-usb-input-and-the-ext-engine">Sound from outside</a>).
+- Messages: USB HOST: PLUG A MIDI KEYBOARD, USB MIDI KEYBOARD READY, USB AUDIO IN READY: USE INPUT (an audio
+  interface), NOT USB MIDI OR AUDIO 16BIT 44.1-48K (a device that is neither), LOW SPEED: NOT SUPPORTED, USB DEVICE
+  LOST (it reconnects by itself).
 - While HOST is on there is no USB to a computer: no editor, no stems, no MIDI to the computer. Any other USB value turns
   it off. HOST is never saved: the FM-1 always powers on as a USB device, so the installer and the editor always work.
 - Input only: nothing is sent to the keyboard. Its code lives in the Bluetooth area of the flash (a broken install
@@ -4642,26 +4837,102 @@ does: notes, CC, program change, bend, the clock and start / stop (CLOCK USB +BT
   the DELAY, REVERB and CHORUS (the other tracks' sends left out), plus the whole MIX (the master as the FM-1 plays it),
   all the same length, 16-bit 44.1 kHz stereo, in one ZIP: T1.wav .. T6.wav and MIX.wav (a silent track is left out).
   Faster than real time, no USB limits, nothing on the device.</p>
-<h3 id="usb-audio-in-075-test-version">USB audio in (0.7.5, test version)</h3>
-<p><strong>MENU &gt; SYSTEM &gt; USB &gt; IN+OUT</strong> makes the FM-1 a USB audio output of the computer or the phone as well as an input:
-the device re-enumerates (as with STEMS, the serial console is off), and the host now lists "JIANT FM" as a speaker,
-stereo, 16 bit, 44.1 kHz. Whatever the host plays to it comes into the <strong>last track</strong> (T6, or T4 with TRACKS 4) and is
-mixed like that track's sound:</p>
+<h3 id="sound-from-outside-the-usb-input-and-the-ext-engine">Sound from outside: the USB input and the EXT engine</h3>
+<p>The FM-1 does not only make sound: it listens too. A voice, a guitar, another synth or a loop from the computer comes
+in as one more track and goes through everything JIANT does: the filter, the combs, lo-fi, the SLICER, the punch-ins,
+the effects; and it can modulate the other tracks as well.</p>
+<p><strong>1. How the audio comes in.</strong> Three ways; in all three the input is stereo (IN 1 the left, IN 2 the right).</p>
 <ul>
-<li>its <strong>LEVEL</strong> sets the input's level, its <strong>PAN</strong> works as a balance, its <strong>CHORUS, DELAY and REVERB</strong> sends take the
-  input into the effects (from the left + right sum), <strong>DUCK</strong> ducks it, its <strong>MUTE</strong> and the mute layer silence it;</li>
-<li>the track's own engine still plays (an empty pattern leaves the input alone); its DIST and filter are not on the input;</li>
-<li>the recording side is the stereo master as with STEREO, with the input in it.</li>
+<li><strong>From the computer or the phone: MENU › SYSTEM › USB › IN+OUT</strong> (0.7.5). The FM-1 re-enumerates (the serial console
+  is off) and the host lists "JIANT FM" as a USB <strong>speaker</strong> too, stereo, 16 bit, 44.1 kHz. Choose the FM-1 as the
+  output in the host's sound settings (or in the DAW / the app), set 44.1 kHz, and play. The FM-1 follows the host's
+  clock (~3.6 ms behind); if the host stops sending, the input fades out and comes back when it resumes. Some hosts
+  make a newly connected USB audio device the default output: that is why IN+OUT is a choice of its own, not on by
+  default.</li>
+<li><strong>From a USB audio interface plugged into the FM-1: MENU › SYSTEM › USB › HOST</strong> (V10.53). A class compliant
+  interface, 16 bit at 44.1 kHz (or 48 kHz since V10.57: the FM-1 converts it), with one or two inputs. The screen says
+  <strong>USB AUDIO IN READY: USE INPUT</strong>. The FM-1 does not power the port: the interface needs its own supply or a powered
+  hub. While HOST is on there is no USB to the computer (no editor, no recording over USB), and HOST is not saved: pick
+  it again after power-on.</li>
+<li><strong>With STEMS+IN</strong> (the phone app, see below): the phone's microphone comes in and returns recorded on its own
+  channel.</li>
 </ul>
-<p>Choose the FM-1 as the output in the host's sound settings (or in the DAW / the app), set 44.1 kHz, and play. The
-FM-1 follows the host's clock (it reads the audio a little faster or slower, ~3.6 ms behind); if the host stops
-sending, the input fades out and comes back when it resumes. Some hosts make a newly connected USB audio device the
-default output: that is why IN+OUT is a choice of its own, not on by default. Test version: tell us how it behaves
-with your computer or phone.</p>
+<p><strong>2. An EXT track makes it sound.</strong> Since V10.56 the input <strong>only sounds where a track with the EXT engine takes it</strong>
+(before, it came in by itself on the last track; it changed because an app that monitors what it records sent the
+FM-1's own output back, a feedback loop). Pick a track, and with <strong>PRESETS</strong> go to EXT's sounds: <strong>IN 1, IN 2, IN 1+2,
+STEREO IN, MIC GATE, SPACE IN, TRANCE GATE, RING IN, CRUSH IN</strong>. Its two EDIT pages are named <strong>INPUT</strong> and <strong>COLOR</strong>:</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Page</th>
+<th>KNOB 1</th>
+<th>KNOB 2</th>
+<th>KNOB 3</th>
+<th>KNOB 4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>INPUT</td>
+<td><strong>SOURCE</strong>: IN 1, IN 2, 1+2 (both summed, mono), STEREO (the whole image), SWARM</td>
+<td><strong>GAIN</strong>: 64 = as it comes, 127 = +12 dB</td>
+<td><strong>GATE</strong>: a noise gate (0 off)</td>
+<td><strong>MODE</strong>: THRU or KEYS</td>
+</tr>
+<tr>
+<td>COLOR</td>
+<td><strong>WIDTH</strong>: the stereo width (SOURCE STEREO, MODE THRU)</td>
+<td><strong>RING</strong>: ring modulation (MODE KEYS)</td>
+<td><strong>BITS</strong>: fewer bits</td>
+<td><strong>RATE</strong>: samples held, 1 to 32</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>The screen shows the two inputs as meters (lit: the ones SOURCE takes), GATE's level across them and, between
+  them, IN ENV's level.</li>
+<li><strong>GATE</strong> opens when the input goes over its level and closes when it falls under three quarters of it: it takes
+  out the background noise between phrases.</li>
+<li><strong>Two EXT tracks</strong> can take IN 1 and IN 2 each, with a chain of their own: a microphone and a guitar, say.</li>
+<li>Then, as any track: <strong>FILTER, DIST, LEVEL, PAN, the sends, MUTE and the MOD matrix</strong>. On STEREO, DIST also narrows
+  the image a little.</li>
+<li>SOURCE <strong>SWARM</strong> is not the audio input: it is the Bluetooth instrument (see
+  <a href="#ext--swarm-a-melody-from-how-near-you-are-v106z6">EXT › SWARM</a>). SWARM and a USB input on another track can play
+  together.</li>
+</ul>
+<p><strong>3. THRU and KEYS; RING.</strong> With <strong>MODE THRU</strong> the input sounds all the time. With <strong>MODE KEYS</strong> it sounds only while a
+note plays, at the track's envelope (ENV: ATK, DEC, SUS, REL): the keys and the sequencer's steps open and close it.
+Write 1/16 steps with a short DEC and a held pad coming in turns into a trance gate in time; a voice turns into
+percussion. On KEYS, <strong>RING</strong> multiplies the input by a sine at the pitch of the note you play: ring modulation that
+follows the keys, from metallic to robotic. (On KEYS the input plays in mono.)</p>
+<p><strong>4. FILTER and the combs.</strong> The EXT track's EDIT › FILTER filters the input: <strong>LP, HP, BP</strong> with CUT and RES, and
+<strong>COMB / COMB-</strong>, a feedback comb tuned to the newest note the track played (see <a href="#filter-every-engine">FILTER</a>).
+With COMB and a high RES, a noise or a voice rings like a string at the note you play; COMB- sounds hollower. Move CUT
+with the LFO, the envelope or IN ENV so the filter breathes.</p>
+<p><strong>5. Lo-fi: BITS, RATE, DIST.</strong> BITS lowers the resolution (grain, quantisation noise); RATE holds each sample up to
+32 times (aliasing, an old sampler's sound); the track's DIST (FX › DIST) saturates.</p>
+<p><strong>6. Stutter: the SLICER.</strong> On <strong>FX › SL BUS</strong> turn the EXT track on (and FX to cut the returns too) so it goes
+through the <a href="#slicer-one-on-a-bus">SLICER</a>. <strong>MODE GATE</strong> cuts it in patterns (PAT 1–16); <strong>MODE STUT</strong>
+records the steps that play and repeats the last one on the others: a stutter in time, <strong>RATE</strong> 1/8 to 32T and
+<strong>DEPTH</strong> the repeat's level. <strong>SL PITCH</strong> tunes each repeat with a 16-step sequence. With LOAD ECO there is no SLICER.</p>
+<p><strong>7. Audio punch-ins.</strong> Hold <strong>FX</strong> and play the keys: REPEAT, REVERSE, FREEZE, TAPE STOP, PITCH UP / DOWN and STRETCH
+act on the whole mix, your input included, and it all comes back when you let go. While FX is held the knobs are
+FILTER, CRUSH, THROW and DEPTH. See <a href="#punch-in-fx-hold-fx">Punch-in FX</a>.</p>
+<p><strong>8. The sends and THROW.</strong> The EXT track's sends (FX › SENDS) take the input into CHORUS, DELAY and REVERB, the same
+buses the synths use. <strong>THROW</strong> (FX held, KNOB 3) throws the dry mix into the delay and the reverb while you turn it,
+dub style.</p>
+<p><strong>9. The input as a modulator: IN ENV.</strong> In the matrix (LFO › MOD), the source <strong>IN ENV</strong> is the level of what comes
+in (up at once, down in about 50 ms; it watches both inputs). Send it to any destination of any track: CUT, PITCH, AMP,
+PAN, a send. It works even when no track plays the input: the input can be a controller only. With a negative amount
+it ducks: the synths go down when you speak. (In the code and in JIANT Studio this source is also called FOLLOW.) The
+sources <strong>T1 ENV – T6 ENV</strong> do the same with another track's level.</p>
+<p><strong>10. Recording.</strong> What is recorded over USB has the input in it as its track mixed it: <strong>IN+OUT</strong> sends the host the
+stereo master; <strong>STEMS+IN</strong> sends each track apart, the FX return and the voice on two channels of its own (see
+below). With an interface on the HOST port there is no USB audio to the computer: record from the audio output.</p>
 <h3 id="stems-with-a-voice-080-test-version">Stems with a voice (0.8.0, test version)</h3>
 <p><strong>MENU &gt; SYSTEM &gt; USB &gt; STEMS+IN</strong> is STEMS and IN+OUT together, for the phone app: the phone's microphone goes out to
-the FM-1, comes into the <strong>last track</strong> as IN+OUT's input does (its LEVEL, PAN, MUTE and its CHORUS, DELAY and REVERB
-sends: your voice through that track's effects), and <strong>10 channels</strong> come back: T1–T6, the FX return L R, then <strong>the
+the FM-1, comes into the <strong>last track</strong> (its LEVEL, PAN, MUTE and its CHORUS, DELAY and REVERB
+sends: your voice through that track's effects; if a track has the EXT engine, it comes in on that one instead), and <strong>10 channels</strong> come back: T1–T6, the FX return L R, then <strong>the
 voice as the track mixed it</strong> and <strong>the voice as it came</strong>. The voice has a channel of its own (not in the track's
 stem), so the app can move it earlier by the round trip's latency and the voice lands in time with what you heard;
 the second voice channel is the reference the app measures that latency against. The voice's share of the FX return
