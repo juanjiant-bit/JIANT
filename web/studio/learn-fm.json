@@ -231,14 +231,14 @@
      "how": {
       "es": [
        "Ocho sonidos: BD SD CP CH OH TM RS CB, cada uno un oscilador afinado con su envolvente de pitch, FM y ruido.",
-       "KIT: MORPH mueve todo el kit entre A y B; TONE y DECAY lo cambian entero. KIT 2: NOISE, BODY (la resonancia del parche), GLUE, GAIN.",
+       "KIT: MORPH mueve todo el kit entre A y B, SNAP el chasquido del ataque; TONE y DECAY lo cambian entero. KIT 2: NOISE, BODY (la resonancia del parche), GLUE, GAIN.",
        "SOUND 1–4 editan un sonido: PITCH, DECAY, NOISE, COLOR, PMOD, WAVE, el filtro del ruido, SIDE y SEND.",
        "WAVE puede ser una fórmula de MATH (F01–F48) usada como FM, con RATIO y MOD AMT; los kits GLITCH FM y MATH LAB están hechos así.",
        "Kits de fábrica como 909 CLUB, 808 BOOM, LATIN PERC (con güiro) o HIP HOP; la batería se dibuja como bichitos que gritan con cada golpe."
       ],
       "en": [
        "Eight sounds: BD SD CP CH OH TM RS CB, each a tuned oscillator with its pitch envelope, FM and noise.",
-       "KIT: MORPH moves the whole kit between A and B; TONE and DECAY change it all. KIT 2: NOISE, BODY (the shell's resonance), GLUE, GAIN.",
+       "KIT: MORPH moves the whole kit between A and B, SNAP the attack's click; TONE and DECAY change it all. KIT 2: NOISE, BODY (the drumhead's resonance), GLUE, GAIN.",
        "SOUND 1–4 edit one sound: PITCH, DECAY, NOISE, COLOR, PMOD, WAVE, the noise filter, SIDE and SEND.",
        "WAVE can be a MATH formula (F01–F48) used as FM, with RATIO and MOD AMT; the GLITCH FM and MATH LAB kits are made that way.",
        "Factory kits such as 909 CLUB, 808 BOOM, LATIN PERC (with a guiro) or HIP HOP; the kit is drawn as little bugs that scream with each hit."
@@ -555,13 +555,13 @@
      },
      "how": {
       "es": [
-       "EDIT 1: FOLD (cuánto se pliega la onda), SYMM (su simetría), MOD y RATIO (la FM de un segundo seno).",
+       "EDIT 1: FOLD (cuánto se pliega la onda), SKEW (su simetría), MOD y RATIO (la FM de un segundo seno).",
        "EDIT 2: GATE y DECAY la compuerta de paso bajo, RES su resonancia, DUST un polvo de impulsos.",
        "La velocidad pliega más y abre más la compuerta: un golpe corto suena como un bongó, un DECAY largo sostiene.",
        "Sonidos de fábrica: plucks, BONGO, MARIMBA, campanas, bajos plegados, drones."
       ],
       "en": [
-       "EDIT 1: FOLD (how much the wave folds), SYMM (its symmetry), MOD and RATIO (FM from a second sine).",
+       "EDIT 1: FOLD (how much the wave folds), SKEW (its symmetry), MOD and RATIO (FM from a second sine).",
        "EDIT 2: GATE and DECAY the low-pass gate, RES its resonance, DUST a dust of impulses.",
        "Velocity folds more and opens the gate more: a short strike rings like a bongo, a long DECAY sustains.",
        "Factory sounds: plucks, BONGO, MARIMBA, bells, folded basses, drones."
@@ -593,13 +593,15 @@
        "EXCITE elige cómo se excita: NOISE, PLUCK, PICK, HAMMR, STICK, o FDBK, la guitarra eléctrica en un ampli.",
        "DECAY cuánto vibra, BRIGHT su brillo, POS dónde se la toca.",
        "STRETCH la vuelve rígida y metálica; BODY y SIZE su caja; BOW le pasa un arco (VIOLIN, VIOLA, CELLO).",
-       "En FDBK: GAIN es qué tan cerca estás del ampli, SPEAKR el armónico donde florece, BLOOM la crecida, DIST la válvula."
+       "En FDBK: GAIN es qué tan cerca estás del ampli, SPEAKR el armónico donde florece, BLOOM la crecida, DIST la válvula.",
+       "Según la página y el modo, las perillas son MOVE, GAIN, DIST, SPEAKR, BLOOM, EXCITE, DECAY, BRIGHT, POS, STRETCH, BODY, SIZE y BOW."
       ],
       "en": [
        "EXCITE picks how it is excited: NOISE, PLUCK, PICK, HAMMR, STICK, or FDBK, the electric guitar into an amp.",
        "DECAY how long it rings, BRIGHT its brightness, POS where it is played.",
        "STRETCH makes it stiff and metallic; BODY and SIZE its body; BOW draws a bow across it (VIOLIN, VIOLA, CELLO).",
-       "In FDBK: GAIN is how close you stand to the amp, SPEAKR the harmonic it blooms into, BLOOM the swell, DIST the tube."
+       "In FDBK: GAIN is how close you stand to the amp, SPEAKR the harmonic it blooms into, BLOOM the swell, DIST the tube.",
+       "Depending on the page and the mode, the knobs are MOVE, GAIN, DIST, SPEAKR, BLOOM, EXCITE, DECAY, BRIGHT, POS, STRETCH, BODY, SIZE and BOW."
       ]
      },
      "where": {
@@ -661,15 +663,15 @@
      "how": {
       "es": [
        "SOURCE: IN 1, IN 2, 1+2, STEREO (la entrada de audio USB) o SWARM.",
-       "GAIN el nivel de entrada, GATE la compuerta que abren los pasos, PLAY cómo la tocan las notas.",
-       "WIDTH el ancho estéreo, RING la modulación en anillo, BITS y RATE el triturado.",
-       "Lo que entra también puede seguirse como fuente de modulación."
+       "GAIN el nivel de entrada y GATE la compuerta.",
+       "MODE: THRU suena todo el tiempo; KEYS solo mientras se tocan teclas o pasos.",
+       "Según la fuente aparecen IMAGE, DRIFT, PLUCK, FM, OCTAVE y CHAOS."
       ],
       "en": [
        "SOURCE: IN 1, IN 2, 1+2, STEREO (the USB audio input) or SWARM.",
-       "GAIN the input level, GATE the gate the steps open, PLAY how the notes play it.",
-       "WIDTH the stereo width, RING the ring modulation, BITS and RATE the crushing.",
-       "What comes in can also be followed as a modulation source."
+       "GAIN the input level and GATE the gate.",
+       "MODE: THRU sounds all the time; KEYS only while keys or steps play.",
+       "Depending on the source, IMAGE, DRIFT, PLUCK, FM, OCTAVE and CHAOS appear."
       ]
      },
      "where": {
@@ -1555,19 +1557,21 @@
      },
      "how": {
       "es": [
-       "Hacia la izquierda un pasabajos que baja; hacia la derecha un pasaaltos que sube.",
+       "Un solo filtro sobre el master: DJ FILT va de −64 a 63, y 0 lo apaga.",
+       "Hacia la izquierda (negativo) un pasabajos que cierra; hacia la derecha (positivo) un pasaaltos que abre.",
        "El barrido sigue al oído, con una resonancia suave hacia los extremos; cruzar el medio nunca hace clic.",
        "Girada con REC armado, se graba como automatización."
       ],
       "en": [
-       "To the left a low-pass that closes; to the right a high-pass that rises.",
+       "One filter on the master: DJ FILT goes from −64 to 63, and 0 turns it off.",
+       "Left (negative) a low-pass closing; right (positive) a high-pass opening.",
        "The sweep follows the ear, with a gentle resonance toward the ends; crossing the middle never clicks.",
        "Turned with REC armed, it is recorded as automation."
       ]
      },
      "where": {
-      "es": "HOME › LIVE MIX, la perilla FILTER",
-      "en": "HOME › LIVE MIX, the FILTER knob"
+      "es": "GLO › MIXER, KNOB 4 (DJ FILT)",
+      "en": "GLO › MIXER, KNOB 4 (DJ FILT)"
      },
      "anim": {
       "kind": "djfilter",
@@ -1739,21 +1743,21 @@
      },
      "how": {
       "es": [
-       "Mantené LFO: KNOB 1–4 son M1–M4; soltá y quedan enganchadas en cualquier página hasta que tocás LFO otra vez.",
-       "En LFO › MACROS, KNOB 1 elige la macro y sus destinos se suman: hasta 16 rutas en total.",
-       "Las macros también son destinos de la matriz: un LFO o una envolvente pueden mover una macro entera.",
-       "Con LFO mantenido, F3 tira rutas nuevas y G3 las borra; los valores se guardan con cada parte."
+       "En FX › MACROS, KNOB 1 elige M1–M4, KNOB 2 el destino, KNOB 3 cuánto y KNOB 4 pasa al destino siguiente: hasta 16 rutas en total.",
+       "Mantené FX: sus perillas mueven las cuatro macros en vivo.",
+       "Cada macro es también un destino de la matriz MOD (después de LEVEL): un LFO o una envolvente pueden mover una macro entera.",
+       "Los valores se guardan con cada parte."
       ],
       "en": [
-       "Hold LFO: KNOB 1–4 are M1–M4; let go and they stay latched on any page until you press LFO again.",
-       "On LFO › MACROS, KNOB 1 picks the macro and its destinations add up: up to 16 routes in all.",
-       "Macros are also matrix destinations: an LFO or an envelope can move a whole macro.",
-       "With LFO held, F3 throws new routes and G3 clears them; the values are saved with each part."
+       "On FX › MACROS, KNOB 1 picks M1–M4, KNOB 2 the destination, KNOB 3 how much and KNOB 4 moves to the next destination: up to 16 routes in all.",
+       "Hold FX: its knobs move the four macros live.",
+       "Each macro is also a destination of the MOD matrix (after LEVEL): an LFO or an envelope can move a whole macro.",
+       "The values are saved with each part."
       ]
      },
      "where": {
-      "es": "Mantené LFO; LFO › MACROS",
-      "en": "Hold LFO; LFO › MACROS"
+      "es": "La página MACROS de la familia FX; las perillas de la capa FX las tocan en vivo",
+      "en": "The MACROS page of the FX family; the FX layer's knobs play them live"
      },
      "anim": {
       "kind": "macro",
@@ -1773,14 +1777,16 @@
      },
      "how": {
       "es": [
-       "Cuatro perillas: FILTER, TIMBRE, PUMP y FX.",
-       "Cada pista que suena mueve a las demás: un golpe empuja, un pad abre.",
-       "Es liviano: casi no gasta procesador, así podés dejarlo andando."
+       "Cuatro perillas de todo el proyecto, no de una pista, de 0 a 100 %: FILTER, TIMBRE, PUMP y FX.",
+       "FILTER: los golpes cierran, las notas abren. TIMBRE: las otras pistas le dan forma al sonido.",
+       "PUMP: los bombos hacen bajar a los sintes. FX: las otras pistas alimentan los envíos.",
+       "Apagado dice LIFE OFF: TURN A KNOB. Casi no gasta procesador, así podés dejarlo andando."
       ],
       "en": [
-       "Four knobs: FILTER, TIMBRE, PUMP and FX.",
-       "Every sounding track moves the others: a hit pushes, a pad opens.",
-       "It is light: it barely uses the processor, so you can leave it running."
+       "Four knobs for the whole project, not one track, 0 to 100 %: FILTER, TIMBRE, PUMP and FX.",
+       "FILTER: hits close, notes open. TIMBRE: the other tracks shape the sound.",
+       "PUMP: the kicks duck the synths. FX: the other tracks feed the sends.",
+       "Off it says LIFE OFF: TURN A KNOB. It barely uses the processor, so you can leave it running."
       ]
      },
      "where": {
@@ -1792,41 +1798,6 @@
       "params": {}
      },
      "since": "V10.7.81"
-    },
-    {
-     "id": "erosion",
-     "name": "EROSION",
-     "tag": {
-      "es": "Desgaste que modula",
-      "en": "Wear that modulates"
-     },
-     "statement": {
-      "es": "Un poco de tiempo y de intemperie sobre el sonido: el corte que tiembla, la altura que se vuelve metal. Modula, nunca reemplaza.",
-      "en": "A bit of time and weather on the sound: a trembling cutoff, a pitch turned to metal. It modulates, it never replaces."
-     },
-     "how": {
-      "es": [
-       "MODE NOISE: un azar que se desliza sobre el corte del filtro, a su RATE.",
-       "MODE METAL: un seno en una relación de la nota, sobre la altura, como FM.",
-       "NOISE es la profundidad: en 0 el sonido queda intacto."
-      ],
-      "en": [
-       "MODE NOISE: a gliding random on the filter's cutoff, at its RATE.",
-       "MODE METAL: a sine at a ratio of the note, on the pitch, as FM.",
-       "NOISE is the depth: at 0 the sound stays untouched."
-      ]
-     },
-     "where": {
-      "es": "EDIT, junto al FILTER (también en DRUM-X)",
-      "en": "EDIT, next to FILTER (on DRUM-X too)"
-     },
-     "anim": {
-      "kind": "lfo",
-      "params": {
-       "shape": "random"
-      }
-     },
-     "since": "V10.7.38"
     },
     {
      "id": "momentary",
