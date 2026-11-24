@@ -266,9 +266,12 @@ static int midi_enqueue(uint32_t pkt, uint32_t source)
     return 1;
 }
 
+#ifndef USB_MIDI_TAP
+#define USB_MIDI_TAP 0                              /* (studio) the browser build reads what MIDI OUT sends (felucca_web.c) */
+#endif
 static void midi_out_event(uint32_t pkt)            /* from the audio ISR */
 {
-    if (usb.config && mo_w - mo_r < MQ) {
+    if ((usb.config || USB_MIDI_TAP) && mo_w - mo_r < MQ) {
         midi_out_q[mo_w % MQ] = pkt;
         RING_PUBLISH();
         mo_w++;

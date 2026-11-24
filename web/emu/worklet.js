@@ -151,6 +151,13 @@ if (typeof registerProcessor === "function") {
       else if (m.type === "enc") ex.web_enc(m.role, m.n | 0);
       else if (m.type === "master") ex.web_master(m.value | 0);
       else if (m.type === "midi") ex.web_midi(m.data[0] | 0, m.data[1] | 0, m.data[2] | 0);
+      else if (m.type === "tap") {                 // (studio) the stems and MIDI OUT to JIANT Studio's recorder
+        const on = !!m.on && !!ex.web_stems;
+        if (ex.web_stems) ex.web_stems(on ? 1 : 0);
+        if (ex.web_midi_tap) ex.web_midi_tap(on ? 1 : 0);
+        this.tap = on ? { planes: Array.from({ length: 8 }, () => new Float32Array(4096)), n: 0, at: this.pos, midi: [] } : null;
+        this.port.postMessage({ type: "tap", on, stems: !!ex.web_stems });
+      }
       else if (m.type === "sysex") {               // (studio) the web editor's frame (editor-api.h): its replies at once
         if (!ex.web_sysex || !Array.isArray(m.data) || m.data.length > 640) return;
         new Uint8Array(ex.memory.buffer, ex.web_sysex_buf(), m.data.length).set(m.data.map((v) => v & 255));
@@ -257,6 +264,23 @@ if (typeof registerProcessor === "function") {
       }
     }
 
+    /* (studio) a block's stems (web_stem_out: T1..T6, FX L, FX R) and the MIDI OUT packets it sent (each at its sample),
+       posted about every 93 ms: { at: the first sample's number, planes, midi: [{ at, data }] } */
+    tapBlock(ex, n) {
+      const T = this.tap;
+      for (let c = 0; c < 8; c++) T.planes[c].set(new Float32Array(ex.memory.buffer, ex.web_stem_out(c), n), T.n);
+      for (let p; ex.web_midi_take && (p = ex.web_midi_take()) !== 0;) {
+        const cin = p & 15, len = cin === 0xC || cin === 0xD ? 2 : cin >= 0x8 && cin <= 0xE ? 3 : cin === 0xF ? 1 : 0;
+        if (len) T.midi.push({ at: this.pos, data: [(p >>> 8) & 255, (p >>> 16) & 255, (p >>> 24) & 255].slice(0, len) });
+      }
+      T.n += n;
+      if (T.n + 128 > 4096) {
+        const planes = T.planes.map((pl) => pl.slice(0, T.n));
+        this.port.postMessage({ type: "tap-chunk", at: T.at, planes, midi: T.midi }, planes.map((pl) => pl.buffer));
+        T.n = 0; T.at = this.pos + n; T.midi = [];
+      }
+    }
+
     process(inputs, outputs) {
       try { return this.renderBlock(inputs, outputs); }
       catch (error) {
@@ -280,6 +304,8 @@ if (typeof registerProcessor === "function") {
       }
       const t0 = clock();
       ex.web_render(n);
+      if (this.tap) this.tapBlock(ex, n);
+      this.pos = (this.pos || 0) + n;
       this.busy += clock() - t0;
       this.frames += n;
       out[0].set(new Float32Array(ex.memory.buffer, ex.web_out_l(), n));

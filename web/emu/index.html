@@ -493,7 +493,7 @@ async function midiOn() {
 
 /* (studio) JIANT Studio's editor talks to this emulator as to an FM-1 (web/emu/editor-api.h): a frame in (sysex), the
  * replies and the live pushes out to each listener; on() says whether the emulator runs */
-const sysexListeners = new Set();
+const sysexListeners = new Set(), tapListeners = new Set();
 window.jiantEmu = {
   on: () => !!node,
   midiInputs: () => midiAccess ? [...midiAccess.inputs.values()].filter((p) => p.state !== "disconnected").map((p) => ({ id: p.id, name: p.name || p.id })) : [],
@@ -503,6 +503,14 @@ window.jiantEmu = {
   },
   sysex: (bytes) => { if (node) node.port.postMessage({ type: "sysex", data: Array.from(bytes) }); },
   listen: (f) => { sysexListeners.add(f); return () => sysexListeners.delete(f); },
+  /* (studio) the recorder: f gets { at, planes: [T1..T6, FX L, FX R] (44.1 kHz), midi: [{ at, data }] } about every
+     93 ms while tapped; returns stop. The stems as MENU > USB STEMS sends them, MIDI as MIDI OUT does */
+  tap: (f) => {
+    if (!node) return null;
+    tapListeners.add(f);
+    if (tapListeners.size === 1) node.port.postMessage({ type: "tap", on: true });
+    return () => { tapListeners.delete(f); if (!tapListeners.size && node) node.port.postMessage({ type: "tap", on: false }); };
+  },
 };
 
 // ------------------------------------------------------------------ switching on
@@ -535,6 +543,7 @@ async function switchOn() {
           rej(new Error(m.message));
         }
         else if (m.type === "sysex") sysexListeners.forEach((f) => m.msgs.forEach(f));
+        else if (m.type === "tap-chunk") tapListeners.forEach((f) => f(m));
         else if (m.type === "frame") {
           if (m.sysex) sysexListeners.forEach((f) => m.sysex.forEach(f));
           if (m.fb) drawScreen(m.fb);

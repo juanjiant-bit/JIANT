@@ -80,6 +80,10 @@ static void audio_block(int32_t *out, uint32_t n)       /* mix (fx.c), then Q15 
 #endif
     t1 = PRF_T();
     mix_block(out, n);
+#ifdef WEB_STEM_TAP
+    if (fx_stems)                                       /* (studio) the browser build: the stems as USB STEMS sends them */
+        WEB_STEM_TAP(n);
+#endif
 #if FELUCCA_HOST_POWER
     smp_audio_block(out, n);                            /* (ports/) the input, the LIVE buffers, the recorder */
 #endif
