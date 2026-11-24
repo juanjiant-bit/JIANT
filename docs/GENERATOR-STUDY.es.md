@@ -813,3 +813,86 @@ Mismas herramientas, mismas semillas. Nada fue juzgado de oído: la mezcla la te
 **Etapa 3, sonido** (parcial): el arp de club como pluck, el stab seco, y un color propio por pieza: las tres partes melódicas juntas un poco más oscuras, como estaban, o un poco más brillantes (corte al 79, 85 o 91 %), según la tonalidad y la cantidad de acordes. Falta: afinación del bombo respecto de la tónica y recetas de ADSR por género.
 
 **Etapa 7, EXPLORE:** toma el diálogo lead/arp (2,5 → 7,5 % de los medios compases) y la progresión propia de la sección de contraste también cuando la pieza tiene un solo acorde. La medida de secciones con otros acordes no se movió (36,1 %).
+
+## 11. V10.8.39: carácter por género, IDM, RADIO y MOOD
+
+Nada fue juzgado de oído; todo lo que sigue son conteos sobre 12 semillas por género (`tests/gen_char.c`, FORM LOOP, todas las partes prendidas).
+
+**Rasgos por género** (tabla `GCHAR` en `gen_tables.c`, función `gchr` en `gen.c`). Cada género tiene ocho rasgos de 0 a 3:
+
+| Rasgo | Qué hace | Dónde está más alto |
+|---|---|---|
+| HR | rolls del hat cerrado (x2, x4, x8), más al final del compás | IDM glitch, phonk, hip hop, dembow, dubstep |
+| GH | toques en caja, tom y rim: ghost en los golpes suaves, flam en los acentos | jazz, breakbeat, tribal, drum & bass, hip hop |
+| NR | ratchets en arp y lead, con volumen que sube o baja | IDM glitch, electro, baile funk, IDM weird |
+| PL | loops de otra longitud que la batería | minimal techno (arp de 6 tiempos), IDM ambient, IDM glitch, IDM weird |
+| JP | saltos de octava del arp | IDM glitch, IDM weird, electro, phonk, baile funk |
+| LK | un corte de filtro o un envío propio para un golpe (parameter locks) | IDM glitch, IDM weird, dubstep |
+| BB | ráfagas en el bajo | IDM glitch, hard bass, EBM, dubstep, metalcore |
+| EV | notas del arp que caminan por la escala vuelta a vuelta | IDM ambient, IDM weird |
+
+Neo classic y fuga quedaron sin rasgos: sus reglas ya son propias.
+
+**IDM glitch:** de 3 a 6 ediciones por compás (antes 0 a 2), con un tipo nuevo, la ráfaga de tres pasos que acelera (x2, x4, x8) o frena. Bajo y lead más fuertes en la mezcla, el bajo con distorsión, arp en loop de 6 tiempos, tempo 140–170.
+
+| IDM glitch (por compás) | Antes | Después |
+|---|---|---|
+| Pasos de batería con roll | 1,1 | 4,8 |
+| Golpes de caja | 6,2 | 8,1 |
+| Pasos melódicos con ratchet u otro componente | 0,2 | 6,5 |
+| Longitudes de loop distintas en la pieza | 1 | 3 |
+| Automatizaciones y locks en la pieza | 2,0 | 14,0 |
+
+**IDM ambient:** arp de 3 compases contra 4, textura de 10 tiempos, notas que caminan, algún lock de filtro; arp y lead un poco más presentes. Longitudes distintas: 1 → 3.
+
+**IDM weird:** lead de 10 tiempos, arp de 7, textura de 5,5; menor armónica en lugar de dórica; progresiones con acordes fuera del modo (bVII, VI7); coro, chip y mallet en lugar de piano eléctrico y campanas. Componentes por compás: 0,4 → 6,6; longitudes distintas: 1 → 4.
+
+**Bombo afinado** (resto de la etapa 3): el PITCH del bombo se corre a la tónica o a la quinta, lo que quede más cerca (3,5 semitonos como mucho). Piezas con el bombo a menos de medio semitono de una de las dos: 17 % → 100 %.
+
+**Distancia entre géneros.** Para cada género, 19 medidas (tempo, golpes por compás de cada parte de la batería, rolls, bombo fuera del pulso, notas y síncopa del bajo, acordes, densidad y rango del lead, densidad del arp, componentes, longitudes de loop, automatización, swing), cada una en desvíos estándar entre géneros con la escala de la versión anterior; el número es la distancia al género más parecido (más alto: más propio). Ojo: la medida cuenta varias de las cosas que agregué (rolls, componentes, loops, locks), así que sube en parte por construcción; y no ve los ghosts y flams, por eso jazz casi no se mueve.
+
+| Género | Antes | Después |
+|---|---|---|
+| Minimal Techno | 3.65 | 6.56 |
+| Hard Techno | 2.93 | 3.64 |
+| Hard Bass | 3.53 | 3.64 |
+| House | 3.01 | 3.25 |
+| Deep House | 3.01 | 3.22 |
+| Tech House | 2.53 | 2.95 |
+| Tribal | 2.53 | 2.95 |
+| Cumbia | 4.10 | 5.60 |
+| Reggaeton | 3.84 | 4.47 |
+| Dembow | 5.31 | 5.35 |
+| Electro | 4.54 | 5.99 |
+| Breakbeat | 3.15 | 3.52 |
+| Drum & Bass | 3.32 | 3.52 |
+| Idm Glitch | 3.32 | 10.39 |
+| Idm Ambient | 3.51 | 5.60 |
+| Idm Weird | 3.15 | 10.39 |
+| Kraut | 2.91 | 3.50 |
+| Ebm | 2.91 | 5.99 |
+| Neo Classic | 4.04 | 4.04 |
+| Fuga | 4.04 | 4.04 |
+| Electro Metal | 2.53 | 2.75 |
+| Techno Rock | 2.97 | 3.50 |
+| Dream Pop | 2.71 | 2.76 |
+| Phonk | 4.42 | 4.95 |
+| Baile Funk | 4.42 | 6.04 |
+| Jazz | 5.89 | 5.91 |
+| Hip Hop | 3.11 | 4.01 |
+| Dubstep | 5.36 | 8.40 |
+| Shoegaze | 2.71 | 2.76 |
+| Metalcore | 2.53 | 2.75 |
+| **Promedio** | 3.53 | 4.75 |
+
+Los que siguen más pegados a su vecino: electro metal y metalcore (2,75), dream pop y shoegaze (2,76), tech house y tribal (2,95). Para separarlos hace falta tocar patrones y sonidos, no solo rasgos.
+
+**RADIO y MOOD** (GEN 4, KNOB 3 y KNOB 4, al lado de KEY y ENTRY):
+
+- RADIO ON: cuando termina la pieza se genera y suena la siguiente sin tocar nada. Una canción (FORM SONG) termina con su última fila; un loop, a los 16 compases (32 si va a más de 110 BPM). El cambio es en la barra de compás, igual que OCT+ mientras suena, y respeta ENTRY. Solo avanza mientras lo que suena es un borrador de GEN: si guardás la pieza, se queda. No actúa con MY LOOP.
+- MOOD, de CALM a DANCE (MID en el medio no cambia nada): mueve la energía (hasta ±40), y con eso la densidad y el lugar del tempo dentro del género. Con GENRE en RANDOM también elige el género: 24 semillas dieron 84 BPM de promedio en CALM y 147 en DANCE. Con un género elegido a mano, solo energía y densidad. En DANCE con la radio prendida, cada pieza toma el tempo más cercano al de la anterior que su género permite.
+- El dibujo de la radio: parlante de puntos que late con el pulso en los colores térmicos, aguja del dial = MOOD, luz = ON, gris cuando está apagada, y "RADIO n" con la cantidad de piezas.
+
+**No entró:** estribillo/verso/puente (etapa 4), segunda voz real (5), hats menos aleatorios en géneros lentos (6), ADSR por género, y el GAIN por defecto por motor (cambia el nivel de los presets que usa GEN y había que recalibrar la mezcla). Quedan 560 B en la imagen y 24 B en el segmento.
+
+Para repetir: `cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src -Itests -o build/host/gen_char tests/gen_char.c -lm && build/host/gen_char 12 v`.
