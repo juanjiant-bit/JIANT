@@ -228,6 +228,45 @@
   @media (max-width: 720px) { .bkrow { grid-template-columns: minmax(0, 1fr); } .bkrow .acts { justify-content: flex-start; } }
   .bkempty { color: var(--dim); font-size: 14px; padding: 6px 0; }
   .chk { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; color: var(--dim); }
+  /* how it works: sectors, the items, one card with its animation */
+  .lrsec { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 8px; }
+  .lrsec button { all: unset; cursor: pointer; padding: 8px 14px; border-radius: 999px; border: var(--border) solid var(--line); font-size: 14px; color: var(--dim); }
+  .lrsec button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .lrsec button b { font-weight: 500; opacity: .7; margin-left: 6px; font-size: 12px; }
+  .lrlead { margin: 0 0 14px; max-width: 70ch; }
+  .lrbody { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 16px; align-items: start; }
+  .lritems { display: flex; flex-direction: column; gap: 4px; max-height: 70vh; overflow: auto; position: sticky; top: 12px; }
+  .lritems button { all: unset; cursor: pointer; display: flex; flex-direction: column; gap: 2px; padding: 9px 12px; border-radius: var(--radius-s); border: var(--border) solid transparent; }
+  .lritems button b { font-family: var(--display); font-weight: 400; font-size: 14px; letter-spacing: .02em; }
+  .lritems button span { font-size: 12px; color: var(--dim); }
+  .lritems button:hover { border-color: var(--line); }
+  .lritems button[aria-selected="true"] { border-color: var(--accent); background: var(--field); }
+  .lrcard { display: flex; flex-direction: column; gap: 12px; }
+  .lrstage { aspect-ratio: 16 / 8; border-radius: var(--radius-s); background: var(--field); border: var(--border) solid var(--line); overflow: hidden; }
+  .lrstage canvas { width: 100%; height: 100%; display: block; }
+  .lrhead { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .lrhead h2 { margin: 0; font-size: clamp(22px, 3vw, 32px); }
+  .lrtag { font-family: var(--mono); font-size: 13px; color: var(--accent); }
+  .lrstate { margin: 0; font-size: clamp(16px, 1.6vw, 19px); line-height: 1.5; max-width: 62ch; }
+  .lrhow { margin: 0; padding-left: 20px; color: var(--dim); }
+  .lrhow li { margin: 4px 0; max-width: 70ch; }
+  .lrwhere { margin: 0; font-family: var(--mono); font-size: 13px; color: var(--fg); background: var(--field); border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 0 var(--radius-s) var(--radius-s) 0; }
+  .lrnav { justify-content: space-between; }
+  .lrisec { margin: 0 0 22px; }
+  .lrisec h2 { margin: 0 0 4px; }
+  .lrisec p { margin: 0 0 10px; max-width: 70ch; }
+  .lrigrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); gap: 10px; }
+  .lritile { all: unset; cursor: pointer; display: flex; flex-direction: column; gap: 3px; padding: 8px; border-radius: var(--radius-s); border: var(--border) solid var(--line); background: var(--panel); }
+  .lritile:hover, .lritile:focus-visible { border-color: var(--accent); }
+  .lritile canvas { width: 100%; aspect-ratio: 16 / 9; display: block; border-radius: var(--radius-s); background: var(--field); margin-bottom: 4px; }
+  .lritile b { font-family: var(--display); font-weight: 400; font-size: 13px; letter-spacing: .02em; }
+  .lritile span { font-size: 12px; color: var(--dim); }
+  @media (max-width: 820px) {
+    .lrbody { grid-template-columns: minmax(0, 1fr); }
+    .lritems { flex-direction: row; overflow-x: auto; max-height: none; position: static; padding-bottom: 4px; }
+    .lritems button { flex: none; max-width: 200px; }
+    .lrstage { aspect-ratio: 4 / 3; }
+  }
   /* rescue: numbered steps (done: ticked), the board's wiring drawn, the LED's colours */
   .badge.warn { font-family: var(--mono, monospace); font-size: 12px; padding: 6px 10px; border-radius: 999px; border: var(--border) solid var(--accent); color: var(--accent); white-space: nowrap; }
   .rsfirst { border-color: var(--accent); margin-bottom: 16px; }
@@ -355,6 +394,7 @@
       <button data-go="emu" data-t="vEmu"></button>
       <button data-go="rec" data-t="vRec"></button>
       <button data-go="proj" data-t="vProj"></button>
+      <button data-go="learn" data-t="vLearn"></button>
       <button data-go="docs" data-t="vDocs"></button>
       <button data-go="rescue" data-t="vRescue"></button>
       <button data-go="ports" data-t="vPorts"></button>
@@ -379,6 +419,7 @@
     <h1>JIANT <span class="fw" id="herofw">FM</span></h1>
     <p class="lead" id="herolead"></p>
     <div class="chips"><span class="chip" data-t="needBrowser"></span><span class="chip" data-t="needCable"></span><span class="chip" data-t="needPhone"></span></div>
+    <p><a class="btn ghost" id="sitelink" href="../"></a></p>
     <div class="steps">
       <div class="card step now" id="step1">
         <div class="num">1</div>
@@ -477,6 +518,27 @@
       <div class="viewhead" style="margin-bottom:6px"><div><h2 data-t="bkLibTitle"></h2><p class="dim" data-t="bkLibHelp"></p></div>
         <label class="chk"><input type="checkbox" id="bkdl" checked> <span data-t="bkAlsoFile"></span></label></div>
       <div class="bklist" id="bklist"></div>
+    </div>
+  </section>
+
+  <!-- ======================================================================================= how it works -->
+  <section class="view" id="v-learn" hidden>
+    <div class="viewhead"><div><p class="eyebrow" data-t="vLearn"></p><h1 id="lrtitle"></h1></div></div>
+    <p class="lead" id="lrintro"></p>
+    <nav class="lrsec" id="lrsec" aria-label="sectors"></nav>
+    <p class="dim lrlead" id="lrlead"></p>
+    <div class="lrindex" id="lrindex" hidden></div>
+    <div class="lrbody">
+      <div class="lritems" id="lritems" role="listbox"></div>
+      <article class="card lrcard" id="lrcard" aria-live="polite">
+        <div class="lrstage"><canvas id="lrcanvas" aria-hidden="true"></canvas></div>
+        <div class="lrhead"><h2 id="lrname"></h2><span class="lrtag" id="lrtag"></span></div>
+        <p class="lrstate" id="lrstate"></p>
+        <ul class="lrhow" id="lrhow"></ul>
+        <p class="lrwhere" id="lrwhere"></p>
+        <div class="row lrnav"><button class="btn ghost" type="button" id="lrback" data-t="lrIndex"></button><button class="btn ghost" type="button" id="lrprev">←</button><span class="dim small" id="lrpos"></span><button class="btn ghost" type="button" id="lrnext">→</button>
+          <button class="btn ghost" type="button" data-go="emu" data-t="lrTry"></button></div>
+      </article>
     </div>
   </section>
 
@@ -592,7 +654,7 @@
     <div class="takes" id="takes"><p class="small dim" data-t="recNone"></p></div>
   </section>
 </main>
-<footer><span data-t="foot"></span> · <a href="https://github.com/juanjiant-bit/JIANT">JIANT FM</a> · <a href="https://github.com/juanjiant-bit/JIANT-BYTE">JIANT BYTE</a> · GPL-3.0</footer>
+<footer><span data-t="foot"></span> · <a href="../">JIANT FM</a> (<a href="https://github.com/juanjiant-bit/JIANT">GitHub</a>) · <a href="../../JIANT-BYTE/">JIANT BYTE</a> (<a href="https://github.com/juanjiant-bit/JIANT-BYTE">GitHub</a>) · GPL-3.0</footer>
 <script type="module" src="studio.js"></script>
 </body>
 </html>

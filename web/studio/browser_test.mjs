@@ -128,6 +128,22 @@ try {
     ok(/V10|JIANT/.test(fw) && /(checked|comprobado)/i.test(ld) && dl && dl.suggestedFilename() === "fm1-rescue.uf2" && size > 600000 && size % 512 === 0,
       `rescue: "${fw.trim()}", the loader checked, fm1-rescue.uf2 for the Pico made (${Math.round(size / 1024)} KB)`);
   }
+  /* how it works: the index (every element a tile), a tile opens its page (its link), the animation runs; a link to
+     a page opens it; JIANT BYTE's own */
+  {
+    const h = await page("#learn", { width: 1280, height: 900 });
+    await h.click('nav.views [data-go="learn"]'); await h.waitForTimeout(1500);
+    const tiles = await h.$$eval("#lrindex .lritile", (x) => x.length);
+    await h.click("#lrindex .lrisec:nth-child(2) .lritile:nth-child(3)"); await h.waitForTimeout(800);
+    const pg = await h.evaluate(() => ({ hash: location.hash, name: document.getElementById("lrname").textContent, how: document.querySelectorAll("#lrhow li").length }));
+    const frame = () => h.evaluate(() => document.getElementById("lrcanvas").toDataURL());
+    const f1 = await frame(); await h.waitForTimeout(400); const f2 = await frame();
+    const d = await page("?fw=byte#learn/engines/wave", { width: 412, height: 900 });
+    await d.waitForTimeout(1500);
+    const dn = await d.evaluate(() => ({ name: document.getElementById("lrname").textContent, title: document.getElementById("lrtitle").textContent }));
+    ok(tiles > 50 && /^#learn\/engines\//.test(pg.hash) && pg.name && pg.how >= 3 && f1 !== f2 && dn.name === "WAVE" && /BYTE/.test(dn.title),
+      `how it works: ${tiles} elements in the index, "${pg.name}" at ${pg.hash} (moving), a link opens JIANT BYTE's ${dn.name}`);
+  }
   /* the manuals: JIANT FM's (the interactive manual opens here), JIANT BYTE's (what its site lacks says so) */
   {
     const m = await page("#docs", { width: 1280, height: 900 });

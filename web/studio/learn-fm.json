@@ -1,0 +1,2533 @@
+{
+ "firmware": "fm",
+ "intro": {
+  "es": "JIANT FM convierte el FM-1 en un instrumento vivo: seis pistas, once motores de síntesis sin samples más uno para señales de afuera, un secuenciador de 64 pasos, efectos, un generador y un modo canción, todo adentro del tecladito y sin computadora. Es bio-generativo, morfeable y evolutivo: los sonidos se transforman, las pistas se mueven entre sí y la música cambia mientras tocás, para no quedar preso de un loop eterno donde solo sube y baja un cutoff. Aprendés seis reglas una vez y ya conocés todo el sinte.",
+  "en": "JIANT FM turns the FM-1 into a living instrument: six tracks, eleven synthesis engines with no samples plus one for outside signals, a 64-step sequencer, effects, a generator and a song mode, all inside the little keyboard and with no computer. It is bio-generative, morphable and evolving: sounds transform, tracks move each other and the music changes as you play, so you are never stuck in an endless loop where only a cutoff goes up and down. Learn six rules once and you know the whole synth."
+ },
+ "sectors": [
+  {
+   "id": "concept",
+   "name": {
+    "es": "El concepto",
+    "en": "The concept"
+   },
+   "lead": {
+    "es": "Un organismo de seis seres: cada pista es una criatura con su motor, su secuencia y su color, y todas se manejan con las mismas reglas.",
+    "en": "An organism of six beings: every track is a creature with its engine, its sequence and its colour, and all of them follow the same rules."
+   },
+   "items": [
+    {
+     "id": "six-tracks",
+     "name": "T1–T6",
+     "tag": {
+      "es": "Seis pistas, una banda",
+      "en": "Six tracks, one band"
+     },
+     "statement": {
+      "es": "Seis pistas como una banda afinada que se escucha entre sí: cada una con su motor, su secuencia y su color. Cualquier motor va en cualquier pista.",
+      "en": "Six tracks like a band in tune that listens to itself: each with its own engine, its own sequence and its own colour. Any engine fits on any track."
+     },
+     "how": {
+      "es": [
+       "ALGORITHM elige la pista en cualquier página; la barra de arriba dice TRACK N / ENGINE.",
+       "Cada pista tiene su color: T1 amarillo, T2 naranja, T3 rojo, T4 magenta, T5 violeta, T6 azul (el mismo en el mixer, los seres, JAM y TAKE).",
+       "Al encender suenan DRUM-X, ANALOG, PHASE, FM6, VOICE y ANIMAL, una banda lista para tocar.",
+       "Cada pista tiene su propio patrón de 64 pasos con su largo: patrones de distinto largo giran unos contra otros.",
+       "Las voces se comparten: VOICES (AUTO o 1–8) decide cuántas toma cada pista."
+      ],
+      "en": [
+       "ALGORITHM picks the track on any page; the bar on top reads TRACK N / ENGINE.",
+       "Each track has its colour: T1 yellow, T2 orange, T3 red, T4 magenta, T5 violet, T6 blue (the same on the mixer, the beings, JAM and TAKE).",
+       "At power-on they play DRUM-X, ANALOG, PHASE, FM6, VOICE and ANIMAL, a band ready to play.",
+       "Every track has its own 64-step pattern with its own length: patterns of different lengths turn against each other.",
+       "Voices are shared: VOICES (AUTO or 1–8) sets how many each track may take."
+      ]
+     },
+     "where": {
+      "es": "ALGORITHM elige la pista; MENU › AUDIO › TRACKS cuántas suenan",
+      "en": "ALGORITHM picks the track; MENU › AUDIO › TRACKS sets how many play"
+     },
+     "anim": {
+      "kind": "tracks",
+      "params": {
+       "n": 6
+      }
+     }
+    },
+    {
+     "id": "six-rules",
+     "name": "SELECT · HOLD",
+     "tag": {
+      "es": "Seis reglas, todo el sinte",
+      "en": "Six rules, the whole synth"
+     },
+     "statement": {
+      "es": "Todas las secciones se manejan igual: lo aprendés una vez y ya conocés todas. Diez botones, diez secciones, una sola manera de moverse.",
+      "en": "Every section works the same way: learn it once and you know them all. Ten buttons, ten sections, one way of moving around."
+     },
+     "how": {
+      "es": [
+       "SELECT recorre las páginas de la sección, una por paso, y frena en la primera y en la última.",
+       "El botón de la sección te lleva a la página que dejaste ahí; si ya estás adentro, salta al grupo siguiente.",
+       "PRESETS carga presets: los sonidos de la pista, los patrones en SEQ, el género en el generador; nunca cambia de página.",
+       "KNOB 1 elige (el paso, el compás, el slot, el operador, el sonido del kit); la pista siempre la elige ALGORITHM.",
+       "Mantener un botón abre su capa: las teclas y perillas cambian de función mientras lo mantenés, y un mapa lo muestra.",
+       "La pantalla dice dónde estás: arriba los grupos como pestañas, abajo SECCIÓN · GRUPO · página y n/N."
+      ],
+      "en": [
+       "SELECT walks the section's pages, one a detent, stopping at the first and the last.",
+       "The section's button takes you to the page you left there; if you are already inside, it jumps to the next group.",
+       "PRESETS loads presets: the track's sounds, the patterns on SEQ, the genre on the generator; it never changes the page.",
+       "KNOB 1 picks (the step, the bar, the slot, the operator, the kit's sound); the track is always ALGORITHM's.",
+       "Holding a button opens its layer: keys and knobs change job while you hold it, and a map shows what each does.",
+       "The screen says where you are: the groups as tabs on top, SECTION · GROUP · page and n/N at the foot."
+      ]
+     },
+     "where": {
+      "es": "Los diez botones de sección: HOME, EDIT, SEQ, FX, GLO, ENV, LFO, SCL, ARP, SAVE",
+      "en": "The ten section buttons: HOME, EDIT, SEQ, FX, GLO, ENV, LFO, SCL, ARP, SAVE"
+     },
+     "anim": {
+      "kind": "pages",
+      "params": {}
+     },
+     "since": "0.9.2"
+    },
+    {
+     "id": "organism",
+     "name": "ECOSYSTEM",
+     "tag": {
+      "es": "Cada motor, una especie",
+      "en": "Each engine, a species"
+     },
+     "statement": {
+      "es": "Cada motor es una especie y cada pista un ser de esa especie: su forma sale de sus perillas y se hincha y se calienta con su propio audio. La pantalla no decora: dibuja lo que suena.",
+      "en": "Each engine is a species and each track a being of that species: its shape comes from its knobs, and it swells and heats up with its own audio. The screen does not decorate: it draws what sounds."
+     },
+     "how": {
+      "es": [
+       "En ECOSYSTEM los seis seres nadan por el panel, cada uno hinchándose con su sonido; un golpe lo empuja.",
+       "Todo se dibuja con una paleta térmica: bajito en cian y azul, fuerte en rojo, naranja y amarillo.",
+       "Cada ser tiene carita: los ojos se cierran con un golpe y la boca se abre con el nivel; una pista muteada duerme.",
+       "En EDIT cada motor dibuja su criatura: una célula, una colonia de operadores, un caracol, una oruga, gusanos de tubo, un tracto vocal, una batería de bichitos, un circuito.",
+       "Se mueven solo mientras la pista suena; en silencio quedan quietos."
+      ],
+      "en": [
+       "On ECOSYSTEM the six beings swim across the panel, each swelling with its sound; a hit pushes it.",
+       "Everything is drawn in a thermal palette: soft in cyan and blue, loud in red, orange and yellow.",
+       "Each being has a face: its eyes close with a hit and its mouth opens with the level; a muted track sleeps.",
+       "On EDIT each engine draws its creature: a cell, a colony of operators, a snail, a caterpillar, tube worms, a vocal tract, a drum kit of little bugs, a circuit.",
+       "They move only while the track sounds; in silence they stay still."
+      ]
+     },
+     "where": {
+      "es": "HOME › ECOSYSTEM, y EDIT en cada motor",
+      "en": "HOME › ECOSYSTEM, and EDIT on every engine"
+     },
+     "anim": {
+      "kind": "creature",
+      "params": {
+       "legs": 6,
+       "color": "thermal"
+      }
+     }
+    },
+    {
+     "id": "keys",
+     "name": "F3–G5 · OCT",
+     "tag": {
+      "es": "Teclas que tocan con fuerza",
+      "en": "Keys that play with force"
+     },
+     "statement": {
+      "es": "El teclado del FM-1 es un instrumento de verdad: responde a la fuerza, a la presión y a la expresión, y en una batería cada octava es otra manera de golpear.",
+      "en": "The FM-1's keyboard is a real instrument: it answers force, pressure and expression, and on a drum track every octave is another way to strike."
+     },
+     "how": {
+      "es": [
+       "Las teclas F3..C5 sienten la velocidad y el aftertouch, y se calibran solas mientras tocás.",
+       "OCT+ / OCT− cambian la octava; con una nota mantenida, OCT− hace un vibrato y OCT+ un bend.",
+       "En una pista DRUM-X las teclas tocan el kit en cualquier octava; OCT cambia cómo suena (redobles, ghosts, flams, fills).",
+       "Con la voz en DRONE las notas siguen sonando al soltar; la misma nota otra vez la suelta.",
+       "Mantené PLAY para el PÁNICO: corta notas, colas y punch-ins trabados."
+      ],
+      "en": [
+       "Keys F3..C5 sense velocity and aftertouch, calibrating themselves as you play.",
+       "OCT+ / OCT− change the octave; with a note held, OCT− makes a vibrato and OCT+ a bend.",
+       "On a DRUM-X track the keys play the kit in any octave; OCT changes how it sounds (rolls, ghosts, flams, fills).",
+       "With the voice on DRONE notes keep sounding after you let go; the same note again releases it.",
+       "Hold PLAY for PANIC: it stops notes, tails and stuck punch-ins."
+      ]
+     },
+     "where": {
+      "es": "Las teclas y OCT±; MENU › CONTROL › VELOCITY y AFTERTOUCH",
+      "en": "The keys and OCT±; MENU › CONTROL › VELOCITY and AFTERTOUCH"
+     },
+     "anim": {
+      "kind": "velocity",
+      "params": {}
+     }
+    },
+    {
+     "id": "save",
+     "name": "SAVE",
+     "tag": {
+      "es": "Todo queda adentro",
+      "en": "Everything stays inside"
+     },
+     "statement": {
+      "es": "Un tema vive adentro del aparato, con nombre, partes y sonidos, listo para tocarse otra vez sin computadora. Guardar es un gesto corto, nunca un trámite.",
+      "en": "A song lives inside the device, with its name, parts and sounds, ready to play again with no computer. Saving is a short gesture, never a chore."
+     },
+     "how": {
+      "es": [
+       "SAVE › PROJECTS: seis proyectos (temas), cada uno con sus cuatro partes A–D.",
+       "Mantené SAVE y tocá C4–F4 para guardar la música en A–D, aun mientras suena; llega a la memoria cuando parás.",
+       "SAVE › USER guarda tus sonidos (U01–U32); SAVE › PRESETS los recorre por motor, favoritos o tipo.",
+       "SAVE + C5 (NAME) le pone nombre al slot, la parte o el proyecto.",
+       "SAVE › TOOLS: CLEAR PROJECT, INIT SOUND, CPU TEST; el editor web hace el backup completo."
+      ],
+      "en": [
+       "SAVE › PROJECTS: six projects (songs), each with its four parts A–D.",
+       "Hold SAVE and press C4–F4 to store the music in A–D, even while it plays; it reaches the memory when you stop.",
+       "SAVE › USER keeps your sounds (U01–U32); SAVE › PRESETS browses them by engine, favourites or type.",
+       "SAVE + C5 (NAME) names the slot, the part or the project.",
+       "SAVE › TOOLS: CLEAR PROJECT, INIT SOUND, CPU TEST; the web editor makes the full backup."
+      ]
+     },
+     "where": {
+      "es": "SAVE (tocalo o mantenelo)",
+      "en": "SAVE (press it or hold it)"
+     },
+     "anim": {
+      "kind": "save",
+      "params": {}
+     }
+    }
+   ]
+  },
+  {
+   "id": "engines",
+   "name": {
+    "es": "Motores",
+    "en": "Engines"
+   },
+   "lead": {
+    "es": "Once motores de síntesis, sin un solo sample, y uno que escucha lo de afuera. Cada uno es una especie con su manera de vibrar.",
+    "en": "Eleven synthesis engines, without a single sample, and one that listens to the outside. Each is a species with its own way of vibrating."
+   },
+   "items": [
+    {
+     "id": "drum-x",
+     "name": "DRUM-X",
+     "tag": {
+      "es": "El corazón: un kit sintetizado",
+      "en": "The heart: a synthesized kit"
+     },
+     "statement": {
+      "es": "El corazón del organismo: ocho tambores sintetizados en tiempo real, cada uno con dos caras, A y B. MORPH los lleva de una a la otra en vivo, como si el kit respirara.",
+      "en": "The organism's heart: eight drums synthesized in real time, each with two faces, A and B. MORPH carries them from one to the other live, as if the kit were breathing."
+     },
+     "how": {
+      "es": [
+       "Ocho sonidos: BD SD CP CH OH TM RS CB, cada uno un oscilador afinado con su envolvente de pitch, FM y ruido.",
+       "KIT: MORPH mueve todo el kit entre A y B; TONE y DECAY lo cambian entero. KIT 2: NOISE, BODY (la resonancia del parche), GLUE, GAIN.",
+       "SOUND 1–4 editan un sonido: PITCH, DECAY, NOISE, COLOR, PMOD, WAVE, el filtro del ruido, SIDE y SEND.",
+       "WAVE puede ser una fórmula de MATH (F01–F48) usada como FM, con RATIO y MOD AMT; los kits GLITCH FM y MATH LAB están hechos así.",
+       "Kits de fábrica como 909 CLUB, 808 BOOM, LATIN PERC (con güiro) o HIP HOP; la batería se dibuja como bichitos que gritan con cada golpe."
+      ],
+      "en": [
+       "Eight sounds: BD SD CP CH OH TM RS CB, each a tuned oscillator with its pitch envelope, FM and noise.",
+       "KIT: MORPH moves the whole kit between A and B; TONE and DECAY change it all. KIT 2: NOISE, BODY (the shell's resonance), GLUE, GAIN.",
+       "SOUND 1–4 edit one sound: PITCH, DECAY, NOISE, COLOR, PMOD, WAVE, the noise filter, SIDE and SEND.",
+       "WAVE can be a MATH formula (F01–F48) used as FM, with RATIO and MOD AMT; the GLITCH FM and MATH LAB kits are made that way.",
+       "Factory kits such as 909 CLUB, 808 BOOM, LATIN PERC (with a guiro) or HIP HOP; the kit is drawn as little bugs that scream with each hit."
+      ]
+     },
+     "where": {
+      "es": "Una pista DRUM-X: EDIT › KIT, SOUND, CROSS MOD, FILTER; PRESETS recorre los kits",
+      "en": "A DRUM-X track: EDIT › KIT, SOUND, CROSS MOD, FILTER; PRESETS browses the kits"
+     },
+     "anim": {
+      "kind": "drum",
+      "params": {
+       "voices": 8
+      }
+     }
+    },
+    {
+     "id": "analog",
+     "name": "ANALOG",
+     "tag": {
+      "es": "Dos osciladores vivos",
+      "en": "Two living oscillators"
+     },
+     "statement": {
+      "es": "El sinte de siempre, pero que nunca queda quieto: dos osciladores que se separan por intervalos y derivan como los viejos analógicos. Se dibuja como una célula cuya membrana es su propia onda.",
+      "en": "The classic synth that never stands still: two oscillators set apart by intervals that drift like old analogues. It is drawn as a cell whose membrane is its own wave."
+     },
+     "how": {
+      "es": [
+       "WAVE: SAW, SQR, TRI, SIN, PWM, SYNC, RING, SAW3 y PLS3 (tres sierras o tres pulsos).",
+       "DETUNE y MIX mezclan los dos osciladores; INT fija el intervalo del segundo (±24 semitonos), INT 3 el del tercero.",
+       "MORPH desliza la onda hacia las siguientes (SAW › SQR › TRI › SIN); DRIFT hace derivar afinación y filtro de cada voz.",
+       "Su filtro es por voz, con su propio DRIVE: CUT y RES barren cada nota por separado."
+      ],
+      "en": [
+       "WAVE: SAW, SQR, TRI, SIN, PWM, SYNC, RING, SAW3 and PLS3 (three saws or three pulses).",
+       "DETUNE and MIX blend the two oscillators; INT sets the second one's interval (±24 semitones), INT 3 the third's.",
+       "MORPH slides the wave toward the next ones (SAW › SQR › TRI › SIN); DRIFT lets each voice's tuning and filter wander.",
+       "Its filter is per voice, with its own DRIVE: CUT and RES sweep each note on its own."
+      ]
+     },
+     "where": {
+      "es": "PRESETS recorre sus sonidos; EDIT + PRESETS salta de motor; sus perillas en EDIT",
+      "en": "PRESETS browses its sounds; EDIT + PRESETS jumps between engines; its knobs on EDIT"
+     },
+     "anim": {
+      "kind": "osc",
+      "params": {
+       "shapes": [
+        "saw",
+        "square",
+        "tri",
+        "sine"
+       ]
+      }
+     }
+    },
+    {
+     "id": "phase",
+     "name": "PHASE",
+     "tag": {
+      "es": "Distorsión de fase",
+      "en": "Phase distortion"
+     },
+     "statement": {
+      "es": "Una onda que se dobla desde adentro: en vez de filtrar, la fase se acelera y se frena y el brillo nace de esa curva. Su criatura es un caracol cuyas cámaras son la fase doblada.",
+      "en": "A wave folded from the inside: instead of filtering, the phase speeds up and slows down and brightness is born from that curve. Its creature is a snail whose chambers are the bent phase."
+     },
+     "how": {
+      "es": [
+       "WAVE y WAVE2: SAW, SQR, PLS, DSIN, SPLS, RSAW, RTRI, RTRP, alternando.",
+       "DCW es cuánto se dobla la fase (el brillo) y ENV cómo se mueve en cada nota.",
+       "LINE mezcla las dos ondas (MIX) o las multiplica (RING); SUB suma un grave; DETUNE las separa.",
+       "FB realimenta la salida hacia la fase: del filo duro al gruñido. MORPH desliza la onda hacia la siguiente."
+      ],
+      "en": [
+       "WAVE and WAVE2: SAW, SQR, PLS, DSIN, SPLS, RSAW, RTRI, RTRP, alternating.",
+       "DCW is how much the phase is bent (the brightness) and ENV how it moves in each note.",
+       "LINE mixes the two waves (MIX) or multiplies them (RING); SUB adds a low one; DETUNE pulls them apart.",
+       "FB feeds the output back into the phase: from a hard edge to a growl. MORPH slides the wave toward the next."
+      ]
+     },
+     "where": {
+      "es": "PRESETS recorre sus sonidos; EDIT + PRESETS salta de motor; sus perillas en EDIT",
+      "en": "PRESETS browses its sounds; EDIT + PRESETS jumps between engines; its knobs on EDIT"
+     },
+     "anim": {
+      "kind": "phase",
+      "params": {}
+     }
+    },
+    {
+     "id": "fm6",
+     "name": "FM6",
+     "tag": {
+      "es": "Seis operadores, 32 algoritmos",
+      "en": "Six operators, 32 algorithms"
+     },
+     "statement": {
+      "es": "La FM clásica de seis operadores, editable entera en el equipo: los operadores son una colonia de bichitos cableados como el algoritmo, cada uno tan grande y caliente como suena.",
+      "en": "Classic six-operator FM, fully editable on the device: the operators are a colony of little beings wired as the algorithm is, each as big and hot as it sounds."
+     },
+     "how": {
+      "es": [
+       "EDIT 1–2 son macros sobre el patch: ALG, FB, MOD, RATIO, MEG, VMOD, DETUNE y SLOT.",
+       "SLOT elige los patches de fábrica F1–F8, OWN (el tuyo) o B1–B32, un banco DX7 enviado desde el editor web.",
+       "OPERATOR, OP ENV y OPERATOR 2 editan cada operador (KNOB 1): RATIO o FIXED, FINE, LEVEL, la envolvente, DTUN, VEL.",
+       "Editar convierte el patch en propio de la pista y se guarda con el proyecto."
+      ],
+      "en": [
+       "EDIT 1–2 are macros over the patch: ALG, FB, MOD, RATIO, MEG, VMOD, DETUNE and SLOT.",
+       "SLOT picks the factory patches F1–F8, OWN (yours) or B1–B32, a DX7 bank sent from the web editor.",
+       "OPERATOR, OP ENV and OPERATOR 2 edit each operator (KNOB 1): RATIO or FIXED, FINE, LEVEL, the envelope, DTUN, VEL.",
+       "Editing makes the patch the track's own and it is saved with the project."
+      ]
+     },
+     "where": {
+      "es": "Una pista FM6: EDIT › OPERATOR, OP ENV, OPERATOR 2; PRESETS recorre sus sonidos",
+      "en": "An FM6 track: EDIT › OPERATOR, OP ENV, OPERATOR 2; PRESETS browses its sounds"
+     },
+     "anim": {
+      "kind": "fm",
+      "params": {
+       "ops": 6,
+       "ratio": 2
+      }
+     }
+    },
+    {
+     "id": "voice",
+     "name": "VOICE",
+     "tag": {
+      "es": "Una voz por formantes",
+      "en": "A formant voice"
+     },
+     "statement": {
+      "es": "Una garganta hecha de números: vocales, habla y aliento como un chip de voz antiguo que canta. En pantalla se ve el tracto vocal vivo, con la lengua y los labios moviéndose como suena.",
+      "en": "A throat made of numbers: vowels, speech and breath like an old speech chip that sings. On screen you see the living vocal tract, tongue and lips moving as it sounds."
+     },
+     "how": {
+      "es": [
+       "VOWEL y VOWEL2 son las dos vocales; TALK pasa de una a la otra; SHIFT mueve todos los formantes (una voz más grande o más chica).",
+       "BUZZ es el brillo, BREATH el aire (arriba, un susurro), Q qué tan marcados son los formantes, RAND la inquietud.",
+       "Canta como una persona: un vibrato suave en las notas largas, glides en curva de S.",
+       "Con varias voces, todas cantan juntas: un coro."
+      ],
+      "en": [
+       "VOWEL and VOWEL2 are the two vowels; TALK moves between them; SHIFT moves every formant (a bigger or smaller voice).",
+       "BUZZ is the brightness, BREATH the air (at the top, a whisper), Q how marked the formants are, RAND the restlessness.",
+       "It sings like a person: a soft vibrato on long notes, S-shaped glides.",
+       "With several voices they all sing together: a choir."
+      ]
+     },
+     "where": {
+      "es": "PRESETS recorre sus sonidos; EDIT + PRESETS salta de motor; sus perillas en EDIT",
+      "en": "PRESETS browses its sounds; EDIT + PRESETS jumps between engines; its knobs on EDIT"
+     },
+     "anim": {
+      "kind": "voice",
+      "params": {}
+     }
+    },
+    {
+     "id": "voice-words",
+     "name": "WORDS",
+     "tag": {
+      "es": "VOICE canta palabras",
+      "en": "VOICE sings words"
+     },
+     "statement": {
+      "es": "Cada nota canta la sílaba siguiente de una letra: la secuencia se vuelve una canción con palabras, en castellano, inglés o japonés.",
+      "en": "Each note sings the next syllable of a lyric: the sequence becomes a song with words, in Spanish, English or Japanese."
+     },
+     "how": {
+      "es": [
+       "LANG prende las palabras (ES, EN, JA); LYRIC elige TEXT (tu letra), W1–W16 (frases del dado) o S1–S8 (scat).",
+       "Mantener la nota sostiene la vocal; al soltar suenan las consonantes finales; en legato pasa de sílaba en sílaba.",
+       "POS fija desde qué sílaba canta (lockealo en un paso para empezar un verso); LOOP la vuelve al principio cada tantas vueltas.",
+       "ARTIC hace las consonantes nítidas o arrastradas; CONS su largo.",
+       "OCT+ en WORDS abre la pantalla para escribir la letra; también desde el editor web."
+      ],
+      "en": [
+       "LANG turns words on (ES, EN, JA); LYRIC picks TEXT (your lyric), W1–W16 (phrases from the dice) or S1–S8 (scat).",
+       "Holding the note sustains the vowel; letting go sounds the final consonants; in legato it moves from syllable to syllable.",
+       "POS sets which syllable it sings from (lock it on a step to start a verse); LOOP brings it back to the start every few rounds.",
+       "ARTIC makes consonants crisp or slurred; CONS sets their length.",
+       "OCT+ on WORDS opens the screen to type the lyric; the web editor can too."
+      ]
+     },
+     "where": {
+      "es": "Una pista VOICE: EDIT › WORDS",
+      "en": "A VOICE track: EDIT › WORDS"
+     },
+     "anim": {
+      "kind": "voice",
+      "params": {}
+     },
+     "since": "0.8.5"
+    },
+    {
+     "id": "animal",
+     "name": "ANIMAL",
+     "tag": {
+      "es": "Cantos de animales",
+      "en": "Animal calls"
+     },
+     "statement": {
+      "es": "Cantos hechos como los hacen los animales: una fuente que se autooscila o golpea excita un cuerpo que resuena, con una capa lenta de presión, tensión y ritmo. Una nota empieza un canto, así que una secuencia es una bandada afinada.",
+      "en": "Calls made the way animals make them: a source that self-oscillates or strikes excites a resonating body, with a slow layer of pressure, tension and rhythm. A note starts a call, so a sequence is a flock in tune."
+     },
+     "how": {
+      "es": [
+       "MODE elige la fuente: CMOS (la máquina de pájaros del autor, con chips Schmitt), PULSE (grillos, cigarras, ranas), WHSTL (silbidos de pájaros), WING (mosquito, abeja, mosca), GLOTT (lobo, perro, rugido, ronroneo).",
+       "RATE es la tasa de sílabas, GROUP cómo se agrupan (HOLD, TRILL o n+m), TEMP la temperatura que acelera a los insectos.",
+       "SIZE mueve el animal más chico o más grande; SWEEP es el gesto de altura de cada sílaba.",
+       "La tecla fija la altura y la velocidad la presión; la criatura se metamorfosea entre pájaro, insecto y mamífero según MODE y SIZE."
+      ],
+      "en": [
+       "MODE picks the source: CMOS (the author's bird machine, built on Schmitt chips), PULSE (crickets, cicadas, frogs), WHSTL (bird whistles), WING (mosquito, bee, fly), GLOTT (wolf, dog, roar, purr).",
+       "RATE is the syllable rate, GROUP how syllables bunch (HOLD, TRILL or n+m), TEMP the temperature that speeds insects up.",
+       "SIZE makes the animal smaller or bigger; SWEEP is each syllable's pitch gesture.",
+       "The key sets the pitch and velocity the pressure; the creature morphs between bird, insect and mammal with MODE and SIZE."
+      ]
+     },
+     "where": {
+      "es": "PRESETS recorre sus sonidos; EDIT + PRESETS salta de motor; sus perillas en EDIT",
+      "en": "PRESETS browses its sounds; EDIT + PRESETS jumps between engines; its knobs on EDIT"
+     },
+     "anim": {
+      "kind": "creature",
+      "params": {
+       "legs": 6,
+       "color": "warm"
+      }
+     },
+     "since": "0.8.3"
+    },
+    {
+     "id": "math",
+     "name": "MATH",
+     "tag": {
+      "es": "Fórmulas que suenan",
+      "en": "Formulas that sound"
+     },
+     "statement": {
+      "es": "Música escrita como una fórmula: una sola línea de matemática da ritmo, melodía y timbre a la vez. MATH la toca afinada en la tecla y deja pasar de una fórmula a otra; su criatura es una oruga cuyos segmentos son los bits del sonido.",
+      "en": "Music written as a formula: one line of maths gives rhythm, melody and timbre at once. MATH plays it in tune with the key and lets one formula morph into another; its creature is a caterpillar whose segments are the sound's bits."
+     },
+     "how": {
+      "es": [
+       "WAVE elige BYTE (bytebeat, en escalones) o FLOAT (floatbeat, hecho de senos).",
+       "ALGO elige la fórmula y VAR la muta; ALGO B es una segunda fórmula y MORPH pasa de ALGO a ALGO B.",
+       "MOTION acelera o frena el ritmo de la fórmula; GRIT (en FLOAT, FEEDBK) la ensucia; BEND pliega el tiempo; LOOP repite un tramo hasta volverlo una nota afinada.",
+       "RETRIG: RTRG reinicia la fórmula en cada nota, y TIME la ata a la nota o al tempo."
+      ],
+      "en": [
+       "WAVE picks BYTE (bytebeat, in steps) or FLOAT (floatbeat, made of sines).",
+       "ALGO picks the formula and VAR mutates it; ALGO B is a second formula and MORPH moves from ALGO to ALGO B.",
+       "MOTION speeds the formula's rhythm up or down; GRIT (FEEDBK in FLOAT) dirties it; BEND folds time; LOOP repeats a stretch until it becomes a tuned note.",
+       "RETRIG: RTRG restarts the formula on every note, and TIME ties it to the note or the tempo."
+      ]
+     },
+     "where": {
+      "es": "PRESETS recorre sus sonidos; EDIT + PRESETS salta de motor; sus perillas en EDIT",
+      "en": "PRESETS browses its sounds; EDIT + PRESETS jumps between engines; its knobs on EDIT"
+     },
+     "anim": {
+      "kind": "math",
+      "params": {}
+     }
+    },
+    {
+     "id": "wheel",
+     "name": "WHEEL",
+     "tag": {
+      "es": "Órgano de tirantes",
+      "en": "Drawbar organ"
+     },
+     "statement": {
+      "es": "Un órgano con sus tirantes, su percusión y su parlante girando. Se dibuja como nueve gusanos de tubo, uno por tirante, que la corriente del rotor dobla.",
+      "en": "An organ with its drawbars, its percussion and its spinning speaker. It is drawn as nine tube worms, one per drawbar, bent by the rotor's current."
+     },
+     "how": {
+      "es": [
+       "REG elige la registración; SUB, BODY y TOP la tiñen por zonas.",
+       "PERC es el golpe de percusión (2ND, 3RD, suave o lento); CLICK el click de tecla; DRIVE la saturación.",
+       "ROTOR: OFF, SLOW o FAST; en EDIT › ROTOR, DEPTH es cuánto gira y DUST el crujido de un órgano viejo."
+      ],
+      "en": [
+       "REG picks the registration; SUB, BODY and TOP colour it by range.",
+       "PERC is the percussion strike (2ND, 3RD, soft or slow); CLICK the key click; DRIVE the overdrive.",
+       "ROTOR: OFF, SLOW or FAST; on EDIT › ROTOR, DEPTH is how much it spins and DUST the crackle of an old organ."
+      ]
+     },
+     "where": {
+      "es": "PRESETS recorre sus sonidos; EDIT + PRESETS salta de motor; sus perillas en EDIT",
+      "en": "PRESETS browses its sounds; EDIT + PRESETS jumps between engines; its knobs on EDIT"
+     },
+     "anim": {
+      "kind": "wheel",
+      "params": {}
+     }
+    },
+    {
+     "id": "west",
+     "name": "WEST",
+     "tag": {
+      "es": "Costa oeste: plegador y vactrol",
+      "en": "West coast: folder and vactrol"
+     },
+     "statement": {
+      "es": "Una voz de la costa oeste, al estilo Buchla y Serge: un núcleo senoidal que se pliega sobre sí mismo y una compuerta de vactrol que golpea rápido y se cierra lenta, oscureciéndose. Se dibuja como su propio circuito.",
+      "en": "A west-coast voice, in the Buchla and Serge style: a sine core folding over itself and a vactrol gate that strikes fast and closes slowly, darkening. It is drawn as its own circuit."
+     },
+     "how": {
+      "es": [
+       "EDIT 1: FOLD (cuánto se pliega la onda), SYMM (su simetría), MOD y RATIO (la FM de un segundo seno).",
+       "EDIT 2: GATE y DECAY la compuerta de paso bajo, RES su resonancia, DUST un polvo de impulsos.",
+       "La velocidad pliega más y abre más la compuerta: un golpe corto suena como un bongó, un DECAY largo sostiene.",
+       "Sonidos de fábrica: plucks, BONGO, MARIMBA, campanas, bajos plegados, drones."
+      ],
+      "en": [
+       "EDIT 1: FOLD (how much the wave folds), SYMM (its symmetry), MOD and RATIO (FM from a second sine).",
+       "EDIT 2: GATE and DECAY the low-pass gate, RES its resonance, DUST a dust of impulses.",
+       "Velocity folds more and opens the gate more: a short strike rings like a bongo, a long DECAY sustains.",
+       "Factory sounds: plucks, BONGO, MARIMBA, bells, folded basses, drones."
+      ]
+     },
+     "where": {
+      "es": "PRESETS recorre sus sonidos; EDIT + PRESETS salta de motor; sus perillas en EDIT",
+      "en": "PRESETS browses its sounds; EDIT + PRESETS jumps between engines; its knobs on EDIT"
+     },
+     "anim": {
+      "kind": "west",
+      "params": {}
+     },
+     "since": "V10.7.38"
+    },
+    {
+     "id": "string",
+     "name": "STRING",
+     "tag": {
+      "es": "Una cuerda que vibra",
+      "en": "A vibrating string"
+     },
+     "statement": {
+      "es": "Una cuerda modelada: se pulsa, se golpea o se frota con un arco, y hasta acoplada a un amplificador hasta que realimenta. Suena porque resuena, y muere cuando la soltás.",
+      "en": "A modelled string: plucked, struck or bowed, even coupled to an amp until it feeds back. It sounds because it resonates, and dies when you let go."
+     },
+     "how": {
+      "es": [
+       "EXCITE elige cómo se excita: NOISE, PLUCK, PICK, HAMMR, STICK, o FDBK, la guitarra eléctrica en un ampli.",
+       "DECAY cuánto vibra, BRIGHT su brillo, POS dónde se la toca.",
+       "STRETCH la vuelve rígida y metálica; BODY y SIZE su caja; BOW le pasa un arco (VIOLIN, VIOLA, CELLO).",
+       "En FDBK: GAIN es qué tan cerca estás del ampli, SPEAKR el armónico donde florece, BLOOM la crecida, DIST la válvula."
+      ],
+      "en": [
+       "EXCITE picks how it is excited: NOISE, PLUCK, PICK, HAMMR, STICK, or FDBK, the electric guitar into an amp.",
+       "DECAY how long it rings, BRIGHT its brightness, POS where it is played.",
+       "STRETCH makes it stiff and metallic; BODY and SIZE its body; BOW draws a bow across it (VIOLIN, VIOLA, CELLO).",
+       "In FDBK: GAIN is how close you stand to the amp, SPEAKR the harmonic it blooms into, BLOOM the swell, DIST the tube."
+      ]
+     },
+     "where": {
+      "es": "PRESETS recorre sus sonidos; EDIT + PRESETS salta de motor; sus perillas en EDIT",
+      "en": "PRESETS browses its sounds; EDIT + PRESETS jumps between engines; its knobs on EDIT"
+     },
+     "anim": {
+      "kind": "string",
+      "params": {}
+     },
+     "since": "0.9.9"
+    },
+    {
+     "id": "add",
+     "name": "ADD",
+     "tag": {
+      "es": "Síntesis aditiva",
+      "en": "Additive synthesis"
+     },
+     "statement": {
+      "es": "Un sonido armado parcial por parcial, como luz descompuesta en colores: diez espectros que se deslizan uno en otro y se mueven solos.",
+      "en": "A sound built partial by partial, like light split into colours: ten spectra that slide into each other and move on their own."
+     },
+     "how": {
+      "es": [
+       "MODE elige el espectro: HARM, ODD, WIDE, BELL, BAR, DRUM, PRIME, FIFTH, SUB, PLATE.",
+       "MORPH pasa de un espectro a otro; BRIGHT y PARTIAL cuántos parciales suenan.",
+       "SHIFT estira los parciales; COMB talla muescas; DECAY deja morir primero los agudos; MOTION barre el espectro."
+      ],
+      "en": [
+       "MODE picks the spectrum: HARM, ODD, WIDE, BELL, BAR, DRUM, PRIME, FIFTH, SUB, PLATE.",
+       "MORPH moves from one spectrum to another; BRIGHT and PARTIAL set how many partials sound.",
+       "SHIFT stretches the partials; COMB carves notches; DECAY lets the highs die first; MOTION sweeps the spectrum."
+      ]
+     },
+     "where": {
+      "es": "PRESETS recorre sus sonidos; EDIT + PRESETS salta de motor; sus perillas en EDIT",
+      "en": "PRESETS browses its sounds; EDIT + PRESETS jumps between engines; its knobs on EDIT"
+     },
+     "anim": {
+      "kind": "additive",
+      "params": {
+       "partials": 10
+      }
+     },
+     "since": "0.9.9"
+    },
+    {
+     "id": "ext",
+     "name": "EXT",
+     "tag": {
+      "es": "El mundo de afuera, sonando",
+      "en": "The outside world, on a track"
+     },
+     "statement": {
+      "es": "Una pista que toca lo que entra de afuera: el audio de la computadora por USB, cortado por los pasos, modulado en anillo, triturado, o el Bluetooth que rodea al FM-1.",
+      "en": "A track that plays what comes in from outside: the computer's audio over USB, gated by the steps, ring-modulated, crushed, or the Bluetooth around the FM-1."
+     },
+     "how": {
+      "es": [
+       "SOURCE: IN 1, IN 2, 1+2, STEREO (la entrada de audio USB) o SWARM.",
+       "GAIN el nivel de entrada, GATE la compuerta que abren los pasos, PLAY cómo la tocan las notas.",
+       "WIDTH el ancho estéreo, RING la modulación en anillo, BITS y RATE el triturado.",
+       "Lo que entra también puede seguirse como fuente de modulación."
+      ],
+      "en": [
+       "SOURCE: IN 1, IN 2, 1+2, STEREO (the USB audio input) or SWARM.",
+       "GAIN the input level, GATE the gate the steps open, PLAY how the notes play it.",
+       "WIDTH the stereo width, RING the ring modulation, BITS and RATE the crushing.",
+       "What comes in can also be followed as a modulation source."
+      ]
+     },
+     "where": {
+      "es": "Una pista EXT, con el FM-1 en USB como placa de audio",
+      "en": "An EXT track, with the FM-1 on USB as an audio interface"
+     },
+     "anim": {
+      "kind": "input",
+      "params": {}
+     }
+    },
+    {
+     "id": "swarm",
+     "name": "SWARM",
+     "tag": {
+      "es": "Melodía según la cercanía",
+      "en": "A melody from nearness"
+     },
+     "statement": {
+      "es": "El Bluetooth que rodea al FM-1 se vuelve música: qué tan cerca está algo decide qué toca y cómo suena. Si te acercás, la melodía sube; si te alejás, baja.",
+      "en": "The Bluetooth around the FM-1 becomes music: how near something is decides what it plays and how it sounds. Come closer and the melody climbs; step away and it falls."
+     },
+     "how": {
+      "es": [
+       "Una voz lead toca a tempo sobre la escala de SCL; los dispositivos de alrededor suman un colchón por debajo.",
+       "Guarda dos estados, FAR y NEAR, y la cercanía hace el morph entre ellos todo el tiempo.",
+       "En cada lado: RATE (la grilla), MOVE (de pedal a arpegio y saltos), TONE, NOISE y MOD.",
+       "CHAOS es el techo de cuánto modulan los dispositivos: en 0 queda limpio aunque haya muchos teléfonos."
+      ],
+      "en": [
+       "A lead voice plays in time on SCL's scale; the devices around add a bed underneath.",
+       "It keeps two states, FAR and NEAR, and nearness morphs between them all the time.",
+       "On each side: RATE (the grid), MOVE (from a pedal to an arpeggio and leaps), TONE, NOISE and MOD.",
+       "CHAOS is the ceiling of how much the devices modulate: at 0 it stays clean however many phones there are."
+      ]
+     },
+     "where": {
+      "es": "Una pista EXT con SOURCE SWARM: EDIT › SWARM, SWARM 2",
+      "en": "An EXT track with SOURCE SWARM: EDIT › SWARM, SWARM 2"
+     },
+     "anim": {
+      "kind": "swarm",
+      "params": {}
+     },
+     "since": "V10.6z6"
+    },
+    {
+     "id": "filter",
+     "name": "FILTER",
+     "tag": {
+      "es": "Un filtro en cada motor",
+      "en": "A filter on every engine"
+     },
+     "statement": {
+      "es": "Todos los motores pasan por el mismo filtro, para tallar cualquier sonido con las mismas manos. El peine lo afina a la nota y lo hace sonar como una cuerda.",
+      "en": "Every engine runs through the same filter, so any sound is carved with the same hands. The comb tunes it to the note and makes it ring like a string."
+     },
+     "how": {
+      "es": [
+       "TYPE: LP, HP, BP, LP24, COMB y COMB- (un peine afinado a la nota que tocás).",
+       "CUT mueve el corte, RES la resonancia; en el peine, cuánto resuena.",
+       "LFO DEST y ENV DEST mueven el filtro; KEY TRK hace que siga a la nota.",
+       "En ANALOG el filtro es por voz, con su propio DRIVE."
+      ],
+      "en": [
+       "TYPE: LP, HP, BP, LP24, COMB and COMB- (a comb tuned to the note you play).",
+       "CUT moves the cutoff, RES the resonance; on the comb, how much it rings.",
+       "LFO DEST and ENV DEST move the filter; KEY TRK makes it follow the note.",
+       "On ANALOG the filter is per voice, with its own DRIVE."
+      ]
+     },
+     "where": {
+      "es": "EDIT › FILTER",
+      "en": "EDIT › FILTER"
+     },
+     "anim": {
+      "kind": "filter",
+      "params": {
+       "res": 0.7
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "sequencers",
+   "name": {
+    "es": "Secuenciadores",
+    "en": "Sequencers"
+   },
+   "lead": {
+    "es": "El sistema nervioso: 64 pasos por pista, que se escriben, se graban, se generan y se tocan en vivo.",
+    "en": "The nervous system: 64 steps per track, written, recorded, generated and played live."
+   },
+   "items": [
+    {
+     "id": "seq-step",
+     "name": "SEQ › STEP",
+     "tag": {
+      "es": "Un piano roll por pista",
+      "en": "A piano roll per track"
+     },
+     "statement": {
+      "es": "Cada pista escribe su música en un piano roll de 64 pasos: todas las páginas del secuenciador muestran el mismo roll, y cada una hace algo distinto encima.",
+      "en": "Each track writes its music on a 64-step piano roll: every sequencer page shows the same roll, and each does something different on top."
+     },
+     "how": {
+      "es": [
+       "KNOB 1 recorre los 64 pasos, KNOB 2 la nota, KNOB 3 TIME (de REST a TIE, NOTE y hasta 16 pasos de largo), KNOB 4 VEL (1–127, después ACC, SLD, A+S).",
+       "Un paso guarda hasta cuatro notas: un acorde.",
+       "Grabación por pasos: parado, apretá REC y tocá; el cursor avanza al soltar. KNOB 1 con las teclas apretadas fija la duración.",
+       "SEQ + G5 borra el paso del cursor; mantené teclas de paso + OCT+ para copiar, un paso + OCT− para pegar."
+      ],
+      "en": [
+       "KNOB 1 walks the 64 steps, KNOB 2 the note, KNOB 3 TIME (from REST to TIE, NOTE and up to 16 steps long), KNOB 4 VEL (1–127, then ACC, SLD, A+S).",
+       "A step holds up to four notes: a chord.",
+       "Step recording: stopped, press REC and play; the cursor moves on as you let go. KNOB 1 with keys held sets the length.",
+       "SEQ + G5 clears the cursor's step; hold step keys + OCT+ to copy, a step + OCT− to paste."
+      ]
+     },
+     "where": {
+      "es": "SEQ (abre en STEP)",
+      "en": "SEQ (opens on STEP)"
+     },
+     "anim": {
+      "kind": "seq",
+      "params": {
+       "steps": 16
+      }
+     }
+    },
+    {
+     "id": "pattern",
+     "name": "PATTERN",
+     "tag": {
+      "es": "Largo, división y groove",
+      "en": "Length, division and groove"
+     },
+     "statement": {
+      "es": "Cada pista tiene su propio largo y su propio paso, así que patrones distintos giran unos contra otros y el loop nunca se repite igual.",
+      "en": "Each track has its own length and its own step, so different patterns turn against each other and the loop never repeats the same way."
+     },
+     "how": {
+      "es": [
+       "PATTERN: LEN (1–64), DIV (la figura del paso), SWING y GATE.",
+       "TRACK: PITCH transpone la pista, CHANCE ralea sus pasos, HUMAN la hace tocar como una persona (velocity, timing, largo).",
+       "PLAYHEADS: tres cabezales más leen los mismos pasos con su RATE, DIR e INTERVAL: cánones y contrapunto.",
+       "MICRO corre un paso fuera de la grilla, en 64avos."
+      ],
+      "en": [
+       "PATTERN: LEN (1–64), DIV (the step's note value), SWING and GATE.",
+       "TRACK: PITCH transposes the track, CHANCE thins its steps, HUMAN makes it play like a person (velocity, timing, length).",
+       "PLAYHEADS: three more heads read the same steps with their own RATE, DIR and INTERVAL: canons and counterpoint.",
+       "MICRO moves a step off the grid, in 64ths."
+      ]
+     },
+     "where": {
+      "es": "SEQ › PATTERN, TRACK, PLAYHEADS",
+      "en": "SEQ › PATTERN, TRACK, PLAYHEADS"
+     },
+     "anim": {
+      "kind": "seq",
+      "params": {
+       "steps": 12
+      }
+     }
+    },
+    {
+     "id": "live-rec",
+     "name": "REC",
+     "tag": {
+      "es": "Grabar como tocaste",
+      "en": "Record as you played"
+     },
+     "statement": {
+      "es": "REC respeta cómo tocás: el largo de cada nota, el legato y la fuerza quedan tal cual, y lo que girás queda como automatización.",
+      "en": "REC respects how you play: each note's length, the legato and the force stay as they were, and what you turn becomes automation."
+     },
+     "how": {
+      "es": [
+       "Apretá REC: la pista se arma, arranca el transporte y lo que tocás entra en overdub.",
+       "Los giros de perilla se graban como automatización de la pista.",
+       "REC Q cuantiza dónde empiezan las notas; en 0 % conserva tu timing (REC + B3).",
+       "CLICK (OFF / REC / ON) y COUNT-IN en MENU › AUDIO; REC mantenido y soltado solo es UNDO."
+      ],
+      "en": [
+       "Press REC: the track is armed, the transport starts and what you play goes in as overdub.",
+       "Knob turns are recorded as the track's automation.",
+       "REC Q quantizes where notes start; at 0 % it keeps your timing (REC + B3).",
+       "CLICK (OFF / REC / ON) and COUNT-IN on MENU › AUDIO; REC held and let go alone is UNDO."
+      ]
+     },
+     "where": {
+      "es": "REC (tocalo para armar, mantenelo para su capa)",
+      "en": "REC (press to arm, hold for its layer)"
+     },
+     "anim": {
+      "kind": "seq",
+      "params": {
+       "steps": 16
+      }
+     }
+    },
+    {
+     "id": "euclid",
+     "name": "EUCLID",
+     "tag": {
+      "es": "Ritmos euclidianos en vivo",
+      "en": "Euclidean rhythms live"
+     },
+     "statement": {
+      "es": "Golpes repartidos tan parejo como dejan los pasos, el ritmo que se encuentra en tantas músicas del mundo. Girás una perilla y el patrón entero se reescribe al instante.",
+      "en": "Hits spread as evenly as the steps allow, the rhythm found in so many of the world's musics. Turn a knob and the whole pattern rewrites itself at once."
+     },
+     "how": {
+      "es": [
+       "HITS, STEPS (2–64) y ROTATE escriben el patrón; en DRUM-X, LANE ALL y DENSITY arman un kit entero de una sola perilla.",
+       "En DRUM-X cada carril (BD … CB) tiene sus HITS, STEPS y ROTATE.",
+       "En una pista melódica toca en la tonalidad de SCL, o la encuentra en las otras pistas.",
+       "VARY afloja la grilla y arma vueltas que se contestan (A A' A'' B).",
+       "OCT+ una variación nueva, OCT− la anterior; con todo en 0 vuelve tu secuencia."
+      ],
+      "en": [
+       "HITS, STEPS (2–64) and ROTATE write the pattern; on DRUM-X, LANE ALL and DENSITY build a whole kit from one knob.",
+       "On DRUM-X each lane (BD … CB) has its own HITS, STEPS and ROTATE.",
+       "On a melodic track it plays in SCL's key, or finds it in the other tracks.",
+       "VARY loosens the grid and builds rounds that answer each other (A A' A'' B).",
+       "OCT+ a new variation, OCT− the previous one; with everything at 0 your sequence comes back."
+      ]
+     },
+     "where": {
+      "es": "SEQ › EUCLID",
+      "en": "SEQ › EUCLID"
+     },
+     "anim": {
+      "kind": "euclid",
+      "params": {
+       "hits": 5,
+       "steps": 16
+      }
+     },
+     "since": "V10.6"
+    },
+    {
+     "id": "modes",
+     "name": "MODES",
+     "tag": {
+      "es": "Lo que se suma al ritmo",
+      "en": "What adds to the rhythm"
+     },
+     "statement": {
+      "es": "Cuatro cantidades que le suman vida al patrón euclidiano, y un rol para que cada pista escriba sobre la armonía que tocan las otras.",
+      "en": "Four amounts that add life to the euclidean pattern, and a role so each track writes over the harmony the others play."
+     },
+     "how": {
+      "es": [
+       "DRUM-X: ACCENT (un segundo euclidiano de acentos), GHOST (golpes suaves), RATCHET (algunos x2 / x4), VARY.",
+       "Melódica: MOTION (de nota pedal a saltos), HARMONY (acordes en los tiempos fuertes), OCTAVE, SLIDE.",
+       "ROLE: MELODY, CHORDS, BASS o ARP, siguiendo la armonía de las otras pistas.",
+       "CONTOUR, RANGE y MOTIF le dan forma a la melodía."
+      ],
+      "en": [
+       "DRUM-X: ACCENT (a second euclidean of accents), GHOST (soft hits), RATCHET (some x2 / x4), VARY.",
+       "Melodic: MOTION (from a pedal note to leaps), HARMONY (chords on the strong beats), OCTAVE, SLIDE.",
+       "ROLE: MELODY, CHORDS, BASS or ARP, following the other tracks' harmony.",
+       "CONTOUR, RANGE and MOTIF shape the melody."
+      ]
+     },
+     "where": {
+      "es": "SEQ › EUCLID › MODES",
+      "en": "SEQ › EUCLID › MODES"
+     },
+     "anim": {
+      "kind": "modes",
+      "params": {}
+     },
+     "since": "V10.6"
+    },
+    {
+     "id": "comp",
+     "name": "COMP",
+     "tag": {
+      "es": "Componentes de paso",
+      "en": "Step components"
+     },
+     "statement": {
+      "es": "Un paso no es solo una nota: puede llevar una acción que transforma lo que sigue, en las pasadas que vos elijas. Con pocas notas, el patrón evoluciona durante docenas de vueltas.",
+      "en": "A step is not just a note: it can carry an action that transforms what follows, on the passes you choose. With a few notes, the pattern evolves for dozens of rounds."
+     },
+     "how": {
+      "es": [
+       "Hasta dos por paso (COMP y COMP 2), cada uno con ACTION, LENGTH, CONDITION y VALUE.",
+       "Acciones: ARP, SEQ, OCT+ / OCT-, RATCH, STUT, MUTE, TRIG, TRANS, RAND, FILL, RAMP, SHIFT, CHORD, SOUND, BEND.",
+       "CONDITION: ALWAYS, 25 / 50 / 75 %, 1ST, FILL, PRE, NEI, N:M (la pasada N de cada M) y sus contrarios.",
+       "RAMP desliza el lock de un paso hasta su valor en pasos o compases, con su curva."
+      ],
+      "en": [
+       "Up to two per step (COMP and COMP 2), each with ACTION, LENGTH, CONDITION and VALUE.",
+       "Actions: ARP, SEQ, OCT+ / OCT-, RATCH, STUT, MUTE, TRIG, TRANS, RAND, FILL, RAMP, SHIFT, CHORD, SOUND, BEND.",
+       "CONDITION: ALWAYS, 25 / 50 / 75 %, 1ST, FILL, PRE, NEI, N:M (pass N of every M) and their opposites.",
+       "RAMP glides a step's lock to its value over steps or bars, with its curve."
+      ]
+     },
+     "where": {
+      "es": "SEQ › COMP, COMP 2",
+      "en": "SEQ › COMP, COMP 2"
+     },
+     "anim": {
+      "kind": "seq",
+      "params": {
+       "steps": 16
+      }
+     }
+    },
+    {
+     "id": "step-fx",
+     "name": "STEP FX",
+     "tag": {
+      "es": "Componentes que se tocan",
+      "en": "Components you play"
+     },
+     "statement": {
+      "es": "Los componentes de paso se vuelven un instrumento: mantenés una tecla y la secuencia tartamudea, se arpegia o salta de octava, y si querés, queda escrito.",
+      "en": "Step components become an instrument: hold a key and the sequence stutters, arpeggiates or jumps an octave, and if you want, it stays written."
+     },
+     "how": {
+      "es": [
+       "La perilla PRESETS elige el paso; las 16 teclas blancas tocan componentes mientras las mantenés.",
+       "STUTTER, /2, /4 · RATCHET x2 x3 x4 x8 · ARP UP, DOWN, UP-DOWN · OCTAVE UP / DOWN · RANDOM, TRANSPOSE +2, CHORD, MUTE.",
+       "Suena desde el próximo paso y al soltar vuelve la secuencia; un cartel grande dice qué tecla es.",
+       "Con REC y PLAY lo que mantenés se graba en el paso, con su largo (en COMP, o en COMP 2 si está ocupado)."
+      ],
+      "en": [
+       "The PRESETS knob picks the step; the 16 white keys play components while held.",
+       "STUTTER, /2, /4 · RATCHET x2 x3 x4 x8 · ARP UP, DOWN, UP-DOWN · OCTAVE UP / DOWN · RANDOM, TRANSPOSE +2, CHORD, MUTE.",
+       "It sounds from the next step and the sequence comes back when you let go; a big banner names the key.",
+       "With REC and PLAY what you hold is written into the step, with its length (into COMP, or COMP 2 if taken)."
+      ]
+     },
+     "where": {
+      "es": "SEQ › STEP FX",
+      "en": "SEQ › STEP FX"
+     },
+     "anim": {
+      "kind": "punch",
+      "params": {}
+     },
+     "since": "V10.8.21"
+    },
+    {
+     "id": "locks",
+     "name": "LOCKS",
+     "tag": {
+      "es": "Un valor propio por paso",
+      "en": "Each step, its own value"
+     },
+     "statement": {
+      "es": "Cada paso puede tener su propio sonido: un corte, una vocal, un MORPH distinto. El patrón deja de ser notas y se vuelve un paisaje.",
+      "en": "Each step can have its own sound: a different cutoff, vowel, MORPH. The pattern stops being notes and becomes a landscape."
+     },
+     "how": {
+      "es": [
+       "Mantené un paso y girá una perilla: ese paso toma su propio valor de ese parámetro.",
+       "Mantené un paso y girá SELECT para ir a las páginas que bloquean sus perillas.",
+       "Locks y automatización se ven y se editan uno por uno en la lista de LOCKS (LOCK o REC).",
+       "SEQ TOOLS F4 (CLR AUTO) borra la automatización y los locks de la pista sin tocar los pasos."
+      ],
+      "en": [
+       "Hold a step and turn a knob: that step takes its own value of that parameter.",
+       "Hold a step and turn SELECT to walk the pages its knobs lock.",
+       "Locks and automation are listed and edited one by one in the LOCKS list (LOCK or REC).",
+       "SEQ TOOLS F4 (CLR AUTO) clears the track's automation and locks without touching the steps."
+      ]
+     },
+     "where": {
+      "es": "SEQ › STEP con un paso mantenido; SEQ › AUTO",
+      "en": "SEQ › STEP with a step held; SEQ › AUTO"
+     },
+     "anim": {
+      "kind": "locks",
+      "params": {}
+     }
+    },
+    {
+     "id": "drum-grid",
+     "name": "DRUM GRID",
+     "tag": {
+      "es": "La grilla de batería",
+      "en": "The drum grid"
+     },
+     "statement": {
+      "es": "En una pista de batería las teclas son los pasos: dieciséis teclas blancas, ocho carriles, y el ritmo se arma con los dedos.",
+      "en": "On a drum track the keys are the steps: sixteen white keys, eight lanes, and the rhythm is built with your fingers."
+     },
+     "how": {
+      "es": [
+       "Las teclas blancas son los 16 pasos de la página; las negras 1–8 eligen el carril (y lo tocan).",
+       "Perillas: STEP, LANE, HIT y ACC; HIT recorre --, ON, x2, x4, x8, SHORT, GHOST, FLAM.",
+       "Cada sonido tiene su propio modo en cada paso: un redoble de hi-hat no toca el bombo.",
+       "SEQ TOOLS en el carril elegido: G4 CLR, A4 REV, B4 FILL."
+      ],
+      "en": [
+       "The white keys are the page's 16 steps; black keys 1–8 pick the lane (and play it).",
+       "Knobs: STEP, LANE, HIT and ACC; HIT walks --, ON, x2, x4, x8, SHORT, GHOST, FLAM.",
+       "Each sound has its own mode on each step: a hi-hat roll leaves the kick alone.",
+       "SEQ TOOLS on the chosen lane: G4 CLR, A4 REV, B4 FILL."
+      ]
+     },
+     "where": {
+      "es": "SEQ › STEP en una pista DRUM-X",
+      "en": "SEQ › STEP on a DRUM-X track"
+     },
+     "anim": {
+      "kind": "drum",
+      "params": {
+       "voices": 8
+      }
+     }
+    },
+    {
+     "id": "extended",
+     "name": "EXTENDED",
+     "tag": {
+      "es": "Cada octava, un trabajo",
+      "en": "Every octave, a job"
+     },
+     "statement": {
+      "es": "En la batería, OCT no cambia qué suena sino cómo: redobles de verdad arriba, el bombo y el tom cromáticos abajo, y todo se graba tal como lo tocaste.",
+      "en": "On the drums, OCT changes not what sounds but how: real fills above, the kick and the tom chromatic below, and all of it is recorded as you played it."
+     },
+     "how": {
+      "es": [
+       "+2 / +3: RATCH SETS, los golpes con ratchet a tempo mientras mantenés.",
+       "+1: FILLS, redobles de caja, bajadas de toms, flams, en tres largos.",
+       "0: el kit; −1: KICK / TOM cromáticos (o un solo sonido cromático con KEY MAP).",
+       "−2: FX KIT, los sonidos como variantes; −3: FLAM."
+      ],
+      "en": [
+       "+2 / +3: RATCH SETS, ratcheted hits in time while held.",
+       "+1: FILLS, snare rolls, tom runs, flams, in three lengths.",
+       "0: the kit; −1: chromatic KICK / TOM (or a single chromatic sound with KEY MAP).",
+       "−2: FX KIT, the sounds as variants; −3: FLAM."
+      ]
+     },
+     "where": {
+      "es": "Una pista DRUM-X: OCT+ / OCT−; KEY MAP en EDIT › SOUND 4",
+      "en": "A DRUM-X track: OCT+ / OCT−; KEY MAP on EDIT › SOUND 4"
+     },
+     "anim": {
+      "kind": "drum",
+      "params": {
+       "voices": 8
+      }
+     },
+     "since": "V10.6r"
+    },
+    {
+     "id": "scale",
+     "name": "SCL › KEY",
+     "tag": {
+      "es": "Una tonalidad para todo el tema",
+      "en": "One key for the whole song"
+     },
+     "statement": {
+      "es": "Una sola escala para todo el tema: fijala una vez y todas las pistas melódicas la siguen, así nada desafina aunque toques sin mirar.",
+      "en": "One scale for the whole song: set it once and every melodic track follows, so nothing is out of tune even if you play without looking."
+     },
+     "how": {
+      "es": [
+       "ROOT la tónica (o cualquier tecla con SCL mantenido); SCALE entre CHR, MAJ, MIN, DOR, MIX, PEN, BLUES, HARM, LYD y más.",
+       "QUANT: SNAP ajusta las teclas, WHITE hace que las blancas recorran la escala, SEQ ajusta también al secuenciador.",
+       "ALL TR mueve todas las secuencias por la escala a la vez.",
+       "Cada parte del tema guarda su tonalidad; la pantalla muestra la escala con sus notas y grados."
+      ],
+      "en": [
+       "ROOT the tonic (or any key with SCL held); SCALE among CHR, MAJ, MIN, DOR, MIX, PEN, BLUES, HARM, LYD and more.",
+       "QUANT: SNAP fits the keys, WHITE makes the white keys walk the scale, SEQ also fits the sequencer.",
+       "ALL TR moves every sequence along the scale at once.",
+       "Each part of the song keeps its key; the screen shows the scale with its notes and degrees."
+      ]
+     },
+     "where": {
+      "es": "SCL › KEY",
+      "en": "SCL › KEY"
+     },
+     "anim": {
+      "kind": "scale",
+      "params": {}
+     }
+    },
+    {
+     "id": "chord",
+     "name": "SCL › CHORD",
+     "tag": {
+      "es": "Una tecla, un acorde",
+      "en": "One key, one chord"
+     },
+     "statement": {
+      "es": "Inspirado en el Omnichord y el Orchid: una tecla toca un acorde siempre afinado, y cada acorde busca la inversión más cercana al anterior.",
+      "en": "Inspired by the Omnichord and the Orchid: one key plays a chord always in tune, and each chord seeks the inversion closest to the last."
+     },
+     "how": {
+      "es": [
+       "CHORD: TRIAD, 7TH, ADD9, SUS2, SUS4 (en la escala) o MAJ, MIN, 7, MAJ7, MIN7, POWER (en cualquier tecla).",
+       "VOICING: CLOSE, LEAD (el voice leading), OPEN, +BASS; STRUM rasguea de grave a agudo, como un arpa.",
+       "Sets de acordes POP, JAZZ, SOUL, DREAM, QUART.",
+       "La pantalla muestra el acorde que suena de verdad (D MIN7…), sus intervalos y los siete grados."
+      ],
+      "en": [
+       "CHORD: TRIAD, 7TH, ADD9, SUS2, SUS4 (in the scale) or MAJ, MIN, 7, MAJ7, MIN7, POWER (on any key).",
+       "VOICING: CLOSE, LEAD (voice leading), OPEN, +BASS; STRUM strums low to high, like a harp.",
+       "Chord sets POP, JAZZ, SOUL, DREAM, QUART.",
+       "The screen shows the chord really playing (D MIN7…), its intervals and the seven degrees."
+      ]
+     },
+     "where": {
+      "es": "SCL › CHORD",
+      "en": "SCL › CHORD"
+     },
+     "anim": {
+      "kind": "chord",
+      "params": {
+       "notes": 4
+      }
+     },
+     "since": "0.6.81"
+    },
+    {
+     "id": "harmony",
+     "name": "SCL › HARMONY",
+     "tag": {
+      "es": "Una progresión que todos siguen",
+      "en": "A progression everyone follows"
+     },
+     "statement": {
+      "es": "La armonía como un camino compartido: una progresión de acordes por debajo, y cada secuencia melódica la sigue mientras avanza.",
+      "en": "Harmony as a shared path: a chord progression underneath, and every melodic sequence follows it as it moves on."
+     },
+     "how": {
+      "es": [
+       "PROG elige la progresión, LENGTH cuánto dura cada acorde.",
+       "EVOLVE la hace cambiar con las vueltas; SKIP saltea acordes.",
+       "Los acordes se muestran en números romanos en la tonalidad, el que suena encendido."
+      ],
+      "en": [
+       "PROG picks the progression, LENGTH how long each chord lasts.",
+       "EVOLVE makes it change over the rounds; SKIP skips chords.",
+       "The chords are shown as roman numerals in the key, the one playing lit."
+      ]
+     },
+     "where": {
+      "es": "SCL › HARMONY",
+      "en": "SCL › HARMONY"
+     },
+     "anim": {
+      "kind": "chord",
+      "params": {
+       "notes": 3
+      }
+     },
+     "since": "V10.7.81"
+    },
+    {
+     "id": "arp",
+     "name": "ARP",
+     "tag": {
+      "es": "Arpegiador por pista",
+      "en": "An arpeggiator per track"
+     },
+     "statement": {
+      "es": "Cada pista tiene su arpegiador, para que un acorde mantenido se vuelva movimiento.",
+      "en": "Each track has its own arpeggiator, so a held chord turns into movement."
+     },
+     "how": {
+      "es": [
+       "ARP: MODE, RATE, OCT (1–4), GATE; ARP 2: SWING, PROB, HOLD, ORDER.",
+       "Modos: UP, DN, UPDN, RND, ORD, REPEAT, DNUP, UP+8, CONV, DIVG, PINKY, THUMB, WALK, CHORD.",
+       "TRNS: las teclas transponen la secuencia de la pista según su distancia a C4, sin tocar notas.",
+       "Grabando por pasos, ARP con las teclas apretadas escribe el acorde arpegiado en el roll."
+      ],
+      "en": [
+       "ARP: MODE, RATE, OCT (1–4), GATE; ARP 2: SWING, PROB, HOLD, ORDER.",
+       "Modes: UP, DN, UPDN, RND, ORD, REPEAT, DNUP, UP+8, CONV, DIVG, PINKY, THUMB, WALK, CHORD.",
+       "TRNS: the keys transpose the track's sequence by their distance from C4, without playing notes.",
+       "While step recording, ARP with keys held writes the chord arpeggiated on the roll."
+      ]
+     },
+     "where": {
+      "es": "ARP",
+      "en": "ARP"
+     },
+     "anim": {
+      "kind": "arp",
+      "params": {
+       "pattern": "updown"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "effects",
+   "name": {
+    "es": "Efectos",
+    "en": "Effects"
+   },
+   "lead": {
+    "es": "La membrana: lo que rodea a cada sonido, por pista y en buses compartidos, y lo que se toca en vivo encima de todo.",
+    "en": "The membrane: what surrounds every sound, per track and on shared buses, and what you play live on top of it all."
+   },
+   "items": [
+    {
+     "id": "sends",
+     "name": "FX › SENDS",
+     "tag": {
+      "es": "Lo de cada pista",
+      "en": "What each track has"
+     },
+     "statement": {
+      "es": "Cada pista elige cuánto se ensucia y cuánto entra al espacio compartido: DIST propio y tres envíos a los buses.",
+      "en": "Each track chooses how dirty it gets and how much it enters the shared space: its own DIST and three sends to the buses."
+     },
+     "how": {
+      "es": [
+       "SENDS: DIST, CHORUS, DLY y REV de la pista, como columnas.",
+       "DIST: TYPE SOFT, HARD, FOLD, CRUSH, RECT o AMP (un amplificador de guitarra), y TONE.",
+       "AUTO PAN: DEPTH, RATE, SYNC (al compás o libre) y WAVE (SIN, TRI, SAW, SQR, S&H)."
+      ],
+      "en": [
+       "SENDS: the track's DIST, CHORUS, DLY and REV, as columns.",
+       "DIST: TYPE SOFT, HARD, FOLD, CRUSH, RECT or AMP (a guitar amp), and TONE.",
+       "AUTO PAN: DEPTH, RATE, SYNC (to the bar or free) and WAVE (SIN, TRI, SAW, SQR, S&H)."
+      ]
+     },
+     "where": {
+      "es": "FX › SENDS, DIST, AUTO PAN",
+      "en": "FX › SENDS, DIST, AUTO PAN"
+     },
+     "anim": {
+      "kind": "master",
+      "params": {}
+     }
+    },
+    {
+     "id": "delay",
+     "name": "DELAY",
+     "tag": {
+      "es": "Ecos de cinta",
+      "en": "Tape echoes"
+     },
+     "statement": {
+      "es": "Un delay que se porta como una cinta o un BBD: cada eco se oscurece y se ensucia un poco más, y con FEEDBK alto el lazo se sostiene solo. En pantalla, un túnel de ecos que se alejan.",
+      "en": "A delay that behaves like tape or a BBD: each echo gets a little darker and dirtier, and with FEEDBK high the loop sustains itself. On screen, a tunnel of echoes moving away."
+     },
+     "how": {
+      "es": [
+       "DLY: TIME (a tempo, con puntillos, o libre hasta casi 3 s), FEEDBK, TONE (resonante, estilo dub), MIX.",
+       "DLY 2: WIDE, el delay GRAIN (PITCH por repetición, SPRAY) y MOD, la deriva de la cinta.",
+       "DLY 3: TYPE ANALOG, DIGITAL o REVERS; PING (izquierda, derecha…); DRIVE dentro del lazo; R TIME, el tiempo propio del eco derecho."
+      ],
+      "en": [
+       "DLY: TIME (in time, dotted, or free up to almost 3 s), FEEDBK, TONE (resonant, dub style), MIX.",
+       "DLY 2: WIDE, the GRAIN delay (PITCH per repeat, SPRAY) and MOD, the tape's drift.",
+       "DLY 3: TYPE ANALOG, DIGITAL or REVERS; PING (left, right…); DRIVE inside the loop; R TIME, the right echo's own time."
+      ]
+     },
+     "where": {
+      "es": "FX › DELAY",
+      "en": "FX › DELAY"
+     },
+     "anim": {
+      "kind": "delay",
+      "params": {}
+     }
+    },
+    {
+     "id": "reverb",
+     "name": "REVERB",
+     "tag": {
+      "es": "Cinco espacios",
+      "en": "Five spaces"
+     },
+     "statement": {
+      "es": "Cinco maneras de ser un espacio: una sala, un resorte, una cola que sube de octava, cuatro cuerdas afinadas a la escala y una nube granular que se congela.",
+      "en": "Five ways of being a space: a room, a spring, a tail that climbs an octave, four strings tuned to the scale and a granular cloud that freezes."
+     },
+     "how": {
+      "es": [
+       "TYPE: ROOM, SPRING, SHIMR (shimmer), RESO (cuerdas afinadas a la escala) y CLOUD (SIZE al máximo la congela).",
+       "SIZE es el decaimiento en todos; DAMP y PRE (o AIR, FOLLOW, PITCH según el modelo).",
+       "REVERB 2: MOD, RATE, FILT (el tono de entrada) y WIDE."
+      ],
+      "en": [
+       "TYPE: ROOM, SPRING, SHIMR (shimmer), RESO (strings tuned to the scale) and CLOUD (SIZE at full freezes it).",
+       "SIZE is the decay on all of them; DAMP and PRE (or AIR, FOLLOW, PITCH depending on the model).",
+       "REVERB 2: MOD, RATE, FILT (the input tone) and WIDE."
+      ]
+     },
+     "where": {
+      "es": "FX › REVERB",
+      "en": "FX › REVERB"
+     },
+     "anim": {
+      "kind": "reverb",
+      "params": {}
+     }
+    },
+    {
+     "id": "chorus",
+     "name": "CHORUS",
+     "tag": {
+      "es": "Tres voces que orbitan",
+      "en": "Three orbiting voices"
+     },
+     "statement": {
+      "es": "Tres copias que se mecen alrededor del sonido y lo abren a los costados: en pantalla, una órbita izquierda / derecha.",
+      "en": "Three copies swaying around the sound and opening it to the sides: on screen, a left / right orbit."
+     },
+     "how": {
+      "es": [
+       "RATE la velocidad, DEPTH la profundidad.",
+       "STEREO: hacia abajo hasta mono, hacia arriba casi el doble de ancho.",
+       "Cada pista le manda lo suyo desde SENDS."
+      ],
+      "en": [
+       "RATE the speed, DEPTH the depth.",
+       "STEREO: down to mono, up to almost twice as wide.",
+       "Each track sends its share from SENDS."
+      ]
+     },
+     "where": {
+      "es": "FX › CHORUS",
+      "en": "FX › CHORUS"
+     },
+     "anim": {
+      "kind": "chorus",
+      "params": {}
+     }
+    },
+    {
+     "id": "slicer",
+     "name": "SLICER",
+     "tag": {
+      "es": "Cortar la mezcla a tempo",
+      "en": "Slicing the mix in time"
+     },
+     "statement": {
+      "es": "Un cuchillo rítmico sobre el bus: corta, tartamudea y reafina lo que entra, a tempo con la canción.",
+      "en": "A rhythmic knife on the bus: it gates, stutters and retunes what comes in, in time with the song."
+     },
+     "how": {
+      "es": [
+       "SLICER: MODE (OFF, GATE, STUT), PAT (1–16), RATE, DEPTH.",
+       "SL BUS / SL BUS 2: qué entra al slicer, T1–T6 y FX (las colas de los efectos).",
+       "SL PITCH: las repeticiones siguen una secuencia de afinación de 16 pasos, cromática o en la escala.",
+       "Cada parte del tema conserva su propio SLICER."
+      ],
+      "en": [
+       "SLICER: MODE (OFF, GATE, STUT), PAT (1–16), RATE, DEPTH.",
+       "SL BUS / SL BUS 2: what goes into the slicer, T1–T6 and FX (the effects' tails).",
+       "SL PITCH: the repeats follow a 16-step tuning sequence, chromatic or in the scale.",
+       "Each part of the song keeps its own SLICER."
+      ]
+     },
+     "where": {
+      "es": "FX › SLICER",
+      "en": "FX › SLICER"
+     },
+     "anim": {
+      "kind": "slicer",
+      "params": {}
+     }
+    },
+    {
+     "id": "punch-in",
+     "name": "FX",
+     "tag": {
+      "es": "Efectos que se tocan",
+      "en": "Effects you play"
+     },
+     "statement": {
+      "es": "Efectos que actúan mientras mantenés su tecla y vuelven exactamente atrás cuando la soltás: la mezcla entera como un instrumento de performance.",
+      "en": "Effects that act while you hold their key and come back exactly when you let go: the whole mix as a performance instrument."
+     },
+     "how": {
+      "es": [
+       "Mantené FX: un mapa de celdas con nombre, M1–M4 arriba y los mutes T1–T6 abajo.",
+       "RPT 1/8 · 1/16 · 1/32, REVERSE, FREEZE (la mezcla congelada como un drone), OCT− / OCT+, 1/2 TEMPO, TAPE STOP, STUT, PITCH UP / DN, ARP, RANDOM, STRETCH…",
+       "Las perillas con FX mantenido son las macros M1–M4.",
+       "Con REC armado y sonando, los efectos de nota se graban en el carril de punch-in de la parte; REC + FX lo borra."
+      ],
+      "en": [
+       "Hold FX: a map of named cells, M1–M4 on top and the mutes T1–T6 below.",
+       "RPT 1/8 · 1/16 · 1/32, REVERSE, FREEZE (the mix frozen as a drone), OCT− / OCT+, 1/2 TEMPO, TAPE STOP, STUT, PITCH UP / DN, ARP, RANDOM, STRETCH…",
+       "The knobs with FX held are the macros M1–M4.",
+       "With REC armed and playing, note effects are recorded into the part's punch-in lane; REC + FX clears it."
+      ]
+     },
+     "where": {
+      "es": "Mantené FX y tocá una tecla",
+      "en": "Hold FX and press a key"
+     },
+     "anim": {
+      "kind": "punch",
+      "params": {}
+     }
+    },
+    {
+     "id": "punch-editor",
+     "name": "PUNCH IN",
+     "tag": {
+      "es": "Tus propios punch-ins",
+      "en": "Your own punch-ins"
+     },
+     "statement": {
+      "es": "Cada tecla de punch-in puede ser lo que vos quieras: un efecto o cualquier parámetro de cualquier pista, con su forma y su tiempo.",
+      "en": "Each punch-in key can be whatever you want: an effect or any parameter of any track, with its own shape and time."
+     },
+     "how": {
+      "es": [
+       "WHAT: un efecto, o un parámetro (M1–M4, CUT, PITCH, TIMBRE, VOLUME, PAN, DIST, CHORUS, DELAY, REVERB, VIBRATO).",
+       "HOW: HOLD, LATCH, QUANT; un parámetro también RAMP UP / DN, SINE, STUTTER, S&H.",
+       "AMOUNT (−100 … +100 %) y TIME (1/16 … 8 compases); dos slots, A y B."
+      ],
+      "en": [
+       "WHAT: an effect, or a parameter (M1–M4, CUT, PITCH, TIMBRE, VOLUME, PAN, DIST, CHORUS, DELAY, REVERB, VIBRATO).",
+       "HOW: HOLD, LATCH, QUANT; a parameter also RAMP UP / DN, SINE, STUTTER, S&H.",
+       "AMOUNT (−100 … +100 %) and TIME (1/16 … 8 bars); two slots, A and B."
+      ]
+     },
+     "where": {
+      "es": "FX › PUNCH IN, OCT+",
+      "en": "FX › PUNCH IN, OCT+"
+     },
+     "anim": {
+      "kind": "punch",
+      "params": {}
+     },
+     "since": "V10.7.81"
+    },
+    {
+     "id": "master",
+     "name": "MASTER",
+     "tag": {
+      "es": "El final de la cadena",
+      "en": "The end of the chain"
+     },
+     "statement": {
+      "es": "La última piel del sonido: carácter, pegada y bombeo, sin agregar volumen de más.",
+      "en": "The sound's last skin: character, punch and pumping, without adding extra loudness."
+     },
+     "how": {
+      "es": [
+       "CLIP: una saturación que suma carácter, no volumen.",
+       "PUNCH engorda las baterías; DUCK hace que el bombo baje todo lo demás, REL su release.",
+       "TAPE y un EQ de cuatro bandas para terminar la mezcla."
+      ],
+      "en": [
+       "CLIP: a saturation that adds character, not loudness.",
+       "PUNCH fattens the drums; DUCK makes the kick push everything else down, REL its release.",
+       "TAPE and a four-band EQ to finish the mix."
+      ]
+     },
+     "where": {
+      "es": "FX › MASTER, TAPE, EQ",
+      "en": "FX › MASTER, TAPE, EQ"
+     },
+     "anim": {
+      "kind": "master",
+      "params": {}
+     }
+    },
+    {
+     "id": "dj-filter",
+     "name": "DJ FILTER",
+     "tag": {
+      "es": "Una perilla sobre toda la mezcla",
+      "en": "One knob on the whole mix"
+     },
+     "statement": {
+      "es": "Una sola perilla para llevar la mezcla entera a la oscuridad o al aire, como en una cabina. En el medio no existe: el sonido queda exactamente como era.",
+      "en": "A single knob to take the whole mix into darkness or into the air, as in a DJ booth. In the middle it does not exist: the sound is exactly as it was."
+     },
+     "how": {
+      "es": [
+       "Hacia la izquierda un pasabajos que baja; hacia la derecha un pasaaltos que sube.",
+       "El barrido sigue al oído, con una resonancia suave hacia los extremos; cruzar el medio nunca hace clic.",
+       "Girada con REC armado, se graba como automatización."
+      ],
+      "en": [
+       "To the left a low-pass that closes; to the right a high-pass that rises.",
+       "The sweep follows the ear, with a gentle resonance toward the ends; crossing the middle never clicks.",
+       "Turned with REC armed, it is recorded as automation."
+      ]
+     },
+     "where": {
+      "es": "HOME › LIVE MIX, la perilla FILTER",
+      "en": "HOME › LIVE MIX, the FILTER knob"
+     },
+     "anim": {
+      "kind": "djfilter",
+      "params": {}
+     },
+     "since": "0.9.1"
+    }
+   ]
+  },
+  {
+   "id": "modulators",
+   "name": {
+    "es": "Moduladores",
+    "en": "Modulators"
+   },
+   "lead": {
+    "es": "Lo que hace que nada quede quieto: envolventes, LFOs, una matriz, macros, las pistas moviéndose entre sí y hasta qué tan cerca estás.",
+    "en": "What keeps anything from standing still: envelopes, LFOs, a matrix, macros, the tracks moving each other and even how near you are."
+   },
+   "items": [
+    {
+     "id": "env",
+     "name": "ENV",
+     "tag": {
+      "es": "La forma de cada nota",
+      "en": "The shape of every note"
+     },
+     "statement": {
+      "es": "Cada nota nace, crece y se apaga con su propia forma; la envolvente también puede volver a empezar y convertirse en un latido.",
+      "en": "Every note is born, grows and fades with its own shape; the envelope can also start over and turn into a heartbeat."
+     },
+     "how": {
+      "es": [
+       "ENV: ATK, DEC, SUS, REL.",
+       "ENV DEST: cuánto va a FILTER, PITCH y SHAPE; LOOP la hace volver al ataque mientras mantenés (un LFO con forma de ADSR).",
+       "ENV 2: un segundo ADSR por voz, para mandar desde la matriz MOD a cualquier destino.",
+       "La pantalla muestra la envolvente al frente y detrás las de las últimas notas."
+      ],
+      "en": [
+       "ENV: ATK, DEC, SUS, REL.",
+       "ENV DEST: how much goes to FILTER, PITCH and SHAPE; LOOP sends it back to the attack while held (an ADSR-shaped LFO).",
+       "ENV 2: a second per-voice ADSR, to send from the MOD matrix to any destination.",
+       "The screen shows the envelope in front and the last notes' envelopes behind."
+      ]
+     },
+     "where": {
+      "es": "ENV",
+      "en": "ENV"
+     },
+     "anim": {
+      "kind": "env",
+      "params": {}
+     }
+    },
+    {
+     "id": "lfo",
+     "name": "LFO",
+     "tag": {
+      "es": "Una onda que mece",
+      "en": "A rocking wave"
+     },
+     "statement": {
+      "es": "Un satélite que gira a la fase del LFO y escribe su onda: el movimiento lento o rápido que mece al sonido.",
+      "en": "A satellite turning at the LFO's phase and writing its wave: the slow or fast motion that rocks the sound."
+     },
+     "how": {
+      "es": [
+       "LFO: RATE (libre en Hz, o a tempo de 16BAR a 1/32), WAVE (SIN, TRI, SAW, SQR, S&H, DRIFT), MODE (TRIG / FREE), FADE.",
+       "LFO DEST: PITCH, FILTER, SHAPE, AMP.",
+       "TRIG lo reinicia en PHASE con cada frase nueva; FREE corre libre entre notas.",
+       "DRIFT es un azar suave que deriva, para pads y drones que respiran."
+      ],
+      "en": [
+       "LFO: RATE (free in Hz, or in time from 16BAR to 1/32), WAVE (SIN, TRI, SAW, SQR, S&H, DRIFT), MODE (TRIG / FREE), FADE.",
+       "LFO DEST: PITCH, FILTER, SHAPE, AMP.",
+       "TRIG restarts it at PHASE with each new phrase; FREE runs free between notes.",
+       "DRIFT is a gentle wandering random, for pads and drones that breathe."
+      ]
+     },
+     "where": {
+      "es": "LFO",
+      "en": "LFO"
+     },
+     "anim": {
+      "kind": "lfo",
+      "params": {
+       "shape": "sine"
+      }
+     }
+    },
+    {
+     "id": "mseq",
+     "name": "MSEQ",
+     "tag": {
+      "es": "Un secuenciador de modulación",
+      "en": "A modulation sequencer"
+     },
+     "statement": {
+      "es": "Dieciséis pasos de voltaje, como un secuenciador de CV: una forma de modulación que dibujás vos, paso a paso.",
+      "en": "Sixteen steps of voltage, like a CV sequencer: a modulation shape you draw yourself, step by step."
+     },
+     "how": {
+      "es": [
+       "MSEQ: STEP (1–16), LEVEL, LEN, SLEW; MSEQ 2: DIV.",
+       "Se usa desde la matriz MOD con SRC STEP.",
+       "Sobre el tiempo del delay, secuencia los ecos."
+      ],
+      "en": [
+       "MSEQ: STEP (1–16), LEVEL, LEN, SLEW; MSEQ 2: DIV.",
+       "It is used from the MOD matrix with SRC STEP.",
+       "On the delay's time, it sequences the echoes."
+      ]
+     },
+     "where": {
+      "es": "LFO › MSEQ",
+      "en": "LFO › MSEQ"
+     },
+     "anim": {
+      "kind": "lfo",
+      "params": {
+       "shape": "steps"
+      }
+     }
+    },
+    {
+     "id": "mod-matrix",
+     "name": "MOD",
+     "tag": {
+      "es": "Todo hacia todo",
+      "en": "Everything to everything"
+     },
+     "statement": {
+      "es": "Una red de rutas: cualquier fuente puede mover cualquier cosa de la pista, de los efectos o del master. La pantalla la dibuja como cables con un pulso que corre.",
+      "en": "A web of routes: any source can move anything on the track, the effects or the master. The screen draws it as cables with a pulse running along them."
+     },
+     "how": {
+      "es": [
+       "Cuatro slots por pista: SLOT, SRC, DEST, AMT.",
+       "Fuentes: LFO, ENV, ENV2, VEL, KEY, RAND, MODW, AT, EXPR, STEP (MSEQ), NOISE, PROX y OCT+ / OCT−.",
+       "Destinos: PITCH, CUT, SHP, AMP, PAN, DIST, los envíos, RATE, VIB, E1–E8, el master, los buses de delay, reverb y chorus, y las macros M1–M4.",
+       "Al girar SRC o DEST se ve la ruta con nombres completos (LFO > FILTER CUTOFF)."
+      ],
+      "en": [
+       "Four slots per track: SLOT, SRC, DEST, AMT.",
+       "Sources: LFO, ENV, ENV2, VEL, KEY, RAND, MODW, AT, EXPR, STEP (MSEQ), NOISE, PROX and OCT+ / OCT−.",
+       "Destinations: PITCH, CUT, SHP, AMP, PAN, DIST, the sends, RATE, VIB, E1–E8, the master, the delay, reverb and chorus buses, and the macros M1–M4.",
+       "Turning SRC or DEST shows the route with full names (LFO > FILTER CUTOFF)."
+      ]
+     },
+     "where": {
+      "es": "LFO › MOD",
+      "en": "LFO › MOD"
+     },
+     "anim": {
+      "kind": "matrix",
+      "params": {}
+     }
+    },
+    {
+     "id": "macros",
+     "name": "M1–M4",
+     "tag": {
+      "es": "Cuatro perillas que mueven todo",
+      "en": "Four knobs that move everything"
+     },
+     "statement": {
+      "es": "Los cuatro knobs como superficie de deformación: cada macro mueve muchas cosas a la vez, en varias pistas, con un solo gesto.",
+      "en": "The four knobs as a surface for deformation: each macro moves many things at once, across tracks, in a single gesture."
+     },
+     "how": {
+      "es": [
+       "Mantené LFO: KNOB 1–4 son M1–M4; soltá y quedan enganchadas en cualquier página hasta que tocás LFO otra vez.",
+       "En LFO › MACROS, KNOB 1 elige la macro y sus destinos se suman: hasta 16 rutas en total.",
+       "Las macros también son destinos de la matriz: un LFO o una envolvente pueden mover una macro entera.",
+       "Con LFO mantenido, F3 tira rutas nuevas y G3 las borra; los valores se guardan con cada parte."
+      ],
+      "en": [
+       "Hold LFO: KNOB 1–4 are M1–M4; let go and they stay latched on any page until you press LFO again.",
+       "On LFO › MACROS, KNOB 1 picks the macro and its destinations add up: up to 16 routes in all.",
+       "Macros are also matrix destinations: an LFO or an envelope can move a whole macro.",
+       "With LFO held, F3 throws new routes and G3 clears them; the values are saved with each part."
+      ]
+     },
+     "where": {
+      "es": "Mantené LFO; LFO › MACROS",
+      "en": "Hold LFO; LFO › MACROS"
+     },
+     "anim": {
+      "kind": "macro",
+      "params": {}
+     }
+    },
+    {
+     "id": "life",
+     "name": "LIFE",
+     "tag": {
+      "es": "Las pistas se mueven entre sí",
+      "en": "The tracks move each other"
+     },
+     "statement": {
+      "es": "El organismo respira: las pistas dejan de ser seis aparatos separados y se influyen como seres vivos, una abre o empuja a la otra.",
+      "en": "The organism breathes: the tracks stop being six separate machines and influence each other like living beings, one opening or pushing the other."
+     },
+     "how": {
+      "es": [
+       "Cuatro perillas: FILTER, TIMBRE, PUMP y FX.",
+       "Cada pista que suena mueve a las demás: un golpe empuja, un pad abre.",
+       "Es liviano: casi no gasta procesador, así podés dejarlo andando."
+      ],
+      "en": [
+       "Four knobs: FILTER, TIMBRE, PUMP and FX.",
+       "Every sounding track moves the others: a hit pushes, a pad opens.",
+       "It is light: it barely uses the processor, so you can leave it running."
+      ]
+     },
+     "where": {
+      "es": "HOME › LIFE",
+      "en": "HOME › LIFE"
+     },
+     "anim": {
+      "kind": "life",
+      "params": {}
+     },
+     "since": "V10.7.81"
+    },
+    {
+     "id": "erosion",
+     "name": "EROSION",
+     "tag": {
+      "es": "Desgaste que modula",
+      "en": "Wear that modulates"
+     },
+     "statement": {
+      "es": "Un poco de tiempo y de intemperie sobre el sonido: el corte que tiembla, la altura que se vuelve metal. Modula, nunca reemplaza.",
+      "en": "A bit of time and weather on the sound: a trembling cutoff, a pitch turned to metal. It modulates, it never replaces."
+     },
+     "how": {
+      "es": [
+       "MODE NOISE: un azar que se desliza sobre el corte del filtro, a su RATE.",
+       "MODE METAL: un seno en una relación de la nota, sobre la altura, como FM.",
+       "NOISE es la profundidad: en 0 el sonido queda intacto."
+      ],
+      "en": [
+       "MODE NOISE: a gliding random on the filter's cutoff, at its RATE.",
+       "MODE METAL: a sine at a ratio of the note, on the pitch, as FM.",
+       "NOISE is the depth: at 0 the sound stays untouched."
+      ]
+     },
+     "where": {
+      "es": "EDIT, junto al FILTER (también en DRUM-X)",
+      "en": "EDIT, next to FILTER (on DRUM-X too)"
+     },
+     "anim": {
+      "kind": "lfo",
+      "params": {
+       "shape": "random"
+      }
+     },
+     "since": "V10.7.38"
+    },
+    {
+     "id": "momentary",
+     "name": "MOMENTARY",
+     "tag": {
+      "es": "Tocar y volver",
+      "en": "Touch and come back"
+     },
+     "statement": {
+      "es": "Un gesto para tocar el sonido sin perderlo: girás, se escucha, soltás y todo vuelve a como estaba.",
+      "en": "A gesture to play with the sound without losing it: turn, hear it, let go and everything returns to how it was."
+     },
+     "how": {
+      "es": [
+       "Mantené EDIT y girá KNOB 1–4: la perilla cambia su parámetro en la página que se veía.",
+       "Podés girar varias; el encabezado dice MOMENTARY.",
+       "Al soltar EDIT cada parámetro vuelve con un glide corto a su valor de antes; no se guarda ni se graba nada."
+      ],
+      "en": [
+       "Hold EDIT and turn KNOB 1–4: the knob changes its parameter on the page you were seeing.",
+       "You can turn several; the header says MOMENTARY.",
+       "When you let go of EDIT each parameter glides back to its earlier value; nothing is saved or recorded."
+      ]
+     },
+     "where": {
+      "es": "Mantené EDIT y girá una perilla",
+      "en": "Hold EDIT and turn a knob"
+     },
+     "anim": {
+      "kind": "macro",
+      "params": {}
+     },
+     "since": "0.9.9"
+    },
+    {
+     "id": "focus",
+     "name": "EDIT › FOCUS",
+     "tag": {
+      "es": "Un parámetro, grande",
+      "en": "One parameter, big"
+     },
+     "statement": {
+      "es": "Un parámetro del motor en grande, con su modulación a la vista: elegís qué mirar y qué lo mueve, en una sola página.",
+      "en": "One engine parameter shown big, its modulation in view: you choose what to look at and what moves it, on one page."
+     },
+     "how": {
+      "es": [
+       "KNOB 1 elige el parámetro (E1–E8), KNOB 2 lo ajusta.",
+       "KNOB 3 elige la fuente de MOD que lo mueve, KNOB 4 cuánto.",
+       "Una barra térmica con el nombre completo muestra el valor y cuánto lo mueve la modulación."
+      ],
+      "en": [
+       "KNOB 1 picks the parameter (E1–E8), KNOB 2 sets it.",
+       "KNOB 3 picks the MOD source moving it, KNOB 4 how much.",
+       "A thermal bar with the full name shows the value and how much modulation moves it."
+      ]
+     },
+     "where": {
+      "es": "EDIT › FOCUS",
+      "en": "EDIT › FOCUS"
+     },
+     "anim": {
+      "kind": "matrix",
+      "params": {}
+     }
+    },
+    {
+     "id": "velocity",
+     "name": "VELOCITY",
+     "tag": {
+      "es": "La fuerza de tus dedos",
+      "en": "The force of your fingers"
+     },
+     "statement": {
+      "es": "El FM-1 aprende a sentir: la fuerza y la presión de cada dedo llegan al sonido, y también pueden mover lo que quieras.",
+      "en": "The FM-1 learns to feel: the force and pressure of each finger reach the sound, and they can also move whatever you like."
+     },
+     "how": {
+      "es": [
+       "Las teclas F3..C5 sienten velocidad y aftertouch; cada tecla se calibra mientras tocás.",
+       "MENU › CONTROL: VELOCITY, VEL MIN, AFTERTOUCH (1–10, cuánta presión hace falta) y VEL LEARN.",
+       "VEL (en las páginas PLAY de EDIT) es cuánto le llega la velocidad a cada sonido.",
+       "VEL y AT son fuentes de la matriz MOD."
+      ],
+      "en": [
+       "Keys F3..C5 sense velocity and aftertouch; each key calibrates itself as you play.",
+       "MENU › CONTROL: VELOCITY, VEL MIN, AFTERTOUCH (1–10, how much pressure it takes) and VEL LEARN.",
+       "VEL (on EDIT's PLAY pages) is how much velocity reaches each sound.",
+       "VEL and AT are MOD matrix sources."
+      ]
+     },
+     "where": {
+      "es": "MENU › CONTROL",
+      "en": "MENU › CONTROL"
+     },
+     "anim": {
+      "kind": "velocity",
+      "params": {}
+     },
+     "since": "V10.6z7"
+    },
+    {
+     "id": "prox",
+     "name": "PROX",
+     "tag": {
+      "es": "La distancia como fuente",
+      "en": "Distance as a source"
+     },
+     "statement": {
+      "es": "Qué tan cerca está tu celular se vuelve un gesto: acercarlo o alejarlo abre un filtro, cambia un envío, mueve una pista entera.",
+      "en": "How near your phone is becomes a gesture: bringing it closer or farther opens a filter, changes a send, moves a whole track."
+     },
+     "how": {
+      "es": [
+       "Prendé el Bluetooth (MENU › SYSTEM › BLUETOOTH ON) y conectá una app MIDI del celular.",
+       "En la página PROX: OCT− con el celular lejos (FAR), OCT+ apoyado en el FM-1 (NEAR).",
+       "MIN, MAX, SLEW y SENS ajustan el rango y la respuesta.",
+       "En LFO › MOD elegí SRC PROX y mandalo adonde quieras; con AIR escucha a los dispositivos de alrededor."
+      ],
+      "en": [
+       "Turn Bluetooth on (MENU › SYSTEM › BLUETOOTH ON) and connect a phone MIDI app.",
+       "On the PROX page: OCT− with the phone far (FAR), OCT+ resting on the FM-1 (NEAR).",
+       "MIN, MAX, SLEW and SENS set the range and the response.",
+       "On LFO › MOD choose SRC PROX and send it wherever you like; with AIR it listens to the devices around."
+      ]
+     },
+     "where": {
+      "es": "MENU › SYSTEM › BLUETOOTH, OCT+ (la página PROX)",
+      "en": "MENU › SYSTEM › BLUETOOTH, OCT+ (the PROX page)"
+     },
+     "anim": {
+      "kind": "swarm",
+      "params": {}
+     },
+     "since": "V10.13"
+    },
+    {
+     "id": "midi-learn",
+     "name": "LEARN",
+     "tag": {
+      "es": "Tu controlador, a cualquier perilla",
+      "en": "Your controller, to any knob"
+     },
+     "statement": {
+      "es": "Cualquier perilla del sonido de una pista, a cualquier CC de tu controlador, aprendido en el equipo con dos gestos.",
+      "en": "Any knob of a track's sound, to any CC of your controller, learnt on the device in two gestures."
+     },
+     "how": {
+      "es": [
+       "MENU › CONTROL › LEARN: SEL TRACK (sigue a la pista elegida) o FIXED TRK.",
+       "Girá una perilla del FM-1 y después mové la de tu controlador: CC21 > T2 CUT.",
+       "Hasta diez CC aprendidos, por USB, el jack TRS o Bluetooth; se guardan con la configuración."
+      ],
+      "en": [
+       "MENU › CONTROL › LEARN: SEL TRACK (follows the chosen track) or FIXED TRK.",
+       "Turn an FM-1 knob, then move your controller's: CC21 > T2 CUT.",
+       "Up to ten learnt CCs, over USB, the TRS jack or Bluetooth; kept with the settings."
+      ]
+     },
+     "where": {
+      "es": "MENU › CONTROL › LEARN",
+      "en": "MENU › CONTROL › LEARN"
+     },
+     "anim": {
+      "kind": "macro",
+      "params": {}
+     },
+     "since": "0.9.12"
+    }
+   ]
+  },
+  {
+   "id": "generators",
+   "name": {
+    "es": "Generadores",
+    "en": "Generators"
+   },
+   "lead": {
+    "es": "Lo que propone música por vos: un generador de temas, dados para cada parte y un drone que se modela como arcilla. Siempre con UNDO a mano.",
+    "en": "What proposes music for you: a song generator, dice for every part and a drone you shape like clay. Always with UNDO at hand."
+   },
+   "items": [
+    {
+     "id": "gene",
+     "name": "GENERATOR",
+     "tag": {
+      "es": "Una idea de tema entera",
+      "en": "A whole song idea"
+     },
+     "statement": {
+      "es": "Un generador que escribe una idea de tema completa desde un género: batería, bajo, acordes, arpegio y melodía, con sus sonidos y su espacio. La misma semilla siempre da la misma canción.",
+      "en": "A generator that writes a whole song idea from a genre: drums, bass, chords, arpeggio and melody, with their sounds and their space. The same seed always gives the same song."
+     },
+     "how": {
+      "es": [
+       "GENRE: EXPLORE (todas las reglas rotas), RANDOM o un género: techno, house, cumbia, reggaetón, dembow, IDM, jazz, hip hop, phonk, dubstep…",
+       "SEED, ENERGY y FORM (LOOP, PARTS, SONG, MY LOOP).",
+       "DRUMS, BASS, CHORDS, ARP, LEAD: OFF, 10–100 % o AUTO; COMPLEX, SWING, HUMAN.",
+       "OCT+ arma la pieza; con los ajustes sin tocar tira otra semilla, y girando una perilla cambia solo esa parte."
+      ],
+      "en": [
+       "GENRE: EXPLORE (every rule broken), RANDOM or a genre: techno, house, cumbia, reggaeton, dembow, IDM, jazz, hip hop, phonk, dubstep…",
+       "SEED, ENERGY and FORM (LOOP, PARTS, SONG, MY LOOP).",
+       "DRUMS, BASS, CHORDS, ARP, LEAD: OFF, 10–100 % or AUTO; COMPLEX, SWING, HUMAN.",
+       "OCT+ builds the piece; with settings untouched it throws a new seed, and turning one knob changes only that part."
+      ]
+     },
+     "where": {
+      "es": "HOME + SELECT desde cualquier página; PRESETS elige el género",
+      "en": "HOME + SELECT from any page; PRESETS picks the genre"
+     },
+     "anim": {
+      "kind": "gen",
+      "params": {}
+     }
+    },
+    {
+     "id": "my-loop",
+     "name": "FORM MY LOOP",
+     "tag": {
+      "es": "Tu loop hecho tema",
+      "en": "Your loop made a song"
+     },
+     "statement": {
+      "es": "Tu loop queda como está y se vuelve el drop de un tema entero: el generador lo escucha, lo rearmoniza y arma alrededor la estrofa, el build y el break del género.",
+      "en": "Your loop stays as it is and becomes the drop of a whole song: the generator listens to it, reharmonizes it and builds the genre's verse, build-up and break around it."
+     },
+     "how": {
+      "es": [
+       "Escucha la tonalidad y el modo de tu loop.",
+       "Agrega bajo, acordes o una contramelodía hecha con tu melodía, solo en pistas vacías.",
+       "Las demás secciones son del género, tocadas con tus sonidos.",
+       "OCT+ otra vez, otro tema con el mismo loop; UNDO te devuelve el loop."
+      ],
+      "en": [
+       "It listens to your loop's key and mode.",
+       "It adds bass, chords or a countermelody made from your melody, only on empty tracks.",
+       "The other sections belong to the genre, played with your sounds.",
+       "OCT+ again, another song from the same loop; UNDO gives you the loop back."
+      ]
+     },
+     "where": {
+      "es": "GENERATOR, FORM en MY LOOP, OCT+",
+      "en": "GENERATOR, FORM on MY LOOP, OCT+"
+     },
+     "anim": {
+      "kind": "gen",
+      "params": {}
+     },
+     "since": "V10.7.16"
+    },
+    {
+     "id": "drone-clay",
+     "name": "DRONE CLAY",
+     "tag": {
+      "es": "Un drone que se modela",
+      "en": "A drone you mould"
+     },
+     "statement": {
+      "es": "Un secuenciador por pista hecho de arcilla: una nota muy grave sostenida con la voz de la pista y cuatro manos que la moldean, moviendo cualquier parámetro y hasta tocando notas sobre la escala.",
+      "en": "A per-track sequencer made of clay: a very low note held in the track's own voice and four hands moulding it, moving any parameter and even playing notes on the scale."
+     },
+     "how": {
+      "es": [
+       "DRONE CLAY: prendelo (ON), elegí nota y octava; RATE en OFF lo sostiene, si no lo vuelve a atacar con el tempo.",
+       "CLAY MOD 1–4: DEST (qué parámetro mueve), SHAPE (KICK, SNARE, HAT… y otras formas), EUCLID y AMOUNT.",
+       "CLAY DECAY: cuánto dura cada golpe de modulación; los gestos ARP, CHORD y HIT tocan sobre la escala.",
+       "En MONO o LEGATO le cede la voz a los pasos y vuelve después; en POLY suenan juntos."
+      ],
+      "en": [
+       "DRONE CLAY: turn it ON, pick a note and octave; RATE at OFF holds it, otherwise it re-strikes with the tempo.",
+       "CLAY MOD 1–4: DEST (which parameter it moves), SHAPE (KICK, SNARE, HAT… and other shapes), EUCLID and AMOUNT.",
+       "CLAY DECAY: how long each modulation hit lasts; the ARP, CHORD and HIT gestures play on the scale.",
+       "On MONO or LEGATO it yields the voice to the steps and comes back; on POLY they sound together."
+      ]
+     },
+     "where": {
+      "es": "SEQ › CLAY",
+      "en": "SEQ › CLAY"
+     },
+     "anim": {
+      "kind": "drone",
+      "params": {}
+     },
+     "since": "V10.8.21"
+    },
+    {
+     "id": "sound-dice",
+     "name": "EDIT + SELECT",
+     "tag": {
+      "es": "Dados de sonido",
+      "en": "Sound dice"
+     },
+     "statement": {
+      "es": "Una tirada para salir de lo conocido: el sonido de la pista cambia al azar, cerca de un preset, y vos decidís si se queda.",
+      "en": "A throw to leave the familiar behind: the track's sound changes at random, close to a preset, and you decide whether it stays."
+     },
+     "how": {
+      "es": [
+       "Carga un preset de fábrica al azar del motor y mueve cada parámetro hasta un cuarto de su rango.",
+       "En DRUM-X tira los dos lados de cada sonido; a la mitad le da una fórmula propia.",
+       "Girá SELECT otra vez para otra tirada; OCT+ la deja, OCT− vuelve al sonido de antes."
+      ],
+      "en": [
+       "It loads a random factory preset of the engine and moves each parameter up to a quarter of its range.",
+       "On DRUM-X it throws both sides of each sound; half of them get a formula of their own.",
+       "Turn SELECT again for another throw; OCT+ keeps it, OCT− brings the earlier sound back."
+      ]
+     },
+     "where": {
+      "es": "Mantené EDIT y girá SELECT",
+      "en": "Hold EDIT and turn SELECT"
+     },
+     "anim": {
+      "kind": "dice",
+      "params": {}
+     }
+    },
+    {
+     "id": "lfo-fx-dice",
+     "name": "LFO / FX + SELECT",
+     "tag": {
+      "es": "Dados de LFO y efectos",
+      "en": "LFO and effects dice"
+     },
+     "statement": {
+      "es": "Los mismos dados sobre el movimiento y el espacio: un LFO nuevo o unos efectos nuevos, para escuchar antes de decidir.",
+      "en": "The same dice on motion and space: a new LFO or new effects, to hear before you decide."
+     },
+     "how": {
+      "es": [
+       "LFO + SELECT sortea el LFO de la pista.",
+       "FX + SELECT sortea los efectos.",
+       "OCT+ los deja, OCT− los cancela."
+      ],
+      "en": [
+       "LFO + SELECT throws the track's LFO.",
+       "FX + SELECT throws the effects.",
+       "OCT+ keeps them, OCT− cancels them."
+      ]
+     },
+     "where": {
+      "es": "Mantené LFO o FX y girá SELECT",
+      "en": "Hold LFO or FX and turn SELECT"
+     },
+     "anim": {
+      "kind": "dice",
+      "params": {}
+     }
+    },
+    {
+     "id": "macro-dice",
+     "name": "MACRO DICE",
+     "tag": {
+      "es": "Rutas al azar",
+      "en": "Random routes"
+     },
+     "statement": {
+      "es": "Las macros llegan con rutas al azar en cada encendido, así siempre hay algo para deformar desde el primer minuto.",
+      "en": "The macros arrive with random routes at every power-on, so there is always something to deform from the first minute."
+     },
+     "how": {
+      "es": [
+       "Al encender, cada pista sin rutas recibe dos al azar.",
+       "Con LFO mantenido, F3 tira rutas nuevas en las pistas que suenan; G3 las borra.",
+       "Las rutas al azar nunca apuntan a PITCH, así nada se desafina."
+      ],
+      "en": [
+       "At power-on, each track with no routes gets two at random.",
+       "With LFO held, F3 throws new routes on the sounding tracks; G3 clears them.",
+       "Random routes never target PITCH, so nothing goes out of tune."
+      ]
+     },
+     "where": {
+      "es": "Mantené LFO + F3",
+      "en": "Hold LFO + F3"
+     },
+     "anim": {
+      "kind": "dice",
+      "params": {}
+     }
+    },
+    {
+     "id": "undo",
+     "name": "UNDO",
+     "tag": {
+      "es": "Un paso atrás",
+      "en": "One step back"
+     },
+     "statement": {
+      "es": "Equivocarse no cuesta nada: un gesto vuelve atrás el último cambio grande, y otro lo rehace, sin parar la música.",
+      "en": "Mistakes cost nothing: one gesture takes back the last big change, and another redoes it, without stopping the music."
+     },
+     "how": {
+      "es": [
+       "GLO mantenido + G4: UNDO; otra vez, rehacer.",
+       "O mantené REC solo y soltalo sin tocar nada más.",
+       "Cubre dados, pistas borradas, NEW PROJECT, INIT, RECALL, una parte cargada, un pegado de pasos y lo que arma el generador."
+      ],
+      "en": [
+       "GLO held + G4: UNDO; again, redo.",
+       "Or hold REC alone and let it go without touching anything else.",
+       "It covers dice, cleared tracks, NEW PROJECT, INIT, RECALL, a loaded part, a paste of steps and what the generator builds."
+      ]
+     },
+     "where": {
+      "es": "GLO + G4, o REC mantenido solo",
+      "en": "GLO + G4, or REC held alone"
+     },
+     "anim": {
+      "kind": "undo",
+      "params": {}
+     }
+    }
+   ]
+  },
+  {
+   "id": "songs",
+   "name": {
+    "es": "Canciones",
+    "en": "Songs"
+   },
+   "lead": {
+    "es": "La memoria: temas enteros guardados adentro, que se arman tocando y cambian mientras suenan, en vez de repetir un loop.",
+    "en": "The memory: whole songs kept inside, built by playing and changing as they sound, instead of repeating a loop."
+   },
+   "items": [
+    {
+     "id": "projects-parts",
+     "name": "PROJECTS · A–D",
+     "tag": {
+      "es": "Seis temas, cuatro partes",
+      "en": "Six songs, four parts"
+     },
+     "statement": {
+      "es": "Un proyecto es un tema, y cada tema tiene cuatro partes, A, B, C y D: cada una una foto completa de la música, con sus sonidos, sus pasos y sus efectos.",
+      "en": "A project is a song, and each song has four parts, A, B, C and D: each a complete snapshot of the music, with its sounds, its steps and its effects."
+     },
+     "how": {
+      "es": [
+       "Seis proyectos; cada parte guarda sonidos, pasos, automatización, el kit, el SLICER, las macros, el tempo y los efectos.",
+       "Cada pista tiene sus cuatro secuencias A–D para tocar en vivo.",
+       "Un sonido que cambiás mientras suena el tema se queda en las partes que siguen; RECALL (EDIT + G3) trae el de la parte.",
+       "SAVE + KNOB 1 elige otro proyecto (al soltar SAVE, parado)."
+      ],
+      "en": [
+       "Six projects; each part keeps sounds, steps, automation, the kit, the SLICER, the macros, the tempo and the effects.",
+       "Every track has its four sequences A–D to play live.",
+       "A sound you change while the song plays stays through the parts that follow; RECALL (EDIT + G3) brings back the part's.",
+       "SAVE + KNOB 1 picks another project (on releasing SAVE, stopped)."
+      ]
+     },
+     "where": {
+      "es": "SAVE › PROJECTS y PART SLOTS",
+      "en": "SAVE › PROJECTS and PART SLOTS"
+     },
+     "anim": {
+      "kind": "song",
+      "params": {}
+     }
+    },
+    {
+     "id": "live-sections",
+     "name": "SAVE + F3–B3",
+     "tag": {
+      "es": "Saltar de parte en vivo",
+      "en": "Jumping parts live"
+     },
+     "statement": {
+      "es": "Las partes se tocan como escenas de un show: entran en el compás siguiente, se encadenan y se guardan sin parar.",
+      "en": "Parts are played like scenes in a show: they come in on the next bar, chain together and are stored without stopping."
+     },
+     "how": {
+      "es": [
+       "Mantené SAVE: F3–B3 tocan la parte A–D en el compás siguiente (parado, al instante).",
+       "Varias en una misma mantenida: una cadena rápida que gira en loop.",
+       "C4–F4 guardan la música en A–D; OCT+ guarda en la que suena, OCT− la recupera.",
+       "D5 elige qué toca PLAY: LOOP o SONG."
+      ],
+      "en": [
+       "Hold SAVE: F3–B3 play part A–D on the next bar (stopped, at once).",
+       "Several in one hold: a quick chain that loops.",
+       "C4–F4 store the music in A–D; OCT+ stores into the playing one, OCT− brings it back.",
+       "D5 sets what PLAY plays: LOOP or SONG."
+      ]
+     },
+     "where": {
+      "es": "Mantené SAVE",
+      "en": "Hold SAVE"
+     },
+     "anim": {
+      "kind": "scene",
+      "params": {}
+     }
+    },
+    {
+     "id": "jam",
+     "name": "JAM",
+     "tag": {
+      "es": "Armar un tema tocando",
+      "en": "Building a song by playing"
+     },
+     "statement": {
+      "es": "El modo canción se toca: cambiás qué secuencia suena en cada pista, en vivo, y el cambio entra cuando la música lo pide.",
+      "en": "The song mode is played: you switch which sequence each track plays, live, and the change lands when the music asks for it."
+     },
+     "how": {
+      "es": [
+       "Dale PLAY; F3–B3 eligen A–D en todas las pistas; OCT+ lanza, OCT− para.",
+       "CAMBIO dice cuándo entra el cambio (al instante, a la 1/16 … o al compás).",
+       "Una línea de ayuda abajo dice qué podés hacer en cada momento."
+      ],
+      "en": [
+       "Press PLAY; F3–B3 pick A–D on every track; OCT+ launches, OCT− stops.",
+       "CAMBIO sets when the change lands (at once, on the 1/16 … or on the bar).",
+       "A help line at the bottom says what you can do at each moment."
+      ]
+     },
+     "where": {
+      "es": "HOME › JAM",
+      "en": "HOME › JAM"
+     },
+     "anim": {
+      "kind": "song",
+      "params": {}
+     },
+     "since": "V10.8.21"
+    },
+    {
+     "id": "take",
+     "name": "TAKE",
+     "tag": {
+      "es": "La toma y tocar encima",
+      "en": "The take, and playing over"
+     },
+     "statement": {
+      "es": "Lo que tocás queda como una toma; después la toma suena sola y vos tocás encima, y lo tuyo queda marcado.",
+      "en": "What you play becomes a take; then the take plays by itself and you play over it, and your part is marked."
+     },
+     "how": {
+      "es": [
+       "En JAM, REC graba una toma desde el próximo compás; REC otra vez la termina.",
+       "K4 LOCK la reproduce: lo que tocás encima queda marcado YOU.",
+       "Con una pista elegida, REC rehace esa pista una vuelta y OCT− la deshace.",
+       "TAKE edita los cambios: K1 elegir, K2 mover, K3 secuencia, K4 compases, OCT+ nuevo, OCT− borrar."
+      ],
+      "en": [
+       "On JAM, REC records a take from the next bar; REC again ends it.",
+       "K4 LOCK plays it back: what you play over it is marked YOU.",
+       "With a track chosen, REC redoes that track for one round and OCT− undoes it.",
+       "TAKE edits the changes: K1 pick, K2 move, K3 sequence, K4 bars, OCT+ new, OCT− delete."
+      ]
+     },
+     "where": {
+      "es": "HOME › JAM (REC, K4 LOCK) y HOME › TAKE",
+      "en": "HOME › JAM (REC, K4 LOCK) and HOME › TAKE"
+     },
+     "anim": {
+      "kind": "song",
+      "params": {}
+     },
+     "since": "V10.8.21"
+    },
+    {
+     "id": "arrange",
+     "name": "ARRANGE",
+     "tag": {
+      "es": "El tema como partitura viva",
+      "en": "The song as a living score"
+     },
+     "statement": {
+      "es": "El tema entero de un vistazo: filas de partes con sus compases, como una partitura viva con un carril por pista, y un final que vos decidís.",
+      "en": "The whole song at a glance: rows of parts with their bars, like a living score with one lane per track, and an ending you decide."
+     },
+     "how": {
+      "es": [
+       "Hasta 16 filas, cada una una parte que suena 1–64 compases.",
+       "KNOB 1 la fila, KNOB 2 su parte, KNOB 3 sus compases, KNOB 4 guarda o borra su escena; OCT+ agrega, OCT− borra.",
+       "END: STOP, x2–x8 o LOOP.",
+       "PLAY toca el tema desde el principio; al terminar vuelve la música que tenías."
+      ],
+      "en": [
+       "Up to 16 rows, each a part playing for 1–64 bars.",
+       "KNOB 1 the row, KNOB 2 its part, KNOB 3 its bars, KNOB 4 stores or clears its scene; OCT+ adds, OCT− deletes.",
+       "END: STOP, x2–x8 or LOOP.",
+       "PLAY plays the song from the start; when it ends the music you had comes back."
+      ]
+     },
+     "where": {
+      "es": "HOME › ARRANGE",
+      "en": "HOME › ARRANGE"
+     },
+     "anim": {
+      "kind": "song",
+      "params": {}
+     }
+    },
+    {
+     "id": "scenes",
+     "name": "SCENE STORED",
+     "tag": {
+      "es": "Cambios dentro del tema",
+      "en": "Changes inside the song"
+     },
+     "statement": {
+      "es": "Cada fila del tema puede traer su escena, para que la canción evolucione sola o con vos encima, en vez de repetir un loop.",
+      "en": "Each row of the song can bring its scene, so the song evolves on its own or with you on top, instead of repeating a loop."
+     },
+     "how": {
+      "es": [
+       "Una escena guarda los mutes de las pistas, los mutes de grupo de DRUM-X, las macros M1–M4 y los punch-ins mantenidos.",
+       "Se aplica cuando entra su fila y sigue en las filas sin escena.",
+       "Dejá los mutes y las macros como los querés y girá KNOB 4 a la derecha en ARRANGE."
+      ],
+      "en": [
+       "A scene keeps the track mutes, the DRUM-X group mutes, the macros M1–M4 and the held punch-ins.",
+       "It applies when its row comes in and stays through rows with no scene.",
+       "Leave the mutes and macros as you want them and turn KNOB 4 right on ARRANGE."
+      ]
+     },
+     "where": {
+      "es": "HOME › ARRANGE, KNOB 4",
+      "en": "HOME › ARRANGE, KNOB 4"
+     },
+     "anim": {
+      "kind": "scene",
+      "params": {}
+     }
+    },
+    {
+     "id": "scene-key",
+     "name": "SCL › SCENE",
+     "tag": {
+      "es": "Una tecla toca toda la banda",
+      "en": "One key plays the whole band"
+     },
+     "statement": {
+      "es": "Cada pista toma un rol y una sola tecla llega a todas a la vez, cada una a su manera, desde esa nota y la tonalidad: una banda entera bajo un dedo.",
+      "en": "Each track takes a role and a single key reaches all of them at once, each in its own way, from that note and the key: a whole band under one finger."
+     },
+     "how": {
+      "es": [
+       "Roles: KEEP, CHORD, ARP, BASS (una octava abajo), LEAD (una arriba), DRUM (la tecla escribe un ritmo).",
+       "KNOB 1 SCENE ON / OFF, KNOB 2 la pista, KNOB 3 su ROLE, KNOB 4 su acorde, patrón o estilo.",
+       "OCT+ tira el dado de los roles, OCT− los pone todos en KEEP; LEADER pueden ser las teclas o las notas de una pista.",
+       "Con REC armado cada pista con rol graba lo que tocó."
+      ],
+      "en": [
+       "Roles: KEEP, CHORD, ARP, BASS (an octave down), LEAD (one up), DRUM (the key writes a rhythm).",
+       "KNOB 1 SCENE ON / OFF, KNOB 2 the track, KNOB 3 its ROLE, KNOB 4 its chord, pattern or style.",
+       "OCT+ throws the roles' dice, OCT− sets them all to KEEP; the LEADER can be the keys or a track's notes.",
+       "With REC armed every track with a role records what it played."
+      ]
+     },
+     "where": {
+      "es": "SCL › SCENE",
+      "en": "SCL › SCENE"
+     },
+     "anim": {
+      "kind": "scene",
+      "params": {}
+     },
+     "since": "V10.24"
+    },
+    {
+     "id": "mutes",
+     "name": "GLO",
+     "tag": {
+      "es": "Mutes y solos",
+      "en": "Mutes and solos"
+     },
+     "statement": {
+      "es": "Sacar y meter pistas es la forma más simple de arreglar en vivo: mutes enganchados, solos momentáneos y grupos de batería.",
+      "en": "Taking tracks out and back in is the simplest way to arrange live: latched mutes, momentary solos and drum groups."
+     },
+     "how": {
+      "es": [
+       "Mantené GLO: las negras 1–6 mutean T1–T6 (enganchado); F3–D4 hacen solo mientras las mantenés.",
+       "Las negras 7–10 mutean los grupos de DRUM-X: KICK, SNARE, HAT, PERC; E4 desmutea todo.",
+       "F4 es TAP tempo; GLO + SELECT el tempo; GLO + PLAY reinicia sin parar.",
+       "Los mutes se guardan con el proyecto y en las escenas."
+      ],
+      "en": [
+       "Hold GLO: black keys 1–6 mute T1–T6 (latched); F3–D4 solo while held.",
+       "Black keys 7–10 mute the DRUM-X groups: KICK, SNARE, HAT, PERC; E4 unmutes all.",
+       "F4 is TAP tempo; GLO + SELECT the tempo; GLO + PLAY restarts without stopping.",
+       "Mutes are saved with the project and in the scenes."
+      ]
+     },
+     "where": {
+      "es": "Mantené GLO",
+      "en": "Hold GLO"
+     },
+     "anim": {
+      "kind": "tracks",
+      "params": {
+       "n": 6
+      }
+     }
+    }
+   ]
+  }
+ ]
+}
