@@ -31,6 +31,20 @@
   .tip p { margin: 0 0 6px; }
   .tip ol { margin: 0; padding-left: 20px; font-size: 14px; }
   .diag { border: 1px solid var(--dim); padding: 8px 12px; margin: 16px 0; }
+  /* (studio) before installing, the warnings in one card, accepted once; then three steps */
+  .gate { border: 1px solid var(--dim); padding: 16px 18px; margin: 0 0 18px; }
+  .gate h2 { margin: 0 0 6px; font-size: 20px; }
+  .gatebody { max-height: 52vh; overflow: auto; border-top: 1px solid var(--dim); border-bottom: 1px solid var(--dim); padding: 12px 4px; margin: 10px 0; }
+  .accept label { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; font-weight: 600; }
+  .accept input { width: 20px; height: 20px; margin-top: 2px; flex: none; }
+  .isteps { list-style: none; counter-reset: s; padding: 0; margin: 0 0 18px; display: grid; gap: 14px; }
+  .isteps li { counter-increment: s; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 4px 12px; align-items: start; }
+  .isteps li::before { content: counter(s); grid-row: span 4; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; border: 1px solid currentColor; font-weight: 600; }
+  .isteps li > * { grid-column: 2; }
+  .isteps b { font-size: 16px; }
+  .more { margin: 12px 0; }
+  .more summary { cursor: pointer; color: var(--dim); }
+  button.linkish { background: none; color: var(--dim); padding: 0; text-decoration: underline; font-size: 13px; }
   .diag pre { max-height: 220px; overflow: auto; margin: 8px 0; }
   .diag button { font-size: 13px; padding: 4px 12px; margin: 0 6px 6px 0; }
   a { color: inherit; }
@@ -44,6 +58,13 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Instrument+Sans:wght@400;500;600&amp;family=Silkscreen&amp;family=VT323&amp;display=swap">
 <style id="jiant-skin">
 /*SKIN-BEGIN*/
+:root[data-skin] .gate { background:var(--sk-panel); border:var(--sk-b) solid var(--line); border-radius:var(--sk-r); padding:20px 22px; }
+:root[data-skin] .gate h2 { font:400 22px/1.2 var(--sk-display); color:var(--fg); }
+:root[data-skin] .gatebody { border-color:var(--line); }
+:root[data-skin] .accept input { accent-color:var(--sk-accent); }
+:root[data-skin] .isteps li::before { border-color:var(--sk-accent); color:var(--sk-accent); font-family:var(--sk-mono); }
+:root[data-skin] .isteps b { font-family:var(--sk-display); font-weight:400; letter-spacing:.02em; }
+:root[data-skin] .more summary { font-family:var(--sk-mono); font-size:13px; }
 /* (studio) The installer in the firmware's own look, JIANT FM's or JIANT BYTE's (html[data-skin]; JIANT Studio sets it), the
    same tokens and type as JIANT Studio and the editor: the notices as cards, Install as the one big button, the progress in
    the heat gradient, the report in its panel. Nothing of the page's markup or code changes for it. */
@@ -115,24 +136,41 @@
   <p id="beta-banner" hidden style="margin:0 0 20px;padding:14px;border:2px solid #ff8a00;color:#ff8a00;font:700 24px/1.2 monospace">BETA</p>
   <nav class="lang" id="lang" aria-label="Language"><button data-lang="es" lang="es">Español</button><button data-lang="en" lang="en">English</button><button data-lang="ja" lang="ja">日本語</button></nav>
   <h1 class="jiant-wordmark"><a href="https://juanjiant-bit.github.io/JIANT/" aria-label="JIANT FM home">JIANT <span class="fm">FM</span></a><span class="jiant-tool">INSTALLER</span></h1>
-  <p data-t="intro"></p>
-  <p data-t="warn"></p>
-  <p data-t="samples" style="color:#ec6e50"></p>
-  <p data-t="dual" style="border-left:3px solid #ec6e50;padding:4px 0 4px 12px"></p>
-  <p class="small" data-t="direct"></p>
-  <p class="small" data-t="beta"></p>
-  <p class="small"><span data-t="brick"></span>
-    <a href="https://github.com/kurogedelic/FM-1-transporter" target="_blank" rel="noopener" style="color:inherit">FM-1-transporter</a></p>
-  <div class="jiant-notice">
-    <p style="margin:0 0 8px;font-weight:600" data-t="firstTitle"></p>
-    <p class="small" style="margin:0 0 10px" data-t="firstText"></p>
-    <p class="small" style="margin:0 0 10px" data-t="darkText"></p>
-    <p style="margin:0 0 10px"><button id="first-stock" data-t="firstStock"></button></p>
-    <p class="small" style="margin:0" data-t="firstOk"></p>
-  </div>
-  <p class="small"><label><span data-t="verLabel"></span> <select id="ver" style="font:inherit"></select></label>
-    <br><span data-t="verOld"></span></p>
-  <p id="edition-info" class="small"></p>
+  <!-- (studio) Before installing: every warning once, read and accepted; then the installer itself, clean (gateInit) -->
+  <section id="gate" class="gate">
+    <h2 data-t="gateTitle"></h2>
+    <p class="small" data-t="gateLead"></p>
+    <div class="gatebody">
+      <p data-t="warn"></p>
+      <p data-t="samples" style="color:#ec6e50"></p>
+      <p data-t="dual" style="border-left:3px solid #ec6e50;padding:4px 0 4px 12px"></p>
+      <p class="small" data-t="direct"></p>
+      <p class="small" data-t="beta"></p>
+      <p class="small"><span data-t="brick"></span>
+        <a href="https://github.com/kurogedelic/FM-1-transporter" target="_blank" rel="noopener" style="color:inherit">FM-1-transporter</a></p>
+      <div class="jiant-notice">
+        <p style="margin:0 0 8px;font-weight:600" data-t="firstTitle"></p>
+        <p class="small" style="margin:0 0 10px" data-t="firstText"></p>
+        <p class="small" style="margin:0" data-t="darkText"></p>
+      </div>
+      <!-- (V10.6z9) 6 songs, 8 before: back up first -->
+      <div class="jiant-notice">
+        <p style="margin:0 0 8px;font-weight:600" data-t="sixTitle"></p>
+        <p class="small" style="margin:0" data-t="sixText"></p>
+      </div>
+    </div>
+    <p class="accept"><label><input type="checkbox" id="gate-ok"> <span data-t="gateAccept"></span></label></p>
+    <p><button id="gate-go" disabled data-t="gateGo"></button></p>
+  </section>
+  <section id="app" hidden>
+  <ol class="isteps">
+    <li><b data-t="iStep1"></b><span data-t="intro"></span></li>
+    <li><b data-t="iStep2"></b>
+      <select id="ver" style="font:inherit" aria-label="Version"></select>
+      <span class="small" data-t="verOld"></span>
+      <span id="edition-info" class="small"></span></li>
+    <li><b data-t="iStep3"></b><span class="small" data-t="firstOk"></span></li>
+  </ol>
   <!-- (0.8.5) the release's notice, before 0.8.5 is written (releaseNotice) -->
   <div id="notice" class="jiant-notice" hidden>
     <p style="margin:0 0 8px;font-weight:600" data-t="n085Title"></p>
@@ -140,12 +178,16 @@
     <p class="small" style="margin:0 0 8px" data-t="n085Risk"></p>
     <p class="small" style="margin:0 0 8px" data-t="n085Keep"></p>
   </div>
-  <!-- (V10.6z9) 6 songs, 8 before: back up first (the text only; the firmware branch's installer also offers a backup button here) -->
-  <div class="jiant-notice">
-    <p style="margin:0 0 8px;font-weight:600" data-t="sixTitle"></p>
-    <p class="small" style="margin:0" data-t="sixText"></p>
-  </div>
   <p><button id="go" disabled data-t="install"></button></p>
+  <progress id="bar" max="100" value="0"></progress>
+  <p id="status" role="status" aria-live="polite"></p>
+  <div id="tip" class="tip" hidden><p style="font-weight:600" data-t="tipTitle"></p><ol id="tiptext"></ol></div>
+  <p class="small"><button type="button" class="linkish" id="gate-again" data-t="gateReread"></button></p>
+  <details class="more">
+    <summary data-t="firstTitle"></summary>
+    <p class="small" data-t="firstText"></p>
+    <p><button id="first-stock" data-t="firstStock"></button></p>
+  </details>
   <details id="stock" style="margin-top:24px">
     <summary data-t="stockTitle"></summary>
     <p class="small" data-t="back"></p>
@@ -155,17 +197,16 @@
     <p class="small" data-t="stockBackup"></p>
     <p class="small"><label><input id="stock-recovery" type="checkbox"> <span data-t="stockRecovery"></span></label></p>
   </details>
-  <progress id="bar" max="100" value="0"></progress>
-  <p id="status" role="status" aria-live="polite"></p>
-  <div id="tip" class="tip" hidden><p style="font-weight:600" data-t="tipTitle"></p><ol id="tiptext"></ol></div>
   <!-- (0.9.11) what the installer saw and did: the report people paste when they ask for help -->
+  <details class="more diagwrap"><summary data-t="reportTitle"></summary>
   <div class="diag">
     <p class="small" style="margin:0 0 6px"><b data-t="reportTitle"></b> <span data-t="reportWhy"></span></p>
     <button id="copy-report" data-t="copyReport"></button><button id="boot-check" data-t="bootCheck" hidden></button>
     <span class="small" id="copy-state"></span>
     <textarea id="report-box" readonly hidden style="width:100%;height:160px;font:12px monospace"></textarea>
     <pre id="log"></pre>
-  </div>
+  </div></details>
+  </section>
   <p class="small" id="channel"></p>
   <p><a href="../editor/" style="color:inherit" data-t="editor"></a></p>
   <p><span data-t="manual"></span>
@@ -183,6 +224,9 @@
 const $ = (id) => document.getElementById(id);
 const TEXT = {
   ja: {
+    gateTitle: "インストールの前に", gateLead: "一度だけ読んでください。ファームウェアを書き込む前に知っておくべきことのすべてです。",
+    gateAccept: "注意事項を読み、自己責任でインストールすることに同意します。", gateGo: "続ける",
+    gateReread: "注意事項をもう一度見る", iStep1: "FM-1 を接続", iStep2: "バージョンを選ぶ", iStep3: "インストール",
     intro: "FM-1 を USB で接続してください。（Chrome か Edge で使えます）",
     warn: "書き込み中は USB を抜かないでください。",
     samples: "注意: JIANT にはユーザーサンプルがありません。Felucca のユーザーサンプル (USR1–3) はインストールで失われます（その領域は曲の保存に使われます）。元の WAV ファイルは手元に残しておいてください。",
@@ -232,6 +276,9 @@ const TEXT = {
     n085Confirm: "0.8.5 では DRUM-X のオクターブが加わり、中央以外のオクターブのドラムノートはラチェット / SHORT / GHOST / FLAM で鳴ります（既存の曲が変わることがあります）。プロジェクトのバックアップは保存しましたか？ OK でインストールします。",
   },
   en: {
+    gateTitle: "Before you install", gateLead: "Read this once: it is everything worth knowing before the firmware is written.",
+    gateAccept: "I have read the warnings and I install at my own risk.", gateGo: "Continue",
+    gateReread: "See the warnings again", iStep1: "Connect the FM-1", iStep2: "Choose the version", iStep3: "Install",
     intro: "Connect the FM-1 by USB. (Works in Chrome or Edge.)",
     warn: "Do not unplug the USB cable while writing.",
     samples: "Note: JIANT has no user samples. Felucca's user samples (USR1–3) are lost when you install it (that flash holds the songs now). Keep your original WAV files.",
@@ -429,6 +476,9 @@ Object.assign(TEXT.ja, {
   tip_error: "「レポートをコピー」を押して送ってください（GitHub の Issues、またはリンクを見つけた場所）。",
 });
 TEXT.es = {
+  gateTitle: "Antes de instalar", gateLead: "Leé esto una vez: es todo lo que conviene saber antes de escribir el firmware.",
+  gateAccept: "Leí las advertencias y acepto instalar bajo mi responsabilidad.", gateGo: "Continuar",
+  gateReread: "Ver las advertencias otra vez", iStep1: "Conectá la FM-1", iStep2: "Elegí la versión", iStep3: "Instalá",
   intro: "Conectá el FM-1 por USB. (Funciona en Chrome o Edge en una computadora; en Android con Chrome puede funcionar. En iPhone/iPad no.)",
   warn: "No desconectes el cable USB mientras escribe.",
   samples: "Atención: JIANT no tiene samples de usuario. Los samples de usuario de Felucca (USR1–3) se pierden al instalar (esa memoria ahora guarda los temas). Guardá tus WAV originales.",
@@ -655,6 +705,18 @@ function applyLang() {
   if (tipKey) showTip(tipKey);
   showChannel();
 }
+/* (studio) the gate: accepted once in this browser (until the warnings change), then the clean installer */
+const GATE_KEY = "jiant-installer-accepted-1";
+function gateShow(open) { $("gate").hidden = !open; $("app").hidden = open; }
+function gateInit() {
+  let ok = false;
+  try { ok = localStorage.getItem(GATE_KEY) === "1"; } catch (_) {}
+  gateShow(!ok);
+  $("gate-ok").addEventListener("change", () => { $("gate-go").disabled = !$("gate-ok").checked; });
+  $("gate-go").addEventListener("click", () => { try { localStorage.setItem(GATE_KEY, "1"); } catch (_) {} gateShow(false); window.scrollTo(0, 0); });
+  $("gate-again").addEventListener("click", () => { $("gate-ok").checked = true; $("gate-go").disabled = false; gateShow(true); window.scrollTo(0, 0); });
+}
+gateInit();
 const sayK = (k, arg = "") => { lastKey = k; lastArg = arg; $("status").textContent = t(k) + arg; };
 const say = (txt) => { lastKey = null; $("status").textContent = txt; };
 const log = (s) => { $("log").textContent += `${new Date().toISOString().slice(11, 19)} ${s}\n`; };
