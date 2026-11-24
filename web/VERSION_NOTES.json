@@ -175,9 +175,94 @@
     "presets_retouch": {
       "es": "Presets de fábrica retocados (envíos por rol, más movimiento)",
       "en": "Factory presets retouched (sends by role, more movement)"
+    },
+    "gain_all": {
+      "es": "GAIN en todos los motores (0 a 12 dB, OCT+ mantenido + KNOB 4 en la primera página de EDIT)",
+      "en": "GAIN on every engine (0 to 12 dB, OCT+ held + KNOB 4 on EDIT's first page)"
+    },
+    "dj_filter_knob": {
+      "es": "DJ FILTER en GLO > MIXER (OCT+ cambia la KNOB 4 entre BPM y DJ FILT)",
+      "en": "DJ FILTER on GLO > MIXER (OCT+ switches KNOB 4 between BPM and DJ FILT)"
+    },
+    "swarm_wave": {
+      "es": "SWARM: perilla WAVE con 8 fórmulas de FLOAT e indicador de señal en pantalla",
+      "en": "SWARM: WAVE knob with 8 FLOAT formulas and an on-screen signal indicator"
+    },
+    "swarm_notes": {
+      "es": "SWARM como fuente de notas de otra pista (MODE >T1..>T6)",
+      "en": "SWARM as a note source for another track (MODE >T1..>T6)"
+    },
+    "pages_bar_phrases_sys2": {
+      "es": "Páginas SEQ > BAR, SEQ > PHRASES y GLO > SYSTEM 2",
+      "en": "Pages SEQ > BAR, SEQ > PHRASES and GLO > SYSTEM 2"
     }
   },
   "versions": {
+    "V10.8.38": {
+      "date": "2026-11-24",
+      "status": "beta",
+      "summary": {
+        "es": "Beta: GAIN en todos los motores, DJ FILTER en MIXER, SWARM con WAVE y como fuente de notas, NOTE de vuelta en SEQ y TRANS en SCL > CHORD; se van BAR, PHRASES y SYSTEM 2. Sobre V10.8.37.",
+        "en": "Beta: GAIN on every engine, DJ FILTER on MIXER, SWARM with WAVE and as a note source, NOTE back in SEQ and TRANS on SCL > CHORD; BAR, PHRASES and SYSTEM 2 are gone. On top of V10.8.37."
+      },
+      "has": [
+        "eng_west",
+        "drumx_math",
+        "life",
+        "punch_editor",
+        "fx_punchins",
+        "song_mode",
+        "stepfx_keys",
+        "drone_clay",
+        "macros_dest",
+        "euclid",
+        "euclid_role",
+        "harmony",
+        "scene",
+        "half_rate",
+        "track_colours",
+        "hud_screens",
+        "no_power_click",
+        "velocity_at",
+        "gen_new_genres",
+        "copy_paste_oct",
+        "clay_rate",
+        "clay_bars",
+        "clay_keys",
+        "west_dust_metal",
+        "ui_push",
+        "screen_mirror",
+        "emu_editor",
+        "emu_stems",
+        "mutate_compact",
+        "live_compact",
+        "cloud_fix",
+        "dist_noise",
+        "chorus_mix",
+        "key_trk",
+        "presets_retouch",
+        "gain_all",
+        "dj_filter_knob",
+        "swarm_wave",
+        "swarm_notes"
+      ],
+      "hasnt": [
+        "eng_noise",
+        "mutate",
+        "stretch",
+        "live",
+        "seq_dice",
+        "punch_lane",
+        "help_hints",
+        "flt_ms20_lp24",
+        "env_stage",
+        "pages_bar_phrases_sys2"
+      ],
+      "notes": {
+        "es": "Beta: puede tener errores. Los proyectos y presets con filtro MS20 o LP24 abren como LP. MUTATE y LIVE no son las páginas originales (esas quedan en V10.7.81). Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
+        "en": "Beta: it may have bugs. Projects and presets using the MS20 or LP24 filter open as LP. MUTATE and LIVE are not the original pages (those remain in V10.7.81). Make a complete backup of your projects before changing version."
+      }
+    },
     "V10.8.37": {
       "date": "2026-11-24",
       "status": "beta",
@@ -220,7 +305,8 @@
         "dist_noise",
         "chorus_mix",
         "key_trk",
-        "presets_retouch"
+        "presets_retouch",
+        "pages_bar_phrases_sys2"
       ],
       "hasnt": [
         "eng_noise",
@@ -278,7 +364,8 @@
         "live_compact",
         "cloud_fix",
         "dist_noise",
-        "chorus_mix"
+        "chorus_mix",
+        "pages_bar_phrases_sys2"
       ],
       "hasnt": [
         "eng_noise",
@@ -333,7 +420,8 @@
         "emu_editor",
         "emu_stems",
         "mutate_compact",
-        "live_compact"
+        "live_compact",
+        "pages_bar_phrases_sys2"
       ],
       "hasnt": [
         "eng_noise",
@@ -388,7 +476,8 @@
         "ui_push",
         "screen_mirror",
         "emu_editor",
-        "emu_stems"
+        "emu_stems",
+        "pages_bar_phrases_sys2"
       ],
       "hasnt": [
         "eng_noise",
@@ -441,7 +530,8 @@
         "ui_push",
         "screen_mirror",
         "emu_editor",
-        "emu_stems"
+        "emu_stems",
+        "pages_bar_phrases_sys2"
       ],
       "hasnt": [
         "eng_noise",
@@ -491,7 +581,8 @@
         "help_hints",
         "screen_mirror",
         "emu_editor",
-        "emu_stems"
+        "emu_stems",
+        "pages_bar_phrases_sys2"
       ],
       "hasnt": [
         "eng_noise",
@@ -543,7 +634,8 @@
         "punch_lane",
         "help_hints",
         "screen_mirror",
-        "emu_editor"
+        "emu_editor",
+        "pages_bar_phrases_sys2"
       ],
       "hasnt": [
         "eng_noise",
@@ -595,7 +687,8 @@
         "copy_paste_oct",
         "punch_lane",
         "help_hints",
-        "screen_mirror"
+        "screen_mirror",
+        "pages_bar_phrases_sys2"
       ],
       "hasnt": [
         "eng_noise",
@@ -647,7 +740,8 @@
         "gen_new_genres",
         "copy_paste_oct",
         "punch_lane",
-        "help_hints"
+        "help_hints",
+        "pages_bar_phrases_sys2"
       ],
       "hasnt": [
         "eng_noise",
@@ -696,7 +790,8 @@
         "half_rate",
         "velocity_at",
         "gen_new_genres",
-        "help_hints"
+        "help_hints",
+        "pages_bar_phrases_sys2"
       ],
       "hasnt": [
         "eng_noise",
@@ -740,7 +835,8 @@
         "env_stage",
         "half_rate",
         "velocity_at",
-        "help_hints"
+        "help_hints",
+        "pages_bar_phrases_sys2"
       ],
       "hasnt": [
         "eng_noise",
@@ -790,7 +886,8 @@
         "env_stage",
         "half_rate",
         "velocity_at",
-        "help_hints"
+        "help_hints",
+        "pages_bar_phrases_sys2"
       ],
       "hasnt": [
         "eng_noise",
@@ -841,7 +938,8 @@
         "flt_ms20_lp24",
         "env_stage",
         "velocity_at",
-        "help_hints"
+        "help_hints",
+        "pages_bar_phrases_sys2"
       ],
       "hasnt": [
         "eng_noise",
@@ -891,7 +989,8 @@
         "flt_ms20_lp24",
         "env_stage",
         "velocity_at",
-        "help_hints"
+        "help_hints",
+        "pages_bar_phrases_sys2"
       ],
       "hasnt": [
         "eng_west",
@@ -956,7 +1055,8 @@
         "clay_bars",
         "clay_keys",
         "west_dust_metal",
-        "ui_push"
+        "ui_push",
+        "pages_bar_phrases_sys2"
       ],
       "notes": {
         "es": "Versión muy anterior: los proyectos de V10 pueden no abrir en ella. Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
