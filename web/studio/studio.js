@@ -20,6 +20,7 @@ const MOCK = QS.get("mock") === "1";
 /* ------------------------------------------------------------------------------------------------- the words */
 const TEXT = {
   es: {
+    lvNow: "· En pantalla:", lvLayer: "capa", lvLayerWhat: "Estás manteniendo %s: las teclas y perillas hacen otra cosa mientras lo sostenés.", lvPressed: "apretado", lvButton: "Apretaste %s.",
     lvChip: "● En vivo", lvLead: "Tocá tu FM-1 y mirá acá: cada perilla que girás, el motor que elegís, los pasos y el play se explican solos, mientras pasan.",
     lvStartBtn: "Seguir mi FM-1", lvStopBtn: "Dejar de seguir", lvOff: "Conectá la FM-1 (Inicio › Buscar) o prendé el emulador, y tocá «Seguir mi FM-1».",
     lvNoDev: "No hay FM-1 conectada ni emulador prendido.", lvWaiting: "Siguiendo %s: tocá algo…", lvTouch: "Siguiendo: girá una perilla, cambiá de sonido o dale play.",
@@ -154,6 +155,7 @@ const TEXT = {
     foot: "JIANT Studio, de Juan Jiant",
   },
   en: {
+    lvNow: "· On screen:", lvLayer: "layer", lvLayerWhat: "You are holding %s: the keys and knobs do something else while you hold it.", lvPressed: "pressed", lvButton: "You pressed %s.",
     lvChip: "● Live", lvLead: "Play your FM-1 and watch here: every knob you turn, the engine you pick, the steps and play explain themselves as they happen.",
     lvStartBtn: "Follow my FM-1", lvStopBtn: "Stop following", lvOff: "Connect the FM-1 (Home › Find) or switch the emulator on, and press “Follow my FM-1”.",
     lvNoDev: "No FM-1 connected and no emulator on.", lvWaiting: "Following %s: touch something…", lvTouch: "Following: turn a knob, change the sound or press play.",
@@ -1372,6 +1374,10 @@ document.addEventListener("keydown", (e) => { if (state.view !== "learn" || /inp
  * the label's meaning, by engine where it differs), with the guide's related element (its animation); RELOAD (engine,
  * preset, track), STEP_CHANGED, TRACK_CHANGED, TRANSPORT, PUNCH and MUTATE are told too, and UI (43, page and buttons)
  * when the firmware sends it. The last ones in a list */
+/* the UI push's numbers (EDITOR_PROTOCOL.md: push 43, the same in JIANT FM and JIANT BYTE) */
+const UI_SECTIONS = ["HOME", "EDIT", "SEQ", "FX", "GLO", "ENV", "LFO", "SCL", "ARP", "SAVE"];
+const UI_LAYERS = ["", "FX", "GLO", "SCL", "EDIT", "SEQ", "REC", "SAVE", "MACRO"];
+const UI_BUTTONS = ["FX", "SCL", "ENV", "LFO", "EDIT", "GLO", "HOME", "SAVE", "ARP", "SEQ", "PLAY", "REC", "OCT−", "OCT+"];
 const live = { on: false, link: null, timer: 0, desc: new Map(), engine: -1, engines: [], track: 0, gloss: {}, log: [], last: null, player: null, shown: null, status: "" };
 const v14 = (a, i) => (a[i] | (a[i + 1] << 7)) - 8192;
 function readStr(a, i) { let s = ""; while (i < a.length && a[i]) s += String.fromCharCode(a[i++]); return [s, i + 1]; }
@@ -1438,7 +1444,12 @@ async function livePush(f, link) {
     [page, i] = readStr(a, i);
     const layer = a[i], button = a[i + 1]; i += 2;
     for (let k = 0; k < 4 && i < a.length; k++) { let s1; [s1, i] = readStr(a, i); knobs.push(s1); }
-    liveShow({ kind: "ui", section: a[0], page, layer, button, knobs });
+    // (a button's press or release: told as such; a page or layer change: the page)
+    const pressed = button != null && button !== 127 ? { b: button & 63, up: !!(button & 64) } : null;
+    const changed = !live.ui || live.ui.page !== page || live.ui.section !== a[0] || live.ui.layer !== layer;
+    live.ui = { section: a[0], page, layer, knobs };
+    if (changed) liveShow({ kind: "ui", section: a[0], page, layer, knobs });
+    else if (pressed && !pressed.up) liveShow({ kind: "button", button: pressed.b, page });
   }
 }
 /* the guide's element whose id or name matches a word (an engine, FILTER, DELAY…) */
@@ -1473,7 +1484,16 @@ function liveExplain(e) {
   if (e.kind === "transport") return { title: e.playing ? "PLAY" : "STOP", line: e.playing ? `${t("lvBar")} ${e.bar + 1} · ${e.beat + 1}` : "", what: t(e.playing ? "lvPlay" : "lvStop"), how: "", learn: lrFind("song") };
   if (e.kind === "punch") return { title: "FX PUNCH-IN", line: e.bits ? t("lvPunchOn") : t("lvPunchOff"), what: t("lvPunch"), how: "", learn: lrFind("punch") };
   if (e.kind === "mutate") return { title: "MUTATE", line: `${t("lvTrack")} ${e.track + 1}`, what: t("lvMutate"), how: "", learn: lrFind("mutate") };
-  if (e.kind === "ui") return { title: e.page || "—", line: e.knobs.filter(Boolean).join(" · "), what: t("lvPage"), how: "", learn: lrFind(e.page) };
+  if (e.kind === "ui") {
+    const sec = UI_SECTIONS[e.section] || "", lay = e.layer ? UI_LAYERS[e.layer] || "" : "";
+    const knobs = (e.knobs || []).map((k, i) => (k ? `K${i + 1} ${k}` : "")).filter(Boolean).join(" · ");
+    return { title: e.page || sec || "—", line: [sec !== e.page ? sec : "", lay ? `${t("lvLayer")} ${lay}` : "", knobs].filter(Boolean).join(" · "),
+      what: lay ? t("lvLayerWhat").replace("%s", lay) : t("lvPage"), how: "", learn: lrFind(e.page) || lrFind(lay) || lrFind(sec) };
+  }
+  if (e.kind === "button") {
+    const n = UI_BUTTONS[e.button] || "?";
+    return { title: n, line: `${t("lvPressed")} · ${e.page || ""}`, what: t("lvButton").replace("%s", n), how: "", learn: lrFind(n) };
+  }
   return { title: "?", line: "", what: "", how: "" };
 }
 function liveShow(e, quiet) {
@@ -1488,7 +1508,8 @@ function liveShow(e, quiet) {
 function renderLive() {
   if (!$("lrlive") || state.view !== "learn" || lr.sec !== -2) return;
   $("lvgo").textContent = t(live.on ? "lvStopBtn" : "lvStartBtn");
-  $("lvstat").textContent = live.status || (live.on ? t("lvTouch") : t("lvOff"));
+  const here = live.on && live.ui ? ` ${t("lvNow")} ${[UI_SECTIONS[live.ui.section], live.ui.page].filter((x, i, A) => x && A.indexOf(x) === i).join(" › ")}${live.ui.layer ? ` (${t("lvLayer")} ${UI_LAYERS[live.ui.layer] || ""})` : ""}` : "";
+  $("lvstat").textContent = (live.status || (live.on ? t("lvTouch") : t("lvOff"))) + here;
   const x = live.last && live.last.x;
   $("lvcard").hidden = !x;
   if (x) {
@@ -1895,6 +1916,8 @@ function mockAccess() {
       if (f.a[0]) { let k = 0; mockWatch = setInterval(() => {
         k++;
         if (k % 12 === 0) deliver(frame(24, [(k / 12) % 2 ? 2 : 0, k % 5, 0]));
+        else if (k % 12 === 6) { const s0 = (x) => [...x].map((c) => c.charCodeAt(0)).concat(0);
+          deliver(frame(43, [1, ...s0(k % 24 === 6 ? "FILTER" : "OSC"), 0, 127, ...s0("CUT"), ...s0("RES"), ...s0("ENV"), ...s0("TYPE")])); }
         else { const v = 40 + Math.round(40 * Math.sin(k / 3)) + 8192; deliver(frame(23, [0, 20, v & 127, v >> 7])); }
       }, 250); }
       deliver(frame(22, [f.a[0] ? 31 : 0])); return;
