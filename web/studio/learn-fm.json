@@ -786,13 +786,13 @@
       "es": [
        "Desde la compu o el celular: MENU › SYSTEM › USB › IN+OUT y la FM-1 aparece como parlante USB; lo que reproduzcas entra a JIANT.",
        "Desde una interfaz de audio USB enchufada al puerto host de la FM-1 (MENU › SYSTEM › USB › HOST): sus entradas 1 y 2.",
-       "Con STEMS+IN, el micrófono del celular entra y vuelve grabado en su propio canal.",
+       "Con STEMS+IN, el audio que manda el host entra y vuelve grabado en su propio stem.",
        "Elegí una pista, cambiale el motor a EXT y ya suena la entrada."
       ],
       "en": [
        "From the computer or phone: MENU › SYSTEM › USB › IN+OUT and the FM-1 shows as a USB speaker; whatever you play goes into JIANT.",
        "From a USB audio interface plugged into the FM-1's host port (MENU › SYSTEM › USB › HOST): its inputs 1 and 2.",
-       "With STEMS+IN, the phone's microphone comes in and comes back recorded on its own channel.",
+       "With STEMS+IN, the audio the host sends comes in and comes back recorded on a stem of its own.",
        "Pick a track, change its engine to EXT and the input plays."
       ]
      },
@@ -1021,19 +1021,19 @@
       "en": "The input in space"
      },
      "statement": {
-      "es": "Tu sonido entra a los mismos efectos que el resto de JIANT, así que se mezcla con los sintes como si hubiera nacido adentro. Una macro en su envío lo tira al eco en el momento justo, como en el dub.",
-      "en": "Your sound goes into the same effects as the rest of JIANT, so it blends with the synths as if it were born inside. A macro on its send throws it into the echo at the right moment, dub style."
+      "es": "Tu sonido entra a los mismos efectos que el resto de JIANT, así que se mezcla con los sintes como si hubiera nacido adentro. Una macro sobre el envío de delay tira todo al eco en el momento justo, como en el dub.",
+      "en": "Your sound goes into the same effects as the rest of JIANT, so it blends with the synths as if it were born inside. A macro on the delay send throws everything into the echo at the right moment, dub style."
      },
      "how": {
       "es": [
        "Los envíos de la pista EXT mandan la entrada a CHORUS, DELAY y REVERB (cinco modelos de reverb).",
-       "Ruteá una macro a DLY (FX › MACROS) y girala con FX mantenido: la entrada se va al eco y vuelve cuando soltás.",
+       "Ruteá una macro a DLY (FX › MACROS) y girala con FX mantenido: sube el envío de delay de todas las pistas, la entrada incluida, y vuelve cuando soltás.",
        "Con DUCK, el bombo baja las demás pistas: tu entrada respira con el beat.",
        "Probá: una guitarra con delay al tempo y esa macro al final de cada compás."
       ],
       "en": [
        "The EXT track's sends feed the input to CHORUS, DELAY and REVERB (five reverb models).",
-       "Route a macro to DLY (FX › MACROS) and turn it with FX held: the input goes into the echo and comes back when you let go.",
+       "Route a macro to DLY (FX › MACROS) and turn it with FX held: it raises the delay send of every track, the input included, and goes back when you let go.",
        "With DUCK, the kick ducks the other tracks: your input breathes with the beat.",
        "Try it: a guitar with a delay in time and that macro at the end of each bar."
       ]
@@ -1096,13 +1096,13 @@
       "es": [
        "STEREO: la mezcla por USB, con la entrada incluida.",
        "STEMS: T1–T6 por separado y la vuelta de efectos.",
-       "STEMS+IN: además, la voz como la mezcló la pista y como llegó, en canales propios.",
+       "STEMS+IN: además, el audio que manda el host en un stem propio.",
        "En JIANT Studio › Grabar ves cada canal como pista de DAW y exportás WAV, stems y MIDI."
       ],
       "en": [
        "STEREO: the mix over USB, input included.",
        "STEMS: T1–T6 apart and the effects return.",
-       "STEMS+IN: also, the voice as the track mixed it and as it came, on their own channels.",
+       "STEMS+IN: also, the audio the host sends on a stem of its own.",
        "In JIANT Studio › Record you see each channel as a DAW track and export WAV, stems and MIDI."
       ]
      },
@@ -1180,13 +1180,13 @@
        "LENGTH: LEN (1–64), DIV (la figura del paso), SWING y GATE; RHYTHM: con FIT en ON, los LEN pasos entran justos en SPAN divisiones (siete pasos en un compás).",
        "TRACK: PITCH transpone la pista, CHANCE ralea sus pasos, HUMAN la hace tocar como una persona, REC GRID cuantiza lo que grabás.",
        "PLAYHEADS: tres cabezales más leen los mismos pasos con su RATE, DIR e INTVL (el intervalo, en grados): cánones y contrapunto.",
-       "MICRO corre un paso fuera de la grilla, en 64avos."
+       "MICRO (la perilla 4 de la página NOTE) corre un paso fuera de la grilla, en 64avos."
       ],
       "en": [
        "LENGTH: LEN (1–64), DIV (the step's note value), SWING and GATE; RHYTHM: with FIT on, the LEN steps fit exactly into SPAN divisions (seven steps in a bar).",
        "TRACK: PITCH transposes the track, CHANCE thins its steps, HUMAN makes it play like a person, REC GRID quantizes what you record.",
        "PLAYHEADS: three more heads read the same steps with their own RATE, DIR and INTVL (the interval, in degrees): canons and counterpoint.",
-       "MICRO moves a step off the grid, in 64ths."
+       "MICRO (KNOB 4 of the NOTE page) moves a step off the grid, in 64ths."
       ]
      },
      "where": {
@@ -1466,13 +1466,13 @@
      "how": {
       "es": [
        "Mantené un paso y girá una perilla: ese paso toma su propio valor de ese parámetro.",
-       "Mantené un paso y girá SELECT para ir a las páginas que bloquean sus perillas.",
+       "Las perillas bloquean los cuatro parámetros de la última página de sonido que miraste: las tarjetas los muestran mientras mantenés el paso.",
        "Locks y automatización se ven y se editan uno por uno en SEQ › AUTO LIST.",
        "SEQ TOOLS F4 (CLR AUTO) borra la automatización y los locks de la pista sin tocar los pasos."
       ],
       "en": [
        "Hold a step and turn a knob: that step takes its own value of that parameter.",
-       "Hold a step and turn SELECT to walk the pages its knobs lock.",
+       "The knobs lock the four parameters of the sound page you last looked at: the cards show them while the step is held.",
        "Locks and automation are listed and edited one by one on SEQ › AUTO LIST.",
        "SEQ TOOLS F4 (CLR AUTO) clears the track's automation and locks without touching the steps."
       ]
@@ -2177,13 +2177,13 @@
        "En FX › MACROS, KNOB 1 elige M1–M4, KNOB 2 el destino, KNOB 3 cuánto y KNOB 4 pasa al destino siguiente: hasta 16 rutas en total.",
        "Mantené FX: sus perillas mueven las cuatro macros en vivo.",
        "Cada macro es también un destino de la matriz MOD (después de LEVEL): un LFO o una envolvente pueden mover una macro entera.",
-       "Los valores se guardan con cada parte."
+       "Los valores se guardan con el proyecto."
       ],
       "en": [
        "On FX › MACROS, KNOB 1 picks M1–M4, KNOB 2 the destination, KNOB 3 how much and KNOB 4 moves to the next destination: up to 16 routes in all.",
        "Hold FX: its knobs move the four macros live.",
        "Each macro is also a destination of the MOD matrix (after LEVEL): an LFO or an envelope can move a whole macro.",
-       "The values are saved with each part."
+       "The values are saved with the project."
       ]
      },
      "where": {
