@@ -285,7 +285,7 @@ static __attribute__((noinline)) void mom_knob(uint32_t k, int32_t s)
     if (t >= NTRK)
         t = MOM_G;
     if (t == MOM_G && id == G_RTYPE && mom_n + 3u > MOM_N) {
-        ui_message("MOMENTARY: 16 AT MOST");
+        ui_message("16 AT MOST");
         return;
     }
     if (t == MOM_G && id == G_RTYPE) {                  /* (REVERB TYPE: PRE and DAMP change with it, ui_input.c) */
@@ -293,7 +293,7 @@ static __attribute__((noinline)) void mom_knob(uint32_t k, int32_t s)
         (void)mom_keep(MOM_G, G_RDAMP);
     }
     if (!mom_keep(t, id)) {
-        ui_message("MOMENTARY: 16 AT MOST");
+        ui_message("16 AT MOST");
         return;
     }
     if (ui.home)

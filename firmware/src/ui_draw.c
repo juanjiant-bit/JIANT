@@ -2015,7 +2015,7 @@ static void confirm_text(char *a, char *b)
         str_cpy(a, "CLEAR ALL SEQUENCES?", 24);
         break;
     case CF_CPU_TEST:                                /* (0.6.83) SAVE > TOOLS 6 */
-        str_cpy(a, "BUILD CPU TEST SONG?", 24);
+        str_cpy(a, "CPU TEST SONG?", 24);
         break;
     case CF_INIT_SYS:                                /* (0.6.40) SAVE > TOOLS; (V10.7.22) CLEAR PROJECT, MENU > INIT */
         str_cpy(a, "CLEAR PROJECT?", 24);

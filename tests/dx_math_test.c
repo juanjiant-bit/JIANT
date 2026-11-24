@@ -49,6 +49,24 @@ int main(void)
         ok &= !dx_fml[DV_TOM];
         bad += check("DRUM-X MATH: kept with the project ('D' 'F'); one without it: none", ok);
     }
+    {   /* (V10.8.32, the owner: "most sound broken") a formula's modulator steps at no block: its time the hit's,
+         * its x the phase run on over its cycles, the line from the last block's value (F02, FM with its index
+         * walking: a sample's jump 0.74 of the peak before, ~0.28 now, the sine FM's 0.27) */
+        static dx_voice_t v; static int32_t y[CTL];
+        uint32_t b, i; int32_t pr = 0, mx = 1, jm = 0;
+        dx_frt[DV_TOM] = 0; memset(&v, 0, sizeof v); v.trig = 1; dx_fml[DV_TOM] = 2;
+        for (b = 0; b < 60u; b++) {
+            dx_run_fx(&dx_kit[DV_TOM], &v, 0, 0, 0, 0, 0, 0, 0, y, CTL, 0);
+            for (i = 0; i < CTL; i++) {
+                int32_t d = y[i] - pr, a = y[i] < 0 ? -y[i] : y[i];
+                d = d < 0 ? -d : d; pr = y[i];
+                if (a > mx) mx = a;
+                if (d > jm) jm = d;
+            }
+        }
+        dx_fml[DV_TOM] = 0;
+        bad += check("DRUM-X MATH: a formula's FM without steps (no jump past 0.4 of the peak)", jm * 10 < mx * 4);
+    }
     printf(bad ? "dx-math: %d FAILED\n" : "dx-math: all ok\n", bad);
     {   /* (V10.7.79, the owner) the MATH kits load their formulas (MATH LAB DRUM-X's sounds, GLITCH FM its own), any
          * other kit none; the DRUM-X DICE gives formulas to some sounds */

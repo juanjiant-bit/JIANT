@@ -42,7 +42,10 @@ typedef struct {                                         /* a hit */
                                                           * stroke, long or short (in the struct's padding) */
     uint16_t hpos, hsum, hseed;
     int16_t mo1;                                         /* (0.9.9-snd1) FEEDBK: the output a sample before mo (the mean
-                                                          * of the two fed back; in the struct's padding) */                          /* (0.7.9) CLAP's HANDS: half-rate samples since the hit, the
+                                                          * of the two fed back; in the struct's padding) */
+    uint16_t mc;                                         /* (V10.8.32) a MATH modulator's whole cycles since the hit (its x
+                                                          * runs on: the formulas' slower turns whole across a cycle) */
+    int16_t ml;                                          /* (V10.8.32) its last value: the next block's line starts there */                          /* (0.7.9) CLAP's HANDS: half-rate samples since the hit, the
                                                           * hands come in so far (Q12, over the hit's own), this hit's dice */
 } dx_voice_t;
 
@@ -144,8 +147,9 @@ static __attribute__((noinline)) void dx_layer(dx_voice_t *v, int32_t *y, uint32
     static int32_t aux;                                  /* (V10.7.74: a MATH formula's own state, the kit's) */
     uint32_t fl = dx_fml[dx_cur_ln & 7u] <= 48u ? dx_fml[dx_cur_ln & 7u] : 0u;   /* (V10.7.74, the owner) a MATH formula
                                                          * the modulator (its WAVE FM: ui_dx.c), (V10.7.75) its RATIO */
-    uint32_t i, ph = *php, ph2 = *ph2p, ph4 = v->ph4, t0 = ((uint32_t)v->hpos << 1) & ~31u;
-    int32_t md = 0, mp = 0, mn = 0;                     /* (V10.7.76) the formula's two last values */
+    uint32_t i, ph = *php, ph2 = *ph2p, ph4 = v->ph4, t0 = (uint32_t)v->hpos << 1, mc = v->mc;
+    int32_t md = 0, mp = 0, mn = v->ml;                 /* (V10.7.76) the formula's two last values; (V10.8.32, the owner:
+                                                         * "broken") the line from the last block's, no step at its start */
     int32_t o = *op, o1 = *o1p, lx = lay * lay * 600, lm = lay * 3, fh = fbk >> 1;   /* (snd1: FEEDBK's mean of two) */
     uint32_t st4 = lay ? 1448u : 0u;                     /* (LAYER 0: its phase kept) */
     if (fl) ratio = dx_frt_q12(dx_cur_ln);
@@ -160,11 +164,11 @@ static __attribute__((noinline)) void dx_layer(dx_voice_t *v, int32_t *y, uint32
                                                           * shape evolving, not t running a sample); a sample in eight,
                                                           * the line between (was held: grit) */
         else {
-            if (!(i & 7u)) {
-                uint32_t t = t0 + (ph2 >> 27);
+            if (!(i & 7u)) {                             /* (V10.8.32) t the hit's time (was a block's, 128 a step: the
+                                                          * formulas' time and x jumped at every block), x the modulator's
+                                                          * phase run on over its cycles (was wrapped with t in it) */
                 mp = mn;
-                mn = lofi_float(fl - 1u, t, t << 8 | ((ph2 >> 19) & 255u), &aux);
-                if (!i) mp = mn;                         /* (a block's first: no line from nothing) */
+                mn = lofi_float(fl - 1u, t0 + (i << 1), mc << 13 | ph2 >> 19, &aux);
             }
             md = mp + (((mn - mp) * (int32_t)(i & 7u)) >> 3);
         }
@@ -172,7 +176,11 @@ static __attribute__((noinline)) void dx_layer(dx_voice_t *v, int32_t *y, uint32
         o2 = dx_tri(ph4 + (uint32_t)(o * lx));
         y[i] = mulq15(o + (((o2 - o) * lm) >> 6), ga >> 8);
         ph += (uint32_t)inc << 4;
-        ph2 += ((uint32_t)inc >> 8) * ratio;
+        {
+            uint32_t p2 = ph2;
+            ph2 += ((uint32_t)inc >> 8) * ratio;
+            mc += ph2 < p2;                              /* (V10.8.32) a whole cycle more */
+        }
         ph4 += ((uint32_t)inc >> 6) * st4;               /* (x 22.6: x 16 the step, sqrt 2) */
     }
     *php = ph;
@@ -181,6 +189,8 @@ static __attribute__((noinline)) void dx_layer(dx_voice_t *v, int32_t *y, uint32
     *o1p = o1;
     v->ph4 = ph4;
     if (fl) {                                            /* (V10.7.74) the formula's time: the hit's, half-rate samples */
+        v->ml = (int16_t)mn;
+        v->mc = (uint16_t)mc;
         v->hpos = (uint16_t)(v->hpos + n < 65535u ? v->hpos + n : 65535u);
     }
 }
@@ -319,6 +329,8 @@ static __attribute__((noinline)) void dx_run_fx(const dx_lane_t *L, dx_voice_t *
             v->b1 = v->b2 = 0;
             v->mo = 0;
             v->mo1 = 0;
+            v->mc = 0;
+            v->ml = 0;
         }
         v->trig = 0;
         v->live = 1;

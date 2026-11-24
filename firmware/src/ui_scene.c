@@ -105,7 +105,7 @@ static __attribute__((noinline)) void sc_put(uint32_t k, int32_t v)
         {
             char b[16] = "SCENE: T1 LEADS";
             b[8] = (char)('1' + (scn_on >= 2u ? scn_on - 2u : 0u));
-            ui_message(!scn_on ? "SCENE OFF" : need ? "T5 T6 ASLEEP: MENU > 6 TRACKS" :
+            ui_message(!scn_on ? "SCENE OFF" : need ? "T5 T6 ASLEEP" :
                        scn_on == 1u ? "SCENE ON" : b);
         }
     } else if (k == 1u)
