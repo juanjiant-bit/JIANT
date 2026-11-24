@@ -805,7 +805,9 @@ int main(void)
                     if (drum_track(t) || !gs.act[r] || k >= trk_live || (r == RL_TEX && k != gs.trk_of[RL_TEX])) continue;
                     mel++;
                     fmod += t->p[P_ED_FLT] != 0 || t->p[P_LD_FLT] != 0;
-                    if (d) { pit++; if (d > 2 || t->p[P_LFADE] < 60 || t->p[P_LRATE] < 80) { pit_bad++; printf("  pitch LFO %d rate %d fade %d: %s %u T%u\n", t->p[P_LD_PIT], t->p[P_LRATE], t->p[P_LFADE], gs.g->name, gp.seed, k + 1u); } }
+                    int tape = gsnd(r) == SR_TAPE || (gs.g->production == PROD_DREAM && r == RL_PAD);
+                    if (d && tape) pit_bad += d != 1 || t->p[P_LRATE] < 16 || t->p[P_LRATE] > 32;
+                    else if (d) { pit++; if (d > 2 || t->p[P_LFADE] < 60 || t->p[P_LRATE] < 80) { pit_bad++; printf("  pitch LFO %d rate %d fade %d: %s %u T%u\n", t->p[P_LD_PIT], t->p[P_LRATE], t->p[P_LFADE], gs.g->name, gp.seed, k + 1u); } }
                     if (t->p[P_REL] < RL_LO[r]) { rel_bad++; printf("  release %d: %s %u T%u role %u\n", t->p[P_REL], gs.g->name, gp.seed, k + 1u, r); }
                     if (gg == GEN_EXPLORE) { xtr++; anim += t->eng_req == ENGI_ANIMAL; }
                 }
@@ -816,7 +818,7 @@ int main(void)
             }
         printf("gen: sounds x %u pieces: a soft vibrato on %u of %u melodic parts, the filter moving on %u; a progression in %u;"
                " ANIMAL on %u of EXPLORE's %u parts\n", n, pit, mel, fmod, prog, anim, xtr);
-        bad += gcheck("(0.9.13) pitch LFO a soft vibrato only (<= 1/3 semitone, ~5 Hz, fading in), on few parts", !pit_bad && pit * 4u < mel);
+        bad += gcheck("Pitch LFO: subtle slow tape drift on tape parts, fading vibrato elsewhere", !pit_bad && pit * 4u < mel);
         bad += gcheck("(0.9.13) the filter moving on 90 % of the melodic parts; releases in their role's range", fmod * 10u >= mel * 9u && !rel_bad);
         bad += gcheck("(0.9.13) a chord progression (two chords or more) in 90 % of the pieces; ANIMAL on under 5 % of EXPLORE's parts",
                       prog * 10u >= n * 9u && anim * 20u < xtr);

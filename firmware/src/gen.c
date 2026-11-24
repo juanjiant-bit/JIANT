@@ -88,7 +88,12 @@ static struct {
     uint16_t snd[NTRK]; uint8_t nsnd;                   /* (0.9.17) the piece's sounds so far (engine << 8 | preset) */
 } gs;
 #define GKICK(i) ((uint32_t)(gs.kick >> ((i) & 63u)) & 1u)
-static uint32_t gseed_mix(uint32_t part) { return part == GS_PICK ? 0u : (gs.gi + 1u) * 0x85EBCA6Bu; }
+static uint32_t gseed_mix(uint32_t part)
+{
+    /* EXPLORE used stream 44 before the genre list grew. Keep its pieces reproducible. */
+    uint32_t stream = gs.gi == NGENRE ? 44u : gs.gi + 1u + (gs.gi >= 43u);
+    return part == GS_PICK ? 0u : stream * 0x85EBCA6Bu;
+}
 static ggenre_t gmut;                                   /* (0.6.95) the genre as this throw plays it (its neighbours' parts) */
 static char gmut_name[20];
 
@@ -419,6 +424,12 @@ static void gen_drums_idm(track_t *t, uint32_t len)
         s->time = ST_NOTE; s->hit = (uint8_t)h; s->acc = (uint8_t)(i % 4u == 0u ? h & 1u : 0u);
         s->vel = (uint8_t)(h & 1u ? 104 : grr(70, 100));
         if ((h & 8u) && gch(25)) glane_rat(s, 3u, (uint32_t)grr(2, 4));
+        /* Repeat the break, then subdivide its turnaround on the upper lanes alone. */
+        if (gs.g->production == PROD_GLITCH && i % 16u >= 12u && gch(35u + gs.complex / 2u)) {
+            uint32_t lane = h & 2u ? 1u : 3u;
+            s->hit |= (uint8_t)(1u << lane);
+            step_set_lmode(s, lane, lane == 3u && gs.energy > 65u ? LM_X8 : LM_X4);
+        }
         if (!(h & 1u) && gch(30)) step_set_chance(s, (uint32_t)grr(45, 85));
     }
 }
@@ -434,7 +445,9 @@ static void gen_drums(track_t *t, uint32_t len)
     gseed(GS_DRUMS);
     gs.kick = gs.snare = 0;
     for (l = 0; l < 8u; l++) map[l] = DRUM_MAP_I[g->drum][l];
-    if (g->drum != DM_IDM && g->drum != DM_NONE && g->drum != DM_SPARSE) {   /* (0.6.97) a throw's own top end: the hats,
+    int keep_percussion = g->production || (!gx.on && !gs.mutant &&
+        (g->drum == DM_ONEDROP || g->drum == DM_JAZZ || g->drum == DM_BOSSA || g->drum == DM_TRIBAL));
+    if (!keep_percussion && g->drum != DM_IDM && g->drum != DM_NONE && g->drum != DM_SPARSE) {   /* (0.6.97) a throw's own top end: the hats,
                                                          * the open hats and the percussion from the pools now and then;
                                                          * the snare and the clap swapped now and then */
         if (gch(50)) map[3] = HAT_POOL_I[gr() % 8u];
@@ -495,7 +508,7 @@ static void gen_drums(track_t *t, uint32_t len)
         for (i = 0; i < len; i++) {
             step_t *s = &t->step[i];
             if (s->time != ST_NOTE || !(s->hit & 0xD0u) || !gch(50)) continue;
-            s->hit &= (uint8_t)~0xD0u; s->acc &= s->hit;
+            s->hit &= (uint8_t)~(0xD0u & ~s->acc); s->acc &= s->hit;
             if (!s->hit) gclear(s);
         }
     }
@@ -1373,6 +1386,8 @@ static void gen_sound(track_t *t, uint32_t role, uint32_t ri)
     uint32_t e = r->eng[gpickw(EW, 3)], i, k, n, nm = 0, na = 0;
     uint8_t m[32], w[32], any[32];
     const engine_t *en;
+    if (gs.g->production == PROD_EBM && role == RL_LEAD) e = EG_VO;
+    if (gs.g->production == PROD_DREAM && role == RL_PAD && ri == SR_ORGAN) e = EG_WH;
     if (gx.eng >= 0) e = (uint32_t)gx.eng;              /* (0.8.6) EXPLORE: any engine (gx_engine) */
     if (e == ENGI_FM6 && gs.fm6 >= 2u) e = r->eng[0] == ENGI_FM6 ? EG_A : r->eng[0];
     gs.fm6 += e == ENGI_FM6;
@@ -1502,6 +1517,21 @@ static void gen_sound(track_t *t, uint32_t role, uint32_t ri)
     if (ri == SR_GTR || ri == SR_DRONE) {               /* (a tremolo: AUTO PAN on the beat) */
         t->p[P_APDEP] = (int16_t)grr(30, 60); t->p[P_APSYNC] = 1; t->p[P_APRATE] = (int16_t)grr(4, 6); t->p[P_APWAVE] = (int16_t)(ri == SR_GTR ? 3 : 0);
     }
+    if (ri == SR_DONK && e == EG_PH) {
+        t->p[P_E0] = 5;                                 /* resonant saw: the DCW envelope makes the metallic knock */
+        t->p[P_E1] = 0;
+        t->p[P_E2] = (int16_t)grr(30, 46);
+        t->p[P_E3] = (int16_t)grr(78, 100);
+        t->p[P_E6] = (int16_t)grr(24, 40);
+    }
+    if (ri == SR_TAPE || (gs.g->production == PROD_DREAM && role == RL_PAD)) {
+        t->p[P_LWAVE] = 0;
+        t->p[P_LRATE] = (int16_t)grr(16, 32);
+        t->p[P_LD_PIT] = 1;
+        t->p[P_LFADE] = 0;
+        t->p[P_APDEP] = 0;
+        t->p[P_CHOR] = (int16_t)grr(32, 53);
+    }
 }
 static void gen_kit(track_t *t)
 {
@@ -1587,6 +1617,15 @@ static void gen_mix(track_t *t, uint32_t r)
     t->p[P_DLY] = (int16_t)clamp((r == RL_LEAD || r == RL_ARP ? grr(25, 70) : r == RL_PAD && (g->pads == CS_DUB || g->pads == CS_SKANK) ? grr(55, 95) :
                                   r == RL_PAD ? grr(0, 30) : r == RL_DRUM ? grr(0, 10) : 0) * (40 + wet) / 100, 0, 127);
     if (r == RL_LEAD && t->p[P_REV] < 25 && t->p[P_DLY] < 20) t->p[P_DLY] = (int16_t)grr(25, 55);
+    if (g->production == PROD_EBM || g->production == PROD_HARDBASS) {
+        t->p[P_REV] /= 3;
+        t->p[P_DLY] /= 3;
+    }
+    if (g->production == PROD_WALL && r == RL_PAD) {
+        t->p[P_DIST] = (int16_t)grr(30, 46);
+        t->p[P_CHOR] = (int16_t)grr(48, 65);
+        t->p[P_DLY] = (int16_t)grr(34, 50);
+    }
     t->p[P_SSWING] = 0;
     t->p[P_HVEL] = (int16_t)(127 - clamp((HV[r] + HT[r] + HG[r]) * hum / 150, 0, 127));   /* (0.6.92: one amount) */
     t->p[P_HTIM] = t->p[P_HGAT] = 127;
@@ -2245,7 +2284,7 @@ static void gen_pick(void)
         const gprog_t *p = 0;
         uint32_t t;
         for (t = 0; t < 3u && !p; t++) if (gprog_ok(&PROG[g->prog[(pr + t) % 3u]])) p = &PROG[g->prog[(pr + t) % 3u]];
-        if (p && p->n < 2u && gch(85)) {                /* (0.9.13) a progression far more often than a pedal: the genre's
+        if (p && p->n < 2u && g->production != PROD_EBM && g->production != PROD_HARDBASS && gch(85)) {                /* (0.9.13) a progression far more often than a pedal: the genre's
                                                          * next one of two chords or more, else the mode's own loop below */
             const gprog_t *q = 0;
             for (t = 1; t < 3u && !q; t++) if (PROG[g->prog[(pr + t) % 3u]].n >= 2u && gprog_ok(&PROG[g->prog[(pr + t) % 3u]])) q = &PROG[g->prog[(pr + t) % 3u]];
@@ -2349,9 +2388,17 @@ static void gen_make(void)
             gs.mutant = 1;
         }
         /* (0.6.95) a throw its own: the drums from the map's family, the chords' play and a role's recipe from the neighbours */
-        if (gmut.drum < DM_NONE && gmut.drum != DM_IDM && gch(35)) gmut.drum = DM_ALT[gmut.drum][gr() % 2u];
-        if (gmut.pads <= CS_TRANCE && gch(35)) gmut.pads = CS_ALT[gmut.pads][gr() % 2u];
-        for (k = 1; k < GP_N; k++) if (gmut.snd[k] < SR_N && gch(30)) gmut.snd[k] = SR_ALT[gmut.snd[k]][gr() % 2u];
+        if ((!gmut.production || gs.mutant) && gmut.drum < DM_NONE && gmut.drum != DM_IDM && gch(35)) gmut.drum = DM_ALT[gmut.drum][gr() % 2u];
+        if (gs.mutant) gmut.production = PROD_DEFAULT;
+        if (!gmut.production) {
+            if (gmut.pads <= CS_TRANCE && gch(35)) gmut.pads = CS_ALT[gmut.pads][gr() % 2u];
+            for (k = 1; k < GP_N; k++)
+                if (gmut.snd[k] < SR_N && gch(30)) gmut.snd[k] = SR_ALT[gmut.snd[k]][gr() % 2u];
+        } else if (gmut.production == PROD_DREAM && gch(50)) {
+            gmut.snd[GP_CHORDS] = SR_ORGAN;
+            gmut.snd[GP_LEAD] = SR_TAPE;
+            gmut.pads = CS_HOLD;
+        }
         g = gs.g = &gmut;
     }
     gen_pick();
