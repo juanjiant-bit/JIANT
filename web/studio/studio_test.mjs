@@ -67,8 +67,8 @@ const miss = [...used].filter((k) => !(k in TEXT.es) || !(k in TEXT.en));
 const odd = Object.keys(TEXT.es).filter((k) => !(k in TEXT.en)).concat(Object.keys(TEXT.en).filter((k) => !(k in TEXT.es)));
 ok(!miss.length && !odd.length, `every word in Spanish and English (${used.size} used${miss.length ? "; missing " + miss : ""}${odd.length ? "; one language only " + odd : ""})`);
 const views = [...page.matchAll(/<button data-go="(\w+)" data-t="v\w+">/g)].map((m) => m[1]);
-ok(eq(views, ["home", "install", "editor", "screen", "emu", "rec", "docs", "ports"]) && views.every((v) => page.includes(`id="v-${v}"`)) &&
-   /const VIEWS = \["home", "install", "editor", "screen", "emu", "rec", "docs", "ports"\]/.test(js), `eight views, a section each (${views.join(" ")})`);
+ok(eq(views, ["home", "install", "editor", "screen", "emu", "rec", "proj", "docs", "ports"]) && views.every((v) => page.includes(`id="v-${v}"`)) &&
+   /const VIEWS = \["home", "install", "editor", "screen", "emu", "rec", "proj", "docs", "ports"\]/.test(js), `nine views, a section each (${views.join(" ")})`);
 /* other devices: every card's words, and its links (the emulator's panels exist in devices.html) */
 const devices = readFileSync(join(HERE, "..", "emu", "devices.html"), "utf8");
 const portKeys = [...js.matchAll(/\b(p[A-Z]\w+|st[A-Z]\w*|port[A-Z]\w+)"/g)].map((m) => m[1]).filter((k) => !/^(portlist|pic)$/.test(k));

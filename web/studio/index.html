@@ -206,6 +206,28 @@
   .shotbar { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
   .shotbar p { flex: 1; margin: 0; color: var(--dim); font-size: 13px; }
   .port h2 { margin: 0; }
+  /* projects: the four slots, the backups as rows (name, when, firmware, what it holds, its actions) */
+  .projstat { min-height: 1.4em; margin: 0 0 10px; color: var(--dim); font-family: var(--mono, monospace); font-size: 13px; }
+  .bkprog { height: 6px; border-radius: 3px; background: var(--field); overflow: hidden; margin: 0 0 14px; }
+  .bkprog i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s; }
+  #v-proj .card { margin-bottom: 16px; }
+  #v-proj .card h2 { margin: 0 0 4px; }
+  .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 12px; }
+  .slot { border: var(--border) solid var(--line); border-radius: var(--radius-s); padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--field); }
+  .slot b { font-family: var(--display, inherit); font-size: 28px; line-height: 1; }
+  .slot .st { font-family: var(--mono, monospace); font-size: 12px; color: var(--dim); }
+  .slot.used .st { color: var(--accent); }
+  .slot .row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .slot .btn, .bkrow .btn { min-height: 34px; padding: 6px 11px; font-size: 13px; }
+  .bklist { display: flex; flex-direction: column; gap: 8px; }
+  .bkrow { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; gap: 8px 14px; align-items: center; border: var(--border) solid var(--line); border-radius: var(--radius-s); padding: 10px 12px; background: var(--field); }
+  .bkrow input { width: 100%; background: transparent; border: 0; border-bottom: var(--border) dashed var(--line); color: var(--fg); font: inherit; font-weight: 600; padding: 2px 0; }
+  .bkrow .when { font-family: var(--mono, monospace); font-size: 12px; color: var(--dim); }
+  .bkrow .what { font-size: 13px; color: var(--dim); }
+  .bkrow .acts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  @media (max-width: 720px) { .bkrow { grid-template-columns: minmax(0, 1fr); } .bkrow .acts { justify-content: flex-start; } }
+  .bkempty { color: var(--dim); font-size: 14px; padding: 6px 0; }
+  .chk { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; color: var(--dim); }
   /* the manuals: a card each (the interactive manual first and wide), a cheat sheet's picture opens large */
   .docs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; }
   .doc { display: flex; flex-direction: column; gap: 10px; }
@@ -301,6 +323,7 @@
       <button data-go="screen" data-t="vScreen"></button>
       <button data-go="emu" data-t="vEmu"></button>
       <button data-go="rec" data-t="vRec"></button>
+      <button data-go="proj" data-t="vProj"></button>
       <button data-go="docs" data-t="vDocs"></button>
       <button data-go="ports" data-t="vPorts"></button>
     </nav>
@@ -407,6 +430,24 @@
   </section>
 
   <!-- ======================================================================================= ports -->
+  <!-- ======================================================================================= projects and backups -->
+  <section class="view" id="v-proj" hidden>
+    <div class="viewhead"><div><p class="eyebrow" data-t="vProj"></p><h1 data-t="projTitle"></h1></div>
+      <div class="emuctl"><button class="btn" id="bkgo" type="button" data-t="bkNow"></button><button class="btn ghost" id="bkimport" type="button" data-t="bkImport"></button><input id="bkfile" type="file" accept=".json,application/json" hidden></div></div>
+    <p class="lead" data-t="projLead"></p>
+    <p class="projstat" id="projstat" role="status"></p>
+    <div class="bkprog" id="bkprog" hidden><i id="bkbar"></i></div>
+    <div class="card">
+      <div class="viewhead" style="margin-bottom:6px"><div><h2 data-t="slotsTitle"></h2><p class="dim" id="slotshelp"></p></div><button class="btn ghost" id="slotsread" type="button" data-t="slotsRead"></button></div>
+      <div class="slots" id="slots"></div>
+    </div>
+    <div class="card">
+      <div class="viewhead" style="margin-bottom:6px"><div><h2 data-t="bkLibTitle"></h2><p class="dim" data-t="bkLibHelp"></p></div>
+        <label class="chk"><input type="checkbox" id="bkdl" checked> <span data-t="bkAlsoFile"></span></label></div>
+      <div class="bklist" id="bklist"></div>
+    </div>
+  </section>
+
   <!-- ======================================================================================= manuals -->
   <section class="view" id="v-docs" hidden>
     <div class="viewhead"><div><p class="eyebrow" data-t="vDocs"></p><h1 id="docstitle"></h1></div></div>
