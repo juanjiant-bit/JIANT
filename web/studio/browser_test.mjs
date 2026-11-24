@@ -97,6 +97,22 @@ try {
     ok(r.imgs.length === 3 && r.imgs.every((w) => w > 0) && r.thumbs === 3 && r.manuals === 5 && open,
       `other devices: ${r.imgs.length} ports with their shots, the plugin's 3, ${r.manuals} manuals in HTML, a shot opens large`);
   }
+  /* the manuals: JIANT FM's (the interactive manual opens here), JIANT BYTE's (what its site lacks says so) */
+  {
+    const m = await page("#docs", { width: 1280, height: 900 });
+    await m.click('nav.views [data-go="docs"]'); await m.waitForTimeout(2500);
+    const r = await m.evaluate(() => ({ cards: document.querySelectorAll("#doclist .doc").length,
+      pdfs: [...document.querySelectorAll("#doclist a")].filter((a) => /cheatsheet-.*\.pdf$/.test(a.href)).length }));
+    await m.click("#doclist .doc.wide .links button"); await m.waitForTimeout(1500);
+    const f = await m.evaluate(() => ({ open: !document.getElementById("mantry").hidden, src: document.getElementById("f-manual").src }));
+    await m.click('[data-fw="byte"]'); await m.click('nav.views [data-go="docs"]'); await m.waitForTimeout(2500);
+    const by = await m.evaluate(() => ({ title: document.getElementById("docstitle").textContent, cards: document.querySelectorAll("#doclist .doc").length,
+      // (its own cheat sheet linked once its site has it; until then "on its way", never JIANT FM's)
+      pdf: [...document.querySelectorAll("#doclist a")].some((a) => a.href.includes("/JIANT-BYTE/docs/cheatsheet-byte-controls.pdf")) ||
+           (document.querySelectorAll("#doclist .soon").length > 0 && ![...document.querySelectorAll("#doclist a")].some((a) => /\/JIANT-BYTE\/docs\/cheatsheet-controls/.test(a.href))) }));
+    ok(r.cards === 7 && r.pdfs === 2 && f.open && /\/JIANT\/manual\/$/.test(f.src) && by.title === "JIANT BYTE" && by.cards === 4 && by.pdf,
+      `manuals: JIANT FM ${r.cards} (2 cheat sheets, the interactive manual opens here), JIANT BYTE ${by.cards}, its own`);
+  }
   /* install safety */
   const other = await p.context().newPage();               // (the same browser profile: BroadcastChannel reaches it)
   await other.goto(URL0); await other.waitForTimeout(800);
