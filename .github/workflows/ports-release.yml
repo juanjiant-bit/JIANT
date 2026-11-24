@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["ports/RELEASE_VERSION", "ports/RELEASE.md"]
+    paths: ["ports/RELEASE_VERSION", "ports/RELEASE.md", ".github/workflows/ports-release.yml"]
 permissions:
   contents: write
 jobs:
@@ -38,14 +38,27 @@ jobs:
           V: ${{ needs.version.outputs.v }}
         run: |
           TAG="ports-$V"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release edit "$TAG" --notes-file ports/RELEASE.md; echo "$TAG already released: its notes updated"; exit 0
-          fi
-          mkdir -p up
-          find dist -name '*.zip' -exec cp {} up/ \;
-          for f in up/JIANT-FM-Linux.zip up/JIANT-FM-Windows.zip; do
-            [ -f "$f" ] && mv "$f" "${f%.zip}-$V.zip"
+          # the plugins (MPC plugin, VST3 / LV2 / app) are not offered: kept, unnamed in the notes, inside one
+          # JIANT-FM-extras-<v>.zip under plugins/ (repack PLUGINS_DIR into it)
+          pack() {   # $1: folder holding the plugin zips, $2: the extras zip to make
+            [ -n "$(ls "$1"/*.zip 2>/dev/null)" ] || return 1
+            rm -rf x && mkdir -p x/plugins && cp "$1"/*.zip x/plugins/ && (cd x && zip -qr "../$2" plugins)
+          }
+          # every ports-* release already out: its plugin zips into the extras zip, its notes ports/RELEASE.md
+          for T in $(gh release list --limit 100 --json tagName -q '.[].tagName' | grep '^ports-' || true); do
+            rm -rf old && mkdir -p old
+            gh release download "$T" -D old -p 'JIANT-FM-MPC-plugin-*' -p 'JIANT-FM-Linux-*' -p 'JIANT-FM-Windows-*' -p 'JIANT-FM-macOS-*' || true
+            if pack old "JIANT-FM-extras-${T#ports-}.zip"; then
+              gh release upload "$T" "JIANT-FM-extras-${T#ports-}.zip" --clobber
+              for f in old/*.zip; do gh release delete-asset "$T" "$(basename "$f")" -y; done
+            fi
+            gh release edit "$T" --notes-file ports/RELEASE.md
           done
+          if gh release view "$TAG" >/dev/null 2>&1; then echo "$TAG already released: tidied"; exit 0; fi
+          mkdir -p up plug
+          find dist -name 'JIANT-FM-MPC-Sample-*.zip' -exec cp {} up/ \;
+          find dist \( -name 'JIANT-FM-MPC-plugin-*.zip' -o -name 'JIANT-FM-Linux*.zip' -o -name 'JIANT-FM-Windows*.zip' -o -name 'JIANT-FM-macOS*.zip' \) -exec cp {} plug/ \;
+          pack plug "up/JIANT-FM-extras-$V.zip" || true
           ls -l up
           gh release create "$TAG" up/*.zip --target "$GITHUB_SHA" --prerelease \
             --title "JIANT FM beyond the FM-1 — $V (preview)" --notes-file ports/RELEASE.md
