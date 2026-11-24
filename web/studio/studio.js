@@ -20,7 +20,7 @@ const MOCK = QS.get("mock") === "1";
 /* ------------------------------------------------------------------------------------------------- the words */
 const TEXT = {
   es: {
-    vLearn: "Cómo funciona", lrIndex: "Índice", lrIndexLead: "Todo, de un vistazo: tocá cualquier elemento para abrir su página. Con ← y → pasás al siguiente.", lrTitleFm: "JIANT FM por dentro", lrTitleByte: "JIANT BYTE por dentro", lrTry: "Probarlo en el emulador", lrWhere: "En la FM-1: ", lrNone: "Esta guía todavía se está escribiendo.",
+    siteLink: "El sitio de %s: qué es, sus pantallas y su historia →", vLearn: "Cómo funciona", lrIndex: "Índice", lrIndexLead: "Todo, de un vistazo: tocá cualquier elemento para abrir su página. Con ← y → pasás al siguiente.", lrTitleFm: "JIANT FM por dentro", lrTitleByte: "JIANT BYTE por dentro", lrTry: "Probarlo en el emulador", lrWhere: "En la FM-1: ", lrNone: "Esta guía todavía se está escribiendo.",
     vRescue: "Rescate", rsTitle: "Rescatar un FM-1", rsBeta: "experimental · sin probar en hardware",
     rsLead: "Para un FM-1 que no enciende o que la computadora no ve por USB (hard brick). Una placa RP2040 de pocos dólares hace todo sola: se conecta al USB-C del FM-1 con tres cables y le vuelve a escribir el firmware. Sin Python ni terminal: Studio arma el archivo para la placa.",
     rsFirstT: "Antes de empezar", rsFirst: "Si el FM-1 enciende y la computadora lo ve (aunque esté trabado o suene raro), no hace falta esto: usá Instalar, que lo actualiza por USB.", rsToInstall: "Ir a Instalar",
@@ -147,7 +147,7 @@ const TEXT = {
     foot: "JIANT Studio, de Juan Jiant",
   },
   en: {
-    vLearn: "How it works", lrIndex: "Index", lrIndexLead: "Everything at a glance: tap any element to open its page. ← and → go to the next one.", lrTitleFm: "Inside JIANT FM", lrTitleByte: "Inside JIANT BYTE", lrTry: "Try it in the emulator", lrWhere: "On the FM-1: ", lrNone: "This guide is still being written.",
+    siteLink: "%s's site: what it is, its screens and its story →", vLearn: "How it works", lrIndex: "Index", lrIndexLead: "Everything at a glance: tap any element to open its page. ← and → go to the next one.", lrTitleFm: "Inside JIANT FM", lrTitleByte: "Inside JIANT BYTE", lrTry: "Try it in the emulator", lrWhere: "On the FM-1: ", lrNone: "This guide is still being written.",
     vRescue: "Rescue", rsTitle: "Rescue an FM-1", rsBeta: "experimental · not tried on hardware yet",
     rsLead: "For an FM-1 that does not turn on, or that the computer does not see over USB (hard brick). A few-dollar RP2040 board does it all by itself: wired to the FM-1's USB-C with three wires, it writes the firmware again. No Python, no terminal: Studio makes the board's file.",
     rsFirstT: "Before you start", rsFirst: "If the FM-1 turns on and the computer sees it (even stuck or sounding wrong), you do not need this: use Install, which updates it over USB.", rsToInstall: "Go to Install",
@@ -1553,6 +1553,7 @@ function render() {
   const d = state.dev, fwName = state.fw === "byte" ? "BYTE" : "FM";
   $("brandfw").textContent = fwName; $("herofw").textContent = fwName;
   $("herolead").textContent = t(state.fw === "byte" ? "leadByte" : "leadFm");
+  $("sitelink").href = TOOLS[state.fw].base; $("sitelink").textContent = t("siteLink").replace("%s", state.fw === "byte" ? "JIANT BYTE" : "JIANT FM");
   document.querySelectorAll("[data-fw]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.fw === state.fw)));
   document.querySelectorAll("[data-install]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.install === state.fw)));
   document.querySelectorAll("[data-target]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.target === state.target)));
