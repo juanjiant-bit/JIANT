@@ -716,16 +716,39 @@ static inline void master_out(int32_t *l, int32_t *r)
 /* length of one division (N_DIV order) in samples at the song tempo */
 static const uint8_t DIV_DEN[6] = {1, 2, 4, 8, 3, 6};    /* original IDs stay fixed; slow rates append */
 static uint32_t midi_beat_samples;                    /* zero until an external clock has a measured tempo */
-static uint32_t beat_samples(void)
+/* (V10.8.40, a user: "the sequencer creeps ahead of the tempo"; the owner: "tracks leave each other's phase") a beat a
+ * multiple of 24 samples: every division of it (2 4 8 3 6, the 24 pulses of the clock) whole, so tracks on different
+ * DIVs, the click and the clock out keep one grid (were FS * 60 / BPM cut, and cut again a division: at 133 BPM a 1/32
+ * track 12 ms a minute ahead of a 1/16 one, both ahead of the tempo). What that shortens the beat by, the sequencer's
+ * time gives back: mix_block leaves a sample of it out now and then (seq_time), the tempo exact over any length */
+static uint32_t tempo_acc;
+static uint32_t beat_real(void)                       /* (the beat in the DAC's samples: the DELAY's time) */
 {
     return song.g[G_CLOCK] && midi_beat_samples ? midi_beat_samples : (uint32_t)FS * 60u / (uint32_t)song.g[G_BPM];
 }
-static void clay_tick(uint32_t n);                      /* (V10.8.21: seq.c clay.c) DRONE CLAY, a block */
-static uint32_t div_samples(uint32_t div)
+static __attribute__((noinline)) uint32_t beat_samples(void)
 {
-    uint32_t quarter = beat_samples();
+    uint32_t b = beat_real();
+    return b - b % 24u;
+}
+/* a block of n of the DAC's samples in the sequencer's (the FM-1's own clock): FS * 60 samples are BPM beats exactly */
+static __attribute__((always_inline)) inline uint32_t seq_time(uint32_t n)
+{
+    if (!song.g[G_CLOCK]) {
+        tempo_acc += n * ((uint32_t)FS * 60u - beat_samples() * (uint32_t)song.g[G_BPM]);
+        if (tempo_acc >= (uint32_t)FS * 60u) {
+            tempo_acc -= (uint32_t)FS * 60u;
+            n--;
+        }
+    }
+    return n;
+}
+static void clay_tick(uint32_t n);                      /* (V10.8.21: seq.c clay.c) DRONE CLAY, a block */
+static __attribute__((always_inline)) inline uint32_t div_of(uint32_t quarter, uint32_t div)
+{
     return div < 6u ? quarter / DIV_DEN[div] : div < 10u ? quarter << (div - 5u) : quarter / DIV_DEN[div % 6u];
 }
+static __attribute__((noinline)) uint32_t div_samples(uint32_t div) { return div_of(beat_samples(), div); }
 
 #include "perform.c"                                 /* the FX hold layer's effects (the master) */
 static void seq_note_on(track_t *t, uint32_t note, uint32_t vel);   /* (0.6.72: seq.c, a note MIDI OUT ALL sends) */
@@ -946,7 +969,8 @@ static void (*const volatile DLY_REV_SET)(void) = dly_rev_set;   /* (mod.c macro
 static uint32_t delay_samples(void)
 {
     uint32_t g = (uint32_t)GFX(GF_DTIME);
-    uint32_t s = g < DT_FREE ? div_samples(g) : g >= DT_DOT ? div_samples((0x021u >> ((g - DT_DOT) * 4u)) & 3u) * 3u / 2u
+    uint32_t q = beat_real();                            /* (V10.8.40: the DELAY's time as it was, the DAC's samples) */
+    uint32_t s = g < DT_FREE ? div_of(q, g) : g >= DT_DOT ? div_of(q, (0x021u >> ((g - DT_DOT) * 4u)) & 3u) * 3u / 2u
                : (uint32_t)DTIME_MS[(g - DT_FREE) % NELEM(DTIME_MS)] * 441u / 10u;   /* (JIANT 0.4: free; V10.8: 1/8D 1/16D 1/4D) */
     return s < 16u ? 16u : s > DLY_MAX ? DLY_MAX : s;
 }
@@ -1392,7 +1416,7 @@ static void cl_spawn(int32_t gap, int32_t wd, uint32_t ar)
                                                          * the line is written: started that much further back) */
         {   /* (V10.8.36, the owner: "always late, a strange delay") where it reads from: near the write head most often (the cloud starts with the note), else a
              * 16th or a few behind it (the repeats on the tempo's grid, not anywhere in the last 0.47 s) */
-            uint32_t r = cl_rand(), q = r & 7u, s16 = beat_samples() >> 3, off = 48u + back + ((r >> 3) & 127u);
+            uint32_t r = cl_rand(), q = r & 7u, s16 = beat_real() >> 3, off = 48u + back + ((r >> 3) & 127u);
             off += ((q * q) >> 4) * s16;                 /* 0 0 0 0 1 1 2 3 sixteenths (the line at half rate) */
             if (off > CL_LEN - 6000u) off = 48u + back;
             cl_g[k].pos = ((fx.cl_w >> 1) - off) << 16;
@@ -2093,7 +2117,7 @@ static inline __attribute__((always_inline)) void fx_buses(const int32_t *cho_in
     }
 #endif
     rest_ph = 0;
-    uint32_t dro = wd && !png ? div_samples(3) * (uint32_t)wd / 127u : 0u, dr;   /* the right echo: up to 1/32 later */
+    uint32_t dro = wd && !png ? div_of(beat_real(), 3) * (uint32_t)wd / 127u : 0u, dr;   /* the right echo: up to 1/32 later */
     int dly_lo_on = dly_rate(&dl, &dr, dro, png, gr);   /* (0.8.4) the line's rate; TIME within what it holds */
     fxg_fb = fb > 0;
     {   /* (0.8.4) TONE's filter at the line's rate: the same Hz an octave (14 of the table) up the table each halving */
@@ -3018,8 +3042,11 @@ static __attribute__((noinline)) void mix_block(int32_t *out, uint32_t n)   /* (
     if (fx_stems)                                       /* (0.7.1) a part not mixed this block: a silent stem */
         memset(stem_buf, 0, sizeof stem_buf);
     pfx_rec_held = perf_kill ? 0u : perf_held & PF_MIDI;
-    pfx_block(n, (perf_kill ? 0u : (perf_held | perf_latched) & (PF_MIDI | PF_LOOPS)) | scene_pfx);
-    events_block(n);
+    {
+        uint32_t sn = seq_time(n);                      /* (V10.8.40) the sequencer's block */
+        pfx_block(sn, (perf_kill ? 0u : (perf_held | perf_latched) & (PF_MIDI | PF_LOOPS)) | scene_pfx);
+        events_block(sn);
+    }
     if (song.playing)                                   /* (JIANT) the modulation sequences' clock (mod.c): the block's end on
                                                          * the transport's grid (through tempo changes, an external clock) */
         ms_clock = clk_pos == CLK_START ? ms_clock + n : clk_n * div_samples(2) + clk_pos + n;

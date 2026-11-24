@@ -9492,9 +9492,9 @@ static int test_div_order(void)
         song.g[G_DTIME] = (int16_t)(DT_FREE + nf - 1);
         okf &= delay_samples() == DTIME_MS[nf - 1] * 441u / 10u;
         song.g[G_DTIME] = (int16_t)DT_DOT;              /* (V10.8) 1/8D: three 16ths */
-        okf &= str_eq(N_DTIME[DT_DOT], "1/8D") && delay_samples() == div_samples(1) * 3u / 2u;
+        okf &= str_eq(N_DTIME[DT_DOT], "1/8D") && delay_samples() == div_of(beat_real(), 1) * 3u / 2u;   /* (V10.8.40: the DAC's samples) */
         song.g[G_DTIME] = (int16_t)(DT_DOT + 2u);
-        okf &= delay_samples() == div_samples(0) * 3u / 2u && param_turn(&GP[G_DTIME], 0, -1) == (int32_t)(DT_DOT + 2u);
+        okf &= delay_samples() == div_of(beat_real(), 0) * 3u / 2u && param_turn(&GP[G_DTIME], 0, -1) == (int32_t)(DT_DOT + 2u);
         song.g[G_DTIME] = 1;
         bad += check("delay TIME: past 1/32 the free times 5 ms .. 1.48 s and on to the line's longest, each longer; the delay that long", okf);
     }

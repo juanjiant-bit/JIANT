@@ -89,7 +89,7 @@ static void run(uint32_t bpm, int playing, const ev_t *ev, uint32_t nev, uint32_
         }
     }
 }
-#define P16 5512u                                  /* a 1/16 at 120 BPM */
+#define P16 5508u                                  /* a 1/16 at 120 BPM (V10.8.40: a beat 22032, a multiple of 24 samples) */
 static int same(uint32_t a, uint32_t b)            /* out == in on [a, b), both sides */
 {
     uint32_t t;
@@ -198,7 +198,7 @@ static int test_too_long(void)
                  !same(0, 40000) && (perf_avail() & PF_BIT(PF_R8)));
     {   /* (V10.59) the 11 kHz loop repeats: a 1/8 later the same (a 440 Hz / 277 Hz pair: within the lo-fi's error) */
         char what[160];
-        uint32_t L = (uint32_t)(44100u * 60u / 72u / 2u), t, a0 = 30000u;   /* (recorded from the 1/16 after 992, played
+        uint32_t L = div_samples(1), t, a0 = 30000u;   /* (V10.8.40: the sequencer's 1/8, a beat a multiple of 24 samples) */   /* (recorded from the 1/16 after 992, played
                                                          * a 1/8 later: the input of a 1/8 before) */
         double e = 0, p = 0;
         for (t = a0; t < a0 + 4000u; t++) {

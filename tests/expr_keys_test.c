@@ -54,7 +54,7 @@ static uint32_t KEY = 12u;                            /* a white key mid keyboar
 
 /* a fixed play of the keys (both tracks' notes, OCT+, OCT-, both, MIDI OUT ALL, a route of LFO and an inactive one
  * from OCT+ on T1): FNV-1a over every block's kx_q8 and every MIDI byte sent */
-#define EXPR_HASH_V10721 0x9d661a90u
+#define EXPR_HASH_V10721 0x7f86a9ecu   /* (V10.8.40: 0x9d661a90 before the beat a multiple of 24 samples: MIDI OUT's clock pulses a sample or so elsewhere, the bend and the vibrato as they were) */
 static uint32_t expr_hash(void)
 {
     uint32_t h = 2166136261u, b, i, n = 0;

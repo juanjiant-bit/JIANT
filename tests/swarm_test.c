@@ -233,7 +233,7 @@ static void tests(void)
         pkt(1, 30, 38);
         for (d = 0; w < 1500u && (!(d = dev_of(1)) || d->hit); w++) blocks(1);
         printf("swarm:   a packet at block 10, its hit at block %u (1/1 = 1378.1 blocks)\n", 9u + w);
-        check("a device's hit waits for the grid's next step (1/1 here: up to 2 s)", d && !d->hit && 9u + w == 1379u);
+        check("a device's hit waits for the grid's next step (1/1 here: up to 2 s)", d && !d->hit && 9u + w == 4u * beat_samples() / CTL);   /* (V10.8.40: a beat a multiple of 24 samples: 1377) */
     }
     {   /* OCTAVE's second half: each hit the next degree of the scale (D minor), over 2..8 degrees, round */
         static const uint8_t OC[3] = {64, 80, 127}, RN[3] = {2, 3, 8};

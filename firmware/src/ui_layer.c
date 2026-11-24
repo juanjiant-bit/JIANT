@@ -60,7 +60,7 @@ static const layer_t LAYERS[LAYER_N] = {
     {B_SCL, LK_SET, FAM_SCL, "[SCL] SET", {{KC_KEYS, "ROOT"}, {KC_SCL, "DONE"}, {0, 0}}},
     {B_EDIT, LK_SET, FAM_EDIT, "[EDIT] SET", {{KC_SELECT, "DICE"}, {KC_K14, "TWEAK"}, {KC_KEYS, "INIT / RECALL"}}},   /* (0.9.9-seq2e:
                                                                      * KNOB 1..4 MOMENTARY: mom_knob; seq2f: SELECT the sound dice) */
-    {B_SEQ, LK_SET, FAM_SEQ, "[SEQ] TOOLS", {{KC_REC, "CLEAR ALL"}, {KC_SEQ, "DONE"}, {0, 0}}},   /* (0.6.14: REC, all six
+    {B_SEQ, LK_SET, FAM_SEQ, "[SEQ] TOOLS", {{KC_REC, "CLEAR ALL"}, {KC_SEQ, "DONE"}, {KC_PLAY, "RESYNC"}}},   /* (0.6.14: REC, all six
                                                                      * tracks cleared, shown: it was nowhere) */
     {B_REC, LK_SET, FAM_HOME, "[REC] SET", {{KC_KEYS, "RECORDING"}, {KC_REC, "DONE"}, {0, 0}}},
     {B_SAVE, LK_SET, FAM_HOME, "[SAVE] SONG", {{KC_KEYS, "PLAY"}, {KC_OCTUP, "STORE"}, {KC_OCTDN, "RECALL"}}},
@@ -818,6 +818,12 @@ static void layer_knob(uint32_t k, int32_t s)
 /* PLAY with GLO held open: RESTART (from the top, playing on); stopped: PLAY. 1 = done here */
 static int layer_play(void)
 {
+    if (layer_open() == LAYER_SEQ && song.playing) {    /* (V10.8.40, the owner) RESYNC: every track from its first
+                                                         * step at the next bar, in time (seq.c seq_anchor) */
+        seq_rs = (clk_n / 16u + 1u) * 16u;
+        ui_message("RESYNC");
+        return 1;
+    }
     if (layer_open() != LAYER_GLO || chain_busy())
         return 0;
     if (song.g[G_CLOCK] && song.playing) {

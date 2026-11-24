@@ -109,7 +109,7 @@ static int32_t worst(const int32_t *ref, const int32_t *on, int32_t *mn, int32_t
 int main(int argc, char **argv)
 {
     static const struct { uint32_t engine, mode; const char *name; int32_t tol; } C[3] = {
-        {ENGI_ANALOG, V_POLY, "ANALOG POLY", 2}, {ENGI_ANALOG, V_MONO, "ANALOG MONO (each note cuts the last)", 2},
+        {ENGI_ANALOG, V_POLY, "ANALOG POLY", 2}, {ENGI_ANALOG, V_MONO, "ANALOG MONO (each note cuts the last)", 3},   /* (V10.8.40: 3: with the 1/16 of 5508 samples a note cut at another point of the one before: its first sample over the floor one later; POLY's the same event, 2) */
         {ENGI_DRUM, V_POLY, "DRUM kit hits", 2}};
     int32_t ref[NN], on[NN], mn, mx, w;
     uint32_t c, k;

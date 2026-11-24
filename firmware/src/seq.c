@@ -1996,6 +1996,7 @@ static void seq_start(void)
     beat_pos = 0; beat_n = 0;                      /* the ARP LED's beat from the top too */
     bar_n = 0;
     clk_pos = CLK_START;                           /* the metronome's first beat with step 0 */
+    tempo_acc = 0;                                 /* (V10.8.40: fx.c seq_time from PLAY) */
     song.playing = 1;
     slicer_start();                                /* slicer.c: its step 0 with the sequencer's */
     perf_start();                                  /* perform.c: its 1/16 grid too */
@@ -3361,6 +3362,39 @@ static __attribute__((noinline)) uint32_t jam_step(track_t *t, uint32_t n, uint3
     t->seq_idx = (uint16_t)(t->seq_idx % (len ? len : 1u));
     return len;
 }
+/* (V10.8.40, the owner: "after a pattern change, an edit, EUCLID, a variation, a track's start no longer lines up with
+ * the others'; I stop and play again") a track's place from the transport's, every step it enters: the 1/16s since PLAY
+ * (clk_n, clk_pos: click_tick's, a block behind here) less the track's origin (seq_org: PLAY, a song's section in,
+ * RESYNC's bar), over its DIV: the step (k mod LEN) and where in it. A track left alone is there already (nothing
+ * changes, to the sample); one whose LEN or DIV changed under it (EUCLID's steps, a variation of another length, a
+ * sound's pattern, the knobs) is back on the others' grid at its next step. LIVE's playheads, a JUMP, FIT's own clock
+ * and an odd LEN with SWING (its loop is not a whole number of steps) are left as they run.
+ * seq_rs: RESYNC (ui_input.c: PLAY held, playing): the bar every track starts again from, as STOP and PLAY in time */
+static uint32_t seq_org[NTRK], seq_rs;
+static uint16_t seq_oph[NTRK];                       /* (a section in between the transport's 1/16s: its samples past one) */
+static __attribute__((noinline)) void seq_anchor(track_t *t, uint32_t n, uint32_t period, uint32_t len, uint32_t start)
+{
+    uint32_t ti = trk_index(t) % NTRK, s16 = div_samples(2), k, at, sw;
+    uint32_t nom = (clk_pos == CLK_START ? 0u : clk_n * s16 + clk_pos + n) - t->seq_pos + t->ext;
+    if (clk_pos == CLK_START && !start) return;         /* (no transport's clock: a track ticked on its own, a test) */
+    if (seq_rs && clk_n >= seq_rs + 64u) seq_rs = 0;
+    if (start) {
+        seq_org[ti] = nom / s16;
+        seq_oph[ti] = (uint16_t)(nom % s16);
+    } else if (seq_rs > seq_org[ti] && nom + s16 / 2u >= seq_rs * s16) {
+        seq_org[ti] = seq_rs;
+        seq_oph[ti] = 0;
+    }
+    nom -= seq_org[ti] * s16 + seq_oph[ti];
+    if ((int32_t)nom < 0 || !period || (t->seq_fit & 128u) || ((len & 1u) && track_swing(t))) return;
+    k = (nom + period / 2u) / period;
+    sw = k & 1u ? period - swing_step_len(t, period, 1) : 0u;
+    at = k * period + sw;
+    t->seq_idx = (uint16_t)(k % (len ? len : 1u));
+    if (nom >= at) t->seq_pos += nom - at;              /* (entered late: further into it) */
+    else t->ext = (uint16_t)(at - nom + t->ext < 65535u ? at - nom + t->ext : 65535u);   /* (early: as TIMING's, longer) */
+}
+static void (*const volatile seq_anchor_fp)(track_t *, uint32_t, uint32_t, uint32_t, uint32_t) = seq_anchor;
 static void seq_tick(track_t *t, uint32_t n)
 {
     uint32_t period, len, lon, nf;
@@ -3394,7 +3428,10 @@ static void seq_tick(track_t *t, uint32_t n)
                                                  * since LIVE's went, gone) */
             t->seq_idx = (uint16_t)((t->jump_to - 1u) % (len ? len : 1u));
         else
+        {
             t->seq_idx = (uint16_t)((t->seq_idx + 1u) % (len ? len : 1u));
+            if (!lon) seq_anchor_fp(t, n, period, len, start);   /* (V10.8.40) .. as the transport has it */
+        }
         t->jump_to = 0;
         if (jam_rdy)
             len = jam_step(t, n, start, len);           /* (V10.8) JAM */

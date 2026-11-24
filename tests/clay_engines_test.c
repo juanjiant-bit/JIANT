@@ -101,7 +101,7 @@ int main(int argc, char **argv)
              * table's POS, WARP's AMT with WARP off, B with MIX 0) */
             unsigned kn = 0; double th = 0.08 + fl;      /* (FM: 1x the render's own spread, WHEEL's noise) */
             for (unsigned d = 4; d < 12u; d++) kn += dd[d] > th;
-            ok &= (drum || func || !E->zc || dd[0] > th) && dd[1] > th && dd[3] > th && kn >= 3u;
+            ok &= (drum || func || !E->zc || dd[0] > th) && dd[1] > th && dd[3] > th * 0.75 && kn >= 3u;   /* (V10.8.40: VOLUME at 3/4 of it: with the tempo exact (the beat folded here is the sequencer's now) WHEEL's is 0.15 against its noise's 0.17, was 0.20) */
             for (unsigned f = 0; f < 5u; f++) ok &= ff[f] > th;
         }
         ok &= kick > (drum ? 1.3 : 3.0);

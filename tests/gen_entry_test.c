@@ -16,9 +16,30 @@ static void bars(uint32_t n)                            /* play on until n more 
 }
 int main(void)
 {
-    int bad = 0, ok;
+    int bad = 0, ok, mid_ok = 1;
     uint32_t k, s0[NTRK], mel = 0;
     ui_power_on();
+    {   /* (V10.8.40) MOOD MID: the pieces V10.8.39's, byte for byte (from power-on: the tracks' values and steps, the
+         * song's, the kit; a checksum of 8 seeds in EXPLORE, RANDOM and HOUSE; V10.8.39's own, the same tool) */
+        static const uint32_t MID[3] = {0x787146bdu, 0x700fbf45u, 0xe4a3dce1u};
+        uint32_t md, hs = 0, r, i;
+        for (r = 1; r <= NGENRE; r++) if (str_eq(GENRE[r - 1u].name, "HOUSE")) hs = r;
+        for (md = 0; md < 3u; md++) {
+            uint32_t h = 2166136261u;
+            for (r = 0; r < 8u; r++) {
+                gp.genre = (uint8_t)(md == 0u ? GEN_EXPLORE : md == 1u ? 0u : hs);
+                gp.form = 0; gp.seed = (uint16_t)(100u + r * 37u); grd.on = 0; grd.mood = 0;
+                gen_make();
+                for (k = 0; k < NTRK; k++)
+                    for (i = 0; i < sizeof trk[k].p + sizeof trk[k].step; i++)
+                        h = (h ^ (i < sizeof trk[k].p ? ((const uint8_t *)trk[k].p)[i] : ((const uint8_t *)trk[k].step)[i - sizeof trk[k].p])) * 16777619u;
+                for (i = 0; i < sizeof song.g; i++) h = (h ^ ((const uint8_t *)song.g)[i]) * 16777619u;
+                for (i = 0; i < sizeof dx_kit; i++) h = (h ^ ((const uint8_t *)dx_kit)[i]) * 16777619u;
+            }
+            mid_ok &= h == MID[md];
+        }
+        ui_power_on();
+    }
     gp.genre = 1; gp.form = 0; gp.key = 0; gp.entry = 0;
     gen_press(); frames(64);                             /* a piece to start from, stopped: made at once */
     for (k = 0; k < NTRK; k++) s0[k] = steps_sig(&trk[k]);
@@ -145,6 +166,50 @@ int main(void)
         }
         grd.on = 0; grd.mood = 0; grd.rn = 0;
         bad += check("MOOD DANCE on the radio: each piece's tempo the nearest its genre has to the one before", ok);
+        {   /* (V10.8.40, the owner: "CALM changes nothing audible, everything still has drums") MOOD in every GENRE mode
+             * (EXPLORE, RANDOM, HOUSE), 24 seeds each (MID: main's first lines). CALM -50: no sound of the kit but the closed
+             * hat left (every other lane's level 0), that one down, the kit shorter and its filter closing; -25: the
+             * kick and the rest under MID's, still there. DANCE +50: every piece a kick that sounds, on every beat, its
+             * level whole, the drum track over MID's; +25: on the bar's first and third beats */
+            uint32_t md, hs = 0, i, l, okc = 1, okh = 1, okd = 1, okq = 1;
+            for (r = 1; r <= NGENRE; r++) if (str_eq(GENRE[r - 1u].name, "HOUSE")) hs = r;
+            for (md = 0; md < 3u; md++) {
+                for (r = 0; r < 24u; r++) {
+                    track_t *t;
+                    int16_t lv0, e3, fc, ln[8];
+                    uint32_t len, kb = 0, k2 = 0;
+                    gp.genre = (uint8_t)(md == 0u ? GEN_EXPLORE : md == 1u ? 0u : hs);
+                    gp.form = 0; gp.seed = (uint16_t)(100u + r * 37u); grd.on = 0;
+                    grd.mood = 0; gen_make();
+                    t = &trk[gs.trk_of[RL_DRUM]];
+                    lv0 = t->p[P_LEVEL]; e3 = t->p[P_E3]; fc = t->p[P_FCUT];
+                    for (l = 0; l < 8u; l++) ln[l] = t->p[P_LN0 + l];
+                    if (gs.act[RL_DRUM]) {
+                        grd.mood = -25; gen_make(); t = &trk[gs.trk_of[RL_DRUM]];
+                        okq &= !gs.act[RL_DRUM] || (t->p[P_LN0] < ln[0] && t->p[P_LN0] > 0 && t->p[P_LN1] < ln[1] && t->p[P_E3] < e3 && t->p[P_FCUT] < fc);
+                        grd.mood = -50; gen_make(); t = &trk[gs.trk_of[RL_DRUM]];
+                        if (gs.act[RL_DRUM]) {
+                            for (l = 0; l < 8u; l++) okc &= l == DV_HATC ? t->p[P_LN0 + l] <= 80 : t->p[P_LN0 + l] == 0;
+                            okc &= t->p[P_E3] < 40 && t->p[P_FCUT] <= 80 && t->p[P_LEVEL] < 100;
+                        }
+                    }
+                    grd.mood = 50; gen_make(); t = &trk[gs.trk_of[RL_DRUM]];
+                    len = (uint32_t)clamp(t->p[P_SLEN], 1, NSTEP);
+                    for (i = 0; i < len; i += 4u) kb += t->step[i].time == ST_NOTE && (t->step[i].hit & 1u);
+                    okd &= gs.act[RL_DRUM] && kb == (len + 3u) / 4u && t->p[P_LN0] == 127 && (md == 1u || t->p[P_LEVEL] > lv0);
+                    grd.mood = 25; gen_make(); t = &trk[gs.trk_of[RL_DRUM]];
+                    len = (uint32_t)clamp(t->p[P_SLEN], 1, NSTEP);
+                    for (i = 0; i < len; i += 8u) k2 += t->step[i].time == ST_NOTE && (t->step[i].hit & 1u);
+                    okh &= gs.act[RL_DRUM] && k2 == (len + 7u) / 8u;
+                }
+            }
+            grd.mood = 0; gp.genre = 0;
+            bad += check("MOOD MID: EXPLORE's, RANDOM's and HOUSE's pieces V10.8.39's byte for byte", mid_ok);
+            bad += check("MOOD CALM -25: the kick, the snare, the kit's decay and filter under MID's, still there", okq);
+            bad += check("MOOD CALM -50: every piece's kit silent but a low, short, dark closed hat (EXPLORE, RANDOM, HOUSE)", okc);
+            bad += check("MOOD DANCE +25: every piece its drums, the kick on the bar's first and third beats", okh);
+            bad += check("MOOD DANCE +50: every piece a kick on every beat, its level whole, the drums over MID's", okd);
+        }
     }
     printf(bad ? "gen-entry: %d FAILED\n" : "gen-entry: all ok\n", bad);
     return bad != 0;

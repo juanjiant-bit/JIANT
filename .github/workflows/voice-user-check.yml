@@ -141,6 +141,10 @@ jobs:
           build/song-check/project > build/song-check/project.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/fit_test.c -lm -o build/song-check/fit
           build/song-check/fit | tee build/song-check/fit.log
+          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/drift_test.c -lm -o build/song-check/drift
+          build/song-check/drift | tee build/song-check/drift.log
+          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/resync_test.c -lm -o build/song-check/resync
+          build/song-check/resync | tee build/song-check/resync.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/probability_component_test.c -lm -o build/song-check/probability
           build/song-check/probability | tee build/song-check/probability.log
           cc -O1 -g -w -Wno-implicit-function-declaration -fsanitize=address,bounds -Ibuild/gen -Ifirmware/src tests/ramp_test.c -lm -o build/song-check/ramp

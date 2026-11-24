@@ -246,7 +246,8 @@ UH_SEG static int uh_hub_port_probe(uint8_t p, uint32_t st, uh_midi_t *m)
 }
 
 /* read and acknowledge connection changes; a hub that stops answering is left alone until the root is replugged */
-UH_SEG static int uh_hub_status(uint8_t p, uint8_t *b)
+/* (V10.8.40: in the image, for the segment's room; called from the segment only, as the HAL it calls) */
+__attribute__((noinline)) static int uh_hub_status(uint8_t p, uint8_t *b)
 {
     if (uh_ctl(uh.hub_addr, 0xA3, 0, 0, p, 4, b, uh.hub_mps) < 4 ||
         ((b[2] & 1u) && uh_ctl(uh.hub_addr, 0x23, 1, 16, p, 0, 0, uh.hub_mps) < 0)) {

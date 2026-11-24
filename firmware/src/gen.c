@@ -1856,6 +1856,32 @@ static __attribute__((noinline)) void gen_kit(track_t *t)
         t->p[P_LN4] = 106;
         t->p[P_LN6] = t->p[P_LN7] = 100;
     }
+    if (grd.mood) {                                     /* (V10.8.40, the owner: "CALM changes nothing, everything still
+                                                         * has drums") MOOD on the kit, in every GENRE mode. CALM: the
+                                                         * sounds' levels down (the kick the fastest, all but the closed
+                                                         * hat gone by -50: the one left, a tick), the
+                                                         * decay shorter, the filter closing; DANCE: the kick whole, the
+                                                         * snare, the clap and the hats up, longer, driven (0: untouched) */
+        int32_t m = grd.mood, l;
+        t->p[P_E3] = (int16_t)clamp(t->p[P_E3] + (m < 0 ? m : m / 4), 0, 127);
+        if (m < 0) {
+            t->p[P_FCUT] = (int16_t)(t->p[P_FCUT] + m);
+            for (l = 0; l < 8; l++)
+                t->p[P_LN0 + l] = (int16_t)clamp(t->p[P_LN0 + l] + (l == DV_HATC ? m : m * (l ? 1 : 2) + (m < -25 ? (m + 25) * 4 : 0)), 0, 127);
+        } else {
+            t->p[P_LN0] = 127;
+            for (l = 1; l < 5; l++) t->p[P_LN0 + l] = (int16_t)clamp(t->p[P_LN0 + l] + m / 5, 0, 127);
+            t->p[P_E7] = (int16_t)clamp(t->p[P_E7] + m / 2, 0, 127);
+        }
+    }
+}
+/* (V10.8.40) MOOD DANCE on a drum pattern: the kick on the bar's first and third beats from +25, on every beat from +40 */
+static __attribute__((noinline)) void gen_drums_m(track_t *t, uint32_t len)
+{
+    uint32_t i;
+    gen_drums(t, len);
+    if (grd.mood >= 25)
+        for (i = 0; i < len; i += grd.mood >= 40 ? 4u : 8u) gdrum_hit(t, i, DV_KICK, 118, 1);
 }
 /* the mix and the humanity of a role */
 static __attribute__((noinline)) void gen_mix(track_t *t, uint32_t r)
@@ -1872,7 +1898,7 @@ static __attribute__((noinline)) void gen_mix(track_t *t, uint32_t r)
     /* (p3, the owner: "the leads eat the drums and everything else; the drums always in front, the rest accompanies")
      * the drums up, the bass under them, the chords and the arp back, the lead ~6 dB under gen3's; the genre's lift at
      * half and on the bass and the chords only */
-    t->p[P_LEVEL] = (int16_t)clamp((r == RL_DRUM ? 110 : r == RL_BASS ? 114 : r == RL_LEAD ? (g->lead == LD_RIFF ? 108 : 92) : r == RL_ARP ? 96 :
+    t->p[P_LEVEL] = (int16_t)clamp((r == RL_DRUM ? 110 + (grd.mood < 0 ? grd.mood / 3 : grd.mood / 5) : r == RL_BASS ? 114 : r == RL_LEAD ? (g->lead == LD_RIFF ? 108 : 92) : r == RL_ARP ? 96 :
                                     r == RL_TEX ? (g->tex == SR_NOISE ? 56 : 66) : 100) +
                                    (r == RL_BASS || r == RL_PAD ? GG_LIFT(GGR) / 2 : 0) +   /* (the genre's own: GGRAM) */
                                    (gs.gi < NGENRE ? (r == RL_TEX ? 8 : 3) * ((int8_t)(GMIX[gs.gi][r >> 1] << (r & 1u ? 0 : 4)) >> 4) : 0) +
@@ -1956,7 +1982,7 @@ BTAPP_FN static void gen_role(track_t *t, uint32_t k, uint32_t len)   /* (V10.7.
     uint32_t r = gs.role[k];
     if (!gs.act[r] || (r == RL_TEX && k != gs.trk_of[RL_TEX])) return;
     switch (r) {
-    case RL_DRUM: gen_drums(t, len); break;
+    case RL_DRUM: gen_drums_m(t, len); break;
     case RL_BASS: gen_bass(t, len); break;
     case RL_PAD: gen_pads(t, len); break;
     case RL_ARP: gen_arp(t, len); break;
@@ -2162,7 +2188,7 @@ static void gen_parts(void)
                     if (form == FM_PARTS) gs.complex = c0 + 20u > 100u ? 100u : c0 + 20u;
                 }
                 gclear_all(t);
-                gen_drums(t, dlen(t));
+                gen_drums_m(t, dlen(t));
                 gs.drum_fill = 0; gs.amt[GP_DRUMS] = a0; gs.complex = c0;
             }
             if (plan && k == 1u && gs.act[RL_DRUM] && !gls.on) gdrum_hit(t, 0, 4, 120, 1);   /* B: the drop's first loop, a crash on its one */
@@ -2805,7 +2831,7 @@ BTAPP_FN static void gen_pick(void)
             }
         }
     }
-    gs.energy = dice_force_energy >= 0 ? (uint32_t)dice_force_energy * 50u : (uint32_t)clamp((int32_t)gp.energy + grd.mood * 4 / 5, 0, 100);   /* (V10.8.39: MOOD) */
+    gs.energy = dice_force_energy >= 0 ? (uint32_t)dice_force_energy * 50u : (uint32_t)clamp((int32_t)gp.energy + grd.mood * 6 / 5, 0, 100);   /* (V10.8.39: MOOD; V10.8.40: +-60, was 40) */
     gs.complex = gp.complex;
     if (gs.mutant) gs.complex = gs.complex + 20u > 100u ? 100u : gs.complex + 20u;   /* (a mutant: more going on) */
     if (gx.on) gs.complex = (uint32_t)clamp((int32_t)gs.complex + grr(10, 40), 0, 100);   /* (EXPLORE: more still) */
@@ -3042,6 +3068,12 @@ static __attribute__((noinline)) void gen_make(void)
         uint8_t pri[5];
         uint32_t np = 0;
         drums = gs.amt[GP_DRUMS] && g->drum != DM_NONE && (gp.amt[GP_DRUMS] != GA_AUTO || gch(g->drum_pct));
+        if (grd.mood >= 25 && !drums) {                 /* (V10.8.40) DANCE: never without its drums (a genre with
+                                                         * none: the first map's, the kick gen_drums_m's) */
+            if (g->drum == DM_NONE) { gmut = *g; gmut.drum = 0; g = gs.g = &gmut; }
+            drums = 1;
+            if (gs.amt[GP_DRUMS] < 60u) gs.amt[GP_DRUMS] = 60;
+        }
         for (k = 0; k < RL_N; k++) gs.act[k] = 0;
         gs.act[RL_DRUM] = (uint8_t)drums;
         for (k = 1; k < GP_N; k++) if (gs.amt[k]) { pri[np++] = PRI[k]; gs.act[PRI[k]] = 1; }

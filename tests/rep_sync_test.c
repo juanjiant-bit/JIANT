@@ -34,12 +34,14 @@ static uint32_t rs_run(uint32_t samples, uint32_t *at, uint32_t max)
     while (rs_clock < end) {
         uint32_t v0 = vage;
         static int32_t o[2 * CTL];
+        /* (V10.8.40) the clock in the sequencer's samples: a block less the sample mix_block leaves out (fx.c seq_time) */
+        uint32_t adv = tempo_acc + CTL * ((uint32_t)FS * 60u - beat_samples() * (uint32_t)song.g[G_BPM]) >= (uint32_t)FS * 60u ? CTL - 1u : CTL;
         mix_block(o, CTL);                          /* (the whole block: the punch-ins, the events, the parts) */
         for (; v0 < vage; v0++) {
             if (n < max) at[n] = rs_clock;
             n++;
         }
-        rs_clock += CTL;
+        rs_clock += adv;
     }
     return n;
 }
