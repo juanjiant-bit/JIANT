@@ -77,9 +77,13 @@ static void mir_frame(const uint32_t *box, uint32_t k)
     scr.prev = 0;
 }
 
-/* lcd.c: a fill (px 0: w x h of colour fill, as lcd_fill takes it) or a strip (w x h of px, a row every stride
- * pixels, each pixel byte-swapped as the panel takes it) about to go to the panel at x, y */
-static void scr_tap(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint16_t *px, uint32_t stride, uint32_t fill)
+/* (V10.8.26) a row's last part sent: a hash of its x, w and pixels. A row part the same as the last one sent on that
+ * row is not sent again (every part sent on a row replaces it, so a part is skipped only when nothing was drawn on
+ * that row since); SCREEN 1 and 3 forget them all. In the RAM, not the pool (the pool keeps its 8 KiB to spare). */
+uint16_t scr_row[SCR_H];
+
+/* a box sent (scr_rows: the rows that changed) */
+static __attribute__((noinline)) void scr_tap(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint16_t *px, uint32_t stride, uint32_t fill)
 {
     uint32_t i = 0, k = 0, c, hh, box[4];
     if (!scr_on || !w || !h || x + w > SCR_W || y + h > SCR_H)
@@ -115,6 +119,34 @@ static void scr_tap(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint16
     if (scr_on)
         mir_frame(box, 0);                     /* (the last one out; the new header is never sent) */
 }
+
+/* lcd.c: a fill (px 0: w x h of colour fill, as lcd_fill takes it) or a strip (w x h of px, a row every stride
+ * pixels, each pixel byte-swapped as the panel takes it) about to go to the panel at x, y: the rows that changed sent,
+ * those in a row together as one box */
+static void scr_rows(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint16_t *px, uint32_t stride, uint32_t fill)
+{
+    uint32_t r, i, hs, r0 = 0, n = 0;
+    if (!scr_on || !w || !h || x + w > SCR_W || y + h > SCR_H)
+        return;                                /* (lcd.c clips before; nothing past the panel) */
+    for (r = 0; r <= h; r++) {
+        if (r < h) {
+            hs = x * 251u + w * 31u + 1u;
+            for (i = 0; i < w; i++)
+                hs = hs * 33u + (px ? px[r * stride + i] : fill);
+            hs = (hs ^ hs >> 16) & 0xFFFFu;
+            hs -= hs == 0xFFFFu;                /* (0xFFFF: a row not sent yet) */
+            if (scr_row[y + r] != hs) {
+                scr_row[y + r] = (uint16_t)hs;
+                if (!n++)
+                    r0 = r;
+                continue;
+            }
+        }
+        if (n)
+            scr_tap(x, y + r0, w, n, px ? px + r0 * stride : px, stride, fill);
+        n = 0;
+    }
+}
 #endif
 
 /* SCREEN (78): op 0 query, 1 on (and the whole screen again), 2 keep it on, 3 the whole screen again, 4 off.
@@ -128,6 +160,7 @@ static int ed_screen_handle(uint32_t cmd, const uint8_t *a, uint32_t na)
 #if SCR_HAS_LCD
     if (!bad && (op == 1u || (op == 3u && scr_on))) {
         ui.force = 1;                          /* the next frame redraws everything: the editor's first picture */
+        memset(scr_row, 0xFF, sizeof scr_row); /* (sent whole: no row is the same as the last sent) */
         scr_on = 1;
     } else if (!bad && op == 4u)
         scr_on = 0;                            /* (op 2: ed_service's last_ms, any request, keeps it on) */

@@ -23,8 +23,8 @@ static uint8_t lcd_small[64];
 #define SCR_HAS_LCD 1
 uint8_t scr_on __attribute__((section(".pool.mirror")));   /* (not static, after the pool: kept out of the compiler's merged
                                                          * globals, so no other variable moves; app.ld) */
-static void scr_tap(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint16_t *px, uint32_t stride, uint32_t fill);
-#define SCR_TAP(x, y, w, h, px, stride, fill) do { if (scr_on) scr_tap(x, y, w, h, px, stride, fill); } while (0)
+static void scr_rows(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint16_t *px, uint32_t stride, uint32_t fill);
+#define SCR_TAP(x, y, w, h, px, stride, fill) do { if (scr_on) scr_rows(x, y, w, h, px, stride, fill); } while (0)
 #else
 #define SCR_TAP(x, y, w, h, px, stride, fill) ((void)0)
 #endif
