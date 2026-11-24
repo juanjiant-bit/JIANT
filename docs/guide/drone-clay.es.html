@@ -55,12 +55,12 @@ footer{margin-top:60px;color:var(--dim);font-size:14px}
 
 <h2>Las piezas</h2>
 <div class="grid">
-  <div class="card"><h3 style="color:var(--t1)">El drone</h3><p>Una nota grave con la voz de la pista. Elegís nota y octava. <span class="k">RATE</span> en <span class="k">HOLD</span> la sostiene para siempre; de <span class="k">4BAR</span> a <span class="k">1/16</span> la vuelve a atacar con el tempo.</p></div>
-  <div class="card"><h3 style="color:var(--t2)">Cuatro moduladores</h3><p><span class="k">CLAY MOD 1–4</span>. Cada uno tiene <span class="k">DEST</span> (qué parámetro de la pista amasa), <span class="k">SHAPE</span> (el gesto), <span class="k">EUCLID</span> (cuándo presiona) y <span class="k">AMOUNT</span> (cuánto).</p></div>
+  <div class="card"><h3 style="color:var(--t1)">El drone</h3><p>Una nota grave con la voz de la pista. Elegís nota y octava. <span class="k">RATE</span> en <span class="k">HOLD</span> la sostiene para siempre; cualquier otro valor (de <span class="k">1/64</span> a <span class="k">4BAR</span>, con puntillo y tresillos) la vuelve a atacar con el tempo. <span class="k">PITCH</span> la corre de −24 a +36 semitonos.</p></div>
+  <div class="card"><h3 style="color:var(--t2)">Cuatro moduladores</h3><p>En <span class="k">CLAY MOD</span>, <span class="k">MOD</span> elige cuál de los cuatro editás: <span class="k">DEST</span> (qué parámetro de la pista amasa), <span class="k">SHAPE</span> (el gesto) y <span class="k">AMOUNT</span> (cuánto; en 0 no golpea). En <span class="k">CLAY RHYTHM</span>, su propio <span class="k">RATE</span> (su grilla), <span class="k">EUCLID</span> (cuándo presiona) y <span class="k">DECAY</span>.</p></div>
   <div class="card"><h3 style="color:var(--t3)">Golpes</h3><p>Las primeras formas son golpes de batería hechos con la propia masa: <span class="k">KICK</span>, <span class="k">SNARE</span>, <span class="k">HAT</span>, <span class="k">CLAP</span>, <span class="k">TOM</span>, <span class="k">ZAP</span>… El drone se vuelve percusión sin dejar de ser drone.</p></div>
   <div class="card"><h3 style="color:var(--t4)">Formas lentas</h3><p><span class="k">SINE</span>, <span class="k">DRIFT</span>, <span class="k">SPRING</span>, <span class="k">STAIRS</span>, <span class="k">BOUNCE</span>, <span class="k">CHAOS</span>, <span class="k">S&amp;H</span>, rampas y envolventes: estirar, aflojar, dejar caer.</p></div>
   <div class="card"><h3 style="color:var(--t5)">Gestos de nota</h3><p><span class="k">ARP</span>, <span class="k">CHORD</span>, <span class="k">+OCT</span>, <span class="k">+5TH</span>, <span class="k">GLIDE DN</span> tocan sobre la escala del proyecto; las formas <span class="k">FM x½ … x7</span> cambian el color armónico.</p></div>
-  <div class="card"><h3 style="color:var(--t6)">Memoria de la huella</h3><p><span class="k">CLAY DECAY</span> dice cuánto tarda cada golpe en soltarse: corto es un pellizco, largo es una marca que queda. <span class="k">SEED</span> cambia la variación; <span class="k">RUN</span> elige si sigue la canción (<span class="k">SONG</span>) o corre libre (<span class="k">FREE</span>).</p></div>
+  <div class="card"><h3 style="color:var(--t6)">Memoria de la huella</h3><p><span class="k">DECAY</span> (en CLAY RHYTHM) dice cuánto tarda cada golpe en soltarse: corto es un pellizco, largo es una marca que queda. En <span class="k">CLAY TIME</span>, <span class="k">SEED</span> cambia la variación y <span class="k">RUN</span> elige si sigue la canción (<span class="k">SONG</span>) o corre libre (<span class="k">FREE</span>); con <span class="k">NOKEY</span> las teclas tocan notas como siempre.</p></div>
 </div>
 
 <h2>Guía rápida</h2>
@@ -68,10 +68,11 @@ footer{margin-top:60px;color:var(--dim);font-size:14px}
 <ol>
   <li>Elegí una pista y andá a <span class="k">SEQ</span> › pestaña <span class="k">CLAY</span>.</li>
   <li>En <span class="k">DRONE CLAY</span> poné <span class="k">ON</span>, elegí nota y octava, y <span class="k">RATE</span> en <span class="k">HOLD</span> para empezar con la masa quieta.</li>
-  <li>En <span class="k">CLAY MOD 1</span>: <span class="k">DEST</span> en CUTOFF, <span class="k">SHAPE</span> en KICK, un <span class="k">EUCLID</span> y subí <span class="k">AMOUNT</span> hasta que el golpe se sienta.</li>
+  <li>En <span class="k">CLAY MOD</span>, con <span class="k">MOD</span> en 1: <span class="k">DEST</span> en CUTOFF, <span class="k">SHAPE</span> en KICK y subí <span class="k">AMOUNT</span>; en <span class="k">CLAY RHYTHM</span> dale un <span class="k">EUCLID</span> y un <span class="k">RATE</span> hasta que el golpe se sienta.</li>
   <li>Sumá <span class="k">MOD 2</span> con una forma lenta (DRIFT o SINE) sobre SHAPE o PAN: la masa empieza a respirar.</li>
   <li>Con <span class="k">MOD 3</span> en un gesto de nota (ARP UP, CHORD m) la arcilla canta sobre la escala.</li>
-  <li>Ajustá <span class="k">CLAY DECAY</span> para que las huellas se borren rápido o queden.</li>
+  <li>Ajustá <span class="k">DECAY</span> (CLAY RHYTHM) para que las huellas se borren rápido o queden.</li>
+  <li>Tocá las teclas blancas: cada una golpea un gesto sobre el MOD elegido (<span class="k">OCT−</span> / <span class="k">OCT+</span> cambian el grupo de gestos); las últimas siete teclas eligen el grado del drone en la escala.</li>
 </ol>
 </div>
 
@@ -83,7 +84,7 @@ footer{margin-top:60px;color:var(--dim);font-size:14px}
   <li>Se guarda con el proyecto. Los proyectos viejos abren con DRONE CLAY apagado.</li>
 </ul>
 
-<footer>DRONE CLAY nació en JIANT BYTE y se trajo a JIANT FM en V10.8.20. JIANT FM — Juan Jiant.</footer>
+<footer>DRONE CLAY nació en JIANT BYTE y se trajo a JIANT FM en V10.8.21; esta página sigue la V10.8.35. JIANT FM — Juan Jiant.</footer>
 </main>
 </body>
 </html>

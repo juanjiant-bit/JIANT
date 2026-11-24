@@ -55,23 +55,24 @@ footer{margin-top:60px;color:var(--dim);font-size:14px}
 
 <h2>The parts</h2>
 <div class="grid">
-  <div class="card"><h3 style="color:var(--t1)">The drone</h3><p>A low note in the track's voice. Pick note and octave. <span class="k">RATE</span> en <span class="k">HOLD</span> holds it forever; from <span class="k">4BAR</span> a <span class="k">1/16</span> retriggers it with the tempo.</p></div>
-  <div class="card"><h3 style="color:var(--t2)">Four modulators</h3><p><span class="k">CLAY MOD 1–4</span>. Each has <span class="k">DEST</span> (which track parameter it kneads), <span class="k">SHAPE</span> (the gesture), <span class="k">EUCLID</span> (when it presses) y <span class="k">AMOUNT</span> (how much).</p></div>
+  <div class="card"><h3 style="color:var(--t1)">The drone</h3><p>A low note in the track's voice. Pick note and octave. <span class="k">RATE</span> at <span class="k">HOLD</span> holds it forever; any other value (<span class="k">1/64</span> to <span class="k">4BAR</span>, dotted and triplets too) strikes it again with the tempo. <span class="k">PITCH</span> moves it −24 to +36 semitones.</p></div>
+  <div class="card"><h3 style="color:var(--t2)">Four modulators</h3><p>On <span class="k">CLAY MOD</span>, <span class="k">MOD</span> picks which of the four you edit: <span class="k">DEST</span> (which track parameter it kneads), <span class="k">SHAPE</span> (the gesture) and <span class="k">AMOUNT</span> (how much; at 0 it strikes nothing). On <span class="k">CLAY RHYTHM</span>, its own <span class="k">RATE</span> (its grid), <span class="k">EUCLID</span> (when it presses) and <span class="k">DECAY</span>.</p></div>
   <div class="card"><h3 style="color:var(--t3)">Hits</h3><p>The first shapes are drum hits made from the mass itself: <span class="k">KICK</span>, <span class="k">SNARE</span>, <span class="k">HAT</span>, <span class="k">CLAP</span>, <span class="k">TOM</span>, <span class="k">ZAP</span>… The drone turns percussive without ceasing to be a drone.</p></div>
   <div class="card"><h3 style="color:var(--t4)">Slow shapes</h3><p><span class="k">SINE</span>, <span class="k">DRIFT</span>, <span class="k">SPRING</span>, <span class="k">STAIRS</span>, <span class="k">BOUNCE</span>, <span class="k">CHAOS</span>, <span class="k">S&amp;H</span>, ramps and envelopes: stretch, loosen, let fall.</p></div>
   <div class="card"><h3 style="color:var(--t5)">Note gestures</h3><p><span class="k">ARP</span>, <span class="k">CHORD</span>, <span class="k">+OCT</span>, <span class="k">+5TH</span>, <span class="k">GLIDE DN</span> play on the project's scale; the <span class="k">FM x½ … x7</span> shapes change the harmonic colour.</p></div>
-  <div class="card"><h3 style="color:var(--t6)">Memory of the imprint</h3><p><span class="k">CLAY DECAY</span> sets how long each hit takes to let go: short is a pinch, long is a mark that stays. <span class="k">SEED</span> changes the variation; <span class="k">RUN</span> chooses whether it follows the song (<span class="k">SONG</span>) or runs free (<span class="k">FREE</span>).</p></div>
+  <div class="card"><h3 style="color:var(--t6)">Memory of the imprint</h3><p><span class="k">DECAY</span> (on CLAY RHYTHM) sets how long each hit takes to let go: short is a pinch, long is a mark that stays. On <span class="k">CLAY TIME</span>, <span class="k">SEED</span> changes the variation and <span class="k">RUN</span> chooses whether it follows the song (<span class="k">SONG</span>) or runs free (<span class="k">FREE</span>); with <span class="k">NOKEY</span> the keys play notes as usual.</p></div>
 </div>
 
 <h2>Quick start</h2>
 <div class="card">
 <ol>
   <li>Pick a track and go to <span class="k">SEQ</span> › tab <span class="k">CLAY</span>.</li>
-  <li>En <span class="k">DRONE CLAY</span> set <span class="k">ON</span>, pick note and octave, and <span class="k">RATE</span> en <span class="k">HOLD</span> to start with the mass still.</li>
-  <li>En <span class="k">CLAY MOD 1</span>: <span class="k">DEST</span> to CUTOFF, <span class="k">SHAPE</span> to KICK, an <span class="k">EUCLID</span> and raise <span class="k">AMOUNT</span> until the hit is felt.</li>
+  <li>On <span class="k">DRONE CLAY</span> set <span class="k">ON</span>, pick note and octave, and <span class="k">RATE</span> at <span class="k">HOLD</span> to start with the mass still.</li>
+  <li>On <span class="k">CLAY MOD</span>, with <span class="k">MOD</span> at 1: <span class="k">DEST</span> to CUTOFF, <span class="k">SHAPE</span> to KICK and raise <span class="k">AMOUNT</span>; on <span class="k">CLAY RHYTHM</span> give it a <span class="k">EUCLID</span> and a <span class="k">RATE</span> until the hit is felt.</li>
   <li>Add <span class="k">MOD 2</span> with a slow shape (DRIFT or SINE) on SHAPE or PAN: the mass starts to breathe.</li>
   <li>With <span class="k">MOD 3</span> on a note gesture (ARP UP, CHORD m) the clay sings on the scale.</li>
-  <li>Set <span class="k">CLAY DECAY</span> so the imprints fade fast or stay.</li>
+  <li>Set <span class="k">DECAY</span> (CLAY RHYTHM) so the imprints fade fast or stay.</li>
+  <li>Play the white keys: each strikes a gesture on the MOD picked (<span class="k">OCT−</span> / <span class="k">OCT+</span> change the group of gestures); the last seven keys pick the drone's degree on the scale.</li>
 </ol>
 </div>
 
@@ -83,7 +84,7 @@ footer{margin-top:60px;color:var(--dim);font-size:14px}
   <li>It is saved with the project. Old projects open with DRONE CLAY off.</li>
 </ul>
 
-<footer>DRONE CLAY was born in JIANT BYTE and came to JIANT FM in V10.8.20. JIANT FM — Juan Jiant.</footer>
+<footer>DRONE CLAY was born in JIANT BYTE and came to JIANT FM in V10.8.21; this page follows V10.8.35. JIANT FM — Juan Jiant.</footer>
 </main>
 </body>
 </html>
