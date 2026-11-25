@@ -234,6 +234,80 @@
     }
   },
   "versions": {
+    "V10.8.48": {
+      "date": "2026-11-25",
+      "status": "public",
+      "summary": {
+        "es": "Versión pública: gate reverb y gate delay, página LEVEL con GAIN en todos los motores, arpegiador en grilla y cuantizado al grabar, nombres más claros en la sección de partes y canción, y un generador con secciones más cortas que evolucionan, envolventes reales y filtros variados.",
+        "en": "Public release: gate reverb and gate delay, a LEVEL page with GAIN on every engine, the arpeggiator on the grid and quantized when recording, clearer names in the parts and song section, and a generator with shorter evolving sections, real envelopes and varied filters."
+      },
+      "has": [
+        "eng_west",
+        "drumx_math",
+        "life",
+        "punch_editor",
+        "fx_punchins",
+        "song_mode",
+        "stepfx_keys",
+        "drone_clay",
+        "macros_dest",
+        "euclid",
+        "euclid_role",
+        "harmony",
+        "scene",
+        "half_rate",
+        "track_colours",
+        "hud_screens",
+        "no_power_click",
+        "velocity_at",
+        "gen_new_genres",
+        "copy_paste_oct",
+        "clay_rate",
+        "clay_bars",
+        "clay_keys",
+        "west_dust_metal",
+        "ui_push",
+        "screen_mirror",
+        "emu_editor",
+        "emu_stems",
+        "mutate_compact",
+        "live_compact",
+        "cloud_fix",
+        "dist_noise",
+        "chorus_mix",
+        "key_trk",
+        "presets_retouch",
+        "gain_all",
+        "dj_filter_knob",
+        "swarm_wave",
+        "swarm_notes",
+        "gen_character",
+        "gen_radio_mood",
+        "seq_sync_fix",
+        "resync",
+        "mood_strong",
+        "gen_idiomatic",
+        "gate_fx",
+        "gain_page"
+      ],
+      "hasnt": [
+        "eng_noise",
+        "mutate",
+        "stretch",
+        "live",
+        "seq_dice",
+        "punch_lane",
+        "help_hints",
+        "flt_ms20_lp24",
+        "env_stage",
+        "pages_bar_phrases_sys2",
+        "gen_fuga"
+      ],
+      "notes": {
+        "es": "La página de CPU de ABOUT y el diagnóstico de velocity ya no están. Los proyectos y presets con filtro MS20 o LP24 abren como LP. MUTATE y LIVE no son las páginas originales (esas quedan en V10.7.81). Ya no están las páginas BAR, PHRASES y SYSTEM 2 ni el género FUGA del generador. Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
+        "en": "The CPU page in ABOUT and the velocity diagnostic are gone. Projects and presets using the MS20 or LP24 filter open as LP. MUTATE and LIVE are not the original pages (those remain in V10.7.81). The BAR, PHRASES and SYSTEM 2 pages and the generator's FUGA genre are gone. Make a complete backup of your projects before changing version."
+      }
+    },
     "V10.8.46": {
       "date": "2026-11-25",
       "status": "beta",
@@ -458,7 +532,7 @@
     },
     "V10.8.42": {
       "date": "2026-11-25",
-      "status": "public",
+      "status": "classic",
       "summary": {
         "es": "Versión pública: tempo exacto y pistas siempre en fase (RESYNC con SEQ + PLAY), generador retocado género por género con RADIO y MOOD, GAIN en todos los motores, DJ FILTER en MIXER, SWARM con WAVE y como fuente de notas, KEY TRK en el filtro, NOISE en DIST y MIX en CHORUS.",
         "en": "Public release: exact tempo and tracks always in phase (RESYNC with SEQ + PLAY), the generator reworked genre by genre with RADIO and MOOD, GAIN on every engine, DJ FILTER on MIXER, SWARM with WAVE and as a note source, KEY TRK on the filter, NOISE on DIST and MIX on CHORUS."

@@ -14,7 +14,7 @@ step components you can play live, a song mode you perform and record, a generat
 inside the little keyboard. It is a fork of [Felucca](https://github.com/hugelton/Felucca) 1.1.5.1 by Hügelton
 Instruments (GPL-3.0) and takes its song system from [SLOOP](https://github.com/isod89/sloop-fm1).
 
-> **Current public release: V10.8.42** (not a beta). **Back up your projects before updating**: save a complete
+> **Current public release: V10.8.48** (not a beta). **Back up your projects before updating**: save a complete
 > backup with the editor or the installer first. If something doesn't work for you, V10.7.81 is still offered in the
 > installer.
 
