@@ -681,6 +681,8 @@ static int16_t trks_ui;
 extern int16_t dnz_v[NTRK];
 #define ID_CMIX 0xE6u                                   /* (V10.8.36) FX > CHORUS's MIX (fx.c cho_mix); both in MUTATE's old ids */
 extern int16_t cho_mix;
+extern int16_t fx_gt[2];                                /* (V10.8.44) FX > REVERB's and FX > DLY's GATE (fx.c) */
+#define GATE_PG(pg) ((pg)->fam == FAM_FX && (pg)->scope == SC_GLOBAL && ((pg)->id[0] == G_RTYPE || (pg)->id[0] == G_DTIME))
 #define ID_GAIN 0xDFu                                   /* (V10.7.64) a track's GAIN (trk_gain) */
 static int16_t trk_gain[NTRK] __attribute__((section(".bss.tape")));   /* (V10.7.64, the owner: GAIN, not DRIVE)
                                                          * 0..12 dB clean on the track's level (fx.c) */
@@ -785,7 +787,7 @@ static const page_t PAGES[] = {
      * and PHASE's MORPH DRIFT; WHEEL's ROTOR DEPTH DUST) with UNISON and VEL; one MORE an engine (page_visible). ALLOC
      * and NOTE PRIO off the panel (kept: the editor, NRPN, the projects) */
     {"MORE", FAM_EDIT, SC_TRACK, GR_NONE, {P_LRTRG, 0xFF, 0xFF, 0xFF}},   /* (V10.7.64: UNISON VEL on PLAY) */
-    {"MORE", FAM_EDIT, SC_TRACK, GR_MORPH, {P_MORPH, P_DRIFT, ID_GAIN, 0xFF}},   /* (V10.7.64: ANALOG's GAIN, its DRIVE off the panel) */   /* (0.6.45) the wave morphs;
+    {"MORE", FAM_EDIT, SC_TRACK, GR_MORPH, {P_MORPH, P_DRIFT, 0xFF, 0xFF}},   /* (V10.8.44: GAIN on LEVEL) */   /* (V10.7.64: ANALOG's GAIN, its DRIVE off the panel) */   /* (0.6.45) the wave morphs;
                                                          * (0.7.8) DRIFT: the voices wander */
     {"MORE", FAM_EDIT, SC_TRACK, GR_NONE, {P_WRDEP, P_WDUST, 0xFF, 0xFF}},   /* (0.7.8) WHEEL: the rotor's depth, DUST */
     /* (JIANT 0.6.54) DRUM: the whole kit first (KIT = EDIT 1, KIT 2 = EDIT 2, KIT 3, X-MOD, FILTER), then a sound
@@ -862,7 +864,7 @@ static const page_t PAGES[] = {
     {"EUCLID", FAM_SEQ, SC_TRACK, GR_EUCLID, {ID_EU0, ID_EU0 + 1u, ID_EU0 + 2u, ID_EU0 + 3u}},   /* (V10.6, MUTATE's place)
                                                          * HITS STEPS ROTATE, LANE / VARY (ui_euclid.c) */
     /* (0.8.5) LENTE everywhere (ui_lens.c): pages the mock-up added, appended (the table's order is no one's index) */
-    {"" /* MORE */, FAM_EDIT, SC_TRACK, GR_NONE, {P_DETUNE, P_TVEL, 0xFF, 0xFF}},   /* (V10.7.60: was PLAY 2's ALLOC UNISON VEL PRIO) */   /* ALLOC, UNISON's detune (in TP since
+    {"LEVEL", FAM_EDIT, SC_TRACK, GR_NONE, {ID_GAIN, P_LEVEL, P_PAN, 0xFF}},   /* (V10.8.44, the owner: "GAIN near the first parameters") a synth's GAIN LEVEL PAN, after EDIT (the plain MORE's row) */   /* (V10.7.60: was PLAY 2's ALLOC UNISON VEL PRIO) */   /* ALLOC, UNISON's detune (in TP since
                                                          * Felucca, on no page until 0.8.5), (after V10.7.2) VEL,
                                                          * (codex/coherence) IMAGE, the voices across (POLY; V10.49's STEREO
                                                          * page gone; was VOICE 2) */
@@ -975,6 +977,11 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
         static const param_desc_t TGAIN_DESC = {"GAIN", F_INT, 0, 12, 0, 0};
         *valp = &trk_gain[(uint32_t)(TSEL - trk) % NTRK];
         return &TGAIN_DESC;
+    }
+    if (eu_hold && slot == 3u && GATE_PG(pg)) {       /* (V10.8.44) FX > REVERB / DLY, OCT+ held: KNOB 4 the GATE */
+        static const param_desc_t GATE_DESC = {"GATE", F_INT, 0, 127, 0, 0};
+        *valp = &fx_gt[pg->id[0] == G_DTIME];
+        return &GATE_DESC;
     }
     if (id == ID_CMIX) {                              /* (V10.8.36) FX > CHORUS's MIX: chorus .. vibrato */
         static const param_desc_t CMIX_DESC = {"MIX", F_PCT, 0, 100, 0, 0};

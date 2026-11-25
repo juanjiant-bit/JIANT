@@ -2071,6 +2071,45 @@ static __attribute__((noinline)) int fx_rest(int32_t *wet, uint32_t n, uint32_t 
     dly_wow_adv(n, &wm, &dwm);
     return 1;
 }
+/* (V10.8.44, the owner: "a gate reverb and a gate delay") GATE on FX > REVERB and FX > DLY (OCT+ held + KNOB 4; the
+ * project's 'G' 'T'; 0: off, the buses as they were, bit for bit). Each return through a gate its own input opens: open
+ * at once while what is sent is over ~-36 dB, held GATE / 64 of a beat after it falls (16: a 1/16, 64: a beat, 127: two),
+ * then shut: the reverb's tail cut over ~6 ms (the 80s snare), the delay's MIX and FEEDBK to 0 (its repeats die with it,
+ * the line empty when it opens again). From the flash, a block at a time */
+int16_t fx_gt[2];                                       /* the reverb's, the delay's */
+static uint32_t gt_h[2];                                 /* the hold left, samples */
+static int32_t gt_rg;                                    /* the reverb's return as it is, Q16 */
+static __attribute__((noinline)) void fx_gates(const int32_t *dly_in, const int32_t *rev_in, uint32_t n)
+{
+    uint32_t b, i;
+    for (b = 0; b < 2u; b++) {
+        const int32_t *in = b ? dly_in : rev_in;
+        int32_t pk = 0;
+        for (i = 0; i < n; i++) pk |= in[i] < 0 ? -in[i] : in[i];
+        if (pk >= 512) gt_h[b] = (beat_real() * (uint32_t)fx_gt[b] >> 6) + 1u;
+        else gt_h[b] = gt_h[b] > n ? gt_h[b] - n : 0u;
+    }
+    if (!gt_h[1] && fx.dm_cur < 1024) fx.dm_cur = 0;     /* (the glide's last steps) */
+}
+static __attribute__((noinline)) void rev_gated(uint32_t rt, const int32_t *rev_in, int32_t *wet, uint32_t n)
+{
+    int32_t g = gt_rg, g1 = gt_h[0] ? 65536 : g - (int32_t)(n << 8), d;
+    uint32_t i;
+    void (*run)(uint32_t, const int32_t *, int32_t *, uint32_t) = rev_run;   /* (in the RAM: through a register) */
+    FM1_OPAQUE(run);
+    if (g1 < 0) g1 = 0;
+    gt_rg = g1;
+    if (g == 65536 && g1 == 65536) { run(rt, rev_in, wet, n); return; }
+    for (i = 0; i < n; i++) { dlo_x[i] = wet[i]; dlo_xr[i] = fx_sl[i]; }
+    run(rt, rev_in, wet, n);
+    d = (g1 - g) / (int32_t)n;
+    for (i = 0; i < n; i++) {
+        g += d;
+        wet[i] = dlo_x[i] + mulq16(wet[i] - dlo_x[i], (uint32_t)g);
+        fx_sl[i] = dlo_xr[i] + mulq16(fx_sl[i] - dlo_xr[i], (uint32_t)g);
+        fx_sr[i] = -fx_sl[i];
+    }
+}
 static inline __attribute__((always_inline)) void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t *rev_in, int32_t *wet,
                      uint32_t n)
 {
@@ -2086,11 +2125,17 @@ static inline __attribute__((always_inline)) void fx_buses(const int32_t *cho_in
         fxg_quiet = any ? 0u : fxg_quiet < 0xFFFFFFu ? fxg_quiet + 1u : fxg_quiet;
     }                                                   /* (0.6.19: it opens over ~6 ms, fx_gate: at once, the
                                                          * residue in the lines stepped in: a tick on the next note) */
+    if (fx_gt[0] | fx_gt[1]) {                          /* (V10.8.44) GATE: the holds, from the flash */
+        void (*f)(const int32_t *, const int32_t *, uint32_t) = fx_gates;
+        FM1_OPAQUE(f);
+        f(dly_in, rev_in, n);
+    }
     int32_t fb = dly_fb(GFX(GF_DFDBK)), tn = GFX(GF_DCOL) - 64;   /* (JIANT 0.4) TONE: one knob, low-pass .. open .. low cut */
     int32_t wm, dwm, dig = song.g[G_DTYPE] == 1;        /* (0.6.89: TONE in the middle: each repeat the very copy) */
     tone_t dtn, rtn;
     int dton;
     int32_t dmix = GFX(GF_DMIX) * 258;
+    if (fx_gt[1] && !gt_h[1]) dmix = fb = 0;            /* (V10.8.44) the delay's GATE shut */
     int32_t cdepth = GFX(GF_CDEPTH) * 6, rt;
     uint32_t cinc = LFO_INC[GFX(GF_CRATE) & 127] / CTL;
     int32_t hk = 5, wd = song.g[G_WIDTH];             /* (the loop's DC block: ~1 Hz, 0.6.89); WIDTH */
@@ -2295,7 +2340,12 @@ static inline __attribute__((always_inline)) void fx_buses(const int32_t *cho_in
         fx_gate(wet, n);
         return;
     }
-    rev_run(rt, rev_in, wet, n);
+    if (fx_gt[0]) {                                     /* (V10.8.44) the reverb's GATE */
+        void (*f)(uint32_t, const int32_t *, int32_t *, uint32_t) = rev_gated;
+        FM1_OPAQUE(f);
+        f((uint32_t)rt, rev_in, wet, n);
+    } else
+        rev_run(rt, rev_in, wet, n);
     fx_gate(wet, n);
 }
 

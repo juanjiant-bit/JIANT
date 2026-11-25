@@ -1335,7 +1335,7 @@ static void edit_param(uint32_t slot, int32_t steps)
         eu_every(steps);
         return;
     }
-    if (eu_hold && slot == 3u && pg->id[0] == P_E0)       /* (V10.8.38) EDIT 1, OCT+ held: KNOB 4 the GAIN (page_desc) */
+    if (eu_hold && slot == 3u && (pg->id[0] == P_E0 || GATE_PG(pg)))   /* (V10.8.38) EDIT 1, OCT+ held: KNOB 4 the GAIN (page_desc); (V10.8.44) REVERB's, DLY's GATE */
         eu_hold = 2;
     if (eu_hold && slot == 1u && pg->id[0] == P_FTYPE) {   /* (V10.8.37) FILTER, OCT+ held: CUT's knob the KEY TRK */
         uint8_t *kp = &kt_v[song.sel % NTRK];
@@ -2963,7 +2963,8 @@ static void ui_input_frame(void)
                 break;
             }
             if (b == B_OCTUP && !fm1_in.notes && !ui.home && !ui.menu && !ui.confirm &&
-                (cur_page()->id[0] == P_FTYPE || (cur_page()->id[0] == P_E0 && cur_page()->scope == SC_ENGINE))) {
+                (cur_page()->id[0] == P_FTYPE || (cur_page()->id[0] == P_E0 && cur_page()->scope == SC_ENGINE) ||
+                 GATE_PG(cur_page()))) {                /* (V10.8.44: REVERB's, DLY's KNOB 4 the GATE while held) */
                 ui.force = 1;                           /* (V10.8.38: EDIT 1's KNOB 4 the GAIN while held) */
                 eu_hold = 1;                            /* (V10.8.37) FILTER: OCT+'s octave when let go (held with CUT's
                                                          * knob: KEY TRK, no octave) */

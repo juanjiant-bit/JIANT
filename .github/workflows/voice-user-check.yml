@@ -72,6 +72,8 @@ jobs:
           build/song-check/dist-noise | tee build/song-check/dist-noise.log
           cc -O1 -w -Ibuild/gen -Ifirmware/src tests/chorus_mix_test.c -lm -o build/song-check/chorus-mix
           build/song-check/chorus-mix | tee build/song-check/chorus-mix.log
+          cc -O1 -w -Ibuild/gen -Ifirmware/src tests/gate_fx_test.c -lm -o build/song-check/gate-fx
+          build/song-check/gate-fx | tee build/song-check/gate-fx.log
           cc -O1 -w -Ibuild/gen -Ifirmware/src tests/key_trk_test.c -lm -o build/song-check/key-trk
           build/song-check/key-trk | tee build/song-check/key-trk.log
           cc -O1 -w -Ibuild/gen -Ifirmware/src tests/west_test.c -lm -o build/song-check/west

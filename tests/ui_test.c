@@ -4321,6 +4321,76 @@ static int test_layer(void)
         cho_mix = 0; dnz_v[TSEL - trk] = 0;
         project_save(2);
     }
+    {   /* (V10.8.44, the owner) GATE on the reverb and on the delay: FX > REVERB / DLY, OCT+ held + KNOB 4 (its card GATE
+         * while held, PRE's / MIX's own value untouched), 0..127; a project keeps both, an empty one has none */
+        uint32_t ub = 1u << panel.btn[B_OCTUP], k;
+        int ok = 1, oct = song.octave;
+        for (k = 0; k < 2u; k++) {
+            int16_t v3;
+            go_title(k ? "DLY" : "REVERB");
+            ok &= cur_page()->id[0] == (k ? G_DTIME : G_RTYPE);
+            v3 = song.g[cur_page()->id[3]]; fx_gt[k] = 0;
+            fm1_in.buttons |= ub; host_pressed |= ub; frame();
+            ui.force = 1; ui_draw();
+            ok &= !strncmp(ui.col[3], "GATE", 4);
+            turn(EN_K4, 5);
+            ok &= fx_gt[k] > 0 && fx_gt[!k] == 0 && song.g[cur_page()->id[3]] == v3;
+            turn(EN_K4, 90); turn(EN_K4, 90); turn(EN_K4, 90); turn(EN_K4, 90);
+            ok &= fx_gt[k] == 127;
+            fm1_in.buttons &= ~ub; frame();
+            ui.force = 1; ui_draw();
+            ok &= song.octave == oct && strncmp(ui.col[3], "GATE", 4) != 0;
+            fx_gt[k] = 0;
+        }
+        fx_gt[0] = 33; fx_gt[1] = 96;
+        song.playing = 0;
+        project_save(2);
+        fx_gt[0] = fx_gt[1] = 0;
+        project_load(2);
+        ok &= fx_gt[0] == 33 && fx_gt[1] == 96;
+        fx_gt[0] = fx_gt[1] = 0;
+        project_save(2);
+        fx_gt[0] = 5;
+        project_load(2);
+        bad += check("V10.8.44 GATE: REVERB's and DLY's KNOB 4 with OCT+ held (the card GATE), 0..127; a project keeps them, one without has 0",
+                     ok && !fx_gt[0] && !fx_gt[1]);
+    }
+    {   /* (V10.8.44, the owner: "GAIN near the first parameters") a synth's LEVEL page right after EDIT's own: KNOB 1 GAIN
+         * (0..12), KNOB 2 LEVEL, KNOB 3 PAN; a kit's too (its own GAIN on KIT 2 still) */
+        uint32_t e, n = 0;
+        int ok = 1;
+        for (e = 0; e < NENGINES; e++) {
+            int one;
+            uint32_t ti;
+            int16_t *hv;
+            if (ENGINES[e] == &ENG_GONE || (!FELUCCA_FM4 && e == 1u)) continue;
+            ui_power_on(); frame();
+            set_engine_of(TSEL, e); TSEL->engine = TSEL->eng_req;
+            ti = song.sel % NTRK;
+            go_title("LEVEL");
+            one = cur_page()->fam == FAM_EDIT && cur_page()->id[0] == ID_GAIN && nav_cur() <= 2u && nav_cur() >= 1u;
+            one &= str_eq(page_desc(cur_page(), 0, &hv)->label, "GAIN") && str_eq(page_desc(cur_page(), 1, &hv)->label, "LEVEL") &&
+                   str_eq(page_desc(cur_page(), 2, &hv)->label, "PAN");
+            trk_gain[ti] = 0;
+            turn(EN_K1, 4);
+            one &= trk_gain[ti] == 4;
+            turn(EN_K1, 40);
+            one &= trk_gain[ti] == 12;
+            { int16_t l = TSEL->p[P_LEVEL]; turn(EN_K2, -6); one &= TSEL->p[P_LEVEL] < l; TSEL->p[P_LEVEL] = l; }
+            if (!one) printf("  LEVEL page: engine %u (%s) page %s at %u\n", e, ENGINES[e]->name, cur_page()->title, nav_cur());
+            ok &= one; n++;
+        }
+        trk_gain[song.sel % NTRK] = 7;
+        song.playing = 0;
+        project_save(2);
+        trk_gain[song.sel % NTRK] = 0;
+        project_load(2);
+        ok &= trk_gain[song.sel % NTRK] == 7;
+        memset(trk_gain, 0, sizeof trk_gain);
+        project_save(2);
+        ui_power_on();
+        bad += check("V10.8.44 LEVEL: every engine's page after EDIT's own, KNOB 1 GAIN 0..12 (a project keeps it), KNOB 2 LEVEL, KNOB 3 PAN", ok && n >= 11u);
+    }
     /* chording: a key held before FX stays a note, its note-off arrives */
     ui_power_on();
     mo = mo_w;
@@ -4695,11 +4765,11 @@ static int test_edit_cycle(void)
 {
     /* (0.9.2: one chain, SELECT a page a detent; an EDIT tap the next group's first. Was 0.8.5's lens: SELECT a level, the
      * tap the level's next set) */
-    static const char *const CH_A[] = {"EDIT 1", "FILTER", "FOCUS", "MORE", "PLAY"};   /* (V10.7.80: MORE before PLAY) */   /* (V10.7.60: MORPH and PLAY 2 one MORE) */   /* (JIANT 0.5:
+    static const char *const CH_A[] = {"EDIT 1", "LEVEL", "FILTER", "FOCUS", "MORE", "PLAY"};   /* (V10.7.80: MORE before PLAY) */   /* (V10.7.60: MORPH and PLAY 2 one MORE) */   /* (JIANT 0.5:
                                                          * ANALOG's FILTER; 0.6.45: MORPH; V10.7.21: no EDIT 2; codex/coherence:
                                                          * PLAY, was VOICE; STEREO's IMAGE on PLAY 2) */
     static const char *const TP_A[] = {"FILTER", "FOCUS", "MORE"};   /* (V10.7.80: the group's first MORE) */
-    static const char *const CH_F[] = {"EDIT 1", "EDIT 2", "FILTER", "OPERATOR", "OP ENV", "OPERATOR 2", "PLAY"};   /* (V10.7.64: MORE gone) */
+    static const char *const CH_F[] = {"EDIT 1", "EDIT 2", "LEVEL", "FILTER", "OPERATOR", "OP ENV", "OPERATOR 2", "PLAY"};   /* (V10.7.64: MORE gone) */
     static const char *const TP_F[] = {"FILTER", "OPERATOR", "PLAY"};
     static const char *const CH_D[] = {"EDIT 1", "EDIT 2", "FILTER", "MORE", "PLAY", "OP1 ENV", "OP2 ENV", "OP3 ENV",
                                        "OP4 ENV", "OP LEVEL"};
@@ -4768,7 +4838,7 @@ static int test_edit_cycle(void)
 #endif
     {   /* #97: a DRUM track's lane levels on EDIT > LANES (KICK SNARE CLAP HATCL) and LANES 2 (HATOP TOM RIM BELL) */
         /* (161d079, 2026-10-28: KIT 4, the KEY MAP, after KIT 3 in the KIT group) */
-        static const char *const CH_K[] = {"KIT", "KIT 2", "SOUND", "SOUND 2", "SOUND 3", "SOUND 4", "CROSS MOD",
+        static const char *const CH_K[] = {"KIT", "KIT 2", "LEVEL", "SOUND", "SOUND 2", "SOUND 3", "SOUND 4", "CROSS MOD",
                                            "FILTER"};   /* (V10.7.63, the owner: 13 -> 8; BUS, PLAY, LEVELS, STEREO gone) */
         static const char *const TP_K[] = {"SOUND", "CROSS MOD"};
         set_engine_of(TSEL, ENGI_DRUM);
@@ -10940,8 +11010,8 @@ static int test_bpm_lock(void)
     turn(EN_SELECT, 7);   /* (V10.7.63: past the song's four) */
     ok &= ui.home && ui.confirm == CF_DICE_ALL && song.g[G_BPM] == b0;   /* (0.6.69) HOME: GEN */
     press(B_OCTDN); frame(); ok &= !ui.confirm;
-    go_title("EDIT 1"); frame(); turn(EN_SELECT, 1);
-    ok &= str_eq(cur_page()->title, "FILTER") && pd_level() == 1u;    /* (V10.7.21 ANALOG: EDIT 1 FILTER ..) */
+    go_title("EDIT 1"); frame(); turn(EN_SELECT, 2);
+    ok &= str_eq(cur_page()->title, "FILTER") && pd_level() == 1u;    /* (V10.7.21 ANALOG: EDIT 1 FILTER ..; V10.8.44: LEVEL between) */
     turn(EN_SELECT, -5);
     ok &= str_eq(cur_page()->title, "EDIT 1");                        /* (no wrap: the lens's first level) */
     go_title("ENV DEST"); frame(); turn(EN_SELECT, 2);
@@ -12096,13 +12166,15 @@ static int test_lz_edit(void)
     ui_power_on(); set_engine_of(TSEL, 0); frame();
     press(B_EDIT); frame();
     ok = pd_on() && lz_fam() == LZ_EDIT && pd_level() == 0u && lz_tab_lit(0) && lz_crumb_is("EDIT \xB7 SOUND \xB7 OSC") &&
-         lz_count_is("1/5");                                        /* (codex/coherence: EDIT . OSC, ANALOG has no EDIT 2) */
+         lz_count_is("1/6");                                        /* (codex/coherence: EDIT . OSC, ANALOG has no EDIT 2) */
+    turn(EN_SELECT, 1); frame();                                    /* (V10.8.44: LEVEL, GAIN's page, after EDIT's own) */
+    ok &= pd_level() == 0u && lz_tab_lit(0) && str_eq(cur_page()->title, "LEVEL") && lz_count_is("2/6");
     turn(EN_SELECT, 1); frame();                                    /* (V10.7.21 ANALOG: no EDIT 2) */
     ok &= pd_level() == 1u && lz_tab_lit(1) && str_eq(cur_page()->title, "FILTER") && lz_crumb_is("EDIT \xB7 TONE \xB7 FILTER") &&
-          lz_count_is("2/5");
+          lz_count_is("3/6");
     frames(320); press(B_EDIT); frame();                            /* EDIT: the next group, FOCUS */
     ok &= pd_level() == 2u && lz_tab_lit(2) && str_eq(cur_page()->title, "FOCUS") && lz_crumb_is("EDIT \xB7 FOCUS \xB7 FOCUS") &&
-          lz_count_is("3/5");
+          lz_count_is("4/6");
     turn(EN_SELECT, 3); frame();
     ok &= str_eq(cur_page()->title, "PLAY");                        /* (V10.7.80: MORE PLAY last; no wrap) */
     turn(EN_SELECT, -3); frame();
@@ -12114,7 +12186,7 @@ static int test_lz_edit(void)
     frames(320); press(B_EDIT); frame();
     ok &= str_eq(cur_page()->title, "EDIT 1");                      /* (round) */
     bad += check("0.9.2 EDIT: one chain by SELECT (no wrap), an EDIT tap the next group's first (round); tabs, crumb, n/N", ok);
-    turn(EN_SELECT, 1); frame();
+    turn(EN_SELECT, 2); frame();
     open_family(FAM_ENV); frame();
     press(B_EDIT); frame();
     ok = str_eq(cur_page()->title, "FILTER") && pd_level() == 1u;
@@ -12159,10 +12231,11 @@ static int test_lz_edit(void)
         ok &= TSEL->p[P_SIMG] != v && !nav_put(SEC_EDIT, "STEREO");
         go_title("PLAY"); frame();
         turn(EN_SELECT, -1); frame();                   /* (V10.7.80: MORE before PLAY) */
-        ok &= str_eq(cur_page()->title, "MORE") && str_eq(page_desc(cur_page(), 0, &hv)->label, "MORPH") &&
-              str_eq(page_desc(cur_page(), 2, &hv)->label, "GAIN");
+        ok &= str_eq(cur_page()->title, "MORE") && str_eq(page_desc(cur_page(), 0, &hv)->label, "MORPH");
+        go_title("LEVEL"); frame();                     /* (V10.8.44: GAIN on LEVEL, after EDIT 1) */
+        ok &= str_eq(page_desc(cur_page(), 0, &hv)->label, "GAIN");
         v = trk_gain[song.sel];
-        turn(EN_K3, 2); frame();
+        turn(EN_K1, 2); frame();
         ok &= trk_gain[song.sel] > v;
         trk_gain[song.sel] = 0;
         set_engine_of(TSEL, ENGI_INPUT); go_title("FILTER"); frame();   /* (EXT: no IMAGE, its voice is one) */

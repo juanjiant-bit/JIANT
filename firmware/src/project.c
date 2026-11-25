@@ -132,6 +132,8 @@ typedef struct {
                                                 * block after the kit's, when one is set; absent: 0 */
     uint8_t dnz[2u * NTRK + 1u];                    /* (V10.8.36) each track's DIST NOISE (fx.c dnz_v, 0..127), then the CHORUS's MIX
                                                 * (cho_mix, 0..100): FUNC's 'D' 'N' block, the last, when one is set; absent: 0 */
+    uint8_t gt[2];                             /* (V10.8.44) the reverb's and the delay's GATE (fx.c fx_gt, 0..127): FUNC's
+                                                * 'G' 'T' block after 'D' 'N', when one is set; absent: 0 */
     uint8_t dx_gain;                           /* (V10.7.63) the kit's GAIN (eng_drum.c dx_gain, 0..12): FUNC's 'K' 'G' block
                                                 * after LIFE's, when set; absent: 0 */
     uint8_t clay[NTRK][CLAY_NF];               /* (V10.8.21) DRONE CLAY (seq.c clay.c clay_pack, 0..127): FUNC's 'C' 'L' blocks
@@ -620,6 +622,7 @@ static uint32_t proj_packed_size(const project_t *q)
         if (q->clay[t][CL_ON]) n += 4u + CLAY_NF;
     for (t = 0; t < sizeof q->dnz; t++)                 /* (V10.8.36) DIST NOISE, CHORUS MIX; (V10.8.37) KEY TRK */
         if (q->dnz[t]) { n += 2u + sizeof q->dnz; break; }
+    if (q->gt[0] | q->gt[1]) n += 4u;                   /* (V10.8.44) GATE */
     return n;
 }
 static int proj_split_ok(const uint8_t *s)
@@ -843,6 +846,9 @@ static int proj_pack(project_store_t *out, const project_t *q)
     for (i = 0; i < sizeof q->dnz && !q->dnz[i]; i++) {}
     if (i < sizeof q->dnz) {                                    /* (V10.8.36) DIST NOISE, CHORUS MIX (the last) */
         b[pos++] = 'D'; b[pos++] = 'N'; memcpy(b + pos, q->dnz, sizeof q->dnz); pos += sizeof q->dnz;
+    }
+    if (q->gt[0] | q->gt[1]) {                          /* (V10.8.44) GATE (the last) */
+        b[pos++] = 'G'; b[pos++] = 'T'; b[pos++] = q->gt[0]; b[pos++] = q->gt[1];
     }
     memcpy(b + PROJC_PFX_OFF, q->pfx_lane, sizeof q->pfx_lane);
     b[PROJC_PFX_OFF + sizeof q->pfx_lane] = q->pfx_ltgt > 2u ? 0u : q->pfx_ltgt;
@@ -1226,6 +1232,11 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
         memcpy(q->dnz, b + pos + 2u, sizeof q->dnz);
         pos += 2u + sizeof q->dnz;
     }
+    q->gt[0] = q->gt[1] = 0;                            /* (V10.8.44) GATE: as saved, else 0 */
+    if (pos + 4u <= room && b[pos] == 'G' && b[pos + 1u] == 'T') {
+        q->gt[0] = b[pos + 2u] & 127u; q->gt[1] = b[pos + 3u] & 127u;
+        pos += 4u;
+    }
     proj_new_tracks(q, nt);                             /* (a FUNC of fewer tracks: the rest at power-on) */
     for (t = nt; t < NTRK; t++)
         memcpy(q->fm6[t], FM6_INIT, FM6_PACKED);
@@ -1380,6 +1391,7 @@ static __attribute__((noinline)) void proj_master_put(project_t *p)
     for (k = 0; k < NTRK; k++) p->tgain[k] = (uint8_t)clamp(trk_gain[k], 0, 12);   /* (V10.7.64) */
     for (k = 0; k < NTRK; k++) p->dnz[k] = (uint8_t)clamp(dnz_v[k], 0, 127);   /* (V10.8.36) */
     p->dnz[NTRK] = (uint8_t)clamp(cho_mix, 0, 100);
+    p->gt[0] = (uint8_t)clamp(fx_gt[0], 0, 127); p->gt[1] = (uint8_t)clamp(fx_gt[1], 0, 127);   /* (V10.8.44) */
     memcpy(p->dnz + NTRK + 1u, kt_v, NTRK);             /* (V10.8.37) KEY TRK, a byte a track after them */
     for (k = 0; k < NTRK; k++) clay_pack(clay[k], p->clay[k]);   /* (V10.8.21) DRONE CLAY */
     for (k = 0; k < 4u; k++) p->eq[k] = (int8_t)eq_v[k];
@@ -1651,6 +1663,7 @@ static int project_restore_runtime(const project_t *input)
         for (k = 0; k < NTRK; k++) trk_gain[k] = p->tgain[k] > 12u ? 12 : p->tgain[k];   /* (V10.7.64) */
         for (k = 0; k < NTRK; k++) dnz_v[k] = p->dnz[k] & 127;   /* (V10.8.36) */
         cho_mix = p->dnz[NTRK] > 100u ? 100 : p->dnz[NTRK];
+        fx_gt[0] = p->gt[0]; fx_gt[1] = p->gt[1];       /* (V10.8.44) GATE */
         for (k = 0; k < NTRK; k++) kt_v[k] = p->dnz[NTRK + 1u + k] & 3u;   /* (V10.8.37) KEY TRK */
         for (k = 0; k < NTRK; k++) clay_unpack(p->clay[k], clay[k]);   /* (V10.8.21) DRONE CLAY */
         memset(clay_dn, 0, sizeof clay_dn); memset(clay_nn, 0, sizeof clay_nn);   /* (its notes: the load's all-off) */
@@ -1771,6 +1784,7 @@ static __attribute__((noinline)) void system_init(void)   /* (snd8: out of its c
     memset(trk_gain, 0, sizeof trk_gain);               /* (V10.7.64) the tracks' GAIN */
     memset(kt_v, 0, sizeof kt_v);                       /* (V10.8.37) KEY TRK */
     memset(dnz_v, 0, sizeof dnz_v); cho_mix = 0;        /* (V10.8.36) DIST NOISE, CHORUS MIX */
+    fx_gt[0] = fx_gt[1] = 0;                            /* (V10.8.44) GATE */
     memset(clay, 0, sizeof clay); memset(clay_b0, 0, sizeof clay_b0); memset(clay_pq, 0, sizeof clay_pq);   /* (V10.8.21) DRONE CLAY off */
     for (i = 0; i < 5u; i++) song.g[KEEP[i]] = kept[i];
     kept[0] = dice_secs;
@@ -2126,6 +2140,7 @@ static uint32_t autosave_sig(void)
     h = as_mix(h, kt_v, sizeof kt_v);                   /* (V10.8.37) KEY TRK */
     h = as_mix(h, dnz_v, sizeof dnz_v);                 /* (V10.8.36) DIST NOISE */
     h = as_mix(h, &cho_mix, sizeof cho_mix);
+    h = as_mix(h, fx_gt, sizeof fx_gt);                 /* (V10.8.44) GATE */
     return as_mix(h, proj_name, sizeof proj_name);
 }
 
