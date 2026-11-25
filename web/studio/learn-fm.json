@@ -271,13 +271,13 @@
        "WAVE: SAW, SQR, TRI, SIN, PWM, SYNC, RING, SAW3 y PLS3 (tres sierras o tres pulsos).",
        "DETUNE y MIX mezclan los dos osciladores; INT fija el intervalo del segundo (±24 semitonos), INT 3 el del tercero.",
        "En MORE, MORPH desliza la onda hacia las siguientes (SAW › SQR › TRI › SIN); DRIFT hace derivar afinación y filtro de cada voz.",
-       "Su filtro es por voz: CUT y RES barren cada nota por separado; NOISE y DRIVE están en FOCUS, GAIN en MORE."
+       "Su filtro es por voz: CUT y RES barren cada nota por separado; NOISE y DRIVE están en FOCUS, GAIN en MORE (V10.8.38: en cualquier motor, OCT+ mantenido + KNOB 4 en su primera página EDIT es GAIN, 0–12 dB)."
       ],
       "en": [
        "WAVE: SAW, SQR, TRI, SIN, PWM, SYNC, RING, SAW3 and PLS3 (three saws or three pulses).",
        "DETUNE and MIX blend the two oscillators; INT sets the second one's interval (±24 semitones), INT 3 the third's.",
        "On MORE, MORPH slides the wave toward the next ones (SAW › SQR › TRI › SIN); DRIFT lets each voice's tuning and filter wander.",
-       "Its filter is per voice: CUT and RES sweep each note on its own; NOISE and DRIVE live on FOCUS, GAIN on MORE."
+       "Its filter is per voice: CUT and RES sweep each note on its own; NOISE and DRIVE live on FOCUS, GAIN on MORE (V10.8.38: on any engine, OCT+ held + KNOB 4 on its first EDIT page is GAIN, 0–12 dB)."
       ]
      },
      "where": {
@@ -666,14 +666,14 @@
       "es": [
        "SOURCE: IN 1, IN 2, 1+2, STEREO (la entrada de audio USB) o SWARM.",
        "GAIN el nivel de entrada y GATE la compuerta.",
-       "MODE: THRU suena todo el tiempo; KEYS solo mientras se tocan teclas o pasos.",
+       "MODE: THRU suena todo el tiempo; KEYS solo mientras se tocan teclas o pasos; con SWARM, >T1 … >T6 (V10.8.38) hace que sus notas toquen el motor de esa pista.",
        "Según la fuente aparecen IMAGE, DRIFT, PLUCK, FM, OCTAVE y CHAOS.",
        "Todo lo que se puede hacer con la entrada está en la sección Entrada de audio de esta guía."
       ],
       "en": [
        "SOURCE: IN 1, IN 2, 1+2, STEREO (the USB audio input) or SWARM.",
        "GAIN the input level and GATE the gate.",
-       "MODE: THRU sounds all the time; KEYS only while keys or steps play.",
+       "MODE: THRU sounds all the time; KEYS only while keys or steps play; with SWARM, >T1 … >T6 (V10.8.38) makes its notes play that track's engine.",
        "Depending on the source, IMAGE, DRIFT, PLUCK, FM, OCTAVE and CHAOS appear.",
        "Everything you can do with the input is in this guide's Audio in section."
       ]
@@ -702,14 +702,14 @@
       "es": [
        "Una voz lead toca a tempo sobre la escala de SCL; los dispositivos de alrededor suman un colchón por debajo.",
        "Guarda dos estados, FAR y NEAR, y la cercanía hace el morph entre ellos todo el tiempo.",
-       "En cada lado: RATE (la grilla), MOVE (de pedal a arpegio y saltos), TONE, NOISE y MOD.",
-       "CHAOS es el techo de cuánto modulan los dispositivos: en 0 queda limpio aunque haya muchos teléfonos."
+       "En cada lado: RATE (la grilla), MOVE (de pedal a arpegio y saltos), TONE, NOISE y MOD; WAVE (V10.8.38) cambia el seno por una de ocho fórmulas FLOAT.",
+       "CHAOS es el techo de cuánto modulan los dispositivos: en 0 queda limpio aunque haya muchos teléfonos. Una etiqueta en el dibujo dice qué escucha: PROX n, AIR n, ALONE (camina solo de FAR a NEAR) o AIR OFF."
       ],
       "en": [
        "A lead voice plays in time on SCL's scale; the devices around add a bed underneath.",
        "It keeps two states, FAR and NEAR, and nearness morphs between them all the time.",
-       "On each side: RATE (the grid), MOVE (from a pedal to an arpeggio and leaps), TONE, NOISE and MOD.",
-       "CHAOS is the ceiling of how much the devices modulate: at 0 it stays clean however many phones there are."
+       "On each side: RATE (the grid), MOVE (from a pedal to an arpeggio and leaps), TONE, NOISE and MOD; WAVE (V10.8.38) swaps the sine for one of eight FLOAT formulas.",
+       "CHAOS is the ceiling of how much the devices modulate: at 0 it stays clean however many phones there are. A tag on the picture says what it hears: PROX n, AIR n, ALONE (it walks FAR to NEAR by itself) or AIR OFF."
       ]
      },
      "where": {
@@ -737,13 +737,13 @@
       "es": [
        "TYPE: LP, HP, BP, COMB y COMB- (un peine afinado a la nota que tocás); hasta V10.8.34 también MS20 y LP24 (uno guardado abre como LP).",
        "CUT mueve el corte, RES la resonancia; en el peine, cuánto resuena.",
-       "LFO DEST y ENV DEST mueven el filtro; KEY TRK (V10.8.37: OCT+ mantenido + KNOB 2; OFF, 50, 100, NOTE) hace que el corte siga a la tecla, y en NOTE cae en semitonos; KNOB 4 es IMAGE, la imagen estéreo.",
+       "LFO DEST y ENV DEST mueven el filtro; KEY TRK (V10.8.37: OCT+ mantenido + KNOB 2; OFF, 50, 100, NOTE) hace que el corte siga a la tecla, y en NOTE cae en semitonos (V10.8.38: en LP y HP el pico de la resonancia queda afinado en la nota); KNOB 4 es IMAGE, la imagen estéreo.",
        "En ANALOG el filtro es por voz (su DRIVE, en FOCUS)."
       ],
       "en": [
        "TYPE: LP, HP, BP, COMB and COMB- (a comb tuned to the note you play); up to V10.8.34 also MS20 and LP24 (a stored one opens as LP).",
        "CUT moves the cutoff, RES the resonance; on the comb, how much it rings.",
-       "LFO DEST and ENV DEST move the filter; KEY TRK (V10.8.37: OCT+ held + KNOB 2; OFF, 50, 100, NOTE) makes the cutoff follow the key, and on NOTE it lands on semitones; KNOB 4 is IMAGE, the stereo image.",
+       "LFO DEST and ENV DEST move the filter; KEY TRK (V10.8.37: OCT+ held + KNOB 2; OFF, 50, 100, NOTE) makes the cutoff follow the key, and on NOTE it lands on semitones (V10.8.38: on LP and HP the resonance's peak sits in tune on the note); KNOB 4 is IMAGE, the stereo image.",
        "On ANALOG the filter is per voice (its DRIVE on FOCUS)."
       ]
      },
@@ -1142,20 +1142,20 @@
      "how": {
       "es": [
        "KNOB 1 SEQ elige la secuencia A–D de la pista, KNOB 2 la nota, KNOB 3 TIME (de REST a TIE, NOTE y hasta 16 pasos de largo), KNOB 4 VEL (1–127, después ACC, SLD, A+S); la perilla PRESETS recorre los 64 pasos.",
-       "Un paso guarda hasta cuatro notas: un acorde.",
+       "Un paso guarda hasta cuatro notas: un acorde. SEQ › NOTE (volvió en V10.8.38) edita el paso del cursor: FOCUS (el acorde o una sola de sus notas), PITCH, MOVE (un paso a los costados) y MICRO.",
        "Grabación por pasos: parado, apretá REC y tocá; el cursor avanza al soltar. KNOB 1 con las teclas apretadas fija la duración.",
        "SEQ + G5 borra el paso del cursor; mantené teclas de paso y girá SELECT para copiar; mantené un paso y apretá REC para pegar."
       ],
       "en": [
        "KNOB 1 SEQ picks the track's sequence A–D, KNOB 2 the note, KNOB 3 TIME (from REST to TIE, NOTE and up to 16 steps long), KNOB 4 VEL (1–127, then ACC, SLD, A+S); the PRESETS knob walks the 64 steps.",
-       "A step holds up to four notes: a chord.",
+       "A step holds up to four notes: a chord. SEQ › NOTE (back in V10.8.38) edits the cursor step: FOCUS (the chord or one of its notes alone), PITCH, MOVE (a step sideways) and MICRO.",
        "Step recording: stopped, press REC and play; the cursor moves on as you let go. KNOB 1 with keys held sets the length.",
        "SEQ + G5 clears the cursor's step; hold step keys and turn SELECT to copy; hold a step and press REC to paste."
       ]
      },
      "where": {
-      "es": "SEQ (abre en STEP)",
-      "en": "SEQ (opens on STEP)"
+      "es": "SEQ (abre en STEP; NOTE es la página siguiente)",
+      "en": "SEQ (opens on STEP; NOTE is the next page)"
      },
      "anim": {
       "kind": "seq",
@@ -1180,13 +1180,13 @@
        "LENGTH: LEN (1–64), DIV (la figura del paso), SWING y GATE; RHYTHM: con FIT en ON, los LEN pasos entran justos en SPAN divisiones (siete pasos en un compás).",
        "TRACK: PITCH transpone la pista, CHANCE ralea sus pasos, HUMAN la hace tocar como una persona, REC GRID cuantiza lo que grabás.",
        "PLAYHEADS: tres cabezales más leen los mismos pasos con su RATE, DIR e INTVL (el intervalo, en grados): cánones y contrapunto.",
-       "MICRO (la perilla 4 de la página NOTE) corre un paso fuera de la grilla, en 64avos."
+       "MICRO (la perilla 4 de la página NOTE) corre un paso fuera de la grilla, en 64avos. Desde V10.8.40 cada pista toma su lugar del transporte: después de cambiar LEN o DIV vuelve con las demás en su paso siguiente."
       ],
       "en": [
        "LENGTH: LEN (1–64), DIV (the step's note value), SWING and GATE; RHYTHM: with FIT on, the LEN steps fit exactly into SPAN divisions (seven steps in a bar).",
        "TRACK: PITCH transposes the track, CHANCE thins its steps, HUMAN makes it play like a person, REC GRID quantizes what you record.",
        "PLAYHEADS: three more heads read the same steps with their own RATE, DIR and INTVL (the interval, in degrees): canons and counterpoint.",
-       "MICRO (KNOB 4 of the NOTE page) moves a step off the grid, in 64ths."
+       "MICRO (KNOB 4 of the NOTE page) moves a step off the grid, in 64ths. Since V10.8.40 every track takes its place from the transport: after a LEN or DIV change it is back with the others at its next step."
       ]
      },
      "where": {
@@ -1607,13 +1607,13 @@
      "how": {
       "es": [
        "CHORD: TRIAD, 7TH, ADD9, SUS2, SUS4 (en la escala) o MAJ, MIN, 7, MAJ7, MIN7, POWER (en cualquier tecla).",
-       "VOICING: CLOSE, LEAD (el voice leading), OPEN, +BASS; STRUM rasguea de grave a agudo, como un arpa.",
+       "VOICING: CLOSE, LEAD (el voice leading), OPEN, +BASS; STRUM rasguea de grave a agudo, como un arpa; TRANS (KNOB 4, V10.8.38) transpone la pista ±24 semitonos.",
        "Sets de acordes POP, JAZZ, SOUL, DREAM, QUART.",
        "La pantalla muestra el acorde que suena de verdad (D MIN7…), sus intervalos y los siete grados."
       ],
       "en": [
        "CHORD: TRIAD, 7TH, ADD9, SUS2, SUS4 (in the scale) or MAJ, MIN, 7, MAJ7, MIN7, POWER (on any key).",
-       "VOICING: CLOSE, LEAD (voice leading), OPEN, +BASS; STRUM strums low to high, like a harp.",
+       "VOICING: CLOSE, LEAD (voice leading), OPEN, +BASS; STRUM strums low to high, like a harp; TRANS (KNOB 4, V10.8.38) transposes the track ±24 semitones.",
        "Chord sets POP, JAZZ, SOUL, DREAM, QUART.",
        "The screen shows the chord really playing (D MIN7…), its intervals and the seven degrees."
       ]
@@ -1991,18 +1991,18 @@
        "Un solo filtro sobre el master: DJ FILT va de −64 a 63, y 0 lo apaga.",
        "Hacia la izquierda (negativo) un pasabajos que cierra; hacia la derecha (positivo) un pasaaltos que abre.",
        "El barrido sigue al oído, con una resonancia suave hacia los extremos; cruzar el medio nunca hace clic.",
-       "Hoy no tiene perilla en el equipo (estaba en GLO › LIVE, que se fue en V10.8.3): se mueve por MIDI, desde el editor o con automatización ya grabada."
+       "En GLO › MIXER, un toque de OCT+ pasa el KNOB 4 de BPM a DJ FILT y vuelta (V10.8.38; de V10.8.3 a V10.8.37 no tuvo perilla en el equipo). También por MIDI, desde el editor o con automatización."
       ],
       "en": [
        "One filter on the master: DJ FILT goes from −64 to 63, and 0 turns it off.",
        "Left (negative) a low-pass closing; right (positive) a high-pass opening.",
        "The sweep follows the ear, with a gentle resonance toward the ends; crossing the middle never clicks.",
-       "Today it has no knob on the device (it was on GLO › LIVE, gone in V10.8.3): it is moved over MIDI, from the editor or by automation already recorded."
+       "On GLO › MIXER a tap of OCT+ turns KNOB 4 from BPM to DJ FILT and back (V10.8.38; from V10.8.3 to V10.8.37 it had no knob on the device). Also over MIDI, from the editor or by automation."
       ]
      },
      "where": {
-      "es": "Sin perilla en el equipo: MIDI, el editor o JIANT Studio (DJ FILT)",
-      "en": "No knob on the device: MIDI, the editor or JIANT Studio (DJ FILT)"
+      "es": "GLO › MIXER: tocá OCT+ y el KNOB 4 pasa a ser DJ FILT",
+      "en": "GLO › MIXER: tap OCT+ and KNOB 4 becomes DJ FILT"
      },
      "anim": {
       "kind": "djfilter",
@@ -2424,17 +2424,19 @@
      },
      "how": {
       "es": [
-       "GENRE: EXPLORE (todas las reglas rotas), RANDOM o un género: techno, house, cumbia, reggaetón, dembow, IDM, jazz, hip hop, phonk, dubstep…",
+       "GENRE: EXPLORE (todas las reglas rotas), RANDOM o uno de 29 géneros: techno, house, cumbia, reggaetón, dembow, IDM, jazz, hip hop, phonk, dubstep…",
        "SEED, ENERGY y FORM (LOOP, PARTS, SONG, MY LOOP).",
        "DRUMS, BASS, CHORDS, ARP, LEAD: OFF, 10–100 % o AUTO; COMPLEX, SWING, HUMAN; KEY (NEW / KEEP) y ENTRY (ALL / BUILD).",
        "OCT+ arma la pieza; con los ajustes sin tocar tira otra semilla, y girando una perilla cambia solo esa parte.",
+       "RADIO (GENERATOR 4, V10.8.39): en ON, cuando termina la pieza generada arma sola la siguiente y entra en la barra de compás; MOOD, de CALM a DANCE, mueve la energía, la batería y, con RANDOM, qué géneros salen. Ninguno se guarda con el proyecto.",
        "SEQ › TRACK GEN escribe solo la pista elegida: GENRE, SEED, ROLE (BUSY en un kit) y ENERGY; OCT+ la arma (MAKE)."
       ],
       "en": [
-       "GENRE: EXPLORE (every rule broken), RANDOM or a genre: techno, house, cumbia, reggaeton, dembow, IDM, jazz, hip hop, phonk, dubstep…",
+       "GENRE: EXPLORE (every rule broken), RANDOM or one of 29 genres: techno, house, cumbia, reggaeton, dembow, IDM, jazz, hip hop, phonk, dubstep…",
        "SEED, ENERGY and FORM (LOOP, PARTS, SONG, MY LOOP).",
        "DRUMS, BASS, CHORDS, ARP, LEAD: OFF, 10–100 % or AUTO; COMPLEX, SWING, HUMAN; KEY (NEW / KEEP) and ENTRY (ALL / BUILD).",
        "OCT+ builds the piece; with settings untouched it throws a new seed, and turning one knob changes only that part.",
+       "RADIO (GENERATOR 4, V10.8.39): ON, when the generated piece ends it makes the next one by itself, in on the bar line; MOOD, from CALM to DANCE, moves the energy, the drums and, with RANDOM, which genres come up. Neither is saved with the project.",
        "SEQ › TRACK GEN writes the chosen track alone: GENRE, SEED, ROLE (BUSY on a kit) and ENERGY; OCT+ makes it (MAKE)."
       ]
      },
@@ -2882,13 +2884,13 @@
       "es": [
        "Mantené GLO: las negras 1–6 mutean T1–T6 (enganchado); F3–D4 hacen solo mientras las mantenés.",
        "Las negras 7–10 mutean los grupos de DRUM-X: KICK, SNARE, HAT, PERC; E4 desmutea todo.",
-       "F4 es TAP tempo; GLO + SELECT el tempo; GLO + PLAY reinicia sin parar.",
+       "F4 es TAP tempo; GLO + SELECT el tempo; GLO + PLAY reinicia de una, sin parar (RESTART); SEQ + PLAY (V10.8.40) es RESYNC: todas las pistas desde su primer paso en el compás siguiente.",
        "Los mutes se guardan con el proyecto y en las escenas."
       ],
       "en": [
        "Hold GLO: black keys 1–6 mute T1–T6 (latched); F3–D4 solo while held.",
        "Black keys 7–10 mute the DRUM-X groups: KICK, SNARE, HAT, PERC; E4 unmutes all.",
-       "F4 is TAP tempo; GLO + SELECT the tempo; GLO + PLAY restarts without stopping.",
+       "F4 is TAP tempo; GLO + SELECT the tempo; GLO + PLAY restarts at once, without stopping (RESTART); SEQ + PLAY (V10.8.40) is RESYNC: every track from its first step on the next bar.",
        "Mutes are saved with the project and in the scenes."
       ]
      },
