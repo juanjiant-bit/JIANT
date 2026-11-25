@@ -1446,7 +1446,14 @@ const rdMock = MOCK && { s: [1, 0, 1234, 0, 64, 2, 1, 1], gen(cmd, arg, g) {
   const s = this.s; if (cmd === 0) s[0] = arg ? 1 : 0; if (cmd === 1) { s[6]++; s[2] = (s[2] * 7 + 13) % 99991; } if (cmd === 2) s[1] = Math.max(0, arg); if (cmd === 3) s[3] = arg; if (cmd === 4) s[7] = arg;
   return Promise.resolve({ ok: true, info: [...s], genres: g ? ["HOUSE", "TECHNO", "IDM GLITCH", "DREAM POP"] : null });
 } };
-function rdGen() { if (rdMock) return rdMock; try { const e = frames.emu.el.contentWindow.jiantEmu; return e && e.on() && e.gen ? e : null; } catch (_) { return null; } }
+function rdGen() {
+  if (rdMock) return rdMock;
+  try {
+    const e = frames.emu.el.contentWindow.jiantEmu;
+    if (!e || !e.on() || !e.gen) return null;
+    return { gen: async (c, a, g) => { const r = (await e.gen(c, a, g)) || {}; return { ...r, ok: r.ok ?? !!r.info }; } };   // (BYTE's shell: no ok, info an object)
+  } catch (_) { return null; }
+}
 function rdLink() {
   if (!emuOn()) return null;
   if (!proj.emuLink || proj.emuLink.closed) { const m = emuMidi(), input = [...m.inputs.values()][0], output = [...m.outputs.values()][0]; const link = proj.emuLink = new Link(output, () => {}); input.addEventListener("midimessage", (e) => link.receive(e.data)); }
