@@ -609,13 +609,16 @@ static const uint16_t RTRIM[SR_N] = {
  * a LEAD's sustain 44..75 % (never the organ's or the choir's full one: a medium decay to it, a short release; a bell's,
  * an EP's, a pluck's lead, its archetype's sustain under 56, a pluck's), an ARP's a pluck's (a fast attack, a short-medium decay, a low sustain), the CHORDS stabbed short (STAB PULSE DUB SKANK COMP
  * BROKEN TRANCE: GSTAB) or held slow in and out (HOLD SWELL DRONE), a BASS fast in; the rest as the archetype has it */
-static const uint8_t ENV_RULE[6][4] = {
-    {GR(8, 31), GR(48, 95), GR(56, 95), GR(32, 63)},    /* lead (V10.8.45, the owner: "the envelopes": some release, was 16..47; V10.8.46: soft in, 8..31, was 0..23) */
-    {GR(0, 7), GR(32, 71), GR(0, 31), GR(16, 63)},      /* arp: a pluck (V10.8.46: shorter, 32..71, less sustain, 0..31; were 32..79, 0..39) */
-    {GR(0, 7), GR(32, 71), GR(0, 47), GR(16, 47)},      /* chords stabbed */
-    {GR(48, 127), GR(48, 127), GR(56, 127), GR(88, 127)},   /* chords held (V10.8.45: slower in 16 -> 32, longer out 64 -> 80; V10.8.46: 48, 88) */
-    {GR(0, 7), GR(24, 127), GR(0, 127), GR(16, 47)},    /* bass (V10.8.46: firm in, 0..7, a middle release, 16..47; were 0..15, 8..63) */
-    {GR(0, 127), GR(0, 127), GR(0, 127), GR(0, 127)},   /* the others */
+static const uint8_t ENV_RULE[6][4] = {   /* (V10.8.48, the owner: "everything lacks decay and release, all at sustain 100";
+                                                         * "the leads: a lot of decay, little sustain, a LOT of release"): no role at full
+                                                         * sustain (an organ's and a drone's aside: gen_sound), the decays and the releases
+                                                         * real (TIME: 64 ~0.1 s, 80 ~0.33 s, 96 ~1 s, 104 ~1.9 s) */
+    {GR(8, 31), GR(72, 103), GR(16, 40), GR(80, 103)},  /* lead: a clear decay, sustain 37 % at most, a long tail (were 48..95, 56..95, 32..63) */
+    {GR(0, 7), GR(56, 87), GR(0, 16), GR(64, 87)},      /* arp, a pluck's lead: short, ~no sustain, a medium tail (were 32..71, 0..31, 16..63) */
+    {GR(0, 7), GR(64, 87), GR(8, 32), GR(64, 95)},      /* chords stabbed: a low sustain, a medium-long tail (were 32..71, 0..47, 16..47) */
+    {GR(64, 103), GR(80, 111), GR(56, 88), GR(96, 119)},   /* chords held: slow in, sustain 75 % at most, long out (were 48..127 all, 88..127) */
+    {GR(0, 7), GR(56, 95), GR(24, 80), GR(16, 47)},     /* bass: firm in, a real decay, sustain 68 % at most, its tail short (were 24..127, 0..127; the tail as it was) */
+    {GR(24, 95), GR(64, 111), GR(32, 88), GR(80, 119)},   /* the others (a texture, a power or sparse chord): slower both ends (were free) */
 };
 #define GSTAB(p) ((0x3C7Cu >> (p)) & 1u)                /* CS_STAB PULSE DUB SKANK COMP BROKEN TRANCE CHUG CHARL: the chords short */
 /* the names the song generator never picks (the cheerful, the odd), whatever the role */
@@ -990,12 +993,12 @@ static const uint8_t GMIX[][3] = {
     GMX(-3, 7, 0, 7, 7, 0),   /* EBM (the owner's dark techno / industrial reference: its sub's rumble up; the
                                                          * other throws' FAT BASS as it was, at the level's top already) */
     GMX(0, 0, 4, 3, 2, 3),   /* NEO CLASSIC */
-    GMX(0, -2, -2, 4, -2, 1),   /* ELECTRO METAL (V10.8.36: the arp +4.5 dB, 21 under) */
+    GMX(0, -5, -2, 4, -2, 1),   /* ELECTRO METAL (V10.8.36: the arp +4.5 dB, 21 under; V10.8.48: the bass down, its peak at the limit: its level was at the top) */
     GMX(0, -3, 0, 3, 0, 1),   /* TECHNO ROCK */
     GMX(-1, 1, -3, 2, 2, 3),   /* DREAM POP (V10.8.41: the bass under the drums) (V10.8.36: the voice +4.5 dB, 23 under the drums) */
     GMX(-4, 0, -2, 7, 7, 4),   /* PHONK (V10.7.2: the drums -1.5, z10's DNA ~2 dB over the parts) */
     GMX(-3, 2, -3, 7, 7, 4),   /* BAILE FUNK (V10.8.36: the arp +4.5 dB) (V10.7.8: the 808 4.5 dB up, the chops under) */
-    GMX(0, -2, 0, 1, 0, -2),   /* JAZZ (V10.8.41: the bass 2 dB down) */
+    GMX(0, -4, 0, 1, 0, -2),   /* JAZZ (V10.8.41: the bass 2 dB down; V10.8.48: its decay longer, another 3 down) */
     GMX(-3, -5, -1, 7, 5, 4),   /* HIP HOP */
     GMX(2, 5, -3, 6, 4, 3),   /* (V10.7.63) DUBSTEP (V10.8.41: its drums clean now, 6 dB up): the wobble up front (V10.8.36: the lead and the arp +6 dB) */
     GMX(-1, -5, 2, 3, 3, 2),   /* SHOEGAZE (the bass under the drums) (V10.8.41: the wall back, the arpeggio and the hook up) */

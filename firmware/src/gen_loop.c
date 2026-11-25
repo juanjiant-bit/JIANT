@@ -252,7 +252,7 @@ static __attribute__((noinline)) void gls_prep(void)
         gls_reharm(w, b, r);
     } else gls.v.n = 0;
     gplan(0);
-    gs.fm6 = fm6;
+    gs.fm6 = fm6; gs.ftl = 0;
     gseed(GS_SOUND);
     for (j = 0; j < 3u; j++) {                          /* the parts the loop lacks, on its empty tracks */
         track_t *t;

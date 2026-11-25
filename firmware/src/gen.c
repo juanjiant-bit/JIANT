@@ -117,6 +117,7 @@ static struct {                                         /* (V10.6z10: the fields
     uint8_t role[NTRK], act[RL_N], trk_of[RL_N];
     int16_t root, scale;                                /* the key, as the SCALE page has it (always a mode of seven) */
     uint8_t sc[7];                                      /* (0.8.3) the mode: its degrees' semitones over the tonic */
+    uint8_t ftl;                                        /* (V10.8.48) the filter type the part before took */
     uint8_t pal, hx;                                    /* the lead's degrees (bit d: degree d of the mode), the harmony */
     uint8_t pdeg[4], pq[4], pn;                         /* the progression as chosen: degrees, qualities with their colour */
     uint8_t nch;                                        /* the plan's chords (ch) */
@@ -1182,7 +1183,7 @@ static int32_t gl_fold(const gline_t *L, int32_t d)     /* into the window by oc
     while (d < L->dlo) d += 7;
     return d;
 }
-static void gl_add(gline_t *L, uint32_t at, int32_t d, uint32_t vel, uint32_t lock)
+BTAPP_FN static void gl_add(gline_t *L, uint32_t at, int32_t d, uint32_t vel, uint32_t lock)
 {
     gln_t *x;
     if (L->k >= GL_MAX) return;
@@ -1732,17 +1733,47 @@ static __attribute__((noinline)) void gen_sound(track_t *t, uint32_t role, uint3
         const uint8_t *er = ENV_RULE[role == RL_LEAD ? ((r->sus & 15u) < 7u) : role == RL_ARP ? 1 : role == RL_BASS ? 4 : role != RL_PAD ? 5 :
                                      GSTAB(gs.g->pads) ? 2 : ((0x103u >> gs.g->pads) & 1u) || gs.g->wet >= 70u ? 3 : 5];   /* (held: HOLD SWELL DRONE; V10.8.46: a wet genre's other chords too) */
         for (i = 0; i < 4u; i++)
-            t->p[P_ATK + i] = (int16_t)clamp(t->p[P_ATK + i], (er[i] >> 4) * 8, (er[i] & 15u) * 8 + 7);
+            if (i != 2u || (ri != SR_ORGAN && ri != SR_DRONE) || (er[2] & 15u) < 8u)   /* (V10.8.48: a held organ's and a
+                                                         * drone's sustain theirs; as a lead, stabbed or plucked, short as any) */
+                t->p[P_ATK + i] = (int16_t)clamp(t->p[P_ATK + i], (er[i] >> 4) * 8, (er[i] & 15u) * 8 + 7);
         if (grd.mood < 0 && role != RL_BASS) {          /* (V10.8.45) towards CALM: softer in, longer out */
-            t->p[P_ATK] -= grd.mood / 2; t->p[P_REL] = (int16_t)clamp(t->p[P_REL] - grd.mood / 2, 0, 120);
+            t->p[P_ATK] = (int16_t)clamp(t->p[P_ATK] - grd.mood / 2, 0, 120); t->p[P_REL] = (int16_t)clamp(t->p[P_REL] - grd.mood / 2, 0, 120);   /* (V10.8.48: ATK
+                                                         * kept in range: a held chord's 110 + 25 was past the TIME table) */
         }
     }
     if (e == EG_FM) t->p[P_E2] = (int16_t)clamp(t->p[P_E2] - grr(4, 20), -64, 63);   /* (warmer) */
+    uint32_t ti = (uint32_t)(t - trk);
+    int16_t *tg = &trk_gain[ti];
+    *tg = (int16_t)((64 - clamp(t->p[P_SUS], 0, 64)) >> (role == RL_BASS ? (e == EG_A ? 7 : 4) : role == RL_PAD ? 4 : 3));   /* (V10.8.48: the track's GAIN the piece's, not a piece before's:
+                                                         * what a low sustain takes made up: a lead's, an arp's 0 .. +8 dB,
+                                                         * a chord's and a bass's half, an ANALOG bass's none (measured loud) */
+    kt_v[ti] = 0;                                       /* (V10.8.48: KEY TRK the piece's too) */
+    if (role >= RL_PAD && (e == EG_A || e == EG_PH) && ri != SR_ACID && ri != SR_DUBCHORD) {   /* (V10.8.48, the owner: "the chords all filtered the
+                                                         * same: the other types, bands above all, the low end left to the bass";
+                                                         * "the whole generator") a melodic part's TYPE its own: BP the most, HP
+                                                         * over the bass, else its sound's; never the part before's band twice.
+                                                         * ANALOG's and PHASE's parts: FM6's, STRING's, MATH's measured 15 .. 30 dB
+                                                         * down through a band; COMB cancelling 30 dB: not picked; acid's and dub's their own */
+        uint32_t c = (0x7B6C5A77u >> ((role - RL_PAD) & 3u) * 8u) & 255u, x = gr() & 15u;   /* (PAD LEAD ARP TEX, in 16ths: BP
+                                                         * under the high nibble, HP under the low one; a chord no HP: low, it
+                                                         * lost 18 dB at HP's lowest CUT) */
+        x = x < (c >> 4) ? FT_BP : x < (c & 15u) ? FT_HP : FT_LP;
+        if (x != gs.ftl && x != FT_LP) ft = x;
+        gs.ftl = (uint8_t)x;
+    }
     if (ft != 7u) {
         int32_t cut = grg(r->cut, 8), res = grg(r->res, 8);
         if (role == RL_BASS && e != EG_A) cut += 20;    /* (a bass: only its fizz taken) */
         if (gs.g->human >= 40u && role != RL_BASS) cut += 10;   /* (a band: air) */
         if (gs.energy > 66u) cut += 6;
+        if (ft - FT_HP < 2u) {                          /* (V10.8.48) KEY TRK 100: the band and the knee follow the notes
+                                                         * (C4 at ~54), whatever the part's register (measured 1 .. 2 dB down, 15 .. 20
+                                                         * without): HP at 24, two octaves and more under the note; BP at 54, on
+                                                         * it, wide; the level they take made up by the GAIN, +1 / +3 dB */
+            cut = ft == FT_BP ? 54 : 24; res = 8;
+            *tg += (int16_t)(ft * 2u - 1u);
+            kt_v[ti] = 2;
+        }
         t->p[P_FTYPE] = (int16_t)ft;
         if (e == EG_A) { t->p[P_E4] = (int16_t)clamp(cut, 0, 127); t->p[P_E5] = (int16_t)clamp(res, 0, ri == SR_ACID ? 120 : 112); }
         else { t->p[P_FCUT] = (int16_t)clamp(cut, 0, 127); t->p[P_FRES] = (int16_t)res; }
@@ -3203,7 +3234,7 @@ static __attribute__((noinline)) void gen_make(void)
      * the rest as the genre has it */
     if (!gx.on && !g->amt[GP_ARP] && !g->amt[GP_LEAD] && g->drum < DM_CUMBIA && gp.amt[GP_ARP] == GA_AUTO && gch(45))
         gs.amt[GP_ARP] = (uint8_t)(25u + gs.energy / 4u);
-    gs.fm6 = 0;
+    gs.fm6 = 0; gs.ftl = 0;
     gs.song = (uint8_t)(gform() == FM_LOOP ? 0u : gform() == FM_CLUB ? 2u : 1u);   /* (V10.6m: no fill in a song's patterns) */
     /* the orchestration: the drums (unless the genre or the knob leaves them out), then the melodic roles with an
      * amount, the most important first; the drums on the DRUM track (none: the fourth, or the last live) */

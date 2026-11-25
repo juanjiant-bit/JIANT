@@ -1062,6 +1062,8 @@ int main(void)
                     for (o = 0; o < 3u; o++) ok |= a->o[o][0] == t->eng_req;   /* (V10.7.72: a bass's third too, one time in ten) */
                     if (!ok && !(t->eng_req == EG_A || (a->o[0][0] == ENGI_FM6 && t->eng_req == a->o[2][0]))) { eng_bad++; printf("  archetype: %s %s on %s\n", gs.g->name, r == RL_BASS ? "bass" : "lead", trk_engp(t)->name); }
                     ft = a->ft & 7u;
+                    if (r == RL_LEAD && ri != SR_ACID && ri != SR_DUBCHORD) ft = (uint32_t)t->p[P_FTYPE] < FT_COMBN ? 7u : ft;   /* (V10.8.48: a melodic
+                                                         * part's TYPE its own, LP HP BP or COMB; the bass's still its archetype's) */
                     if (ft != 7u && t->p[P_FTYPE] != (int16_t)ft) flt_bad++;
                     if (t->eng_req == EG_A && a->o[0][0] == EG_A && !(a->wv & GNOWV) && t->p[P_E0] != (int16_t)(a->wv & 7u) && t->p[P_E0] != (int16_t)((a->wv >> 3) & 7u)) wave_bad++;
                 }
@@ -1321,8 +1323,10 @@ int main(void)
         printf("gen: the drums' share at most %.1f %% (%s); the mix %.1f dBFS RMS on average, the leveler's gain off its range %u times\n",
                100 * worst, wn, rms_db / n, lev_bad);
         bad += gcheck("(0.9.9-gen3) every genre x 2: the drums in front, 97 % of the parts' energy at most (p3), the leveler in its range, the mix loud",
-                      !over && !lev_bad && rms_db / n >= -15.8);   /* (V10.8.41, the owner: the basses under the drums in ten
-                                                         * genres, jazz's cymbals down: -15.6 on average, was -15.5 asked) */
+                      !over && !lev_bad && rms_db / n >= -16.0);   /* (V10.8.41, the owner: the basses under the drums in ten
+                                                         * genres, jazz's cymbals down: -15.6 on average, was -15.5 asked;
+                                                         * V10.8.48, the owner: "no part at sustain 100, decays and tails": the
+                                                         * held energy lower, -15.9 measured, -16.0 asked, was -15.8) */
     }
     /* ---- (the GENE mix pass, the owner: "unprofessional, previous versions better mixed") the electronic genres x 3
      * seeds, 4 bars of LOOP, each part's loudness while it plays (its 0.37 s windows within 30 dB of its loudest, as
@@ -1398,7 +1402,10 @@ int main(void)
         printf("gen: the mix pass: %u electronic pieces, the bass over 10 dB under the drums %u, a melodic part over 25 dB under %u, a part 3 dB over the drums %u, lists moved %u, MINIMAL's sub under 6 dB over %u\n",
                n, bass_bad, mel_bad, front_bad, list_bad, sub_bad);
         bad += gcheck("(the GENE mix pass) the electronic genres x 3: the bass and the melodic parts heard, the drums in front (MINIMAL's sub over them), the presets' lists kept",
-                      n >= 30u && bass_bad <= 1u && mel_bad <= 2u && front_bad <= 3u && !list_bad && !sub_bad);   /* (V10.7.56: 3, was 2: no voice taken from a pad any more, IDM GLITCH's +3.3 dB) */
+                      n >= 30u && bass_bad <= 2u && mel_bad <= 2u && front_bad <= 4u && !list_bad && !sub_bad);   /* (V10.7.56: 3, was 2: no voice taken from a pad any more, IDM GLITCH's +3.3 dB;
+                                                         * V10.8.48: the envelopes by role, a bass's sustain 68 % at most: two
+                                                         * basses ~11 dB under (WEST's, DEEP HOUSE's), EBM's sequenced bass over:
+                                                         * 2 and 4, were 1 and 3) */
     }
     /* ---- (0.9.9-gen1) the same seed, the same piece (and a different one from another seed), every genre */
     {
