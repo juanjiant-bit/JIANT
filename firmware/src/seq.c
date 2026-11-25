@@ -577,6 +577,7 @@ static void arp_remove(track_t *t, uint32_t note)
 }
 
 static void rec_note(track_t *t, uint32_t note, uint32_t vel);
+static uint32_t rec_arp;                            /* (V10.8.45) an arp's note recorded: its samples past its step + 1 */
 static void rec_release(track_t *t, uint32_t note);
 /* (V10.25) SCENE (SCL > SCENE, ui_scene.c): the keys play every track given a role at once, from the one key: CHORD the
  * key's chord of the scale (its CHORD type, TRI if off), ARP that chord into the track's arp, BASS the key an octave
@@ -806,9 +807,21 @@ static void arp_step_do(track_t *t, uint32_t n)
         uint32_t per = period + (uint32_t)((t->arp_idx & 1u) ? sw : -sw);
         if (t->arp_pos < per && t->arp_pos != 0xFFFFFFF + n)
             return;
-        if (t->arp_pos == 0xFFFFFFF + n) {               /* the start: now */
-            t->arp_pos = 0;
+        if (t->arp_pos == 0xFFFFFFF + n) {               /* the start: now; (V10.8.45, the owner: "the arp is not
+                                                         * quantized") playing: on its RATE's grid of the transport, the
+                                                         * step this block holds or one up to 20 ms back at once, else
+                                                         * the next one */
+            uint32_t ph = 0;
+            if ((song.playing && clk_pos != CLK_START) || cin_left) {   /* (the count-in: its beats' grid) */
+                ph = (song.playing ? clk_n * div_samples(2) + clk_pos : cin_pos) % period;
+                if (ph >= n + (song.rec ? 0u : FS / 50u)) {   /* (armed: never late, what is recorded on its step) */
+                    t->arp_pos = ph + (uint32_t)sw;
+                    return;
+                }
+            }
+            t->arp_pos = ph;
             ev_off = 0;
+            if (ph < n) ev_at(n - ph);
         } else {                                        /* (ctl64) the step at its sample; the samples past it kept
                                                          * (they were dropped: an ARP ran a block late a step) */
             t->arp_pos -= per;
@@ -836,11 +849,12 @@ static void arp_step_do(track_t *t, uint32_t n)
     j = t->p[P_AMODE] == AM_CHORD ? 0u : arp_pick(t, list, len);
     if (t->arp_note)
         arp_off(t);
+    rec_arp = t->arp_pos + 1u;                      /* (V10.8.45) recorded where its step is, not where a key was heard */
     if ((uint32_t)(rng() & 127u) <= (uint32_t)t->p[P_APROB]) {
         t->arp_off = period * (uint32_t)t->p[P_AGATE] / 128u + ev_off;   /* (from the step's sample) */
         if (t->p[P_AMODE] == AM_CHORD) {            /* CHORD: the first 4 notes, an octave up each step */
             arp_chord(t, list, cnt);
-            ev_off = 0;
+            ev_off = rec_arp = 0;
             return;
         }
         uint32_t av = ARP_VEL(t);                   /* (V10.6z6: its keys' velocity) */
@@ -849,7 +863,7 @@ static void arp_step_do(track_t *t, uint32_t n)
             rec_note(t, t->arp_note, av);            /* recording: what the arp plays */
         seq_note_on(t, t->arp_note, tvel(t, av));
     }
-    ev_off = 0;
+    ev_off = rec_arp = 0;
 }
 
 static void arp_tick(track_t *t, uint32_t n) { arp_step(t, n, n); }
@@ -994,7 +1008,8 @@ static void rec_note_at(track_t *t, uint32_t note, uint32_t vel)
     uint32_t len = t->p[P_SLEN] > 0 ? (uint32_t)t->p[P_SLEN] : 1u, idx = t->seq_idx % len, k;
     uint32_t period = div_samples((uint32_t)t->p[P_SDIV]), sl = step_samples(t, period, t->seq_idx);
     int32_t gp = (int32_t)t->seq_pos - (int32_t)t->ext   /* (0.6.88: from the step's place; an early one began before) */
-                 - REC_LAT;                         /* (p8, the owner: live notes landed late) what was heard: the
+                 - (rec_arp ? (int32_t)rec_arp - 1 : REC_LAT);   /* (V10.8.45, the owner: "recording, the arp quantized": its
+                                                         * note at its own step's sample, whatever REC Q) */                         /* (p8, the owner: live notes landed late) what was heard: the
                                                          * sequencer a half buffer and a block ahead of the DAC, the key
                                                          * up to a half more: the press placed where its sound was heard */
     uint32_t next = gp > (int32_t)(sl / 2u);       /* (V10.6z4: the block PLAY starts in, before its first step,
@@ -1004,9 +1019,9 @@ static void rec_note_at(track_t *t, uint32_t note, uint32_t vel)
     if (next)
         idx = (idx + 1u) % len;
     s = &t->step[seq_src(t, idx)];
-    if (t->seq_pos < 0x7FFFFFFFu && t->p[P_HRQ] < 127) {   /* (0.6.88) REC Q under 100 %: where it was played, kept */
+    if (t->seq_pos < 0x7FFFFFFFu && (t->p[P_HRQ] < 127 || rec_arp)) {   /* (0.6.88) REC Q under 100 %: where it was played, kept */
         int32_t off = next ? gp - (int32_t)sl : gp, l = (int32_t)(next ? step_samples(t, period, idx) : sl);
-        int32_t q = 127 - clamp(t->p[P_HRQ], 0, 127);
+        int32_t q = rec_arp ? 127 : 127 - clamp(t->p[P_HRQ], 0, 127);
         mic = (off * 64 + (off < 0 ? -l / 2 : l / 2)) / (l ? l : 1);   /* (0.9.1: 64ths of the step, rounded; was 16ths) */
         mic = clamp((mic * q + (mic < 0 ? -63 : 63)) / 127, MICRO_MIN, MICRO_MAX);   /* (REC Q's share of it, rounded) */
     }
@@ -3761,7 +3776,7 @@ static void events_block(uint32_t n)
     if (song.playing)
         click_tick(seq_n);
     for (i = 0; i < NPART; i++)
-        arp_step(&trk[i], clock_mode ? seq_n : n, clock_mode && song.playing ? seq_n : n);
+        arp_step(&trk[i], clock_mode || song.playing ? seq_n : n, clock_mode && song.playing ? seq_n : n);   /* (V10.8.45: playing, the sequencer's time: its grid kept) */
     beat_pos += clock_mode ? seq_n : n;               /* the beat the ARP LED flashes on (ui_leds) */
     if (beat_pos >= beat_samples()) {
         beat_pos -= beat_samples();

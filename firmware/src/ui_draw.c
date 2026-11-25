@@ -52,19 +52,23 @@ static uint32_t batt_icon(int32_t lvl)
     static const uint8_t I[5] = {ICON_X_BAT0, ICON_X_BAT1, ICON_X_BAT3, ICON_X_BAT4, ICON_X_BAT_CHG};
     return I[clamp(lvl, 0, 4)];
 }
-/* (JIANT 0.5) the load: how much of the audio's time the sound takes now (audio.c song.cpu_q8, averaged); 0..5.
- * (0.8.5, the mock-up) five bars 3 x 7 side by side left of the battery, lit THEME from the left, the rest RAISE */
+/* (JIANT 0.5) the load: how much of the audio's time the sound takes now (audio.c song.cpu_q8, averaged).
+ * (V10.8.45, the owner: "the little purple bar a small number, clearer") its per cent, 0 .. 99, in THEME left of the
+ * battery; the number shown follows the load once it is 3 away (no flicker) */
 static uint32_t head_load(void)
 {
-    uint32_t l = (song.cpu_q8 * 5u + 128u) >> 8;
-    return song.cpu_q8 && !l ? 1u : l > 5u ? 5u : l;
+    static uint8_t shown;
+    uint32_t p = (song.cpu_q8 * 100u) >> 8;
+    if (p > 99u) p = 99u;
+    if (p > shown + 2u || p + 2u < shown || !p) shown = (uint8_t)p;
+    return shown;
 }
-#define HEAD_LOAD_X 200                                /* the load's bars: 200 .. 218 */
+#define HEAD_LOAD_X 200                                /* the load's number: 200 .. 218 */
 static void draw_load(int32_t x)
 {
-    uint32_t k, n = head_load();
-    for (k = 0; k < 5u; k++)
-        cv_rect(x + (int32_t)k * 4, HEAD_MID - 3, 3, 7, k < n ? T_THEME : T_RAISE);
+    char b[12];
+    fmt_int(b, (int32_t)head_load());
+    cv_text_r(x + 19, HEAD_MID - AF_X_CAP_H / 2 - AF_X_CAP_Y, &AF_X, b, T_THEME, T_BG);
 }
 static void draw_battery(int32_t bx)
 {

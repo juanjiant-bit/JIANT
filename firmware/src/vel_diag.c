@@ -51,21 +51,8 @@ typedef struct {
     uint8_t st, pi, dnext, up;          /* state, ring index, drive the next sample, pulled-up samples let go */
     uint32_t t_touch;
 } vd_key_t;
-typedef struct {
-    uint8_t key, n;
-    uint16_t v[VD_CAP];
-} vd_cap_t;
-typedef struct {
-    uint8_t key;
-    uint16_t dt, pmin, dmin;
-} vd_ev_t;
 
 static vd_key_t vd_key[VD_NK];
-static vd_cap_t vd_cap[2] __attribute__((section(".lowbuf")));   /* (app.ld LOWBUF) one written, the other done */
-static volatile uint8_t vd_cw, vd_cbusy, vd_cready;   /* the one written; its key + 1 (0: none); the other done */
-static vd_ev_t vd_ev[VD_NEV], vd_last;  /* the presses not read yet; the last one (the message line) */
-static volatile uint8_t vd_ev_w, vd_ev_r, vd_last_n;
-static volatile uint16_t vd_lost;       /* presses and captures nobody read in time */
 static void vel_driven(uint32_t key, const vd_key_t *k, uint32_t v);   /* (vel.c) */
 static void vel_lift(uint32_t key, uint32_t strike);
 
@@ -73,23 +60,6 @@ static uint32_t vd_note(uint32_t col, uint32_t rowbit)   /* the note on (column,
 {
     int id = col < FM1_NCOL && rowbit < 6u ? FM1_KEYMAP[rowbit][col] : -1;
     return id >= 14 && (uint32_t)id - 14u < VD_NK ? (uint32_t)id - 14u : VD_NK;
-}
-
-static void vd_cap_add(uint32_t key, uint32_t v)
-{
-    vd_cap_t *c = &vd_cap[vd_cw];
-    if (vd_cbusy != key + 1u)
-        return;
-    c->v[c->n++] = (uint16_t)v;
-    if (c->n < VD_CAP)
-        return;
-    vd_cbusy = 0;
-    if (vd_cready)
-        vd_lost++;                              /* (the last one still unread: this one dropped) */
-    else {
-        vd_cw ^= 1u;
-        vd_cready = 1;
-    }
 }
 
 /* (the scan's ISR) one sample of the key at (col, rowbit): v 0..1023; driven: taken with the row driven high */
@@ -107,7 +77,6 @@ static void vd_sample(uint32_t col, uint32_t rowbit, uint32_t v, uint32_t driven
                 k->dmin = (uint16_t)v;
             vel_driven(key, k, v);              /* (V10.6z6) the strike's window, the pressure (vel.c) */
         }
-        vd_cap_add(key, v | VD_DRIVEN);
         return;
     }
     if (k->st == VD_OPEN && v < VD_TOUCH) {
@@ -118,16 +87,7 @@ static void vd_sample(uint32_t col, uint32_t rowbit, uint32_t v, uint32_t driven
         k->up = 0;
         vk[key].pend = 1;                       /* (V10.6z6) the strike's window open (vel.c) */
         vk[key].vel = vk[key].at = 0;
-        if (!vd_cbusy && vs.diag) {             /* a capture: the samples before, then this one on */
-            vd_cap_t *c = &vd_cap[vd_cw];
-            c->key = (uint8_t)key;
-            for (i = 0; i < VD_PRE; i++)
-                c->v[i] = k->pre[(k->pi + i) % VD_PRE];
-            c->n = VD_PRE;
-            vd_cbusy = (uint8_t)(key + 1u);
-        }
     }
-    vd_cap_add(key, v);
     if (k->st != VD_OPEN) {
         if (v < k->pmin)
             k->pmin = (uint16_t)v;
@@ -141,22 +101,8 @@ static void vd_sample(uint32_t col, uint32_t rowbit, uint32_t v, uint32_t driven
         else if (++k->up >= 2u) {               /* let go (a graze: back over VD_TOUCH): the press queued */
             k->st = VD_OPEN;
             vel_lift(key, k->dt == VD_NONE ? VD_NONE : vs.strike[key]);   /* (V10.6z6: no pressure; a seated one learnt) */
-            if (!vs.diag)
-                goto kept;
-            vd_last.key = (uint8_t)key;
-            vd_last.dt = k->dt;
-            vd_last.pmin = k->pmin;
-            vd_last.dmin = k->dmin;
-            vd_last_n++;
-            if ((uint8_t)(vd_ev_w - vd_ev_r) < VD_NEV) {
-                vd_ev[vd_ev_w % VD_NEV] = vd_last;
-                vd_ev_w++;
-            } else {
-                vd_lost++;
-            }
         }
     }
-kept:
     k->pre[k->pi] = (uint16_t)v;
     k->pi = (uint8_t)((k->pi + 1u) % VD_PRE);
     k->dnext = k->st != VD_OPEN;                /* touched or held: the next sample driven */
@@ -174,7 +120,7 @@ static int vd_drive(uint32_t col, uint32_t rowbit)
  * want it, the diagnostic's drive (else Velo's 2, the one calibrated); off, the scan lets go at its next tick */
 static void vd_apply(void)
 {
-    if (!vs.diag && !vk_on) {
+    if (!vk_on) {
         fm1_an.want = 0;
         return;
     }
@@ -182,98 +128,7 @@ static void vd_apply(void)
         memset(vd_key, 0, sizeof vd_key);
         fm1_an.master = fm1_an.batt = -1;       /* (until the scan's first readings) */
     }
-    fm1_an.drive = vs.diag ? vs.dlv : 2u;
+    fm1_an.drive = 2u;
     fm1_an.want = 1;
     fm1_an.on = 1;
 }
-/* the diagnostic on (drive 0: no driven samples; 1..4 its strength, 2 Velo's) or off; off at power-on. (V10.6z6) Off,
- * the sampling stays on while the keys' velocity or pressure use it */
-static void vd_set(uint32_t on, uint32_t drive)
-{
-    if (on && !vs.diag) {                       /* (its queue fresh: nothing from before) */
-        vd_cbusy = vd_cready = 0;
-        vd_ev_r = vd_ev_w;
-        vd_lost = 0;
-    }
-    vs.diag = (uint8_t)(on != 0u);
-    vs.dlv = (uint8_t)(drive > 4u ? 4u : drive);
-    vd_apply();
-}
-
-/* the next thing to read: 2 a capture (*c), 1 a press (*e), 0 nothing; taken */
-static uint32_t vd_next(vd_cap_t *c, vd_ev_t *e)
-{
-    if (vd_cready) {
-        *c = vd_cap[vd_cw ^ 1u];
-        vd_cready = 0;
-        return 2;
-    }
-    if (vd_ev_r != vd_ev_w) {
-        *e = vd_ev[vd_ev_r % VD_NEV];
-        vd_ev_r++;
-        return 1;
-    }
-    return 0;
-}
-
-static char *vd_num(char *b, uint32_t v)        /* decimal; the end returned */
-{
-    char t[6];
-    uint32_t n = 0;
-    do
-        t[n++] = (char)('0' + v % 10u);
-    while ((v /= 10u) != 0u && n < sizeof t);
-    while (n)
-        *b++ = t[--n];
-    *b = 0;
-    return b;
-}
-
-static char *vd_key_name(char *p, uint32_t key) /* "F3", "C#4" (note 0 F3, 7 C4, 19 C5); the end returned */
-{
-    static const char N[12][3] = {"F", "F#", "G", "G#", "A", "A#", "B", "C", "C#", "D", "D#", "E"};
-    *p++ = N[key % 12u][0];
-    if (N[key % 12u][1])
-        *p++ = '#';
-    *p++ = (char)('3' + (key + 5u) / 12u);
-    *p = 0;
-    return p;
-}
-
-/* "C4 D412 P188 2.2MS" (D-, P-: no reading; GRAZE: touched, never seated) */
-static void vd_line(char *b, const vd_ev_t *e)
-{
-    char *p = vd_key_name(b, e->key);
-    *p++ = ' ';
-    *p++ = 'D';
-    if (e->dmin == VD_NONE) *p++ = '-'; else p = vd_num(p, e->dmin);
-    *p++ = ' ';
-    *p++ = 'P';
-    if (e->pmin == VD_NONE) *p++ = '-'; else p = vd_num(p, e->pmin);
-    *p++ = ' ';
-    if (e->dt == VD_NONE) {
-        str_cpy(p, "GRAZE", 6);
-        return;
-    }
-    p = vd_num(p, e->dt / 10u);
-    *p++ = '.';
-    p = vd_num(p, e->dt % 10u);
-    str_cpy(p, "MS", 3);
-}
-
-/* main loop: the last press on the message line (the console's streaming: console.c con_vel) */
-static void vd_poll(void)
-{
-    static uint8_t seen;
-    if (!vs.diag)
-        return;
-    if (seen != vd_last_n) {
-        char b[28];
-        vd_ev_t e = vd_last;
-        seen = vd_last_n;
-        str_cpy(b, "VEL ", 5);
-        vd_line(b + 4, &e);
-        ui_message(b);
-    }
-}
-

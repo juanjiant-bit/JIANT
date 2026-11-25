@@ -1860,6 +1860,7 @@ static int test_rec(void)
         for (i = 0; i < NSTEP; i++)
             n += t->step[i].n;
         bad += check("ARP on: the key held is not recorded", n == 0);
+        clk_pos = CLK_START;                             /* (V10.8.45: no transport's clock here: the arp at once; with one, on its grid: arp_grid_test) */
         arp_tick(t, 1);
         for (i = 0; i < NSTEP; i++)
             if (t->step[i].n)

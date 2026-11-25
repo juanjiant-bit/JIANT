@@ -916,33 +916,22 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
         break;
     }
 #ifdef VD_NK
-    case ED_VEL: {
-        static vd_cap_t c;
-        vd_ev_t e;
-        uint32_t k = 0;
+    case ED_VEL: {                                  /* (V10.8.45, the owner: the diagnostic out) op 1 2 3 answer as
+                                                     * ever with the diagnostic off and nothing to read (web/vel.html
+                                                     * shows no presses); 0 4 5: the keys' velocity as it was */
         if (!na || a[0] > 5u)
             return;
-        if (a[0] == 1u || a[0] == 2u)
-            vd_set(a[0] == 1u, na > 1u ? a[1] : 2u);
         if (a[0] == 5u)
             vk_cal = 2;                             /* (1.2) the calibration's seeds back (vel.c vel_poll) */
-        ed_b(a[0]); ed_b(vs.diag); ed_b(fm1_an.drive);
-        ed_v(vd_lost); ed_v(fm1_an.timeouts); ed_v(fm1_an.master);
+        ed_b(a[0]); ed_b(0); ed_b(fm1_an.drive);
+        ed_v(0); ed_v(fm1_an.timeouts); ed_v(fm1_an.master);
         if (a[0] >= 4u) {                           /* (1.2) the keys' velocity (in the Bluetooth segment: cold) */
             if (bt_hw_seg())
                 ed_vel_live();
             break;
         }
-        if (a[0] != 3u)
-            break;
-        ed_b(k = vd_next(&c, &e));
-        if (k == 1u) {
-            ed_b(e.key); ed_v((int16_t)e.dt); ed_v((int16_t)e.pmin); ed_v((int16_t)e.dmin);   /* (VD_NONE: -1) */
-        } else if (k == 2u) {
-            ed_b(c.key); ed_b(VD_CAP);
-            for (i = 0; i < VD_CAP; i++)
-                ed_v(c.v[i]);
-        }
+        if (a[0] == 3u)
+            ed_b(0);
         break;
     }
 #endif

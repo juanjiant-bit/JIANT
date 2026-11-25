@@ -31,7 +31,7 @@ int main(void)
     ui_power_on();
     {   /* (V10.8.40) MOOD MID: the pieces V10.8.39's, byte for byte (from power-on: the tracks' values and steps, the
          * song's, the kit; a checksum of 8 seeds in EXPLORE, RANDOM and HOUSE; V10.8.39's own, the same tool) */
-        static const uint32_t MID[3] = {0x332a2b9eu, 0xf6802e87u, 0x158a05b2u};   /* (V10.8.42 recorded again; V10.8.41: the generator rewritten genre by genre:
+        static const uint32_t MID[3] = {0xd49db8e0u, 0x9b2fb1dcu, 0x5ac65091u};   /* (V10.8.45 recorded again: the envelopes' rules; V10.8.42 too; V10.8.41: the generator rewritten genre by genre:
          * this version's own pieces, recorded with GEN_MID=1; a change to the generator records them again) */
         uint32_t md, hs = 0, r, i;
         for (r = 1; r <= NGENRE; r++) if (str_eq(GENRE[r - 1u].name, "HOUSE")) hs = r;
@@ -136,20 +136,20 @@ int main(void)
         transport_req = 2; blk();
         grd.on = 1;
         transport_req = 1; blk();
-        bars(30);
-        ok &= song.playing && dice_print() == h0 && !grd.rn;      /* (its 31st bar: still the piece) */
+        bars(14);                                        /* (V10.8.45, the owner: half: 16 bars over 110 BPM, were 32) */
+        ok &= song.playing && dice_print() == h0 && !grd.rn;      /* (its 15th bar: still the piece) */
         bars(3); blk();
         ok &= song.playing && grd.rn == 1u && gp.seed != sd0 && dice_print() != h0;
         h0 = dice_print();
         for (n = 0; n < 40u && grd.rn < 2u; n++) bars(1);
         blk();
-        ok &= song.playing && grd.rn == 2u && n >= 31u && dice_print() != h0;
+        ok &= song.playing && grd.rn == 2u && n >= 15u && dice_print() != h0;
         if (!ok) printf("  radio: playing %u rn %u seed %u (was %u)\n", (unsigned)song.playing, grd.rn, gp.seed, sd0);
-        bad += check("RADIO: off nothing; on, the next piece after the loop's 32 bars, playing on, twice", ok);
+        bad += check("RADIO: off nothing; on, the next piece after the loop's 16 bars, playing on, twice", ok);
         {   /* (V10.8.43, BYTE's) a STOP right on the piece's last bar stops: no next piece made, nothing playing (it
              * made the next piece and played it) */
             uint32_t rn;
-            for (n = 0; n < 40u && (bar_n & 31u) != 31u; n++) bars(1);
+            for (n = 0; n < 40u && (bar_n & 15u) != 15u; n++) bars(1);
             frames(8);
             h0 = dice_print(); rn = grd.rn; sd0 = gp.seed;
             ok = song.playing && grd.arm;

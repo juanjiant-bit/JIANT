@@ -1733,6 +1733,9 @@ static __attribute__((noinline)) void gen_sound(track_t *t, uint32_t role, uint3
                                      GSTAB(gs.g->pads) ? 2 : (0x103u >> gs.g->pads) & 1u ? 3 : 5];   /* (held: HOLD SWELL DRONE) */
         for (i = 0; i < 4u; i++)
             t->p[P_ATK + i] = (int16_t)clamp(t->p[P_ATK + i], (er[i] >> 4) * 8, (er[i] & 15u) * 8 + 7);
+        if (grd.mood < 0 && role != RL_BASS) {          /* (V10.8.45) towards CALM: softer in, longer out */
+            t->p[P_ATK] -= grd.mood / 2; t->p[P_REL] = (int16_t)clamp(t->p[P_REL] - grd.mood / 2, 0, 120);
+        }
     }
     if (e == EG_FM) t->p[P_E2] = (int16_t)clamp(t->p[P_E2] - grr(4, 20), -64, 63);   /* (warmer) */
     if (ft != 7u) {
@@ -1745,7 +1748,7 @@ static __attribute__((noinline)) void gen_sound(track_t *t, uint32_t role, uint3
         else { t->p[P_FCUT] = (int16_t)clamp(cut, 0, 127); t->p[P_FRES] = (int16_t)res; }
         t->p[P_ED_FLT] = grg(r->envf, 4);
         if (role != RL_PAD && role != RL_TEX && t->p[P_ED_FLT] < 6)   /* (gen3: the filter's envelope on a bass, a lead, an arp) */
-            t->p[P_ED_FLT] = (int16_t)(6 + (gs.complex >> 4));
+            t->p[P_ED_FLT] = (int16_t)(12 + (gs.complex >> 3));   /* (V10.8.45: more of it, was 6 .. 12) */
     }
     if (r->lfo) {                                       /* the LFO on the filter: a slow drift, or on the beat */
         uint32_t lr = r->lfo & 15u;
@@ -1931,7 +1934,8 @@ static __attribute__((noinline)) void gen_kit(track_t *t)
                                                          * snare, the clap and the hats up, longer, driven (0: untouched) */
         int32_t m = grd.mood, l, c = m / 2 + (m < -25 ? (m + 25) * 5 : 0), e = c < -50 ? -50 : c;   /* (V10.8.41: to -25 a light
                                                          * hand, ~6 dB and a little shorter and darker; the kit gone only near -50) */
-        t->p[P_E3] = (int16_t)clamp(t->p[P_E3] + (m < 0 ? e : m / 4), 0, 127);
+        t->p[P_E3] = (int16_t)clamp(t->p[P_E3] + (m < 0 ? e : -m / 5), 0, 127);   /* (V10.8.45, the owner: "DANCE's decays too long,
+                                                         * they cover the other layers": a little shorter, was longer) */
         if (m < 0) {
             t->p[P_FCUT] = (int16_t)(t->p[P_FCUT] + e);
             for (l = 0; l < 8; l++)
@@ -2199,6 +2203,23 @@ static uint32_t grow(uint32_t r, uint32_t s, uint32_t bars, uint32_t m, uint32_t
     sc->on = (uint8_t)(1u | ((m >> 3) & 6u));
     sc->mute = (uint8_t)((m & 15u) | gm << 4);
     memcpy(sc->mac, macro_v, sizeof sc->mac);
+    if (!gls.on) {                                      /* (V10.8.45, the owner: "loops that do not evolve and come back the
+                                                         * same; every part its timbre, a story in the sound") a row its own
+                                                         * colour: the macros (their routes every track's: the filter, the
+                                                         * shape, the engine's, the sends) a row's own values, the first as
+                                                         * the piece stands, M1 opening as the song goes; a section come
+                                                         * again (its fill row too): the lead's and the arp's lines varied
+                                                         * (ARRANGE's VAR 1 / 2, a row's own), the drums' where they are free */
+        static uint8_t seen[4];
+        uint32_t i, n;
+        if (!r) memset(seen, 0, sizeof seen);
+        n = seen[s & 3u]++;
+        for (i = 0; i < 4u && r; i++) sc->mac[i] = (uint8_t)((r * (29u + 18u * i) + (i ? 0u : r * 4u)) % 72u);
+        for (i = RL_DRUM; n && i <= RL_ARP; i += i ? 1u : RL_LEAD) {   /* (the drums, the lead, the arp) */
+            uint32_t k = gs.trk_of[i];
+            if (k < NTRK && !((var >> (4u * k)) & 15u)) var |= (uint32_t)(RV_MUT1 + ((n - 1u) & 1u)) << (4u * k);
+        }
+    }
     song_idx.tsrc[song_cur][r] = src;
     song_idx.tvar[song_cur][r] = var;
     return r + 1u;
@@ -2278,8 +2299,10 @@ static void gen_parts(void)
                 }
             }
             load_end(t);
-            if (plan && k == 2u)                        /* .. the master's high-pass opening over its last two bars */
-                for (i = 0; i < 8u; i++) gmot(t, 32u + 4u * i, MOT_DJF, (int32_t)((i + 1u) * (i + 1u) * 3u / 4u), 0);
+            if (plan && k == 2u)                        /* .. the master's high-pass opening over its last bar (V10.8.45, the
+                                                         * owner: "the DJ FILTER's automations too long and abrupt": was
+                                                         * two bars to 48 in quarter steps; a bar to 30 in eighths) */
+                for (i = 0; i < 8u; i++) gmot(t, 48u + 2u * i, MOT_DJF, (int32_t)((i + 1u) * (i + 1u) * 15u / 32u), 0);
         }
         /* (0.8.3) the section's harmony: the break and the apex on the predominant (not the modal loops: theirs keep
          * the loop); PARTS' last section a whole step up where the genre lifts (pop's last chorus) */
@@ -2391,7 +2414,8 @@ static void gen_parts(void)
     np = PLAN_OF[np + 1u] - PLAN_OF[np];
     gseed(GS_FORM);
     for (j = 0; j < np; j++) {
-        uint32_t t = pl[j] & 15u, nt = pl[(j + 1u) % np] & 15u, bars = (pl[j] >> 4) * 4u >> half, s, m = 0, gm = 0, fill, f;
+        uint32_t t = pl[j] & 15u, nt = pl[(j + 1u) % np] & 15u, bars = (pl[j] >> 4) * 4u >> (half + !gls.on), s, m = 0, gm = 0, fill, f;   /* (V10.8.45, the owner: "a section lasts more than
+                                                         * twice what it should": half; MY LOOP's as they were) */
         if (bars < 4u) bars = 4u;
         if (t >= GT_SEC) { s = t - GT_SEC; m = secm[s]; }
         else {                                          /* the kind's layers: the drums, the bass, then by priority */
@@ -2411,6 +2435,7 @@ static void gen_parts(void)
             if (t == GT_DROP && gch(50)) bars *= 2u;    /* (a drop of 16 or 32) */
             if (gls.on && t == GT_DROP) m &= gls.add;             /* (FROM LOOP: the drop the loop as it is, its own parts all in) */
         }
+        while (!gls.on && bars > 4u && bars * 10u > (uint32_t)song.g[G_BPM]) bars /= 2u;   /* (.. and none over ~24 s: a slow tempo's shorter) */
         m |= gls.mute;
         fill = dr < NTRK && gs.act[RL_DRUM] && nt != t && !gm && !((m >> dr) & 1u) && (((base | dense) >> s) & 1u);
         if (t == GT_DROP && plan && !gls.on && dr < NTRK && gs.act[RL_DRUM] && bars > lb) { rows = grow(rows, 1, lb, m, gm, 0, 0); bars -= lb; }   /* (the
@@ -3307,7 +3332,7 @@ static __attribute__((noinline)) void gen_make(void)
                                                          * CHORUS MIX towards the vibrato: SHOEGAZE's wobble, a little on DUBSTEP) */
     song.g[G_DUCK] = (int16_t)(gs.act[RL_DRUM] ? (g->spec & GSP_PUMP ? grr(60, 80) : g->kick_mode == KM_SUSTAIN || gclub() ? grr(30, 50) : g->human < 40u ? grr(32, 46) : grr(14, 30)) : 0);   /* (V10.8.41, the owner: "the bass should have sidechain": a machine genre's 3.5 .. 6 dB) */   /* (V10.6n:
                                                          * hard bass pumped) */
-    if (grd.mood > 0 && gs.act[RL_DRUM]) song.g[G_DUCK] += grd.mood / 3;   /* (V10.8.41) DANCE: the kick's pump deeper */
+    if (grd.mood > 0 && gs.act[RL_DRUM]) song.g[G_DUCK] += grd.mood / 2;   /* (V10.8.41) DANCE: the kick's pump deeper */
     if (g->snd[GP_BASS] == SR_WOW && gs.act[RL_BASS] && gs.trk_of[RL_BASS] < NTRK) gwobble(&trk[gs.trk_of[RL_BASS]]);
     song.g[G_DREL] = (int16_t)(g->drum == DM_TECHNO || g->drum == DM_HARD || g->drum == DM_HBASS ? grr(15, 30) : grr(25, 45));
     song.g[G_CLIP] = (int16_t)(gs.act[RL_DRUM] ? (g->spec & GSP_HEAVY ? grr(60, 85) : grr(35, 65)) : grr(10, 30));   /* (gen3: a
@@ -3460,7 +3485,7 @@ static __attribute__((noinline)) void gen_tick(void)   /* (every UI frame) */
      * (V10.8.43, BYTE's) a STOP in that bar stops: only the bar played to its end, or the song to its own END
      * (chain.fin), brings the next piece (it was asked for when the bar began, and a STOP made it and played it) */
     {
-        uint32_t a = grd.arm, lb = song.g[G_BPM] > 110 ? 31u : 15u;
+        uint32_t a = grd.arm, lb = song.g[G_BPM] > 110 ? 15u : song.g[G_BPM] > 74 ? 7u : 3u;   /* (V10.8.45: half) */
         grd.arm = 0;
         if (grd.on && song_draft && !gen_wait && gp.form < 3u) {   /* (a draft: GEN's own piece, never a saved song) */
             if (song.playing && (chain.running ? chain.row + 1u >= chain.config.count && chain.remaining <= 1u : (bar_n & lb) == lb))
