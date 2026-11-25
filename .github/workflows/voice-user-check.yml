@@ -169,6 +169,14 @@ jobs:
           build/song-check/draft | tee build/song-check/draft.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/loop_song_test.c -lm -o build/song-check/loop
           timeout 120 build/song-check/loop | tee build/song-check/loop.log
+          # (V10.8.42) the publication gate's suites as main's public-release.yml runs them on a candidate: gen_test was
+          # not here and went stale between two public releases (FUGA's flag, ten expectations of V10.8.41's GEN)
+          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/gen_test.c -lm -o build/song-check/gen
+          timeout 120 build/song-check/gen | tee build/song-check/gen.log
+          for CDC in 0 1; do
+            cc -O2 -w -DHALF_FRAMES=128 -DT_CDC="$CDC" tests/uac_test.c -lm -o "/tmp/uac-$CDC"
+            "/tmp/uac-$CDC" | tail -3
+          done
       - name: Repeats on the tempo (RATCH, STUTTER, the punch-in STUT) and the FX punch-ins (V10.7.59)
         run: |
           set -euo pipefail
