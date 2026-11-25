@@ -1332,7 +1332,7 @@ function wtDraw() {
   }
   g.globalAlpha = 1;
 }
-function wtSet(frames, msg) { wt.frames = frames; wt.sel = 0; wtSay(msg); wtDraw(); }
+function wtSet(frames, msg) { wt.frames = frames; if (MOCK) window.__wtFrames = frames; wt.sel = 0; wtSay(msg); wtDraw(); }
 async function wtFromBuffer(buf, name) {
   try {
     const ac = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 1, 44100);

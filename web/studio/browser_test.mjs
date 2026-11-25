@@ -127,12 +127,12 @@ try {
     await q.click("#wtread"); await q.waitForTimeout(600);
     await q.selectOption("#wtslot", "2"); await q.click("#wtsend"); await q.waitForTimeout(2500);
     const sent = await q.textContent("#wtstat"), opt = await q.$eval('#wtslot option[value="2"]', (o) => o.textContent);
-    const px = () => q.evaluate(() => [...document.querySelectorAll("#wtframes canvas")].map((c) => Array.from(c.getContext("2d").getImageData(0, 0, 128, 128).data.filter((_, i) => i % 4 === 3))));
+    const px = () => q.evaluate(() => window.__wtFrames.map((f) => Array.from(f, (v) => Math.round(v * 1000))));
     const before = await px();
     await q.click("#wtload"); await q.waitForTimeout(2500);
-    const after = await px(), diff = before.flat().filter((v, i) => Math.abs(v - after.flat()[i]) > 64).length / before.flat().length;
+    const after = await px(), diff = before.flat().filter((v, i) => Math.abs(v - after.flat()[i]) > 1).length;
     const fmHidden = await (await page("?mock=1&fw=fm")).$eval('nav.views [data-go="wt"]', (e) => e.hidden);
-    ok(frames === 8 && name === "GLIDE" && /GLIDE/.test(sent) && /GLIDE/.test(opt) && diff < 0.01 && fmHidden,
+    ok(frames === 8 && name === "GLIDE" && /GLIDE/.test(sent) && /GLIDE/.test(opt) && diff === 0 && fmHidden,
       `wavetables: glide.wav -> 8 frames, sent to USER 3 ("${sent}"), read back the same; hidden on FM`);
   }
   /* rescue: the published JIANT FM and JieLi's loader fetched and checked, a board's fm1-rescue.uf2 made */
