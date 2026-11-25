@@ -368,6 +368,8 @@ static void web_ms(void)
 #define EXPORT __attribute__((used, visibility("default")))
 #undef __attribute__
 
+static uint32_t web_gen_qn;                              /* (studio's RADIO page) its commands waiting, run below */
+static void web_gen_run(void);
 static float out_l[1024], out_r[1024];
 EXPORT float *web_out_l(void) { return out_l; }
 EXPORT float *web_out_r(void) { return out_r; }
@@ -377,6 +379,8 @@ EXPORT void web_render(uint32_t n)
     uint32_t k;
     if (n > 1024u)
         n = 1024u;
+    if (web_gen_qn)
+        web_gen_run();
     while (ring_w - ring_r < n)
         web_ms();
     for (k = 0; k < n; k++) {
@@ -523,6 +527,65 @@ EXPORT void web_gen(uint32_t genre, uint32_t seed, uint32_t energy, uint32_t for
 EXPORT const char *web_gen_last(void) { return gp.last; }
 EXPORT uint32_t web_gen_count(void) { return NGENRE; }
 EXPORT const char *web_gen_name(uint32_t i) { return GENRE[i % NGENRE].name; }
+
+/* (studio, the RADIO page: votes on the pieces) GEN read and driven from the page, the emulator's alone (nothing here is
+ * in the FM-1's binary). Genres: an index 0..web_gen_count()-1 (web_gen_genre's names), -1 EXPLORE, -2 RANDOM */
+static uint32_t web_gen_n, web_gen_sig0;                /* a piece counted each time a throw's signature changes */
+static int32_t web_gen_q[8][2];
+static int32_t web_gen_mode(void) { return gp.genre == GEN_EXPLORE ? -1 : gp.genre ? (int32_t)((gp.genre - 1u) % NGENRE) : -2; }
+static void web_gen_count_piece(void) { if (gp.sig && gp.sig != web_gen_sig0) { web_gen_sig0 = gp.sig; web_gen_n++; } }
+/* o[0] RADIO, o[1] the genre SOUNDING (-1 an EXPLORE piece), o[2] its seed, o[3] MOOD -50..50, o[4] ENERGY 0..100, o[5] FORM
+ * (0 LOOP, 1 PARTS, 2 SONG, 3 MY LOOP), o[6] pieces made so far (0: none yet), o[7] playing, o[8] the genre asked (-1
+ * EXPLORE, -2 RANDOM, else the index): a static int32_t[9], read at once */
+static int32_t web_gen_o[9];
+EXPORT int32_t *web_gen_info(void)
+{
+    int32_t *o = web_gen_o;
+    web_gen_count_piece();
+    o[0] = grd.on;
+    o[1] = gs.gi < NGENRE ? (int32_t)gs.gi : -1;
+    o[2] = gp.seed;
+    o[3] = grd.mood;
+    o[4] = gp.energy;
+    o[5] = gp.form;
+    o[6] = (int32_t)web_gen_n;
+    o[7] = song.playing || chain_busy();
+    o[8] = web_gen_mode();
+    return o;
+}
+EXPORT const char *web_gen_genre(uint32_t i) { return i < NGENRE ? GENRE[i].name : 0; }
+/* 0 RADIO off / on (arg), 1 the next piece now (a new seed, made at once: playing, it goes on playing; RADIO's count
+ * too), 2 GENRE = arg, 3 MOOD = arg (-50..50), 4 PLAY (1) / STOP (0). Queued: run when the next block is asked for */
+EXPORT void web_gen_cmd(uint32_t cmd, int32_t arg)
+{
+    if (web_gen_qn < 8u) { web_gen_q[web_gen_qn][0] = (int32_t)cmd; web_gen_q[web_gen_qn][1] = arg; web_gen_qn++; }
+}
+static void web_gen_run(void)
+{
+    uint32_t k, n = web_gen_qn;
+    web_gen_qn = 0;
+    for (k = 0; k < n; k++) {
+        int32_t a = web_gen_q[k][1];
+        switch (web_gen_q[k][0]) {
+        case 0: grd.on = (uint8_t)(a != 0); break;
+        case 1:
+            gen_new_seed();
+            gen_wait = 0;                                   /* (playing or RADIO on: it plays; RADIO counts it) */
+            grd.go = (uint8_t)(grd.on || song.playing || chain_busy());
+            gen_go();
+            gsr.thrown = 0;
+            gp.sig = gen_sig();
+            break;
+        case 2: gp.genre = (uint8_t)(a == -1 ? GEN_EXPLORE : a < 0 ? 0u : 1u + (uint32_t)a % NGENRE); break;
+        case 3: grd.mood = (int8_t)(a < -50 ? -50 : a > 50 ? 50 : a); break;
+        case 4:
+            if (a && !song.playing && !transport_busy()) { if (chain_config.count && live.mode) chain_play_ui(); else transport_req = 1; }
+            else if (!a && (song.playing || chain_busy())) transport_req = 2;
+            break;
+        }
+    }
+    web_gen_count_piece();
+}
 
 /* for the test and the bench (web/emu/emu_test.mjs), a heavy song straight into the tracks (as hostsim's
  * renders set them): T1 FM6 PAD, T2 TRIO (its first preset; PHYS, retired in TONIC, was here), T3 VOICE CHOIR AAH (GRAIN, retired in JIANT, was here), 4-note chords on all 16
