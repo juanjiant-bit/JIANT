@@ -63,7 +63,7 @@ static const layer_t LAYERS[LAYER_N] = {
     {B_SEQ, LK_SET, FAM_SEQ, "[SEQ] TOOLS", {{KC_REC, "CLEAR ALL"}, {KC_SEQ, "DONE"}, {KC_PLAY, "RESYNC"}}},   /* (0.6.14: REC, all six
                                                                      * tracks cleared, shown: it was nowhere) */
     {B_REC, LK_SET, FAM_HOME, "[REC] SET", {{KC_KEYS, "RECORDING"}, {KC_REC, "DONE"}, {0, 0}}},
-    {B_SAVE, LK_SET, FAM_HOME, "[SAVE] SONG", {{KC_KEYS, "PLAY"}, {KC_OCTUP, "STORE"}, {KC_OCTDN, "RECALL"}}},
+    {B_SAVE, LK_SET, FAM_HOME, "[SAVE] SONG", {{KC_KEYS, "PLAY"}, {KC_OCTUP, "SAVE"}, {KC_OCTDN, "RECALL"}}},
     {B_LFO, LK_SET, FAM_HOME, "[LFO] MACRO", {{KC_K14, "M1-M4"}, {KC_SELECT, "DICE"}, {KC_KEYS, "DICE / CLEAR"}}},   /* JIANT (mod.c macro_v; SELECT, F3: macro_dice, G3 clears) */
 };
 /* SCL's knobs: the key and the sequence offset (cur_page() while the layer edits or draws them: page_over) */
@@ -1102,11 +1102,11 @@ static uint32_t ly_keyname(uint32_t l, int blk, uint32_t p, char *nm)
             return !project_used(p) ? LS_DIM : live.req == (int8_t)p ? LS_WAIT : live.cur == (int8_t)p ? LS_SEL : LS_OFF;
         }
         if (p < SK_STORE + 4u) {
-            str_cpy(nm, "STORE A", 12);
+            str_cpy(nm, "SAVE A", 12);
             nm[6] = (char)('A' + p - SK_STORE);
             return (live.dirty >> (p - SK_STORE)) & 1u ? LS_WAIT : LS_OFF;
         }
-        str_cpy(nm, p == SK_MODE ? (live.mode ? "SONG" : "LOOP") : p == SK_REC ? "SONG REC" : p == SK_PAGE ? "ARRANGE" :
+        str_cpy(nm, p == SK_MODE ? (live.mode ? "SONG" : "PART") : p == SK_REC ? "SONG REC" : p == SK_PAGE ? "ARRANGE" :
                     p == SK_NAME ? "NAME" : "", 12);
         if (p == SK_NAME)
             return !ui.home && (cur_page()->graph == GR_USER || cur_page()->graph == GR_SLOTS) ? LS_OFF : LS_DIM;
@@ -1431,7 +1431,7 @@ static __attribute__((noinline)) void layer_cards(uint32_t l)
                     ICON_X_SONG);
         val[0] = live.cur >= 0 ? (char)('A' + live.cur) : '-'; val[1] = 0;
         text_column(1, "PART", val, live.cur >= 0 ? VAL(1u) : T_DIM);
-        hot_text_column(2, "PLAY", live.mode ? "SONG" : "LOOP");
+        hot_text_column(2, "PLAY", live.mode ? "SONG" : "PART");
         text_column(3, "REC", live.srec == 2u ? "ON" : live.srec ? "ARM" : "OFF", live.srec ? VAL(3u) : T_DIM);
     } else if (l == LAYER_REC) {                        /* CLICK, then empty cards */
         rec_columns();
@@ -1550,7 +1550,7 @@ static __attribute__((noinline)) void layer_state(uint32_t l)
         str_cpy(b, "CHAIN ", sizeof b);
         for (k = 0; k < lys.nqc && k < 8u; k++) { char c[2] = {(char)('A' + lys.qc[k]), 0}; str_cpy(b + str_len(b), c, sizeof b - str_len(b)); }
         lst_chip(lys.nqc >= 2u ? b : "CHAIN -", 0, lys.nqc >= 2u);
-        lst_chip(live.mode ? "SONG" : "LOOP", 0, 1);
+        lst_chip(live.mode ? "SONG" : "PART", 0, 1);
         lst_chip("SONG REC", live.srec == 2u ? "ON" : live.srec ? "ARM" : "OFF", live.srec != 0u);
         if (chain.running) {
             fmt_int(v, (int32_t)chain.row + 1);

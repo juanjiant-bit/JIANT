@@ -2086,7 +2086,7 @@ static const char *act_name(uint32_t c)          /* column c's action (the foote
         return UP_GO[(c + 2u) % 3u];
     if (cur_page()->graph == GR_SLOTS && (c & 3u) == 2u)   /* (V10.17) PART SLOTS' KNOB 3 (codex/coherence: was 2) */
         return "ERASE";
-    return id == G_CLRSEQ ? "CLEAR" : id == G_INITSND ? "INIT" : id == G_LOAD ? "LOAD" : "SAVE";
+    return id == G_CLRSEQ ? "CLEAR" : id == G_INITSND ? "INIT" : id == G_LOAD ? save_level() == SV_PROJ ? "PLAY" : "LOAD" : "SAVE";
 }
 
 /* the picked action would do something now (OCT+ breathes): another pattern, a used slot, stopped for

@@ -8536,7 +8536,7 @@ static int test_song_layer(void)
     bad += check("  playing: G3 asks for B, it goes in on the next bar, every track from step 0", ok);
     trk[0].step[0].note[0] = 99;                        /* an edit of what plays */
     btn_down(B_SAVE); frame(); press(B_OCTUP); btn_up(B_SAVE); frame();
-    ok = (live.dirty & 2u) && live.cur == 1 && msg_is("STORED B");
+    ok = (live.dirty & 2u) && live.cur == 1 && msg_is("SAVED B");
     project_load(1);                                    /* (stopped by it: the slot holds the stored edit) */
     ok &= trk[0].step[0].note[0] == 99 && !song.playing;
     song_poll();

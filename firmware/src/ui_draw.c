@@ -1296,15 +1296,15 @@ static void draw_columns(void)
         if (song_bars(s)) fmt_int(val, (int32_t)song_bars(s));
         else str_cpy(val, "--", sizeof val);
         text_column(2, "BARS", val, T_DIM);
-        text_column(3, "PLAY", live.mode ? "SONG" : "LOOP", VAL(3u));
+        text_column(3, "PLAY", live.mode ? "SONG" : "PART", VAL(3u));
         return;
     }
     if (SONG_CLIPS(cur_page())) {                      /* (V10.6s) CLIPS: TRACK, PART (the cell), SONG REC */
         val[0] = 'T'; val[1] = (char)('1' + song.sel % NTRK); val[2] = 0;
         hot_text_column(0, "TRACK", val);
         val[0] = (char)('A' + (ui.part & 3u)); val[1] = 0;
-        text_column(1, "SEQ", val, sec_col(ui.part & 3u));
-        text_column(2, "CAMBIO", JAM_Q_N[jam_q % 6u], VAL(2u));   /* (V10.8) */
+        text_column(1, "PART", val, sec_col(ui.part & 3u));
+        text_column(2, "SWITCH", JAM_Q_N[jam_q % 6u], VAL(2u));   /* (V10.8) */
         text_column(3, "TAKE", live.srec == 2u || jam_tr & 8u ? "REC" : live.srec || jam_tr ? "ARM" : jam_lock ? "LOCK" : "FREE",
                     live.srec || jam_tr ? T_ACCENT : jam_lock ? T_THEME : T_DIM);   /* (V10.8.2: LOCK's REC, one track) */   /* (V10.8) the JAM
                                                          * take: REC (the REC key), LOCK (KNOB 4) */
@@ -1325,7 +1325,7 @@ static void draw_columns(void)
         w[e] = '.'; w[e + 1u] = (char)('1' + (p >> 2 & 3u)); w[e + 2u] = '.'; w[e + 3u] = (char)('1' + (p & 3u)); w[e + 4u] = 0;
         text_column(1, "WHEN", w, VAL(1u));
         val[0] = (char)('A' + s); val[1] = 0;
-        text_column(2, "SEQ", val, sec_col(s));
+        text_column(2, "PART", val, sec_col(s));
         fmt_int(w, (int32_t)(len >> 4));
         text_column(3, "BARS", w, VAL(3u));
         return;
@@ -1354,7 +1354,7 @@ static void draw_columns(void)
         if (ui.song_row >= song_end_row()) {            /* (0.6.22) the song's END: STOP / x2 .. x8 / LOOP */
             uint32_t e = SONG_END(&chain_config);
             hot_text_column(0, "ROW", "END");
-            if (e == SONG_FOREVER) str_cpy(val, "LOOP", sizeof val);
+            if (e == SONG_FOREVER) str_cpy(val, "REPEAT", sizeof val);
             else if (e >= 2u) { val[0] = 'x'; fmt_int(val + 1, (int32_t)e); }
             else str_cpy(val, "STOP", sizeof val);
             hot_text_column(1, "END", val);
@@ -1526,7 +1526,7 @@ static void draw_columns(void)
             hot_gauge_column(0, "PROJECT", val, (int32_t)song_save_target * 1000 / (int32_t)(NSONG - 1u));
             draw_act_column(2, "ERASE", T_THEME, ICON_AUTO);
         }
-        draw_act_column(1, "LOAD", used || (save_level() == SV_LIB && (song_draft || song_save_target != song_cur)) ? T_THEME : T_DIM, ICON_AUTO);
+        draw_act_column(1, save_level() == SV_PROJ ? "PLAY/EDIT" : "LOAD", used || (save_level() == SV_LIB && (song_draft || song_save_target != song_cur)) ? T_THEME : T_DIM, ICON_AUTO);
         draw_act_column(3, "SAVE", T_THEME, ICON_AUTO);
         return;
     }

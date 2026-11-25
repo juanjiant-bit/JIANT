@@ -1912,7 +1912,7 @@ static __attribute__((noinline)) void gen_kit(track_t *t)
     t->p[P_LN3] = (int16_t)(gs.g->hats == HC_MACHINE ? 112 : 118);   /* (the hats a little under) */
     t->p[P_LN4] = 118;
     t->p[P_LN6] = t->p[P_LN7] = 110;
-    if (gs.g->drum == DM_JAZZ) { t->p[P_LN0] = 72; t->p[P_LN3] = 70; t->p[P_LN4] = 76; }   /* (V10.6w) JAZZ's kick feathered, under
+    if (gs.g->drum == DM_JAZZ) { t->p[P_LN0] = 72; t->p[P_LN3] = 54; t->p[P_LN4] = 58; }   /* (V10.6w) JAZZ's kick feathered, under
                                                          * the ride; (V10.8.41, the owner: "jazz's hats still far too
                                                          * loud") the foot and the ride ~7 dB down (the lanes' square law) */
     if (glatin() && gs.gi) {                            /* (V10.8.41, the owner: cumbia's "guiro shorter") */
@@ -1947,6 +1947,8 @@ static __attribute__((noinline)) void gen_kit(track_t *t)
             t->p[P_E7] = (int16_t)clamp(t->p[P_E7] + m / 2, 0, 127);
         }
     }
+    if (gs.g->drum == DM_JAZZ)                          /* (V10.8.47, the owner: "jazz's hats at 50 % or less") whatever the mood */
+        for (i = 3; i < 5u; i++) if (t->p[P_LN0 + i] > 63) t->p[P_LN0 + i] = 63;
 }
 /* (V10.8.41) the maps that are no four on the floor (half-time, breaks, electro, jazz): MOOD DANCE leaves their kick's places */
 static const uint32_t GHALF[3] = {1u << DM_PHONK | 1u << DM_PHONK2 | 1u << DM_TRAP | 1u << DM_DRILL | 1u << DM_BAILE | 1u << DM_BAILE2 | 1u << DM_ELECTRO |

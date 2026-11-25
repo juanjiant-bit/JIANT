@@ -102,7 +102,7 @@ static void song_len_txt(char *b, uint32_t total)
     uint32_t end = SONG_END(&chain_config);
     fmt_int(b, (int32_t)total);
     str_cpy(b + str_len(b), " BARS \xB7 ", 9);
-    if (end == SONG_FOREVER) str_cpy(b + str_len(b), "LOOP", 6);
+    if (end == SONG_FOREVER) str_cpy(b + str_len(b), "END REPEAT", 11);
     else if (end >= 2u) { uint32_t k = str_len(b); b[k] = 'x'; fmt_int(b + k + 1u, (int32_t)end); }
     else str_cpy(b + str_len(b), "STOP", 6);
 }
@@ -426,16 +426,21 @@ static void graph_proj(void)
         cv_rect(x, 2, 56, 49, c);
         GFX_HOOK_ALIGN(0, 8, 0, 19, AL_V | AL_PASS, "project section letter");
         cv_text_on(x + 6, 4, &AF_M, b, ink, c);
-        cv_free_text(x + 6, 25, &AF_X, !used ? "EMPTY" : nm[0] ? nm : "USED", ink, c, 47);
+        if (used && !nm[0]) {                            /* (V10.8.47, the owner) no name: its bars in the song ("0 BARS": in no row) */
+            fmt_int(b, (int32_t)song_bars(i));
+            str_cpy(b + str_len(b), " BARS", 6);
+            nm = b;
+        }
+        cv_free_text(x + 6, 25, &AF_X, used ? nm : "EMPTY", ink, c, 47);
         if (live.cur == (int8_t)i && used)
-            cv_text_r(x + 52, 38, &AF_X, "NOW", ink, c);
+            cv_text_r(x + 52, 38, &AF_X, "PLAYING", ink, c);
         if (pick) {                                      /* (2 px, round it) */
             cv_frame(x - 2, 0, 60, 53, T_TEXT);
             cv_frame(x - 1, 1, 58, 51, T_TEXT);
         }
     }
     GFX_HOOK_ALIGN(0, 58, 0, 69, AL_V | AL_PASS, "project arrange title");
-    cv_text(6, 58, &AF_X, "ARRANGE", T_DIM);
+    cv_text(6, 58, &AF_X, "ARRANGE  PART+BARS", T_DIM);
     for (i = 0; i < n && i < CHAIN_ROWS; i++) {
         const chain_row_t *r = &chain_config.row[i];
         int32_t x = 4 + (int32_t)(i % 8u) * 293 / 10, y = 72 + (int32_t)(i / 8u) * 22;

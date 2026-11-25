@@ -486,7 +486,7 @@ static void section_store(uint32_t s)
     memcpy(&proj_slot[s], &proj_wire, sizeof proj_slot[s]);
     live.cur = (int8_t)s;
     live.dirty |= (uint8_t)(1u << s);
-    ui_say("STORED ", b);
+    ui_say("SAVED ", b);
 }
 /* RECALL: the section playing back as it was stored */
 static void section_recall(void)

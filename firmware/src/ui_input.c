@@ -1822,7 +1822,9 @@ slot_action:
     switch (id) {
     case G_LOAD:
         undo_mark();                                      /* (0.6.21) UNDO: the music before the load */
-        project_load(k);
+        if (song.playing && !(chain.running && !chain.loop)) section_jump(k);   /* (V10.8.47, the owner: PLAY/EDIT) playing: in on
+                                                           * the next bar, as the layer's PLAY A (was: cut in at once) */
+        else project_load(k);
         break;
     case G_SAVE:                                          /* the NAME screen writes it */
         if (transport_busy())
