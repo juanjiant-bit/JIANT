@@ -135,6 +135,22 @@ try {
     ok(frames === 8 && name === "GLIDE" && /GLIDE/.test(sent) && /GLIDE/.test(opt) && diff === 0 && fmHidden,
       `wavetables: glide.wav -> 8 frames, sent to USER 3 ("${sent}"), read back the same; hidden on FM`);
   }
+  /* radio: the generator's pieces voted (the pretend generator of ?mock=1); a vote posted to Supabase (intercepted), a
+     409 taken as done, a skip posts nothing */
+  {
+    const q = await page("?mock=1#radio", { width: 1280, height: 900 });
+    const posts = [];
+    await q.route("https://tjscbsiofkxshzckmmhk.supabase.co/**", (r) => { posts.push({ h: r.request().headers(), b: JSON.parse(r.request().postData()) }); r.fulfill({ status: posts.length === 2 ? 409 : 201, body: "" }); });
+    await q.click("#rdgo"); await q.waitForTimeout(1500);
+    const now = await q.textContent("#rdnow");
+    await q.click("#rdup"); await q.waitForTimeout(800);
+    await q.click("#rddown"); await q.waitForTimeout(800);
+    await q.click("#rdskip"); await q.waitForTimeout(800);
+    const b0 = posts[0] && posts[0].b, count = await q.textContent("#rdcount");
+    ok(now === "HOUSE" && posts.length === 2 && b0.device === "FM" && b0.vote === 1 && posts[1].b.vote === -1 && b0.genre === "HOUSE" && b0.version === "V10.8.44" &&
+       /^c[0-9a-f]{24}$/.test(b0.client) && posts[0].h.apikey && posts[1].b.seed !== b0.seed && /2/.test(count),
+      `radio: ${now}, 👍 and 👎 posted (${posts.map((p) => p.b.vote).join(" ")}, a 409 taken), ⏭ nothing; "${count}"`);
+  }
   /* rescue: the published JIANT FM and JieLi's loader fetched and checked, a board's fm1-rescue.uf2 made */
   {
     const ctx = await b.newContext({ viewport: { width: 1280, height: 900 }, acceptDownloads: true });

@@ -250,6 +250,12 @@
   .lrstate { margin: 0; font-size: clamp(16px, 1.6vw, 19px); line-height: 1.5; max-width: 62ch; }
   .lrhow { margin: 0; padding-left: 20px; color: var(--dim); }
   .lrhow li { margin: 4px 0; max-width: 70ch; }
+  .rdcard { text-align: center; }
+  .rdnow { font-family: var(--mono); font-size: 28px; margin: 6px 0 0; }
+  .rdmeta { margin: 4px 0 14px; }
+  .rdvote { display: flex; gap: 14px; justify-content: center; margin-bottom: 14px; }
+  .rdbig { font-size: 40px; min-width: 96px; min-height: 80px; }
+  .rdcard .wtsend { justify-content: center; }
   .wtframes { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin: 8px 0; }
   .wtframes canvas { width: 100%; aspect-ratio: 1; background: var(--field); border-radius: var(--radius-s); cursor: pointer; }
   .wtframes canvas.on { outline: 2px solid var(--accent); }
@@ -432,6 +438,7 @@
       <button data-go="rec" data-t="vRec"></button>
       <button data-go="proj" data-t="vProj"></button>
       <button data-go="wt" data-t="vWt"></button>
+      <button data-go="radio" data-t="vRadio"></button>
       <button data-go="learn" data-t="vLearn"></button>
       <button data-go="docs" data-t="vDocs"></button>
       <button data-go="rescue" data-t="vRescue"></button>
@@ -580,6 +587,22 @@
         <button class="btn" id="wtsend" type="button" data-t="wtSend"></button><button class="btn ghost" id="wtload" type="button" data-t="wtLoad"></button></div>
       <div class="bkprog" id="wtprog" hidden><i id="wtbar"></i></div>
     </div>
+  </section>
+
+  <!-- ======================================================================================= radio (votes) -->
+  <section class="view" id="v-radio" hidden>
+    <div class="viewhead"><div><p class="eyebrow" data-t="vRadio"></p><h1 data-t="rdTitle"></h1></div>
+      <div class="emuctl"><button class="btn" id="rdgo" type="button"></button></div></div>
+    <p class="lead" data-t="rdLead"></p>
+    <p class="projstat" id="rdstat" role="status"></p>
+    <div class="card rdcard" id="rdcard" hidden>
+      <p class="rdnow" id="rdnow"></p>
+      <p class="dim rdmeta" id="rdmeta"></p>
+      <div class="rdvote"><button class="btn rdbig" id="rdup" type="button" aria-label="+1">👍</button><button class="btn rdbig" id="rddown" type="button" aria-label="−1">👎</button><button class="btn ghost rdbig" id="rdskip" type="button" aria-label="skip">⏭</button></div>
+      <div class="wtsend"><label><span data-t="rdGenre"></span> <select id="rdgenre"></select></label>
+        <label><span data-t="rdMood"></span> <input id="rdmood" type="range" min="-50" max="50" value="0"></label><span class="dim" id="rdcount"></span></div>
+    </div>
+    <p class="dim" data-t="rdPrivacy"></p>
   </section>
 
   <!-- ======================================================================================= how it works -->

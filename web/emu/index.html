@@ -494,6 +494,7 @@ async function midiOn() {
 /* (studio) JIANT Studio's editor talks to this emulator as to an FM-1 (web/emu/editor-api.h): a frame in (sysex), the
  * replies and the live pushes out to each listener; on() says whether the emulator runs */
 const sysexListeners = new Set(), tapListeners = new Set();
+const genWait = new Map(); let genSeq = 0;
 window.jiantEmu = {
   on: () => !!node,
   midiInputs: () => midiAccess ? [...midiAccess.inputs.values()].filter((p) => p.state !== "disconnected").map((p) => ({ id: p.id, name: p.name || p.id })) : [],
@@ -505,6 +506,14 @@ window.jiantEmu = {
   listen: (f) => { sysexListeners.add(f); return () => sysexListeners.delete(f); },
   /* (studio) the recorder: f gets { at, planes: [T1..T6, FX L, FX R] (44.1 kHz), midi: [{ at, data }] } about every
      93 ms while tapped; returns stop. The stems as MENU > USB STEMS sends them, MIDI as MIDI OUT does */
+  /* (studio RADIO) the generator: gen(cmd, arg, genres) -> { ok, info: [radio, genre, seed, mood, energy, form, piece,
+     playing], genres }; cmd null only reads. ok false: this firmware has no web_gen_info */
+  gen: (cmd = null, arg = 0, genres = false) => new Promise((res) => {
+    if (!node) { res({ ok: false }); return; }
+    const id = ++genSeq; genWait.set(id, res);
+    node.port.postMessage({ type: "gen", id, cmd, arg, genres });
+    setTimeout(() => { if (genWait.delete(id)) res({ ok: false }); }, 1500);
+  }),
   tap: (f) => {
     if (!node) return null;
     tapListeners.add(f);
@@ -545,6 +554,7 @@ async function switchOn() {
         }
         else if (m.type === "sysex") sysexListeners.forEach((f) => m.msgs.forEach(f));
         else if (m.type === "tap-chunk") tapListeners.forEach((f) => f(m));
+        else if (m.type === "gen") { const r = genWait.get(m.id); if (r) { genWait.delete(m.id); r(m); } }
         else if (m.type === "frame") {
           if (m.sysex) sysexListeners.forEach((f) => m.sysex.forEach(f));
           if (m.fb) drawScreen(m.fb);

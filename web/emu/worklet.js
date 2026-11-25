@@ -165,6 +165,22 @@ if (typeof registerProcessor === "function") {
         const out = sysexOut(ex);
         if (out.length) this.port.postMessage({ type: "sysex", msgs: out });
       }
+      else if (m.type === "gen") {                 // (studio RADIO) the generator: a command (web_gen_cmd), then its state
+        if (m.cmd != null && ex.web_gen_cmd) ex.web_gen_cmd(m.cmd >>> 0, m.arg | 0);
+        let info = null, genres = null;
+        if (ex.web_gen_info) {
+          const p = ex.web_gen_info();                // a static int32[8] of the firmware's
+          if (p) info = Array.from(new Int32Array(ex.memory.buffer, p, 8));
+        }
+        if (m.genres && ex.web_gen_genre) {
+          genres = [];
+          for (let i = 0, a; i < 64 && (a = ex.web_gen_genre(i)); i++) {
+            const b = new Uint8Array(ex.memory.buffer, a, 32), z = b.indexOf(0);
+            genres.push(String.fromCharCode(...b.subarray(0, z < 0 ? 32 : z)));
+          }
+        }
+        this.port.postMessage({ type: "gen", id: m.id, ok: !!ex.web_gen_info, info, genres });
+      }
       else if (m.type === "visible") this.period = m.on ? 1 / 30 : 1 / 4;
       else if (m.type === "meter") {               // the output's level since the last ask (tests, the page)
         this.metering = true;
