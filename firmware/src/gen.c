@@ -1730,7 +1730,7 @@ static __attribute__((noinline)) void gen_sound(track_t *t, uint32_t role, uint3
     {   /* (gen3) the envelope by the role, whatever the archetype (gen_tables.c ENV_RULE): a lead never at full sustain, a
          * pluck or a stab short, a held pad slow in and out */
         const uint8_t *er = ENV_RULE[role == RL_LEAD ? ((r->sus & 15u) < 7u) : role == RL_ARP ? 1 : role == RL_BASS ? 4 : role != RL_PAD ? 5 :
-                                     GSTAB(gs.g->pads) ? 2 : (0x103u >> gs.g->pads) & 1u ? 3 : 5];   /* (held: HOLD SWELL DRONE) */
+                                     GSTAB(gs.g->pads) ? 2 : ((0x103u >> gs.g->pads) & 1u) || gs.g->wet >= 70u ? 3 : 5];   /* (held: HOLD SWELL DRONE; V10.8.46: a wet genre's other chords too) */
         for (i = 0; i < 4u; i++)
             t->p[P_ATK + i] = (int16_t)clamp(t->p[P_ATK + i], (er[i] >> 4) * 8, (er[i] & 15u) * 8 + 7);
         if (grd.mood < 0 && role != RL_BASS) {          /* (V10.8.45) towards CALM: softer in, longer out */
@@ -1749,6 +1749,7 @@ static __attribute__((noinline)) void gen_sound(track_t *t, uint32_t role, uint3
         t->p[P_ED_FLT] = grg(r->envf, 4);
         if (role != RL_PAD && role != RL_TEX && t->p[P_ED_FLT] < 6)   /* (gen3: the filter's envelope on a bass, a lead, an arp) */
             t->p[P_ED_FLT] = (int16_t)(12 + (gs.complex >> 3));   /* (V10.8.45: more of it, was 6 .. 12) */
+        else if (role == RL_PAD && t->p[P_ED_FLT] < 4) t->p[P_ED_FLT] = 6;   /* (V10.8.46: a chord's filter opens with its envelope) */
     }
     if (r->lfo) {                                       /* the LFO on the filter: a slow drift, or on the beat */
         uint32_t lr = r->lfo & 15u;
@@ -2066,6 +2067,26 @@ static __attribute__((noinline)) void gfxs_own(track_t *t, uint32_t r, uint32_t 
         if (r == RL_BASS || r == RL_LEAD) t->p[P_CHOR] = (int16_t)grr(55, 70);
     }
 }
+/* (V10.8.46, the owner: "every part its timbre, and modulations, parameters that evolve, a story in the sound: it is
+ * not only placing notes") a melodic part never still, a LOOP's too: its LFO where no vibrato has it, slow and free of
+ * the notes (5 .. 20 s, a part its own period, no bar's), on the filter where nothing moved it and on the shape with
+ * it; the part across the stereo over four bars or two (the bass in the middle); a lead's and an arp's note its
+ * envelope on the shape too */
+static __attribute__((noinline)) void gen_evolve(track_t *t, uint32_t r)
+{
+    uint32_t k = (uint32_t)(t - trk);
+    if (r == RL_DRUM || r >= RL_N) return;
+    if (!t->p[P_LD_PIT]) {
+        if (!t->p[P_LD_FLT] && !t->p[P_LD_AMP]) {
+            t->p[P_LWAVE] = (int16_t)(k & 1u ? LW_DRIFT : LW_SIN); t->p[P_LRATE] = (int16_t)(1u + 4u * r + (gs.root & 3u));
+            t->p[P_LPHASE] = -1; t->p[P_LFADE] = 0;
+            t->p[P_LD_FLT] = (int16_t)(r == RL_BASS ? 5 : 9);
+        }
+        if (!t->p[P_LD_SHP] && r != RL_BASS) t->p[P_LD_SHP] = 12;   /* (the bass's weight as it is: its filter alone) */
+    }
+    if (r != RL_BASS && !t->p[P_APDEP]) { t->p[P_APDEP] = (int16_t)(12u + 4u * r); t->p[P_APSYNC] = 1; t->p[P_APRATE] = (int16_t)(k & 1u); }
+    if (!t->p[P_ED_SHP] && (r == RL_LEAD || r == RL_ARP)) t->p[P_ED_SHP] = (int16_t)(2u * r + 4u);
+}
 BTAPP_FN static void gen_fxs(track_t *t, uint32_t r)
 {
     uint32_t s = ((uint32_t)gs.g->dtype >> 2) % (FXS_WARM + 1u);
@@ -2214,7 +2235,12 @@ static uint32_t grow(uint32_t r, uint32_t s, uint32_t bars, uint32_t m, uint32_t
         uint32_t i, n;
         if (!r) memset(seen, 0, sizeof seen);
         n = seen[s & 3u]++;
-        for (i = 0; i < 4u && r; i++) sc->mac[i] = (uint8_t)((r * (29u + 18u * i) + (i ? 0u : r * 4u)) % 72u);
+        for (i = 0; i < 4u && r; i++) {                 /* (V10.8.46: an arc, a row a step of a dozen from the one before, were
+                                                         * leaps of up to 70: M1 opens, closes and ends a little open, the
+                                                         * others their own turns) */
+            uint32_t q = (r + 2u * i) & 7u;
+            sc->mac[i] = (uint8_t)((q < 4u ? q : 8u - q) * (10u - 2u * i) + (i ? 0u : 2u * r));
+        }
         for (i = RL_DRUM; n && i <= RL_ARP; i += i ? 1u : RL_LEAD) {   /* (the drums, the lead, the arp) */
             uint32_t k = gs.trk_of[i];
             if (k < NTRK && !((var >> (4u * k)) & 15u)) var |= (uint32_t)(RV_MUT1 + ((n - 1u) & 1u)) << (4u * k);
@@ -2302,7 +2328,8 @@ static void gen_parts(void)
             if (plan && k == 2u)                        /* .. the master's high-pass opening over its last bar (V10.8.45, the
                                                          * owner: "the DJ FILTER's automations too long and abrupt": was
                                                          * two bars to 48 in quarter steps; a bar to 30 in eighths) */
-                for (i = 0; i < 8u; i++) gmot(t, 48u + 2u * i, MOT_DJF, (int32_t)((i + 1u) * (i + 1u) * 15u / 32u), 0);
+                for (i = 0; i < 16u; i++) gmot(t, 48u + i, MOT_DJF, (int32_t)((i + 1u) * (i + 1u) * 3u / 32u), 0);   /* (V10.8.46: "smooth": a
+                                                         * sixteenth a step of 3 at most, to 24; was eighths to 30) */
         }
         /* (0.8.3) the section's harmony: the break and the apex on the predominant (not the modal loops: theirs keep
          * the loop); PARTS' last section a whole step up where the genre lifts (pop's last chorus) */
@@ -3028,7 +3055,7 @@ BTAPP_FN static void gen_pick(void)
     if (g->lead == LD_RIFF) {                           /* (V10.6p) PHONK, BAILE FUNK: a throw's map with its bass (the
                                                          * 808 on its kick) and its tempo; its riff, the cowbell's (baile
                                                          * funk's: Bach's flute two times in five) */
-        uint32_t ph = g->drum == DM_PHONK, m = ph ? !(gr() & 3u) : gr() & 1u, fl = !ph && gch(12);   /* (V10.8.41: drift phonk three in four) */
+        uint32_t ph = g->drum == DM_PHONK, m = gr() & (ph ? 0u : 1u), fl = !ph && gch(12);   /* (V10.8.46, the owner: phonk the drift one alone; the Brazilian one in four gone) */
         if (!gs.mutant) {
             gmut.drum = (uint8_t)(g->drum + m);
             gs.ba = g->bass[gch(20) ? 2u : m];
@@ -3236,7 +3263,7 @@ static __attribute__((noinline)) void gen_make(void)
     }
     gen_scale_page();
     gseed(GS_MIX);
-    for (k = 0; k < NTRK; k++) { gen_mix(&trk[k], gs.role[k]); gen_fxs(&trk[k], gs.role[k]); }   /* (V10.7.63: its FX) */
+    for (k = 0; k < NTRK; k++) { gen_mix(&trk[k], gs.role[k]); gen_fxs(&trk[k], gs.role[k]); gen_evolve(&trk[k], gs.role[k]); }   /* (V10.7.63: its FX) */
     for (k = 0; k < NTRK && gx.on; k++)                 /* (0.8.6) EXPLORE: wider (V10.6n: no track's own swing: the pulse
                                                          * one) */
         if (gs.role[k] != RL_DRUM && gs.role[k] != RL_BASS) trk[k].p[P_PAN] = (int16_t)grr(-45, 45);

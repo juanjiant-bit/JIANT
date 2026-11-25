@@ -610,11 +610,11 @@ static const uint16_t RTRIM[SR_N] = {
  * an EP's, a pluck's lead, its archetype's sustain under 56, a pluck's), an ARP's a pluck's (a fast attack, a short-medium decay, a low sustain), the CHORDS stabbed short (STAB PULSE DUB SKANK COMP
  * BROKEN TRANCE: GSTAB) or held slow in and out (HOLD SWELL DRONE), a BASS fast in; the rest as the archetype has it */
 static const uint8_t ENV_RULE[6][4] = {
-    {GR(0, 23), GR(48, 95), GR(56, 95), GR(32, 63)},    /* lead (V10.8.45, the owner: "the envelopes": some release, was 16..47) */
-    {GR(0, 7), GR(32, 79), GR(0, 39), GR(16, 63)},      /* arp: a pluck */
+    {GR(8, 31), GR(48, 95), GR(56, 95), GR(32, 63)},    /* lead (V10.8.45, the owner: "the envelopes": some release, was 16..47; V10.8.46: soft in, 8..31, was 0..23) */
+    {GR(0, 7), GR(32, 71), GR(0, 31), GR(16, 63)},      /* arp: a pluck (V10.8.46: shorter, 32..71, less sustain, 0..31; were 32..79, 0..39) */
     {GR(0, 7), GR(32, 71), GR(0, 47), GR(16, 47)},      /* chords stabbed */
-    {GR(32, 127), GR(48, 127), GR(56, 127), GR(80, 127)},   /* chords held (V10.8.45: slower in 16 -> 32, longer out 64 -> 80) */
-    {GR(0, 15), GR(24, 127), GR(0, 127), GR(8, 63)},    /* bass */
+    {GR(48, 127), GR(48, 127), GR(56, 127), GR(88, 127)},   /* chords held (V10.8.45: slower in 16 -> 32, longer out 64 -> 80; V10.8.46: 48, 88) */
+    {GR(0, 7), GR(24, 127), GR(0, 127), GR(16, 47)},    /* bass (V10.8.46: firm in, 0..7, a middle release, 16..47; were 0..15, 8..63) */
     {GR(0, 127), GR(0, 127), GR(0, 127), GR(0, 127)},   /* the others */
 };
 #define GSTAB(p) ((0x3C7Cu >> (p)) & 1u)                /* CS_STAB PULSE DUB SKANK COMP BROKEN TRANCE CHUG CHARL: the chords short */

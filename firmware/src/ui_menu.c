@@ -209,6 +209,11 @@ static int32_t menu_document(int32_t y, int draw)
     y = menu_lines(ABOUT_PROJECT_PACK, y + 216, draw);
     if (bt_hw_seg())                                    /* (V10.13: in the segment) */
         y = about_load(y, draw);
+    {   /* (V10.8.46, the owner: only the CPU's lines were to go) the last crash, kept across power-off (cpu_safe.c) */
+        char b[40];
+        y = menu_text("LAST CRASH", y + 4, T_THEME, draw);
+        y = menu_text(crash_log_get(b) ? b : "NONE", y, T_TEXT, draw);
+    }
     y = menu_lines(ABOUT_CREDITS_PACK, y + 8, draw);
     return y + 4;
 }
