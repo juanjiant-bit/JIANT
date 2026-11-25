@@ -68,6 +68,7 @@ const TEXT = {
     rsAndroidT: "Sin computadora: la app FM-1 Rescue", rsAndroid: "Hace lo mismo desde un teléfono Android: graba la placa por OTG y muestra el avance del rescate. Todavía es una versión de prueba: se baja de GitHub (Actions › android › Artifacts › fm1-rescue) con una cuenta iniciada.",
     rsAndroidHow: "Cómo se usa", rsAndroidApk: "Bajar el APK", rsMore: "Cómo funciona",
     rsSafe: "Solo se escribe la zona del firmware (0x4000–0x92FFF), sector por sector, cada uno releído y comparado; la cabecera de arranque y tus datos no se tocan. Sin firmware dentro, la placa queda como un FM-1 Transporter común. Basado en FM-1 Transporter (Hügelton Instruments), MvaveFM1Unbricker (Quixotic7), jl-uboot-tool (kagaimiq) y la guía de GoodPerson42. Usalo con la batería cargada y bajo tu responsabilidad: todavía no se probó en un FM-1 real.",
+    rdLiked: "¿Qué te gustó? (opcional)", rdDisliked: "¿Qué no te gustó? (opcional)", rdNext: "Siguiente", rdpDrums: "Batería", rdpBass: "Bajo", rdpChords: "Acordes", rdpLead: "Lead", rdpArp: "Arp", rdpSound: "Sonido/mezcla",
     vRadio: "Radio", rdTitle: "Votá las piezas del generador", rdLead: "El emulador toca piezas nuevas del generador (GEN en RADIO), una tras otra. Decí si te gusta cada una: con tus votos el generador mejora. Tocá Empezar y subí el volumen.",
     rdStart: "Empezar", rdStop: "Parar", rdGenre: "Género", rdMood: "MOOD", rdSeed: "semilla", rdThanks: "%n votos, ¡gracias!",
     rdNoEmu: "Primero prendé el emulador en la pestaña Emulador (Switch on) y volvé.", rdOld: "El emulador publicado todavía no tiene RADIO para esta página: llega con su próxima versión.",
@@ -236,6 +237,7 @@ const TEXT = {
     rsAndroidT: "No computer: the FM-1 Rescue app", rsAndroid: "Does the same from an Android phone: flashes the board over OTG and shows the rescue's progress. Still a test version: it downloads from GitHub (Actions › android › Artifacts › fm1-rescue) while signed in.",
     rsAndroidHow: "How to use it", rsAndroidApk: "Get the APK", rsMore: "How it works",
     rsSafe: "Only the firmware area (0x4000–0x92FFF) is written, sector by sector, each read back and compared; the boot head and your data are not touched. Without a firmware inside, the board is a plain FM-1 Transporter. Built on FM-1 Transporter (Hügelton Instruments), MvaveFM1Unbricker (Quixotic7), jl-uboot-tool (kagaimiq) and GoodPerson42's guide. Use it with a charged battery and at your own risk: it has not been tried on a real FM-1 yet.",
+    rdLiked: "What did you like? (optional)", rdDisliked: "What didn't you like? (optional)", rdNext: "Next", rdpDrums: "Drums", rdpBass: "Bass", rdpChords: "Chords", rdpLead: "Lead", rdpArp: "Arp", rdpSound: "Sound/mix",
     vRadio: "Radio", rdTitle: "Vote on the generator's pieces", rdLead: "The emulator plays new pieces from the generator (GEN on RADIO), one after another. Say whether you like each one: your votes make the generator better. Press Start and turn the volume up.",
     rdStart: "Start", rdStop: "Stop", rdGenre: "Genre", rdMood: "MOOD", rdSeed: "seed", rdThanks: "%n votes, thank you!",
     rdNoEmu: "First switch the emulator on in the Emulator tab (Switch on) and come back.", rdOld: "The published emulator does not have RADIO for this page yet: it comes with its next version.",
@@ -1430,7 +1432,7 @@ $("wtload").onclick = async () => {
  * (web/emu worklet.js: the firmware's web_gen_info / web_gen_genre / web_gen_cmd) */
 const RD_URL = "https://tjscbsiofkxshzckmmhk.supabase.co/rest/v1/votes", RD_KEY = "sb_publishable_An299mMM1UZte-5dkjnojg_Cl_Lk6tM";
 const RD_FORMS = ["LOOP", "PARTS", "SONG"];
-const rd = { on: false, timer: 0, info: null, genres: [], piece: -1, since: 0, version: "", votes: 0, queue: [], retry: 0 };
+const rd = { pending: null, askT: 0, on: false, timer: 0, info: null, genres: [], piece: -1, since: 0, version: "", votes: 0, queue: [], retry: 0 };
 function rdClient() {
   let c = null;
   try { c = localStorage.getItem("jiant.studio.radio.client"); } catch (_) {}
@@ -1485,8 +1487,10 @@ async function rdStart() {
 }
 function rdStop() { rd.on = false; clearInterval(rd.timer); const G = rdGen(); if (G) G.gen(4, 0); renderRadio(); }
 async function rdSend(row) {
+  const post = (b) => fetch(RD_URL, { method: "POST", headers: { apikey: RD_KEY, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(b) });
   try {
-    const r = await fetch(RD_URL, { method: "POST", headers: { apikey: RD_KEY, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(row) });
+    let r = await post(row);
+    if (r.status === 400 && "parts" in row) { const { parts, ...rest } = row; r = await post(rest); }   // no `parts` column yet: the vote without it
     return r.ok || r.status === 409;                            // 409: this piece voted already from this browser
   } catch (_) { return false; }
 }
@@ -1494,19 +1498,31 @@ async function rdFlush() {
   while (rd.queue.length) { if (!(await rdSend(rd.queue[0]))) return; rd.queue.shift(); }
   clearInterval(rd.retry); rd.retry = 0;
 }
-async function rdNext(vote) {
+/* a vote: the optional "what did (not) you like" row (parts: drums 1, bass 2, chords 4, lead 8, arp 16, sound 32), then
+   one insert and the next piece; Next, or 4 s untouched */
+const RD_PARTS = ["rdpDrums", "rdpBass", "rdpChords", "rdpLead", "rdpArp", "rdpSound"];
+function rdAsk(vote) {
   const G = rdGen(); if (!G || !rd.on || !rd.info) return;
-  if (vote) {
-    const [, g, seed, mood, energy, form] = rd.info;
-    rd.queue.push({ device: state.fw === "byte" ? "BYTE" : "FM", version: rd.version, genre: g === -1 ? "EXPLORE" : rd.genres[g] || String(g), seed, mood, energy,
-      form: RD_FORMS[form] || "SONG", listened_s: Math.round((Date.now() - rd.since) / 1000), vote, client: rdClient() });
-    rd.votes++;
+  const [, g, seed, mood, energy, form] = rd.info;
+  rd.pending = { device: state.fw === "byte" ? "BYTE" : "FM", version: rd.version, genre: g === -1 ? "EXPLORE" : rd.genres[g] || String(g), seed, mood, energy,
+    form: RD_FORMS[form] || "SONG", listened_s: Math.round((Date.now() - rd.since) / 1000), vote, client: rdClient(), parts: 0 };
+  $("rdpartsq").textContent = t(vote > 0 ? "rdLiked" : "rdDisliked");
+  $("rdparts").replaceChildren(...RD_PARTS.map((k, i) => { const b = document.createElement("button"); b.type = "button"; b.className = "btn ghost rdchip"; b.textContent = t(k); b.setAttribute("aria-pressed", "false");
+    b.onclick = () => { rd.pending.parts ^= 1 << i; b.setAttribute("aria-pressed", String(!!(rd.pending.parts & (1 << i)))); rdArm(); }; return b; }));
+  $("rdask").hidden = false; $("rdvote").hidden = true; rdArm();
+}
+function rdArm() { clearTimeout(rd.askT); rd.askT = setTimeout(() => rdNext(), 4000); }
+async function rdNext() {
+  const G = rdGen(); clearTimeout(rd.askT);
+  $("rdask").hidden = true; $("rdvote").hidden = false;
+  if (rd.pending) {
+    rd.queue.push(rd.pending); rd.pending = null; rd.votes++;
     rdFlush().then(() => { if (rd.queue.length && !rd.retry) rd.retry = setInterval(rdFlush, 30000); });
   }
-  await G.gen(1, 0); await rdPoll();
+  if (G && rd.on) { await G.gen(1, 0); await rdPoll(); }
 }
 $("rdgo").onclick = () => (rd.on ? rdStop() : rdStart());
-$("rdup").onclick = () => rdNext(1); $("rddown").onclick = () => rdNext(-1); $("rdskip").onclick = () => rdNext(0);
+$("rdup").onclick = () => rdAsk(1); $("rddown").onclick = () => rdAsk(-1); $("rdskip").onclick = () => { rd.pending = null; rdNext(); }; $("rdnext").onclick = () => rdNext();
 $("rdgenre").onchange = async () => { const G = rdGen(); if (G) { await G.gen(2, +$("rdgenre").value); await G.gen(1, 0); await rdPoll(); } };
 $("rdmood").onchange = async () => { const G = rdGen(); if (G) { await G.gen(3, +$("rdmood").value); await rdPoll(); } };
 /* ------------------------------------------------------------------------------------------- how it works */
