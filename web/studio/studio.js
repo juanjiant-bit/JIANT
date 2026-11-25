@@ -521,6 +521,17 @@ try {
 } catch (_) {}
 
 /* ------------------------------------------------------------------------------------- views, firmware, target */
+/* the views' strip: its edges and arrows where it scrolls, the wheel sideways, the current one brought into view */
+{
+  const nv = document.querySelector("nav.views"), row = $("viewsrow");
+  const edges = () => { row.classList.toggle("l", nv.scrollLeft > 4); row.classList.toggle("r", nv.scrollLeft + nv.clientWidth < nv.scrollWidth - 4); };
+  nv.addEventListener("scroll", edges, { passive: true }); window.addEventListener("resize", edges);
+  nv.addEventListener("wheel", (e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && nv.scrollWidth > nv.clientWidth) { nv.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
+  $("navl").onclick = () => { nv.scrollLeft -= nv.clientWidth * 0.7; };
+  $("navr").onclick = () => { nv.scrollLeft += nv.clientWidth * 0.7; };
+  window.navShow = () => { const b = nv.querySelector('[aria-current="page"]'); if (b) nv.scrollTo({ left: b.offsetLeft - (nv.clientWidth - b.offsetWidth) / 2, behavior: "smooth" }); edges(); };
+  setTimeout(edges, 50);
+}
 const VIEWS = ["home", "install", "editor", "screen", "emu", "rec", "proj", "wt", "radio", "learn", "docs", "rescue", "ports"];
 function go(view, push = true) {
   if (!VIEWS.includes(view)) view = "home";
@@ -529,6 +540,7 @@ function go(view, push = true) {
   if (push && !(view === "learn" && /^#learn\//.test(location.hash))) history.replaceState(null, "", location.pathname + location.search + "#" + view);
   showFrames();
   render();
+  window.navShow && window.navShow();
   window.scrollTo({ top: 0 });
 }
 document.addEventListener("click", (e) => {
