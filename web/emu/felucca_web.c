@@ -555,10 +555,12 @@ EXPORT int32_t *web_gen_info(void)
 }
 EXPORT const char *web_gen_genre(uint32_t i) { return i < NGENRE ? GENRE[i].name : 0; }
 /* 0 RADIO off / on (arg), 1 the next piece now (a new seed, made at once: playing, it goes on playing; RADIO's count
- * too), 2 GENRE = arg, 3 MOOD = arg (-50..50), 4 PLAY (1) / STOP (0). Queued: run when the next block is asked for */
+ * too), 2 GENRE = arg, 3 MOOD = arg (-50..50), 4 PLAY (1) / STOP (0). Run at once (the worklet calls it between blocks); PLAY
+ * and STOP take effect on the next block */
 EXPORT void web_gen_cmd(uint32_t cmd, int32_t arg)
 {
     if (web_gen_qn < 8u) { web_gen_q[web_gen_qn][0] = (int32_t)cmd; web_gen_q[web_gen_qn][1] = arg; web_gen_qn++; }
+    web_gen_run();                                      /* (between blocks, as web_gen: web_gen_info after it says it) */
 }
 static void web_gen_run(void)
 {
