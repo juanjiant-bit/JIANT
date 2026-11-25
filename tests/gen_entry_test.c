@@ -146,6 +146,20 @@ int main(void)
         ok &= song.playing && grd.rn == 2u && n >= 31u && dice_print() != h0;
         if (!ok) printf("  radio: playing %u rn %u seed %u (was %u)\n", (unsigned)song.playing, grd.rn, gp.seed, sd0);
         bad += check("RADIO: off nothing; on, the next piece after the loop's 32 bars, playing on, twice", ok);
+        {   /* (V10.8.43, BYTE's) a STOP right on the piece's last bar stops: no next piece made, nothing playing (it
+             * made the next piece and played it) */
+            uint32_t rn;
+            for (n = 0; n < 40u && (bar_n & 31u) != 31u; n++) bars(1);
+            frames(8);
+            h0 = dice_print(); rn = grd.rn; sd0 = gp.seed;
+            ok = song.playing && grd.arm;
+            transport_req = 2; blk(); frames(200);
+            ok &= !song.playing && !grd.arm && grd.rn == rn && gp.seed == sd0 && dice_print() == h0;
+            frames(500);
+            ok &= !song.playing && dice_print() == h0;
+            if (!ok) printf("  radio stop: playing %u arm %u rn %u (%u) bar %u\n", (unsigned)song.playing, grd.arm, grd.rn, rn, (unsigned)bar_n);
+            bad += check("RADIO: a STOP on the loop's last bar stops (no next piece, nothing playing)", ok);
+        }
         gp.form = 2; gp.sig = 0;                         /* (a song: its END the next piece's cue) */
         transport_req = 2; blk();
         gen_press(); frames(64);
@@ -158,6 +172,17 @@ int main(void)
         ok &= grd.rn == 1u && song.playing && dice_print() != h0;
         if (!ok) printf("  radio song: rows %u bars waited %u playing %u rn %u\n", chain_config.count, n, (unsigned)song.playing, grd.rn);
         bad += check("RADIO: a song's last row ended, the next song made and playing", ok);
+        {   /* (V10.8.43) the song's last bar, STOP: the song stops, no next song (its own END alone goes on: chain.fin) */
+            uint32_t rn;
+            for (n = 0; n < 400u && !(chain.running && chain.row + 1u >= chain.config.count && chain.remaining <= 1u); n++) { bars(1); song_poll(); }
+            frames(64);
+            sd0 = gp.seed; rn = grd.rn;
+            ok = song.playing && grd.arm;
+            transport_req = 2; blk(); song_poll(); frames(500); song_poll(); frames(64);
+            ok &= !song.playing && !grd.arm && grd.rn == rn && gp.seed == sd0;
+            if (!ok) printf("  song stop: playing %u arm %u rn %u (%u) row %u/%u rem %u fin %u\n", (unsigned)song.playing, grd.arm, grd.rn, rn, chain.row, chain.config.count, chain.remaining, chain.fin);
+            bad += check("RADIO: a STOP on a song's last bar stops (no next song)", ok);
+        }
         transport_req = 2; blk();
         grd.on = 0; gp.form = 0; gp.genre = 0;
         for (r = 0; r < 24u; r++) {

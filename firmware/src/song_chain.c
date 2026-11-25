@@ -116,6 +116,7 @@ static struct {
     chain_config_t config;
     volatile uint8_t armed, running, row, remaining;   /* remaining: the bars of the row still to play */
     volatile uint8_t ended;           /* ISR: the song ended or stopped (song_poll brings the music back) */
+    volatile uint8_t fin;             /* ISR: the song played to its END (not a STOP; gen.c RADIO: the next piece) */
     volatile uint8_t applied;         /* ISR: a section went in (song_poll: the FM6 SLOTs, the screen) */
     volatile uint8_t armed_bar;       /* a quick chain asked for while playing: it starts on the next bar */
     uint8_t loop;                     /* the quick chain: round and round (a song stops at its end) */

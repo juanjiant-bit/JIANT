@@ -43,6 +43,30 @@ int main(void)
         ok = str_eq(cur_page()->title, "HARMONY") && song.g[G_HPROG] == 3;
         bad += check("SCL > HARMONY: the page, KNOB 1 the progression", ok);
     }
+    {   /* (V10.8.43, BYTE's; the owner: "GEN must not touch HARMONY") throws alternately with HARMONY off (the piece its
+         * own progression, as ever) and on (its four values kept; the melodic parts on the key's tonic chord, every
+         * section's too: HARMONY supplies the movement, not twice) */
+        uint32_t k, i, prog = 0;
+        ok = 1;
+        for (k = 0; k < 96u; k++) {
+            ui_power_on();
+            gp.genre = (uint8_t)(1u + (k >> 1) % NGENRE); gp.seed = (uint16_t)(100u + (k >> 1)); gp.energy = 60; gp.form = (uint8_t)((k >> 1) % 3u);
+            gp.complex = 50; gp.swing = GA_AUTO; gp.human = 30; gp.mix = 0;
+            for (i = 0; i < GP_N; ++i) gp.amt[i] = GA_AUTO;
+            song.g[G_HPROG] = k & 1u ? 3 : 0; song.g[G_HLEN] = 3; song.g[G_HEVO] = 40; song.g[G_HSKIP] = 2;
+            gen_go();
+            if (k & 1u) {
+                ok &= song.g[G_HPROG] == 3 && song.g[G_HLEN] == 3 && song.g[G_HEVO] == 40 && song.g[G_HSKIP] == 2 &&
+                      gs.pn == 1u && gs.pdeg[0] == 0u;
+                if (!(gs.pn == 1u && gs.pdeg[0] == 0u)) printf("  on: %s seed %u form %u pn %u deg %u\n", gs.g->name, gp.seed, gp.form, gs.pn, gs.pdeg[0]);
+            } else {
+                ok &= song.g[G_HPROG] == 0;
+                prog += gs.pn > 1u;
+            }
+        }
+        if (prog < 24u) printf("  off: a progression in %u of 48\n", prog);
+        bad += check("GEN leaves SCL > HARMONY alone: on, kept and the piece on the tonic chord; off, its own progression", ok && prog >= 24u);
+    }
     printf(bad ? "harmony: %d FAILED\n" : "harmony: all ok\n", bad);
     return bad != 0;
 }

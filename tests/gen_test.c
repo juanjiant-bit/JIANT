@@ -1225,10 +1225,8 @@ int main(void)
         printf("gen: leads %u (vibrato on %u), %u off the rule; pads %u off; kits %u, %u over\n", leads, vib, lfo_bad, pad_bad, kits, kit_bad);
         bad += gcheck("  the leads' and arps' pitch LFO 19 cents at most, 5 Hz or faster, faded in, no filter LFO with it (all genres, EXPLORE)",
                       !lfo_bad && vib && leads);
-        bad += gcheck("  the pads', chords', textures' pitch LFO a slow drift at most (PITCH 1, under 0.8 Hz; one preset's own vibrato aside)", pad_bad <= 1u);   /* (the gate
-                                                         * at V10.8.42: a chord part on a lead's preset keeps that preset's
-                                                         * faded-in vibrato: 5 of 3160 chord parts over 40 seeds a genre
-                                                         * (ELECTRO METAL, METALCORE, DEEP HOUSE); here ELECTRO METAL's one) */
+        bad += gcheck("  the pads', chords', textures' pitch LFO a slow drift at most (PITCH 1, under 0.8 Hz)", !pad_bad);   /* (V10.8.43: a
+                                                         * lead's preset on a chord part its fast vibrato off; V10.8.42 let one by) */
         bad += gcheck("  the drums: kick, clap, hats, toms DECAY under 96 / 64 / 32 / 84 / 80, GLUE 8 at most, LEVEL 116 at most, FEEDBK 4",
                       kits && !kit_bad);
     }

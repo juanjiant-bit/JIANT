@@ -145,6 +145,7 @@ static void chain_start(void)                         /* (seq_start) */
     chain.carry = 0;
     chain.bar_pos = 0;
     chain.armed_bar = 0;
+    chain.fin = 0;
     if (!chain.armed)
         return;
     chain.armed = 0;
@@ -191,6 +192,7 @@ static void chain_tick(uint32_t n)
         if (next >= chain.config.count) {
             uint32_t e = SONG_END(&chain.config);
             if (!chain.loop && !(e == SONG_FOREVER || (e >= 2u && chain.pass + 1u < e))) {   /* the song's end */
+                chain.fin = 1;
                 seq_stop();
                 return;
             }

@@ -50,7 +50,7 @@ static struct {
 /* (V10.8.39, the owner) RADIO: a piece ended, the next one made and played with no press (rn: how many so far; go: this
  * one is its); MOOD -50 CALM .. 50 DANCE (0: none): the energy, RANDOM's genres, a DANCE radio's tempo near the piece
  * before (bpm0). (Its own section: the data's addresses as they were, the pinned sound's code with them) */
-static struct { uint8_t on, rn, go; int8_t mood; int16_t bpm0; } grd __attribute__((section(".bss.dice")));
+static struct { uint8_t on, rn, go, arm; int8_t mood; int16_t bpm0; } grd __attribute__((section(".bss.dice")));
 #define GMOOD ((int32_t)grd.mood + 50)
 
 /* (V10.7.39) the cost model of gcpu_est (below, gen_make's), on CPU TEST's scale (instructions a sample on the host: its
@@ -1773,6 +1773,8 @@ static __attribute__((noinline)) void gen_sound(track_t *t, uint32_t role, uint3
         t->p[P_APDEP] = (int16_t)grr(30, 70); t->p[P_APSYNC] = 1; t->p[P_APRATE] = (int16_t)grr(3, 5);
     }
     if (role == RL_ARP) t->p[P_LD_PIT] = 0;             /* (V10.6z10: another preset's pad drift never on an arp) */
+    else if (!gx.on && role != RL_LEAD && role != RL_BASS && (t->p[P_LD_PIT] != 1 || t->p[P_LRATE] > 60)) t->p[P_LD_PIT] = 0;   /* (V10.8.43: a lead's
+                                                         * preset on a chord part: its fast vibrato off, a slow drift at most; EXPLORE: gx_sound's own rule) */
     t->p[P_DIST] = (int16_t)(role == RL_BASS || gch(70) ? gnear((int32_t)(r->dc >> 4) * 4, 12) : 0);   /* (V10.6z10: 12 and
                                                          * 14 either way, were 8 and 10) */
     t->p[P_DTYPE] = (int16_t)(gch(70) ? 0 : 2);
@@ -2284,7 +2286,7 @@ static void gen_parts(void)
         if (gls.on && gls.v.n && (k == 1u || (k == 3u && gch(50)))) { gs.pn = gls.v.n; memcpy(gs.pdeg, gls.v.deg, 8); }   /* (MY
                                                          * LOOP: the verse the genre's progression, the break it or the
                                                          * drop's) */
-        if (fam != HF_LOOP && ((form == FM_PARTS && k == 1u) || (form != FM_PARTS && k == 3u))) {
+        if (fam != HF_LOOP && !song.g[G_HPROG] && ((form == FM_PARTS && k == 1u) || (form != FM_PARTS && k == 3u))) {   /* (V10.8.43: HARMONY on: its) */
             if ((pn > 1u || gx.on) && !gls.on && !glatin() && gch(80)) {   /* (V10.8.36: EXPLORE's one chord too) */   /* (V10.8.34, the owner: "different parts within a song") the
                                                          * contrast section its own progression, the family's grammar's (as
                                                          * many chords as A's, A's qualities), from its predominant */
@@ -2863,8 +2865,10 @@ static void gen_scale_page(void)
 static void system_init_named(void);                   /* (project.c: system_init, the project's name kept) */
 static void gen_clean(void)
 {
-    int16_t bpm = song.g[G_BPM];
+    int16_t bpm = song.g[G_BPM], hm[4];
+    memcpy(hm, &song.g[G_HPROG], sizeof hm);            /* (V10.8.43, BYTE's) SCL > HARMONY the player's: kept */
     system_init_named();
+    memcpy(&song.g[G_HPROG], hm, sizeof hm);
     if (ui_prefs & PREF_BPM_LOCK) song.g[G_BPM] = bpm;
     memset(&gs, 0, sizeof gs);                          /* (LOOP: system_init) */
 }
@@ -2965,6 +2969,8 @@ BTAPP_FN static void gen_pick(void)
             gs.pq[k] = (uint8_t)(qq | f);
         }
     }
+    if (song.g[G_HPROG]) { gs.pn = 1; gs.pdeg[0] = 0; gs.pq[0] = QQ(gs.pq[0]); }   /* (V10.8.43, BYTE's) SCL > HARMONY on: the
+                                                         * parts on the key's tonic chord, HARMONY moving them (not twice) */
     gs.cst = 16u * g->cbars;
     if (gx.on || (g->spec & GSP_POLY))                  /* (V10.6n) EXPLORE: the chords over a cycle of 64 (48: three of
                                                          * them, or the 3:4 layer's), the period every track divides */
@@ -3450,12 +3456,21 @@ static __attribute__((noinline)) void gen_tick(void)   /* (every UI frame) */
         hm_n = pr->n;
     }
     /* (V10.8.39, the owner) RADIO: the piece's last bar (a song's last row's; a loop's sixteenth, its thirty-second
-     * over 110 BPM): the next one asked for, made on the bar line as OCT+'s (ENTRY's way; not MY LOOP's) */
-    if (grd.on && song.playing && song_draft && !gen_wait && gp.form < 3u &&   /* (a draft: GEN's own piece, never a saved song) */
-        (chain.running ? chain.row + 1u >= chain.config.count && chain.remaining <= 1u : bar_n % (song.g[G_BPM] > 110 ? 32u : 16u) == (song.g[G_BPM] > 110 ? 31u : 15u))) {
-        gen_new_seed();
-        gen_wait = grd.go = 1;
-        gen_wbar = bar_n;
+     * over 110 BPM) played through: the next one made on the bar line as OCT+'s (ENTRY's way; not MY LOOP's).
+     * (V10.8.43, BYTE's) a STOP in that bar stops: only the bar played to its end, or the song to its own END
+     * (chain.fin), brings the next piece (it was asked for when the bar began, and a STOP made it and played it) */
+    {
+        uint32_t a = grd.arm, lb = song.g[G_BPM] > 110 ? 31u : 15u;
+        grd.arm = 0;
+        if (grd.on && song_draft && !gen_wait && gp.form < 3u) {   /* (a draft: GEN's own piece, never a saved song) */
+            if (song.playing && (chain.running ? chain.row + 1u >= chain.config.count && chain.remaining <= 1u : (bar_n & lb) == lb))
+                grd.arm = 1;
+            else if (a && (song.playing || chain.fin)) {
+                gen_new_seed();
+                gen_wait = grd.go = 1;
+                gen_wbar = bar_n - 1u;
+            }
+        }
     }
     if (gen_wait && (!song.playing || bar_n != gen_wbar)) gen_press();
     gst_tick();
