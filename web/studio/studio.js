@@ -1431,7 +1431,9 @@ $("wtload").onclick = async () => {
  * (insert only; 409 = voted already, taken as done); offline, kept and sent later. The generator through jiantEmu.gen
  * (web/emu worklet.js: the firmware's web_gen_info / web_gen_genre / web_gen_cmd) */
 const RD_URL = "https://tjscbsiofkxshzckmmhk.supabase.co/rest/v1/votes", RD_KEY = "sb_publishable_An299mMM1UZte-5dkjnojg_Cl_Lk6tM";
-const RD_FORMS = ["LOOP", "PARTS", "SONG"];
+const RD_FORMS = ["LOOP", "PARTS", "SONG", "MY LOOP"];   // (3 MY LOOP: JIANT BYTE's)
+const rdInfo = (i) => Array.isArray(i) ? i : i ? [i.radio, i.genre, i.seed, i.mood, i.energy, i.form, i.n ?? i.piece, i.playing] : null;   // (BYTE's shell: an object)
+const rdGenre = (g) => g === -1 ? "EXPLORE" : g === -2 ? "RANDOM" : rd.genres[g] || String(g);
 const rd = { pending: null, askT: 0, on: false, timer: 0, info: null, genres: [], piece: -1, since: 0, version: "", votes: 0, queue: [], retry: 0 };
 function rdClient() {
   let c = null;
@@ -1457,7 +1459,7 @@ function renderRadio() {
   $("rdcard").hidden = !rd.on || !rd.info;
   if (!rd.info) return;
   const [, g, seed, mood, energy, form] = rd.info;
-  $("rdnow").textContent = g === -1 ? "EXPLORE" : rd.genres[g] || `#${g}`;
+  $("rdnow").textContent = rdGenre(g);
   $("rdmeta").textContent = `${t("rdMood")} ${mood > 0 ? "+" : ""}${mood} · ${RD_FORMS[form] || "?"} · ${t("rdSeed")} ${seed} · ${rd.version || ""}`;
   $("rdcount").textContent = rd.votes ? t("rdThanks").replace("%n", rd.votes) : "";
   for (const id of ["rdup", "rddown", "rdskip"]) $(id).disabled = !rd.on;
@@ -1467,9 +1469,9 @@ async function rdPoll() {
   const r = await G.gen(null, 0, !rd.genres.length);
   if (!r.ok) { rdSay(t("rdOld")); return; }
   if (r.genres && r.genres.length) { rd.genres = r.genres; $("rdgenre").replaceChildren(...[["-2", "RANDOM"], ["-1", "EXPLORE"], ...r.genres.map((n, i) => [String(i), n])].map(([v, n]) => { const o = document.createElement("option"); o.value = v; o.textContent = n; return o; })); }
-  rd.info = r.info;
-  if (r.info[6] !== rd.piece) { rd.piece = r.info[6]; rd.since = Date.now(); }
-  if (!r.info[0] && rd.on) G.gen(0, 1);                      // RADIO back on (the device's own keys can turn it off)
+  rd.info = rdInfo(r.info);
+  if (rd.info[6] !== rd.piece) { rd.piece = rd.info[6]; rd.since = Date.now(); }
+  if (!rd.info[0] && rd.on) G.gen(0, 1);                      // RADIO back on (the device's own keys can turn it off)
   rdSay(""); renderRadio();
 }
 async function rdStart() {
@@ -1504,7 +1506,7 @@ const RD_PARTS = ["rdpDrums", "rdpBass", "rdpChords", "rdpLead", "rdpArp", "rdpS
 function rdAsk(vote) {
   const G = rdGen(); if (!G || !rd.on || !rd.info) return;
   const [, g, seed, mood, energy, form] = rd.info;
-  rd.pending = { device: state.fw === "byte" ? "BYTE" : "FM", version: rd.version, genre: g === -1 ? "EXPLORE" : rd.genres[g] || String(g), seed, mood, energy,
+  rd.pending = { device: state.fw === "byte" ? "BYTE" : "FM", version: rd.version, genre: rdGenre(g), seed, mood, energy,
     form: RD_FORMS[form] || "SONG", listened_s: Math.round((Date.now() - rd.since) / 1000), vote, client: rdClient(), parts: 0 };
   $("rdpartsq").textContent = t(vote > 0 ? "rdLiked" : "rdDisliked");
   $("rdparts").replaceChildren(...RD_PARTS.map((k, i) => { const b = document.createElement("button"); b.type = "button"; b.className = "btn ghost rdchip"; b.textContent = t(k); b.setAttribute("aria-pressed", "false");
