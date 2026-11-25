@@ -6,7 +6,8 @@ Firmware personalizado para el M-VAVE FM-1, de Juan Jiant. Primero la versión m
 
 | Versión | Fecha | Estado |
 | --- | --- | --- |
-| V10.8.26 … V10.8.42 | 2026-11-24 … 11-25 | Beta |
+| **V10.8.42** | 2026-11-25 | **Pública** |
+| V10.8.26 … V10.8.41 | 2026-11-24 | Beta |
 | **V10.8.25** | 2026-11-24 | **Pública** |
 | V10.8.22 … V10.8.24 | 2026-11-23 | Beta |
 | **V10.8.21** | 2026-11-23 | **Pública** |
@@ -46,7 +47,7 @@ Antes de instalar, revisá los apartados **Compatibilidad**.
 
 ---
 
-## V10.8.42 — generador: hard bass con donk, dream pop con dos arreglos (2026-11-25, beta)
+## V10.8.42 — generador: hard bass con donk, dream pop con dos arreglos (2026-11-25)
 
 - Solo el generador: HARD BASS con bajo donk, DREAM POP con dos arreglos (órgano o tipo guitarra) y más lento, los acentos se conservan, IDM AMBIENT desde 76 BPM. Ninguna página ni gesto cambia.
 

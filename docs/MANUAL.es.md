@@ -1,7 +1,7 @@
 # JIANT FM — Manual de usuario
 
-**JIANT FM V10.8.42 para el M-VAVE FM-1** (la versión pública es la V10.8.21; de la V10.8.22 a la V10.8.42 son betas:
-lo que cambió en ellas está en [Lo nuevo en V10.8.42](#lo-nuevo-en-v10842-desde-v10821))
+**JIANT FM V10.8.42 para el M-VAVE FM-1** (versión pública; lo que cambió desde la V10.8.21
+está en [Lo nuevo en V10.8.42](#lo-nuevo-en-v10842-desde-v10821))
 
 > *English version: [MANUAL.md](MANUAL.md).*
 
@@ -39,7 +39,7 @@ versión pública) o de antes: [Qué hay de nuevo en esta versión](#qué-hay-de
 
 ### Lo nuevo en V10.8.42 (desde V10.8.21)
 
-Las betas V10.8.22 a V10.8.42 en una lista. Donde un capítulo de abajo todavía describe la pantalla anterior, vale esta lista.
+Las versiones V10.8.22 a V10.8.42 en una lista. Donde un capítulo de abajo todavía describe la pantalla anterior, vale esta lista.
 
 - **RADIO y MOOD** (V10.8.39–V10.8.41; HOME › GENERATOR 4): **KNOB 3 RADIO** ON / OFF: cuando termina la última fila
   del tema (un loop: a los 16 compases, 32 por encima de 110 BPM) el generador arma solo la pieza siguiente y entra en
