@@ -250,6 +250,7 @@
   .lrstate { margin: 0; font-size: clamp(16px, 1.6vw, 19px); line-height: 1.5; max-width: 62ch; }
   .lrhow { margin: 0; padding-left: 20px; color: var(--dim); }
   .lrhow li { margin: 4px 0; max-width: 70ch; }
+  nav.views .navradio { color: var(--accent); font-weight: 700; }
   .rdcard { text-align: center; }
   .rdask { margin-bottom: 14px; } .rdparts { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 8px 0 12px; }
   .rdchip[aria-pressed="true"] { background: var(--accent); color: var(--bg); }
@@ -432,6 +433,7 @@
   <div class="bar">
     <a class="brand" href="#home" data-go="home" aria-label="JIANT Studio">JIANT <span class="fw" id="brandfw">FM</span> <small>studio</small></a>
     <nav class="views" aria-label="Studio">
+      <button data-go="radio" data-t="vRadio" class="navradio"></button>
       <button data-go="home" data-t="vHome"></button>
       <button data-go="install" data-t="vInstall"></button>
       <button data-go="editor" data-t="vEditor"></button>
@@ -440,7 +442,6 @@
       <button data-go="rec" data-t="vRec"></button>
       <button data-go="proj" data-t="vProj"></button>
       <button data-go="wt" data-t="vWt"></button>
-      <button data-go="radio" data-t="vRadio"></button>
       <button data-go="learn" data-t="vLearn"></button>
       <button data-go="docs" data-t="vDocs"></button>
       <button data-go="rescue" data-t="vRescue"></button>
