@@ -251,6 +251,8 @@
   .lrhow { margin: 0; padding-left: 20px; color: var(--dim); }
   .lrhow li { margin: 4px 0; max-width: 70ch; }
   .rdcard { text-align: center; }
+  .rdask { margin-bottom: 14px; } .rdparts { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 8px 0 12px; }
+  .rdchip[aria-pressed="true"] { background: var(--accent); color: var(--bg); }
   .rdnow { font-family: var(--mono); font-size: 28px; margin: 6px 0 0; }
   .rdmeta { margin: 4px 0 14px; }
   .rdvote { display: flex; gap: 14px; justify-content: center; margin-bottom: 14px; }
@@ -598,7 +600,8 @@
     <div class="card rdcard" id="rdcard" hidden>
       <p class="rdnow" id="rdnow"></p>
       <p class="dim rdmeta" id="rdmeta"></p>
-      <div class="rdvote"><button class="btn rdbig" id="rdup" type="button" aria-label="+1">👍</button><button class="btn rdbig" id="rddown" type="button" aria-label="−1">👎</button><button class="btn ghost rdbig" id="rdskip" type="button" aria-label="skip">⏭</button></div>
+      <div class="rdask" id="rdask" hidden><p id="rdpartsq"></p><div class="rdparts" id="rdparts"></div><button class="btn" id="rdnext" type="button" data-t="rdNext"></button></div>
+      <div class="rdvote" id="rdvote"><button class="btn rdbig" id="rdup" type="button" aria-label="+1">👍</button><button class="btn rdbig" id="rddown" type="button" aria-label="−1">👎</button><button class="btn ghost rdbig" id="rdskip" type="button" aria-label="skip">⏭</button></div>
       <div class="wtsend"><label><span data-t="rdGenre"></span> <select id="rdgenre"></select></label>
         <label><span data-t="rdMood"></span> <input id="rdmood" type="range" min="-50" max="50" value="0"></label><span class="dim" id="rdcount"></span></div>
     </div>
