@@ -381,7 +381,8 @@ const emu = {
       ac.audioWorklet.addModule("worklet.js?v=" + Date.now())]);
     this.store = opts.store ? await opts.store(wasm) : STORE;   // (where its flash is kept in this browser)
     const node = new AudioWorkletNode(ac, "felucca", { numberOfInputs: opts.input ? 1 : 0, numberOfOutputs: 1, outputChannelCount: [2] });
-    node.connect(ac.destination);
+    /* (the owner: "the emulators sound quiet at full volume next to the phone's other sound") the speakers' path 8 dB up through a limiter: the firmware's master peaks near -9 dBFS as the FM-1's DAC does; the recording stream and the stems stay at the device's level */
+    { const spk = ac.createGain(), lim = ac.createDynamicsCompressor(); spk.gain.value = 2.5; lim.threshold.value = -2; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.002; lim.release.value = 0.08; node.connect(spk).connect(lim).connect(ac.destination); }
     await new Promise((res, rej) => {
       node.port.onmessage = (e) => {
         const m = e.data;
