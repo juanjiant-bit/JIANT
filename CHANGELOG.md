@@ -6,7 +6,9 @@ Custom firmware for the M-VAVE FM-1 by Juan Jiant. Newest version first.
 
 | Version | Date | Status |
 | --- | --- | --- |
-| V10.8.22 … V10.8.37 | 2026-11-23 … 11-24 | Beta |
+| V10.8.26 … V10.8.42 | 2026-11-24 … 11-25 | Beta |
+| **V10.8.25** | 2026-11-24 | **Public** |
+| V10.8.22 … V10.8.24 | 2026-11-23 | Beta |
 | **V10.8.21** | 2026-11-23 | **Public** |
 | V10.8.1 … V10.8.20 | 2026-11-21 … 11-23 | Beta |
 | **V10.7.81** | 2026-11-21 | **Public** |
@@ -42,6 +44,37 @@ The sections marked **Compatibility notes** are the ones to check before you ins
 > 31 October 2026 are much older builds with the same names; they are covered under "Older versions" at the end.
 
 ---
+
+## V10.8.42 — generator: hard bass with a donk, dream pop in two arrangements (2026-11-25, beta)
+
+- The generator only: HARD BASS with a donk bass, DREAM POP in two arrangements (an organ, or guitar-like) and slower, the accents kept, IDM AMBIENT from 76 BPM. No page or gesture changes.
+
+## V10.8.41 — the generator, genre by genre (2026-11-24, beta)
+
+- The generator retouched genre by genre (jazz, IDM GLITCH, baile funk, phonk, dubstep, cumbia, reggaeton, house, hard bass, shoegaze, dream pop, techno, EXPLORE).
+- The genre **FUGA** is gone: 29 genres.
+- **MOOD** progressive: CALM is light down to −25 and the drums go near −50; DANCE keeps half-time; in EXPLORE it moves the tempo.
+
+## V10.8.40 — the tempo exact, the tracks always in phase, RESYNC (2026-11-24, beta)
+
+- **Fix**: the tempo no longer runs ahead (up to about 11 ms a minute at 174 BPM, more at 1/32) and the tracks no longer drift apart after a change of LEN, DIV, EUCLID's STEPS, MUTATE, a variation or SWING: each track takes its place from the transport. Still free on purpose: LIVE's playheads, JUMP, FIT's own clock and an odd LEN with SWING.
+- **RESYNC**: SEQ held + PLAY while playing puts every track back on its step 1 on the next bar, without stopping. GLO + PLAY is still the immediate restart.
+- **MOOD** acts on the drums: CALM lowers and mutes them, DANCE raises them.
+
+## V10.8.39 — RADIO and MOOD on the generator (2026-11-24, beta)
+
+- **GENERATOR 4, KNOB 3 RADIO** (ON / OFF): when a song's last row ends, or after 16 bars of a loop (32 above 110 BPM), it makes the next piece and comes in on the bar, respecting ENTRY. It only advances while a generator draft plays; not with MY LOOP; started with OCT+.
+- **GENERATOR 4, KNOB 4 MOOD** (CALM to DANCE): moves the energy; with GENRE on RANDOM it also biases the choice of genres. Neither RADIO nor MOOD is saved with the project.
+- Each genre its own traits, IDM GLITCH far more extreme, and the kick tuned to the key.
+
+## V10.8.38 — DJ FILTER on the MIXER, NOTE and TRANS back, GAIN on every engine (2026-11-24, beta)
+
+- The pages SEQ › BAR, SEQ › PHRASES and GLO › SYSTEM 2 are gone.
+- **DJ FILTER** on the device again: on GLO › MIXER, a short tap of OCT+ switches KNOB 4 between BPM and DJ FILT.
+- **SEQ › NOTE** is back in the chain, after STEP (17 pages in SEQ). **TRANS** is on SCL › CHORD, KNOB 4.
+- **GAIN** 0 to 12 dB on every engine: on the first EDIT page, OCT+ held + KNOB 4.
+- **KEY TRK NOTE** in tune.
+- **SWARM**: WAVE (SWARM 2, KNOB 4: eight FLOAT formulas), a tag ALONE / AIR n / PROX n / AIR OFF, and MODE >T1 … >T6: SWARM as that track's note source.
 
 ## V10.8.37 — MUTATE without a page, KEY TRK on FILTER, the factory sounds retouched (2026-11-24, beta)
 
