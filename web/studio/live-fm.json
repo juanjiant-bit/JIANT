@@ -409,11 +409,11 @@
   },
   "TRANS": {
    "es": {
-    "what": "Transpone lo que suena la pista en semitonos, hasta dos octavas para arriba o para abajo. No está en ninguna página del equipo: se llega desde el editor o por MIDI.",
+    "what": "Transpone lo que suena la pista en semitonos, hasta dos octavas para arriba o para abajo. En el FM-1 está en SCL > CHORD, KNOB 4.",
     "how": "Usalo para llevar un bajo una octava abajo (−12) o subir una melodía sin reescribirla."
    },
    "en": {
-    "what": "Transposes what the track plays in semitones, up to two octaves up or down. It is on no page of the device: reached from the editor or over MIDI.",
+    "what": "Transposes what the track plays in semitones, up to two octaves up or down. On the FM-1 it is on SCL > CHORD, KNOB 4.",
     "how": "Use it to drop a bass an octave (−12) or lift a melody without rewriting it."
    },
    "learn": "scale"
@@ -672,11 +672,11 @@
   },
   "DEPTH": {
    "es": {
-    "what": "La profundidad de un efecto que se mece: el AUTO PAN de la pista, el CHORUS o el SLICER.",
+    "what": "La profundidad de un efecto que se mece: el AUTO PAN de la pista, el CHORUS o el SLICER; en WHEEL (MORE), la del parlante giratorio del órgano.",
     "how": "Bajo, un movimiento sutil; alto, un efecto marcado. Arrancá por la mitad y ajustá de oído."
    },
    "en": {
-    "what": "The depth of a moving effect: the track's AUTO PAN, the CHORUS or the SLICER.",
+    "what": "The depth of a moving effect: the track's AUTO PAN, the CHORUS or the SLICER; on WHEEL (MORE), that of the organ's rotating speaker.",
     "how": "Low for a subtle motion; high for an obvious effect. Start halfway and adjust by ear."
    }
   },
@@ -1170,11 +1170,11 @@
   "DJ FILT": {
    "es": {
     "what": "Un filtro sobre toda la mezcla: a la izquierda cierra los agudos, a la derecha corta los graves; en 0 no hace nada.",
-    "how": "Llevalo lento hacia un lado para armar tensión antes de un cambio y volvé al medio para el drop."
+    "how": "Llevalo lento hacia un lado para armar tensión antes de un cambio y volvé al medio para el drop. En el FM-1: GLO > MIXER, KNOB 4; OCT+ lo alterna con BPM."
    },
    "en": {
     "what": "One filter over the whole mix: left closes the treble, right cuts the bass; at 0 it does nothing.",
-    "how": "Move it slowly to one side to build tension before a change, then back to the middle for the drop."
+    "how": "Move it slowly to one side to build tension before a change, then back to the middle for the drop. On the FM-1: GLO > MIXER, KNOB 4; OCT+ swaps it with BPM."
    },
    "learn": "dj-filter"
   },
@@ -1210,12 +1210,12 @@
   },
   "MIDI": {
    "es": {
-    "what": "Un ajuste guardado (USB o TRS) que hoy no cambia nada: en el FM-1, la página SYSTEM 2 solo muestra cómo están las entradas MIDI.",
-    "how": "Para saber si llegan mensajes mirá GLO > SYSTEM 2 en el aparato: el estado del USB, la cuenta de mensajes del TRS y el Bluetooth."
+    "what": "Un ajuste guardado (USB o TRS) que no cambia nada: ya no tiene página en el FM-1 (GLO > SYSTEM 2 se fue en V10.8.38).",
+    "how": "No hace falta tocarlo: solo puede llegar desde el editor, y nada en el aparato lo lee."
    },
    "en": {
-    "what": "A stored setting (USB or TRS) that changes nothing today: on the FM-1, the SYSTEM 2 page only shows the state of the MIDI inputs.",
-    "how": "To check that messages arrive, look at GLO > SYSTEM 2 on the device: the USB state, the TRS message count and Bluetooth."
+    "what": "A stored setting (USB or TRS) that changes nothing: it has no page on the FM-1 any more (GLO > SYSTEM 2 went in V10.8.38).",
+    "how": "No need to touch it: it can only come from the editor, and nothing on the device reads it."
    }
   },
   "ROUTE": {
@@ -1784,11 +1784,11 @@
   },
   "MORPH": {
    "es": {
-    "what": "Desliza el sonido entre dos estados, de manera continua: en ANALOG y PHASE lleva la onda hacia las siguientes; en MATH FLOAT, de ALGO a ALGO B.",
+    "what": "Desliza el sonido entre dos estados: en ANALOG y PHASE lleva la onda hacia las siguientes; en MATH FLOAT, de ALGO a ALGO B. En EXT SWARM este lugar guarda WAVE (0 el seno, 1–8 una fórmula).",
     "how": "Movelo despacio o con un LFO para que el sonido se transforme vivo mientras toca."
    },
    "en": {
-    "what": "Slides the sound continuously between two states: on ANALOG and PHASE it takes the wave on toward the next ones; on MATH FLOAT, from ALGO to ALGO B.",
+    "what": "Slides the sound between two states: on ANALOG and PHASE it takes the wave on toward the next ones; on MATH FLOAT, from ALGO to ALGO B. On EXT SWARM this slot holds WAVE (0 the sine, 1–8 a formula).",
     "how": "Move it slowly or with an LFO so the sound transforms live while it plays."
    }
   },
@@ -1848,12 +1848,12 @@
   },
   "DUST": {
    "es": {
-    "what": "Polvo: en WEST, ruido blanco que se pliega junto con el núcleo y, de 96 para arriba, un tono metálico (METAL); en WHEEL, el crujido y el soplido de un órgano viejo.",
-    "how": "En 0 no hay nada. Un poco suma aire y textura sin tapar la nota; en WEST probá la zona alta para timbres de metal."
+    "what": "Polvo: en WHEEL (MORE), los crujidos y el soplido de un órgano viejo; en WEST, ruido blanco que se pliega junto con el núcleo y, de 96 para arriba, METAL.",
+    "how": "Un poco envejece el órgano con encanto; mucho, un órgano de sótano. En WHEEL el número que llega va al revés: 127 es nada."
    },
    "en": {
-    "what": "Dust: on WEST, white noise folded together with the core and, from 96 up, a metallic tone (METAL); on WHEEL, the crackle and hiss of an old organ.",
-    "how": "At 0 there is none. A little adds air and texture without hiding the note; on WEST try the top zone for metal timbres."
+    "what": "Dust: on WHEEL (MORE), the crackle and hiss of an old organ; on WEST, white noise folded together with the core and, from 96 up, METAL.",
+    "how": "A little ages the organ with charm; a lot, a basement organ. On WHEEL the number sent runs backwards: 127 is none."
    },
    "learn": "west"
   },
@@ -2360,28 +2360,6 @@
      "how": "A little gives warmth; a lot, the roaring rock organ. Combine it with SPEED on FAST."
     },
     "learn": "wheel"
-   },
-   "DEPTH": {
-    "es": {
-     "what": "En MORE, la profundidad del parlante giratorio del órgano: cuánto remolino da SPEED. En AUTO PAN, DEPTH es cuánto se mueve el paneo.",
-     "how": "Al máximo, el rotor de siempre; bajalo para un giro más sutil que no maree la mezcla."
-    },
-    "en": {
-     "what": "On MORE, the depth of the organ's rotating speaker: how much swirl SPEED gives. On AUTO PAN, DEPTH is how far the pan swings.",
-     "how": "At maximum, the usual rotor; lower it for a subtler spin that does not make the mix seasick."
-    },
-    "learn": "wheel"
-   },
-   "DUST": {
-    "es": {
-     "what": "El polvo de un órgano viejo: crujidos y soplido sobre el sonido.",
-     "how": "Un poco lo envejece con encanto; mucho, un órgano de sótano. El número que llega va al revés: 127 es nada."
-    },
-    "en": {
-     "what": "An old organ's dust: crackle and hiss over the sound.",
-     "how": "A little ages it with charm; a lot, a basement organ. The number sent runs backwards: 127 is none."
-    },
-    "learn": "wheel"
    }
   },
   "STRING": {
@@ -2852,12 +2830,12 @@
   "EXT": {
    "MODE": {
     "es": {
-     "what": "THRU deja sonar la entrada todo el tiempo; KEYS solo mientras tocás teclas o pasos, con la envolvente de la nota.",
-     "how": "KEYS con la secuencia corta la señal a tempo, como un trance gate; THRU para procesar algo que suena siempre."
+     "what": "THRU deja sonar la entrada todo el tiempo; KEYS solo mientras tocás teclas o pasos, con la envolvente de la nota. En SWARM, >T1 a >T6 mandan las notas del enjambre a esa pista y lo callan.",
+     "how": "KEYS con la secuencia corta la señal a tempo, como un trance gate. Con >T el enjambre toca el motor de otra pista: cada golpe una nota, PLUCK su largo."
     },
     "en": {
-     "what": "THRU lets the input sound all the time; KEYS only while you play keys or steps, at the note's envelope.",
-     "how": "KEYS with the sequence chops the signal in time, like a trance gate; THRU to process something that always plays."
+     "what": "THRU lets the input sound all the time; KEYS only while you play keys or steps, at the note's envelope. On SWARM, >T1 to >T6 send the swarm's notes to that track and silence it.",
+     "how": "KEYS with the sequence chops the signal in time, like a trance gate. With >T the swarm plays another track's engine: each hit a note, PLUCK its length."
     },
     "learn": "ext"
    },
