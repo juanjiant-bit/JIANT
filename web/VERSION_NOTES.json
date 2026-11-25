@@ -228,10 +228,10 @@
   "versions": {
     "V10.8.42": {
       "date": "2026-11-25",
-      "status": "beta",
+      "status": "public",
       "summary": {
-        "es": "Beta: en el generador, hard bass con bajo tipo donk, dream pop con arreglo de órgano o de guitarra, y los golpes acentuados se conservan. Sobre V10.8.41.",
-        "en": "Beta: in the generator, hard bass with a donk bass, dream pop with an organ or a guitar-like arrangement, and accented hits are kept. On top of V10.8.41."
+        "es": "Versión pública: tempo exacto y pistas siempre en fase (RESYNC con SEQ + PLAY), generador retocado género por género con RADIO y MOOD, GAIN en todos los motores, DJ FILTER en MIXER, SWARM con WAVE y como fuente de notas, KEY TRK en el filtro, NOISE en DIST y MIX en CHORUS.",
+        "en": "Public release: exact tempo and tracks always in phase (RESYNC with SEQ + PLAY), the generator reworked genre by genre with RADIO and MOOD, GAIN on every engine, DJ FILTER on MIXER, SWARM with WAVE and as a note source, KEY TRK on the filter, NOISE on DIST and MIX on CHORUS."
       },
       "has": [
         "eng_west",
@@ -294,8 +294,8 @@
         "gen_fuga"
       ],
       "notes": {
-        "es": "Beta: puede tener errores. Los proyectos y presets con filtro MS20 o LP24 abren como LP. MUTATE y LIVE no son las páginas originales (esas quedan en V10.7.81). Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
-        "en": "Beta: it may have bugs. Projects and presets using the MS20 or LP24 filter open as LP. MUTATE and LIVE are not the original pages (those remain in V10.7.81). Make a complete backup of your projects before changing version."
+        "es": "Los proyectos y presets con filtro MS20 o LP24 abren como LP. MUTATE y LIVE no son las páginas originales (esas quedan en V10.7.81). Ya no están las páginas BAR, PHRASES y SYSTEM 2 ni el género FUGA del generador. Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
+        "en": "Projects and presets using the MS20 or LP24 filter open as LP. MUTATE and LIVE are not the original pages (those remain in V10.7.81). The BAR, PHRASES and SYSTEM 2 pages and the generator's FUGA genre are gone. Make a complete backup of your projects before changing version."
       }
     },
     "V10.8.41": {
@@ -907,10 +907,10 @@
     },
     "V10.8.25": {
       "date": "2026-11-24",
-      "status": "public",
+      "status": "classic",
       "summary": {
-        "es": "Versión pública actual: el emulador como entrada en JIANT Studio (stems y MIDI OUT). El firmware del equipo es el de V10.8.24.",
-        "en": "Current public release: the emulator as an input in JIANT Studio (stems and MIDI OUT). The device's firmware is V10.8.24's."
+        "es": "El emulador como entrada en JIANT Studio (stems y MIDI OUT). El firmware del equipo es el de V10.8.24.",
+        "en": "The emulator as an input in JIANT Studio (stems and MIDI OUT). The device's firmware is V10.8.24's."
       },
       "has": [
         "eng_west",
