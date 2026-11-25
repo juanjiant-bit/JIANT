@@ -475,8 +475,8 @@ typedef struct {
 #define NO_ {255, 0}
 enum { SR_SUB, SR_ACID, SR_REESE, SR_FMBASS, SR_ROCKBASS, SR_HOOK, SR_WOW, SR_PAD, SR_STRINGS, SR_CHOIR, SR_ORGAN,
        SR_EP, SR_STAB, SR_DUBCHORD, SR_PLUCK, SR_BELL, SR_LEAD, SR_VOXLEAD, SR_CHIP, SR_KEYS, SR_DRONE, SR_NOISE,
-       SR_TEXTURE, SR_HOOVER, SR_WALL, SR_GTR, SR_SINEKEY, SR_EBMBASS, SR_808, SR_UPRIGHT, SR_TECHBASS, SR_SUPERSAW,
-       SR_PIANO, SR_DIST, SR_COWBELL, SR_FLUTE, SR_CHANT, SR_MALLET, SR_N };   /* (V10.6p: SUPERSAW gone, no genre's) */
+       SR_TEXTURE, SR_HOOVER, SR_WALL, SR_GTR, SR_SINEKEY, SR_EBMBASS, SR_808, SR_UPRIGHT, SR_TECHBASS, SR_DONK,
+       SR_PIANO, SR_DIST, SR_COWBELL, SR_FLUTE, SR_CHANT, SR_MALLET, SR_N };   /* (V10.8.42: SUPERSAW's place the DONK's) */
 /* the factory presets by their place (eng_analog.c, eng_phase.c .. : ANALOG 2 SQR BASS, 4 ACID, 7 SUB BASS ..) */
 /* (V10.6z10, the owner: a genre's throws "the same sounds") an archetype's two options never one preset twice (SUB
  * BASS's SQR BASS, the 808's, the upright's, the chant's TALK BOX; EBM's FAT BASS and phonk's 808 COWBELL twice: the
@@ -492,6 +492,9 @@ static const grecipe_t RECIPE[SR_N] = {
      * ~55 ms, no retrigger), driven after (DIST) */
     [SR_ACID]     = {{{EG_A, 4}, {EG_A, 2}, NO_}, GR(0, 7), GR(80, 88), GR(40, 48), GR(16, 31), GR(32, 40), GR(104, 112), GR4(52, 60), GFT(0, 24), GWV(0, 1, 1), 0, GDC(24, 0), V_LEGATO},
     [SR_REESE]    = {{{EG_A, 16}, {EG_A, 14}, {EG_LO, 4}}, GR(0, 7), GR(72, 95), GR(104, 119), GR(32, 47), GR(40, 55), GR(16, 31), GR4(0, 11), GFT(0, 16), GNOWV, GLFO(12, 1), GDC(20, 28), V_LEGATO},
+    /* (V10.8.42, PR #241's idea) hard bass's DONK: PHASE's resonant saw, its DCW's envelope the metallic knock (gen.c
+     * gen_sound: WAVE RESO, the DCW low and its ENV high, the SUB under it), short, mono, dry */
+    [SR_DONK]     = {{{EG_PH, 3}, {EG_PH, 7}, {EG_PH, 3}}, GR(0, 7), GR(48, 71), GR(64, 87), GR(8, 23), GR(72, 95), GR(8, 23), GR4(0, 7), GFT(0, 0), GNOWV, 0, GDC(60, 0), V_MONO},
     /* (V10.54) the FM6 / WHEEL numbers below re-aimed after V10.42 replaced FM6 8..12 and 14 (ICE BELL DX KEYS FM PLUCK SOFT BELL FM
      * STRINGS WOOD) and WHEEL 5, 6 (DUB ORGAN SOFT KEYS): the roles got leads and basses (a SUB BASS on the bells) */
     [SR_FMBASS]   = {{{EG_FM, 2}, {EG_FM, 13}, {EG_PH, 7}}, GR(0, 7), GR(48, 71), GR(40, 87), GR(16, 31), GR(72, 103), GR(8, 23), GR4(8, 27), GFT(0, 0), GNOWV, 0, GDC(8, 0), V_LEGATO},
@@ -589,7 +592,7 @@ static const uint16_t RTRIM[SR_N] = {
     [SR_808] = RT(-2, -3, 0),
     [SR_UPRIGHT] = RT(0, 2, 0),
     [SR_TECHBASS] = RT(1, 2, 0),
-    [SR_SUPERSAW] = RT(0, 0, 0),
+    [SR_DONK] = RT(2, 2, 2),
     [SR_PIANO] = RT(1, -2, 0),
     [SR_DIST] = RT(1, 1, 0),
     [SR_COWBELL] = RT(6, 0, 0),
@@ -687,7 +690,7 @@ static const ggenre_t GENRE[] = {
      * offbeat eighth (pumped: the kick's sidechain), a simple minor riff a chord a bar, a hoover's line, chanted shouts */
     {"HARD BASS", 150, 160, 0, {SC_MIN, SC_PHRY, SC_HARM, SC_PHRY}, DM_HBASS, 100, KIT_INDUS, 0, HC_MACHINE, FL_ROLL, 0,
      {BA_OFFBEAT, BA_HBASS, BA_HBASS}, 33, KM_SUSTAIN, 45, {PR_AEOL, PR_PHRY, PR_I_VI}, 1, CS_STAB, VM_POWER,
-     {AP_OCTAVES, AP_PULSE}, LD_OSTINATO, AMT(100, 100, 25, 0, 55), {KIT_INDUS, SR_REESE, SR_STAB, SR_PLUCK, SR_HOOVER}, SR_VOXLEAD,
+     {AP_OCTAVES, AP_PULSE}, LD_OSTINATO, AMT(100, 100, 25, 0, 55), {KIT_INDUS, SR_DONK, SR_STAB, SR_PLUCK, SR_HOOVER}, SR_VOXLEAD,
      1, 2, 12, DT(0, FXS_NONE), FM_CLUB, 0, HF_POP | HX_RAISE, GSP_PUMP | GSP_HEAVY},   /* (V10.8.41, the owner: "an extreme
                                                          * kick, distorted, louder; a furious off-beat bass") */
     /* ---- the club: house */
@@ -784,7 +787,7 @@ static const ggenre_t GENRE[] = {
                                                          * basses, melodies": the bass louder and driven, the lead up) */
     /* Boards of Canada, Floating Points, Aphex Twin's SAW: a soft hip hop break laid back, a sub on long roots, warm
      * sevenths and ninths a chord every four bars, pads with the tape's wobble, a few notes of melody */
-    {"IDM AMBIENT", 85, 100, 30, {SC_DOR, SC_MAJ, SC_MIN, SC_LYD}, DM_BOC, 100, KIT_SOFT, 1, HC_FUNK, FL_NONE, 2,
+    {"IDM AMBIENT", 76, 100, 30, {SC_DOR, SC_MAJ, SC_MIN, SC_LYD}, DM_BOC, 100, KIT_SOFT, 1, HC_FUNK, FL_NONE, 2,
      {BA_PEDAL, BA_FIFTHS, BA_DUST}, 31, KM_SUSTAIN, 110, {PR_IDM1, PR_IDM2, PR_SUS}, 4, CS_SWELL, VM_RICH,
      {AP_GLASS, AP_UPDOWN}, LD_SPARSE, AMT(60, 60, 90, 50, 45), {KIT_SOFT, SR_SUB, SR_PAD, SR_BELL, SR_SINEKEY}, SR_DRONE,
      4, 4, 75, DT(0, FXS_WARM), FM_ARC, 30, HF_COLOR, 1 | GSP_WOW},
@@ -1095,6 +1098,12 @@ static const uint8_t GSUB_EB[] = {
     GSO(bass[2], BA_RUMB), GSO(bass_lo, 28), GSO(snd[GP_BASS], SR_SUB), GSO(lead, LD_RIFF2), GSO(snd[GP_LEAD], SR_EBMBASS),
     GSO(scale[1], SC_PHRY), GSO(scale[3], SC_PHRY), GSO(prog[0], PR_ONE), GSO(prog[1], PR_ONE), GSO(prog[2], PR_ONE),
     GSO(spec, GSP_HEAVY | GSP_PUMP), GSO(form, FM_CLUB),
+};
+/* (V10.8.42, PR #241's idea) DREAM POP's throws: the organ's vamps (the row) or a clean guitar's: its chords comped,
+ * its arpeggio broken and louder, keys for the line */
+static const uint8_t GSUB_DP[] = {
+    2, 0,
+    5, GSO(snd[GP_CHORDS], SR_GTR), GSO(pads, CS_COMP), GSO(arp[0], AP_BROKEN), GSO(amt[GP_ARP], 60), GSO(snd[GP_LEAD], SR_KEYS),
 };
 static const uint8_t GSUB_TR[] = {
     3,   /* TECHNO ROCK */

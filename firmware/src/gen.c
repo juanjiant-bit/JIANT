@@ -539,7 +539,8 @@ static __attribute__((noinline)) void gidm_edit(track_t *t, uint32_t len, uint32
             }
         }
         if (gch(lv * 20u)) {                            /* the bar's one roll: before a beat */
-            k = b * 16u + 3u + 4u * (gr() & 3u); j = gr() & 2u ? 1u : 3u;
+            k = b * 16u + (b % 4u == 3u ? 13u + (gr() & 2u) : 3u + 4u * (gr() & 3u)); j = gr() & 2u ? 1u : 3u;   /* (V10.8.42, PR #241: the
+                                                         * phrase's last bar: in its turnaround) */
             gdrum_hit(t, k, j, 70, 0);
             glane_rat(&t->step[k], j, (uint32_t)grr(2, 4));
         }
@@ -655,7 +656,7 @@ BTAPP_FN static void gen_drums(track_t *t, uint32_t len)   /* (V10.7.56: the seg
         for (i = 0; i < len; i++) {
             step_t *s = &t->step[i];
             if (s->time != ST_NOTE || !(s->hit & 0xD0u) || !gch(50)) continue;
-            s->hit &= (uint8_t)~0xD0u; s->acc &= s->hit;
+            s->hit &= (uint8_t)~(0xD0u & ~s->acc); s->acc &= s->hit;   /* (V10.8.42, PR #241: an accented hit stays) */
             if (!s->hit) gclear(s);
         }
     }
@@ -1785,6 +1786,9 @@ static __attribute__((noinline)) void gen_sound(track_t *t, uint32_t role, uint3
     }
     t->p[P_DETUNE] = (int16_t)(ri == SR_REESE || ri == SR_WALL || ri == SR_HOOVER ? grr(30, 60) : gnear(t->p[P_DETUNE], 6));   /* (V10.6z10:
                                                          * the preset's own a little moved) */
+    if (ri == SR_DONK && e == EG_PH) {                  /* (V10.8.42) the donk: the resonant saw, its DCW's envelope the knock */
+        t->p[P_E0] = 5; t->p[P_E1] = 0; t->p[P_E2] = (int16_t)grr(30, 46); t->p[P_E3] = (int16_t)grr(78, 100); t->p[P_E6] = (int16_t)grr(24, 40);
+    }
     if (ri == SR_GTR || ri == SR_DRONE) {               /* (a tremolo: AUTO PAN on the beat) */
         t->p[P_APDEP] = (int16_t)grr(30, 60); t->p[P_APSYNC] = 1; t->p[P_APRATE] = (int16_t)grr(4, 6); t->p[P_APWAVE] = (int16_t)(ri == SR_GTR ? 3 : 0);
     }
@@ -2018,6 +2022,9 @@ static __attribute__((noinline)) void gen_mix(track_t *t, uint32_t r)
                                                          * at 0.3 .. 1 Hz, the filter still; detuned */
         t->p[P_LWAVE] = 0; t->p[P_LRATE] = (int16_t)grr(30, 60); t->p[P_LD_PIT] = 1; t->p[P_LD_FLT] = 0; t->p[P_LFADE] = 0;
         t->p[P_DETUNE] = (int16_t)grr(10, 25);
+        if (g->drum == DM_DREAM) {                      /* (V10.8.42, PR #241: dream pop's tape slower, in chorus, still) */
+            t->p[P_LRATE] = (int16_t)grr(16, 32); t->p[P_CHOR] = (int16_t)grr(32, 53); t->p[P_APDEP] = 0;
+        }
     }
     if (r == RL_PAD || r == RL_ARP || r == RL_LEAD)     /* (p6b: the owner's references all dark, their centroid 350 ..
                                                          * 660 Hz: the melodic parts' cutoff 15 % down) */
@@ -2872,7 +2879,7 @@ BTAPP_FN static void gen_pick(void)
     const ggenre_t *g = gs.g;
     uint32_t k, pr, steps;
     const uint8_t *u = g->drum == DM_TRAP ? GSUB_HH : g->drum == DM_TROCK ? GSUB_TR : g->drum == DM_CUMBIA ? GSUB_CU :
-                       g->drum == DM_REGG ? GSUB_RG : g->drum == DM_DEMBOW ? GSUB_DB : g->lead == LD_EBM ? GSUB_EB :
+                       g->drum == DM_REGG ? GSUB_RG : g->drum == DM_DEMBOW ? GSUB_DB : g->lead == LD_EBM ? GSUB_EB : g->drum == DM_DREAM ? GSUB_DP :
                        !gs.gi ? GSUB_MT : 0;            /* (V10.7.2: the latin genres' throws too; the owner's
                                                          * references: EBM's, MINIMAL TECHNO's, never EXPLORE's) */
     if (u && !gs.mutant) {                              /* (V10.6w) HIP HOP's, TECHNO ROCK's throws: one style of theirs,
