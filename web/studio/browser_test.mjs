@@ -115,6 +115,26 @@ try {
     ok(before[0] !== before[1] && afterB === before[0] && rows.length === 1 && /2 (songs|canciones)/.test(rows[0]) && /(restored|restaurado)/i.test(stat),
       `projects: slots read (${before.join(", ")}), B saved; a backup kept (${rows[0]}), restored: "${stat}"`);
   }
+  /* wavetables (BYTE): a WAV of a gliding saw into 8 frames, sent to USER 3 of the simulated device, read back */
+  {
+    const q = await page("?mock=1&fw=byte#wt", { width: 1280, height: 900 });
+    const sr = 44100, n = sr, d = Buffer.alloc(44 + n * 2); let ph = 0;
+    d.write("RIFF", 0); d.writeUInt32LE(36 + n * 2, 4); d.write("WAVEfmt ", 8); d.writeUInt32LE(16, 16); d.writeUInt16LE(1, 20); d.writeUInt16LE(1, 22);
+    d.writeUInt32LE(sr, 24); d.writeUInt32LE(sr * 2, 28); d.writeUInt16LE(2, 32); d.writeUInt16LE(16, 34); d.write("data", 36); d.writeUInt32LE(n * 2, 40);
+    for (let i = 0; i < n; i++) { ph += 110 * (1 + i / n) / sr; d.writeInt16LE(Math.round(20000 * (2 * (ph - Math.floor(ph)) - 1)), 44 + i * 2); }
+    await q.setInputFiles("#wtfile", { name: "glide.wav", mimeType: "audio/wav", buffer: d }); await q.waitForTimeout(1500);
+    const frames = await q.$$eval("#wtframes canvas", (x) => x.length), name = await q.inputValue("#wtname");
+    await q.click("#wtread"); await q.waitForTimeout(600);
+    await q.selectOption("#wtslot", "2"); await q.click("#wtsend"); await q.waitForTimeout(2500);
+    const sent = await q.textContent("#wtstat"), opt = await q.$eval('#wtslot option[value="2"]', (o) => o.textContent);
+    const px = () => q.evaluate(() => window.__wtFrames.map((f) => Array.from(f, (v) => Math.round(v * 1000))));
+    const before = await px();
+    await q.click("#wtload"); await q.waitForTimeout(2500);
+    const after = await px(), diff = before.flat().filter((v, i) => Math.abs(v - after.flat()[i]) > 1).length;
+    const fmHidden = await (await page("?mock=1&fw=fm")).$eval('nav.views [data-go="wt"]', (e) => e.hidden);
+    ok(frames === 8 && name === "GLIDE" && /GLIDE/.test(sent) && /GLIDE/.test(opt) && diff === 0 && fmHidden,
+      `wavetables: glide.wav -> 8 frames, sent to USER 3 ("${sent}"), read back the same; hidden on FM`);
+  }
   /* rescue: the published JIANT FM and JieLi's loader fetched and checked, a board's fm1-rescue.uf2 made */
   {
     const ctx = await b.newContext({ viewport: { width: 1280, height: 900 }, acceptDownloads: true });

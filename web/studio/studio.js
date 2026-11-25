@@ -11,6 +11,7 @@
 import { scrDecode, scrEncode, wavFile, zipStored, midiFile, SCR } from "./studio-lib.js";
 import { Daw } from "./daw.js";
 import { Player, anim } from "./learn.js";
+import { makeTable, toI16, pack as wtPack, unpack as wtUnpack, parseInfo as parseWtInfo, render as wtRender, wav as wtWav, WT, FRAMES, LEN, CHUNKS } from "./wavetable.js";
 import { captureBackup, restoreBackup, readBackup, songsNotRestored, BACKUP_IDS, bkU32, bkR32, bkCrc, bkPack, bkUnpack } from "./fm1backup.js";
 
 const $ = (id) => document.getElementById(id);
@@ -67,6 +68,15 @@ const TEXT = {
     rsAndroidT: "Sin computadora: la app FM-1 Rescue", rsAndroid: "Hace lo mismo desde un teléfono Android: graba la placa por OTG y muestra el avance del rescate. Todavía es una versión de prueba: se baja de GitHub (Actions › android › Artifacts › fm1-rescue) con una cuenta iniciada.",
     rsAndroidHow: "Cómo se usa", rsAndroidApk: "Bajar el APK", rsMore: "Cómo funciona",
     rsSafe: "Solo se escribe la zona del firmware (0x4000–0x92FFF), sector por sector, cada uno releído y comparado; la cabecera de arranque y tus datos no se tocan. Sin firmware dentro, la placa queda como un FM-1 Transporter común. Basado en FM-1 Transporter (Hügelton Instruments), MvaveFM1Unbricker (Quixotic7), jl-uboot-tool (kagaimiq) y la guía de GoodPerson42. Usalo con la batería cargada y bajo tu responsabilidad: todavía no se probó en un FM-1 real.",
+    vWt: "Wavetables", wtTitle: "Tus wavetables para WAVE", wtLead: "Cualquier sonido (un archivo o el micrófono) se vuelve una tabla de 8 cuadros para el motor WAVE de JIANT BYTE: Studio busca el período de cada parte del sonido, toma un ciclo, lo alinea con el anterior y lo normaliza. Escuchala, bajala como WAV o mandala a una ranura USER del equipo.",
+    wtFile: "Cargar audio", wtMic: "Grabar con el micrófono", wtMicStop: "Parar", wtMicName: "MIC", wtRecording: "Grabando (hasta 8 s): un sonido sostenido o una frase que cambie de color. Tocá Parar.",
+    wtNoMic: "No se pudo abrir el micrófono (el navegador no dio permiso).", wtMade: "%s → 8 cuadros de 128 muestras.", wtSilent: "Ese audio está en silencio.", wtBad: "No pude leer ese archivo de audio.",
+    wtFrames: "Los 8 cuadros", wtFramesHelp: "WAVE barre del cuadro 1 al 8 con su perilla de posición; tocá un cuadro para verlo al frente.", wtPlay: "Escuchar el barrido", wtWav: "Bajar WAV",
+    wtSlots: "Ranuras USER del equipo", wtReadSlots: "Leer ranuras", wtSlot: "Ranura", wtName: "Nombre", wtSend: "Mandar al equipo", wtLoad: "Traer del equipo", wtEmpty: "vacía",
+    wtByteOnly: "Las wavetables de usuario son de JIANT BYTE: elegí BYTE arriba.", wtNoDev: "Conectá el FM-1 con JIANT BYTE (o prendé el emulador) para mandarla.", wtAsk: "Leé las ranuras para ver qué tiene el equipo.",
+    wtSlotsHelp: "Las ranuras USER de %s; la tabla suena apenas llega y queda guardada al terminar.", wtSent: "Listo: %n en %s.", wtLoaded: "%s traída del equipo.", wtOld: "El equipo no respondió: hace falta JIANT BYTE con wavetables de usuario (protocolo 1.5).",
+    wtBusy: "El equipo está guardando: probá de nuevo en un momento.", wtSlotBad: "Esa ranura no existe en el equipo.",
+    tourV_wtT: "Wavetables", tourV_wt: "Convertí cualquier sonido en una wavetable para WAVE de JIANT BYTE y mandala al equipo.", tourV_wtH: "Funciona mejor con sonidos sostenidos: una voz, una cuerda, un drone.",
     vProj: "Proyectos", projTitle: "Proyectos y backups",
     projLead: "Tus proyectos y backups. Un backup guarda todo (la música actual, las canciones con sus secciones, los sonidos de usuario y los ajustes) en este navegador y, si querés, en un archivo. Restaurarlo lo devuelve al aparato tal cual. Funciona con la FM-1 conectada o con el emulador.",
     bkNow: "Hacer backup ahora", bkImport: "Importar archivo…", bkAlsoFile: "Descargar también el archivo", bkLibTitle: "Backups", bkLibHelp: "Guardados en este navegador (no se suben a ningún lado). Descargá los importantes: si se borran los datos del navegador, se pierden.",
@@ -221,6 +231,15 @@ const TEXT = {
     rsAndroidT: "No computer: the FM-1 Rescue app", rsAndroid: "Does the same from an Android phone: flashes the board over OTG and shows the rescue's progress. Still a test version: it downloads from GitHub (Actions › android › Artifacts › fm1-rescue) while signed in.",
     rsAndroidHow: "How to use it", rsAndroidApk: "Get the APK", rsMore: "How it works",
     rsSafe: "Only the firmware area (0x4000–0x92FFF) is written, sector by sector, each read back and compared; the boot head and your data are not touched. Without a firmware inside, the board is a plain FM-1 Transporter. Built on FM-1 Transporter (Hügelton Instruments), MvaveFM1Unbricker (Quixotic7), jl-uboot-tool (kagaimiq) and GoodPerson42's guide. Use it with a charged battery and at your own risk: it has not been tried on a real FM-1 yet.",
+    vWt: "Wavetables", wtTitle: "Your wavetables for WAVE", wtLead: "Any sound (a file or the microphone) becomes an 8-frame table for JIANT BYTE's WAVE engine: Studio finds the period of each part of the sound, takes one cycle, aligns it with the one before and normalizes it. Hear it, download it as a WAV or send it to one of the device's USER slots.",
+    wtFile: "Load audio", wtMic: "Record from the microphone", wtMicStop: "Stop", wtMicName: "MIC", wtRecording: "Recording (up to 8 s): a held sound or a phrase that changes colour. Press Stop.",
+    wtNoMic: "The microphone could not be opened (the browser gave no permission).", wtMade: "%s → 8 frames of 128 samples.", wtSilent: "That audio is silent.", wtBad: "That audio file could not be read.",
+    wtFrames: "The 8 frames", wtFramesHelp: "WAVE sweeps from frame 1 to 8 with its position knob; tap a frame to bring it to the front.", wtPlay: "Hear the sweep", wtWav: "Download WAV",
+    wtSlots: "The device's USER slots", wtReadSlots: "Read slots", wtSlot: "Slot", wtName: "Name", wtSend: "Send to the device", wtLoad: "Get from the device", wtEmpty: "empty",
+    wtByteOnly: "User wavetables are JIANT BYTE's: pick BYTE above.", wtNoDev: "Connect the FM-1 with JIANT BYTE (or switch the emulator on) to send it.", wtAsk: "Read the slots to see what the device holds.",
+    wtSlotsHelp: "%s's USER slots; the table sounds as soon as it arrives and is saved when it is done.", wtSent: "Done: %n in %s.", wtLoaded: "%s fetched from the device.", wtOld: "The device did not answer: this needs JIANT BYTE with user wavetables (protocol 1.5).",
+    wtBusy: "The device is saving: try again in a moment.", wtSlotBad: "That slot does not exist on the device.",
+    tourV_wtT: "Wavetables", tourV_wt: "Turn any sound into a wavetable for JIANT BYTE's WAVE and send it to the device.", tourV_wtH: "Works best with held sounds: a voice, a string, a drone.",
     vProj: "Projects", projTitle: "Projects and backups",
     projLead: "Your projects and backups. A backup keeps everything (the current music, the songs and their sections, the user sounds and the settings) in this browser and, if you want, in a file. Restoring it puts it back on the device as it was. Works with the FM-1 connected or with the emulator.",
     bkNow: "Back up now", bkImport: "Import a file…", bkAlsoFile: "Also download the file", bkLibTitle: "Backups", bkLibHelp: "Kept in this browser (nothing is uploaded). Download the ones that matter: clearing the browser's data loses them.",
@@ -490,7 +509,7 @@ try {
 } catch (_) {}
 
 /* ------------------------------------------------------------------------------------- views, firmware, target */
-const VIEWS = ["home", "install", "editor", "screen", "emu", "rec", "proj", "learn", "docs", "rescue", "ports"];
+const VIEWS = ["home", "install", "editor", "screen", "emu", "rec", "proj", "wt", "learn", "docs", "rescue", "ports"];
 function go(view, push = true) {
   if (!VIEWS.includes(view)) view = "home";
   state.view = view;
@@ -1288,6 +1307,111 @@ function renderProj() {
   }) : [el("p", "bkempty", t("bkEmpty"))]));
 }
 
+/* ------------------------------------------------------------------------------------------- wavetables (BYTE) */
+/* any sound (a file or the microphone) -> WAVE's USER table, 8 frames x 128 (wavetable.js); heard as a sweep, saved as a
+ * WAV, sent to a USER slot of JIANT BYTE over USB (protocol 1.5: WT_INFO 90, WT_WRITE 91 in chunks with an ack, WT_COMMIT
+ * 92; WT_READ 93 back). The FM-1 or the emulator, as Projects */
+const wt = { frames: null, sel: 0, info: null, rec: null, working: false };
+const wtSay = (x) => { $("wtstat").textContent = x; };
+function wtDraw() {
+  $("wtcard").hidden = !wt.frames; renderWtDev();
+  if (!wt.frames) return;
+  const css = getComputedStyle(document.documentElement), fg = css.getPropertyValue("--accent").trim() || "#fff", dim = css.getPropertyValue("--dim").trim() || "#888";
+  const box = $("wtframes");
+  if (box.children.length !== FRAMES) box.replaceChildren(...Array.from({ length: FRAMES }, (_, i) => { const c = document.createElement("canvas"); c.width = c.height = 128; c.onclick = () => { wt.sel = i; wtDraw(); }; return c; }));
+  [...box.children].forEach((c, i) => {
+    const g = c.getContext("2d"); g.clearRect(0, 0, 128, 128); c.classList.toggle("on", i === wt.sel);
+    g.strokeStyle = dim; g.beginPath(); g.moveTo(0, 64); g.lineTo(128, 64); g.stroke();
+    g.strokeStyle = fg; g.lineWidth = 2; g.beginPath(); wt.frames[i].forEach((v, k) => (k ? g.lineTo : g.moveTo).call(g, k, 64 - v * 56)); g.stroke();
+  });
+  const cv = $("wtsweep"), g = cv.getContext("2d"), W = cv.width, H = cv.height; g.clearRect(0, 0, W, H);
+  for (let i = FRAMES - 1; i >= 0; i--) {                     // the frames back to front, each a step up and right
+    const ox = 40 + i * 70, oy = H - 40 - i * 20, sx = (W - 40 - 7 * 70 - 40) / LEN;
+    g.globalAlpha = i === wt.sel ? 1 : 0.35 + 0.08 * (FRAMES - i); g.strokeStyle = i === wt.sel ? fg : dim; g.lineWidth = i === wt.sel ? 2.5 : 1.2;
+    g.beginPath(); wt.frames[i].forEach((v, k) => (k ? g.lineTo : g.moveTo).call(g, ox + k * sx, oy - v * 34)); g.stroke();
+  }
+  g.globalAlpha = 1;
+}
+function wtSet(frames, msg) { wt.frames = frames; if (MOCK) window.__wtFrames = frames; wt.sel = 0; wtSay(msg); wtDraw(); }
+async function wtFromBuffer(buf, name) {
+  try {
+    const ac = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 1, 44100);
+    const a = await ac.decodeAudioData(buf), x = new Float32Array(a.length);
+    for (let c = 0; c < a.numberOfChannels; c++) { const d = a.getChannelData(c); for (let i = 0; i < x.length; i++) x[i] += d[i] / a.numberOfChannels; }
+    wtSet(makeTable(x, a.sampleRate), t("wtMade").replace("%s", name));
+    if (!$("wtname").value) $("wtname").value = name.replace(/\.[^.]+$/, "").toUpperCase().replace(/[^A-Z0-9 ]/g, "").slice(0, 8);
+  } catch (e) { wtSay(e.message === "silent" ? t("wtSilent") : t("wtBad")); }
+}
+$("wtfilebtn").onclick = () => $("wtfile").click();
+$("wtfile").onchange = async () => { const f = $("wtfile").files[0]; if (f) await wtFromBuffer(await f.arrayBuffer(), f.name); $("wtfile").value = ""; };
+$("wtmic").onclick = async () => {
+  if (wt.rec) { wt.rec.stop(); return; }
+  try {
+    const s = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    const r = wt.rec = new MediaRecorder(s), parts = [];
+    r.ondataavailable = (e) => parts.push(e.data);
+    r.onstop = async () => { s.getTracks().forEach((k) => k.stop()); wt.rec = null; $("wtmic").textContent = t("wtMic"); await wtFromBuffer(await new Blob(parts).arrayBuffer(), t("wtMicName")); };
+    r.start(); $("wtmic").textContent = t("wtMicStop"); wtSay(t("wtRecording"));
+    setTimeout(() => { if (wt.rec === r) r.stop(); }, 8000);
+  } catch (_) { wtSay(t("wtNoMic")); }
+};
+$("wtplay").onclick = () => {
+  if (!wt.frames) return;
+  const ac = new AudioContext(), x = wtRender(wt.frames, ac.sampleRate), b = ac.createBuffer(1, x.length, ac.sampleRate);
+  b.copyToChannel(x, 0); const s = ac.createBufferSource(); s.buffer = b; s.connect(ac.destination); s.onended = () => ac.close(); s.start();
+};
+$("wtwav").onclick = () => { if (!wt.frames) return; const a = document.createElement("a"); a.href = URL.createObjectURL(wtWav(wt.frames)); a.download = `${($("wtname").value || "WAVETABLE").trim()}.wav`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); };
+/* the device: its USER slots */
+function wtLink() { return state.fw === "byte" ? projLink() : null; }
+function renderWtDev() {
+  if (!$("wtdevcard")) return;
+  const L = wtLink();
+  $("wtdevcard").hidden = !wt.frames && !wt.info;
+  $("wtslotshelp").textContent = state.fw !== "byte" ? t("wtByteOnly") : !L ? t("wtNoDev") : wt.info ? t("wtSlotsHelp").replace("%s", L.name) : t("wtAsk");
+  const sel = $("wtslot"), cur = sel.value;
+  const n = wt.info ? wt.info.n : 8;
+  sel.replaceChildren(...Array.from({ length: n }, (_, i) => { const o = document.createElement("option"); o.value = i; o.textContent = `USER ${i + 1}${wt.info && wt.info.used[i] ? " · " + (wt.info.names[i] || "—") : wt.info ? " · " + t("wtEmpty") : ""}`; return o; }));
+  if (cur) sel.value = cur;
+  for (const id of ["wtsend", "wtload", "wtread"]) $(id).disabled = !L || wt.working;
+  $("wtsend").disabled ||= !wt.frames;
+}
+async function wtInfo(L) { wt.info = parseWtInfo(await L.link.request(WT.INFO, [], 900)); }
+$("wtread").onclick = async () => { const L = wtLink(); if (!L) return; try { await wtInfo(L); wtSay(""); } catch (_) { wtSay(t("wtOld")); } renderWtDev(); };
+$("wtsend").onclick = async () => {
+  const L = wtLink(); if (!L || !wt.frames) return;
+  const slot = +$("wtslot").value, name = ($("wtname").value || "USER").toUpperCase().slice(0, 8);
+  wt.working = true; renderWtDev(); $("wtprog").hidden = false;
+  try {
+    for (let f = 0; f < FRAMES; f++) {
+      const i16 = toI16(wt.frames[f]);
+      for (let c = 0; c < CHUNKS; c++) {
+        const a = await L.link.request(WT.WRITE, [slot, f, c, ...wtPack(i16, c)], 900, (r) => r[0] === slot && r[1] === f && r[2] === c);
+        if (a[3]) throw new Error(t(a[3] === 2 ? "wtBusy" : "wtSlotBad"));
+        $("wtbar").style.width = `${Math.round(((f * CHUNKS + c + 1) / (FRAMES * CHUNKS)) * 100)}%`;
+      }
+    }
+    const r = await L.link.request(WT.COMMIT, [slot, ...[...name].map((ch) => ch.charCodeAt(0) & 127), 0], 3000, (r) => r[0] === slot);
+    if (r[1]) throw new Error(t("wtBusy"));
+    wtSay(t("wtSent").replace("%s", `USER ${slot + 1}`).replace("%n", name));
+    try { await wtInfo(L); } catch (_) {}
+  } catch (e) { wtSay(e.message === "timeout" ? t("wtOld") : e.message); }
+  wt.working = false; $("wtprog").hidden = true; renderWtDev();
+};
+$("wtload").onclick = async () => {
+  const L = wtLink(); if (!L) return;
+  const slot = +$("wtslot").value; wt.working = true; renderWtDev();
+  try {
+    const frames = [];
+    for (let f = 0; f < FRAMES; f++) {
+      const s = [];
+      for (let c = 0; c < CHUNKS; c++) s.push(...wtUnpack((await L.link.request(WT.READ, [slot, f, c], 900, (r) => r[0] === slot && r[1] === f && r[2] === c)).slice(3)));
+      frames.push(Float32Array.from(s, (v) => v / 32000));
+    }
+    if (wt.info && wt.info.names[slot]) $("wtname").value = wt.info.names[slot];
+    wtSet(frames, t("wtLoaded").replace("%s", `USER ${slot + 1}`));
+  } catch (_) { wtSay(t("wtOld")); }
+  wt.working = false; renderWtDev();
+};
 /* ------------------------------------------------------------------------------------------- how it works */
 /* each firmware's ideas (learn-fm.json, learn-byte.json): sectors (the concept, the engines, the sequencers, the
  * effects, the modulators, the generators, the songs), each item its statement, how it works, where it is on the
@@ -1415,14 +1539,17 @@ const TOUR = [
   { k: "Target", sel: "#targetseg" },
   { k: "Dev", sel: "#devchip", view: "home" },
   { k: "Find", sel: "#find", view: "home" },
-  ...["install", "editor", "screen", "emu", "rec", "proj", "learn", "docs", "rescue", "ports"].map((v) => ({ k: "V_" + v, sel: `nav.views [data-go="${v}"]` })),
+  ...["install", "editor", "screen", "emu", "rec", "proj", "wt", "learn", "docs", "rescue", "ports"].map((v) => ({ k: "V_" + v, sel: `nav.views [data-go="${v}"]` })),
   { k: "Lang", sel: "#lang" },
   { k: "End", sel: "#tourbtn" },
 ];
 const tour = { i: 0, on: false };
 const TOUR_KEY = "jiant.studio.tour.1";
 function tourShow(i) {
+  const dir = i < tour.i ? -1 : 1;
   tour.i = Math.max(0, Math.min(TOUR.length - 1, i));
+  const hid = (x) => x.sel && (() => { const el = document.querySelector(x.sel); return el && el.hidden; })();
+  while (hid(TOUR[tour.i]) && tour.i + dir >= 0 && tour.i + dir < TOUR.length) tour.i += dir;   // a part this firmware has not (Wavetables on FM)
   const st = TOUR[tour.i];
   if (st.view && state.view !== st.view) go(st.view);
   $("tour").hidden = false; tour.on = true;
@@ -1887,6 +2014,8 @@ function render() {
   renderTakes();
   if (state.view === "ports") renderPorts();
   if (state.view === "proj") renderProj();
+  if (state.view === "wt") renderWtDev();
+  document.querySelector('nav.views [data-go="wt"]').hidden = state.fw !== "byte";
   if (state.view === "learn") renderLearn();
   if (state.view === "rescue") { if (!rsStarted) rs.src = state.fw; rsRender(); }
   if (state.view === "docs" && docsFor !== state.fw + lang) { docsFor = state.fw + lang; renderDocs(); }
@@ -2047,6 +2176,14 @@ function mockAccess() {
       else if (op === 1) { const off = bkR32(f.a, 2), body = f.a.slice(7), n = Math.min(256, puts.get(id).length - off); puts.get(id).set(bkUnpack(body, n), off); }
       else if (op === 2) arch.set(id, puts.get(id));
       deliver(frame(67, [op, id, 0]));
+      return;
+    }
+    if (kind === "byte" && f.cmd >= 90 && f.cmd <= 93) {         // user wavetables (protocol 1.5): 8 slots
+      const W = window.__wt = window.__wt || { names: Array(8).fill(""), data: Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => new Array(96).fill(0))) }, a = f.a;
+      if (f.cmd === 90) { const used = W.names.reduce((m, n, i) => m | (n ? 1 << (i % 7) : 0), 0); deliver(frame(90, [8, 8, 128, used & 127, W.names[7] ? 1 : 0, ...W.names.flatMap((n) => [...n].map((c) => c.charCodeAt(0)).concat(0))])); }
+      if (f.cmd === 91) { if (a[0] > 7) { deliver(frame(91, [a[0], a[1], a[2], 1])); return; } W.data[a[0]][a[1] * 4 + a[2]] = a.slice(3); deliver(frame(91, [a[0], a[1], a[2], 0])); }
+      if (f.cmd === 92) { W.names[a[0]] = String.fromCharCode(...a.slice(1, a.indexOf(0, 1))); deliver(frame(92, [a[0], 0])); }
+      if (f.cmd === 93) deliver(frame(93, [a[0], a[1], a[2], ...(W.data[a[0]][a[1] * 4 + a[2]] || new Array(96).fill(0))]));
       return;
     }
     if (f.cmd === CMD.INFO) {

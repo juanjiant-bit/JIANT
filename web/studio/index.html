@@ -250,6 +250,13 @@
   .lrstate { margin: 0; font-size: clamp(16px, 1.6vw, 19px); line-height: 1.5; max-width: 62ch; }
   .lrhow { margin: 0; padding-left: 20px; color: var(--dim); }
   .lrhow li { margin: 4px 0; max-width: 70ch; }
+  .wtframes { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin: 8px 0; }
+  .wtframes canvas { width: 100%; aspect-ratio: 1; background: var(--field); border-radius: var(--radius-s); cursor: pointer; }
+  .wtframes canvas.on { outline: 2px solid var(--accent); }
+  .wtsweep { width: 100%; height: auto; background: var(--field); border-radius: var(--radius-s); }
+  .wtsend { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 6px; }
+  .wtsend input { width: 10ch; text-transform: uppercase; font-family: var(--mono); }
+  @media (max-width: 560px) { .wtframes { grid-template-columns: repeat(4, 1fr); } }
   .lrwhere { margin: 0; font-family: var(--mono); font-size: 13px; color: var(--fg); background: var(--field); border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 0 var(--radius-s) var(--radius-s) 0; }
   .lrnav { justify-content: space-between; }
   .lrlive .row { margin-bottom: 14px; }
@@ -424,6 +431,7 @@
       <button data-go="emu" data-t="vEmu"></button>
       <button data-go="rec" data-t="vRec"></button>
       <button data-go="proj" data-t="vProj"></button>
+      <button data-go="wt" data-t="vWt"></button>
       <button data-go="learn" data-t="vLearn"></button>
       <button data-go="docs" data-t="vDocs"></button>
       <button data-go="rescue" data-t="vRescue"></button>
@@ -549,6 +557,28 @@
       <div class="viewhead" style="margin-bottom:6px"><div><h2 data-t="bkLibTitle"></h2><p class="dim" data-t="bkLibHelp"></p></div>
         <label class="chk"><input type="checkbox" id="bkdl" checked> <span data-t="bkAlsoFile"></span></label></div>
       <div class="bklist" id="bklist"></div>
+    </div>
+  </section>
+
+  <!-- ======================================================================================= wavetables (BYTE) -->
+  <section class="view" id="v-wt" hidden>
+    <div class="viewhead"><div><p class="eyebrow" data-t="vWt"></p><h1 data-t="wtTitle"></h1></div>
+      <div class="emuctl"><button class="btn" id="wtfilebtn" type="button" data-t="wtFile"></button><input id="wtfile" type="file" accept="audio/*,.wav,.aif,.aiff,.mp3,.flac,.ogg" hidden>
+        <button class="btn ghost" id="wtmic" type="button" data-t="wtMic"></button></div></div>
+    <p class="lead" data-t="wtLead"></p>
+    <p class="projstat" id="wtstat" role="status"></p>
+    <div class="card" id="wtcard" hidden>
+      <div class="viewhead" style="margin-bottom:6px"><div><h2 data-t="wtFrames"></h2><p class="dim" data-t="wtFramesHelp"></p></div>
+        <div class="emuctl"><button class="btn ghost" id="wtplay" type="button" data-t="wtPlay"></button><button class="btn ghost" id="wtwav" type="button" data-t="wtWav"></button></div></div>
+      <div class="wtframes" id="wtframes"></div>
+      <canvas class="wtsweep" id="wtsweep" width="960" height="220" aria-label="sweep"></canvas>
+    </div>
+    <div class="card" id="wtdevcard" hidden>
+      <div class="viewhead" style="margin-bottom:6px"><div><h2 data-t="wtSlots"></h2><p class="dim" id="wtslotshelp"></p></div><button class="btn ghost" id="wtread" type="button" data-t="wtReadSlots"></button></div>
+      <div class="wtsend"><label><span data-t="wtSlot"></span> <select id="wtslot"></select></label>
+        <label><span data-t="wtName"></span> <input id="wtname" maxlength="8" spellcheck="false" autocomplete="off"></label>
+        <button class="btn" id="wtsend" type="button" data-t="wtSend"></button><button class="btn ghost" id="wtload" type="button" data-t="wtLoad"></button></div>
+      <div class="bkprog" id="wtprog" hidden><i id="wtbar"></i></div>
     </div>
   </section>
 
