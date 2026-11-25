@@ -145,6 +145,8 @@ jobs:
           target=pages/'preview/emu'
           if target.exists():shutil.rmtree(target)
           shutil.copytree(emu,target)
+          if (pages/'emu-v/index.json').exists():   # (the version picker over every installer version: web/emu/picker.js)
+              (target/'index.html').write_text((target/'index.html').read_text().replace('</body>','<script src="../../emu-v/picker.js"></script>\n</body>',1))
           (target/'SOURCE_COMMIT').write_text(m['source']+'\n')
           (target/'SHA256SUMS').write_text(''.join(digest(p)+'  '+p.relative_to(target).as_posix()+'\n' for p in sorted(target.rglob('*')) if p.is_file()))
           assert before==protected(),'a public, public-emulator or non-preview editor file changed'

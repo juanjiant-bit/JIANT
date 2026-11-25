@@ -87,6 +87,18 @@ jobs:
           if [ "$(tr -d ' \n' < web/EMULATOR_EDITION)" = ADDITIVE ]; then
             python3 -u web/emu/browser-additive-test.py build/emu
           fi
+      # (the owner: "the beta emulator should play every version the public installer offers") each of web/STABLE and
+      # web/CLASSIC as its own emulator under emu-v/<sha7>/ (its commit's own page, worklet and wasm), for the beta
+      # emulator's version picker (web/emu/picker.js); a commit's build kept in the cache, so only a new one is built
+      - name: every installer version's emulator (cached)
+        uses: actions/cache@v4
+        with:
+          path: build/emu-v-cache
+          key: emu-v-1-${{ hashFiles('web/STABLE', 'web/CLASSIC', 'web/WITHDRAWN') }}
+          restore-keys: emu-v-1-
+      - name: every installer version's emulator
+        timeout-minutes: 40
+        run: bash web/emu/build_versions.sh build/pages/emu-v build/emu-v-cache
       # (JIANT) the installer and the web editor next to the emulator: the package needs JieLi's toolchain (downloaded)
       # and three files of their AC79 SDK (a partial clone: only those blobs). A firmware build failure stops deployment.
       - name: JieLi toolchain and SDK files (cached)
@@ -281,6 +293,8 @@ jobs:
           target=Path('build/pages/preview/emu')
           if target.exists(): shutil.rmtree(target)
           shutil.copytree(emu,target)
+          if Path('build/pages/emu-v/index.json').exists():   # (the version picker, web/emu/picker.js)
+              (target/'index.html').write_text((target/'index.html').read_text().replace('</body>','<script src="../../emu-v/picker.js"></script>\n</body>',1))
           (target/'SOURCE_COMMIT').write_text(m['source']+'\n')
           (target/'SHA256SUMS').write_text(''.join(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.relative_to(target).as_posix()+'\n' for p in sorted(target.rglob('*')) if p.is_file()))
           print('beta emulator restored:',m['version'])
