@@ -68,6 +68,11 @@ const TEXT = {
     rsAndroidT: "Sin computadora: la app FM-1 Rescue", rsAndroid: "Hace lo mismo desde un teléfono Android: graba la placa por OTG y muestra el avance del rescate. Todavía es una versión de prueba: se baja de GitHub (Actions › android › Artifacts › fm1-rescue) con una cuenta iniciada.",
     rsAndroidHow: "Cómo se usa", rsAndroidApk: "Bajar el APK", rsMore: "Cómo funciona",
     rsSafe: "Solo se escribe la zona del firmware (0x4000–0x92FFF), sector por sector, cada uno releído y comparado; la cabecera de arranque y tus datos no se tocan. Sin firmware dentro, la placa queda como un FM-1 Transporter común. Basado en FM-1 Transporter (Hügelton Instruments), MvaveFM1Unbricker (Quixotic7), jl-uboot-tool (kagaimiq) y la guía de GoodPerson42. Usalo con la batería cargada y bajo tu responsabilidad: todavía no se probó en un FM-1 real.",
+    vRadio: "Radio", rdTitle: "Votá las piezas del generador", rdLead: "El emulador toca piezas nuevas del generador (GEN en RADIO), una tras otra. Decí si te gusta cada una: con tus votos el generador mejora. Tocá Empezar y subí el volumen.",
+    rdStart: "Empezar", rdStop: "Parar", rdGenre: "Género", rdMood: "MOOD", rdSeed: "semilla", rdThanks: "%n votos, ¡gracias!",
+    rdNoEmu: "Primero prendé el emulador en la pestaña Emulador (Switch on) y volvé.", rdOld: "El emulador publicado todavía no tiene RADIO para esta página: llega con su próxima versión.",
+    rdPrivacy: "Tu voto guarda solo los datos de la pieza (versión, género, semilla) y si te gustó; nada personal. Sirve para mejorar el generador.",
+    tourV_radioT: "Radio", tourV_radio: "Escuchá piezas del generador en el emulador y votá cuáles te gustan.", tourV_radioH: "👍 o 👎 pasa a la siguiente; ⏭ salta sin votar.",
     vWt: "Wavetables", wtTitle: "Tus wavetables para WAVE", wtLead: "Cualquier sonido (un archivo o el micrófono) se vuelve una tabla de 8 cuadros para el motor WAVE de JIANT BYTE: Studio busca el período de cada parte del sonido, toma un ciclo, lo alinea con el anterior y lo normaliza. Escuchala, bajala como WAV o mandala a una ranura USER del equipo.",
     wtFile: "Cargar audio", wtMic: "Grabar con el micrófono", wtMicStop: "Parar", wtMicName: "MIC", wtRecording: "Grabando (hasta 8 s): un sonido sostenido o una frase que cambie de color. Tocá Parar.",
     wtNoMic: "No se pudo abrir el micrófono (el navegador no dio permiso).", wtMade: "%s → 8 cuadros de 128 muestras.", wtSilent: "Ese audio está en silencio.", wtBad: "No pude leer ese archivo de audio.",
@@ -231,6 +236,11 @@ const TEXT = {
     rsAndroidT: "No computer: the FM-1 Rescue app", rsAndroid: "Does the same from an Android phone: flashes the board over OTG and shows the rescue's progress. Still a test version: it downloads from GitHub (Actions › android › Artifacts › fm1-rescue) while signed in.",
     rsAndroidHow: "How to use it", rsAndroidApk: "Get the APK", rsMore: "How it works",
     rsSafe: "Only the firmware area (0x4000–0x92FFF) is written, sector by sector, each read back and compared; the boot head and your data are not touched. Without a firmware inside, the board is a plain FM-1 Transporter. Built on FM-1 Transporter (Hügelton Instruments), MvaveFM1Unbricker (Quixotic7), jl-uboot-tool (kagaimiq) and GoodPerson42's guide. Use it with a charged battery and at your own risk: it has not been tried on a real FM-1 yet.",
+    vRadio: "Radio", rdTitle: "Vote on the generator's pieces", rdLead: "The emulator plays new pieces from the generator (GEN on RADIO), one after another. Say whether you like each one: your votes make the generator better. Press Start and turn the volume up.",
+    rdStart: "Start", rdStop: "Stop", rdGenre: "Genre", rdMood: "MOOD", rdSeed: "seed", rdThanks: "%n votes, thank you!",
+    rdNoEmu: "First switch the emulator on in the Emulator tab (Switch on) and come back.", rdOld: "The published emulator does not have RADIO for this page yet: it comes with its next version.",
+    rdPrivacy: "Your vote keeps only the piece's data (version, genre, seed) and whether you liked it; nothing personal. It helps improve the generator.",
+    tourV_radioT: "Radio", tourV_radio: "Listen to the generator's pieces on the emulator and vote for the ones you like.", tourV_radioH: "👍 or 👎 moves to the next one; ⏭ skips without a vote.",
     vWt: "Wavetables", wtTitle: "Your wavetables for WAVE", wtLead: "Any sound (a file or the microphone) becomes an 8-frame table for JIANT BYTE's WAVE engine: Studio finds the period of each part of the sound, takes one cycle, aligns it with the one before and normalizes it. Hear it, download it as a WAV or send it to one of the device's USER slots.",
     wtFile: "Load audio", wtMic: "Record from the microphone", wtMicStop: "Stop", wtMicName: "MIC", wtRecording: "Recording (up to 8 s): a held sound or a phrase that changes colour. Press Stop.",
     wtNoMic: "The microphone could not be opened (the browser gave no permission).", wtMade: "%s → 8 frames of 128 samples.", wtSilent: "That audio is silent.", wtBad: "That audio file could not be read.",
@@ -509,7 +519,7 @@ try {
 } catch (_) {}
 
 /* ------------------------------------------------------------------------------------- views, firmware, target */
-const VIEWS = ["home", "install", "editor", "screen", "emu", "rec", "proj", "wt", "learn", "docs", "rescue", "ports"];
+const VIEWS = ["home", "install", "editor", "screen", "emu", "rec", "proj", "wt", "radio", "learn", "docs", "rescue", "ports"];
 function go(view, push = true) {
   if (!VIEWS.includes(view)) view = "home";
   state.view = view;
@@ -1412,6 +1422,93 @@ $("wtload").onclick = async () => {
   } catch (_) { wtSay(t("wtOld")); }
   wt.working = false; renderWtDev();
 };
+/* ------------------------------------------------------------------------------------------------ radio (votes) */
+/* The generator heard by real ears: the public emulator with GEN on RADIO (a new piece when one ends), the piece told
+ * (genre, mood, form), 👍 / 👎 (a vote, then the next) or ⏭ (the next, no vote). A vote is the piece's data only
+ * (device, version, genre, seed, mood, energy, form, seconds heard, ±1, a random id of this browser) into Juan's Supabase
+ * (insert only; 409 = voted already, taken as done); offline, kept and sent later. The generator through jiantEmu.gen
+ * (web/emu worklet.js: the firmware's web_gen_info / web_gen_genre / web_gen_cmd) */
+const RD_URL = "https://tjscbsiofkxshzckmmhk.supabase.co/rest/v1/votes", RD_KEY = "sb_publishable_An299mMM1UZte-5dkjnojg_Cl_Lk6tM";
+const RD_FORMS = ["LOOP", "PARTS", "SONG"];
+const rd = { on: false, timer: 0, info: null, genres: [], piece: -1, since: 0, version: "", votes: 0, queue: [], retry: 0 };
+function rdClient() {
+  let c = null;
+  try { c = localStorage.getItem("jiant.studio.radio.client"); } catch (_) {}
+  if (!c) { c = "c" + Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(16).padStart(2, "0")).join(""); try { localStorage.setItem("jiant.studio.radio.client", c); } catch (_) {} }
+  return c.slice(0, 40);
+}
+/* the generator: the emulator's (or, with ?mock=1, a pretend one for the tests) */
+const rdMock = MOCK && { s: [1, 0, 1234, 0, 64, 2, 1, 1], gen(cmd, arg, g) {
+  const s = this.s; if (cmd === 0) s[0] = arg ? 1 : 0; if (cmd === 1) { s[6]++; s[2] = (s[2] * 7 + 13) % 99991; } if (cmd === 2) s[1] = Math.max(0, arg); if (cmd === 3) s[3] = arg; if (cmd === 4) s[7] = arg;
+  return Promise.resolve({ ok: true, info: [...s], genres: g ? ["HOUSE", "TECHNO", "IDM GLITCH", "DREAM POP"] : null });
+} };
+function rdGen() { if (rdMock) return rdMock; try { const e = frames.emu.el.contentWindow.jiantEmu; return e && e.on() && e.gen ? e : null; } catch (_) { return null; } }
+function rdLink() {
+  if (!emuOn()) return null;
+  if (!proj.emuLink || proj.emuLink.closed) { const m = emuMidi(), input = [...m.inputs.values()][0], output = [...m.outputs.values()][0]; const link = proj.emuLink = new Link(output, () => {}); input.addEventListener("midimessage", (e) => link.receive(e.data)); }
+  return proj.emuLink;
+}
+const rdSay = (x) => { $("rdstat").textContent = x; };
+function renderRadio() {
+  if (!$("rdgo")) return;
+  $("rdgo").textContent = t(rd.on ? "rdStop" : "rdStart");
+  $("rdcard").hidden = !rd.on || !rd.info;
+  if (!rd.info) return;
+  const [, g, seed, mood, energy, form] = rd.info;
+  $("rdnow").textContent = g === -1 ? "EXPLORE" : rd.genres[g] || `#${g}`;
+  $("rdmeta").textContent = `${t("rdMood")} ${mood > 0 ? "+" : ""}${mood} · ${RD_FORMS[form] || "?"} · ${t("rdSeed")} ${seed} · ${rd.version || ""}`;
+  $("rdcount").textContent = rd.votes ? t("rdThanks").replace("%n", rd.votes) : "";
+  for (const id of ["rdup", "rddown", "rdskip"]) $(id).disabled = !rd.on;
+}
+async function rdPoll() {
+  const G = rdGen(); if (!G || !rd.on) return;
+  const r = await G.gen(null, 0, !rd.genres.length);
+  if (!r.ok) { rdSay(t("rdOld")); return; }
+  if (r.genres && r.genres.length) { rd.genres = r.genres; $("rdgenre").replaceChildren(...[["-2", "RANDOM"], ["-1", "EXPLORE"], ...r.genres.map((n, i) => [String(i), n])].map(([v, n]) => { const o = document.createElement("option"); o.value = v; o.textContent = n; return o; })); }
+  rd.info = r.info;
+  if (r.info[6] !== rd.piece) { rd.piece = r.info[6]; rd.since = Date.now(); }
+  if (!r.info[0] && rd.on) G.gen(0, 1);                      // RADIO back on (the device's own keys can turn it off)
+  rdSay(""); renderRadio();
+}
+async function rdStart() {
+  if (!rdMock && !emuOn()) { rdSay(t("rdNoEmu")); return; }
+  const G = rdGen();
+  if (!G) { rdSay(t("rdOld")); return; }
+  rd.on = true;
+  try { const L = rdLink(); if (L) rd.version = parseInfo(await L.request(CMD.INFO, [], 900)).version.replace(/^\S+\s+/, ""); } catch (_) {}
+  if (rdMock) rd.version = "V10.8.44";
+  const r = await G.gen(0, 1, true);
+  if (!r.ok) { rd.on = false; rdSay(t("rdOld")); renderRadio(); return; }
+  await G.gen(4, 1);
+  clearInterval(rd.timer); rd.timer = setInterval(rdPoll, 1000);
+  await rdPoll();
+}
+function rdStop() { rd.on = false; clearInterval(rd.timer); const G = rdGen(); if (G) G.gen(4, 0); renderRadio(); }
+async function rdSend(row) {
+  try {
+    const r = await fetch(RD_URL, { method: "POST", headers: { apikey: RD_KEY, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(row) });
+    return r.ok || r.status === 409;                            // 409: this piece voted already from this browser
+  } catch (_) { return false; }
+}
+async function rdFlush() {
+  while (rd.queue.length) { if (!(await rdSend(rd.queue[0]))) return; rd.queue.shift(); }
+  clearInterval(rd.retry); rd.retry = 0;
+}
+async function rdNext(vote) {
+  const G = rdGen(); if (!G || !rd.on || !rd.info) return;
+  if (vote) {
+    const [, g, seed, mood, energy, form] = rd.info;
+    rd.queue.push({ device: state.fw === "byte" ? "BYTE" : "FM", version: rd.version, genre: g === -1 ? "EXPLORE" : rd.genres[g] || String(g), seed, mood, energy,
+      form: RD_FORMS[form] || "SONG", listened_s: Math.round((Date.now() - rd.since) / 1000), vote, client: rdClient() });
+    rd.votes++;
+    rdFlush().then(() => { if (rd.queue.length && !rd.retry) rd.retry = setInterval(rdFlush, 30000); });
+  }
+  await G.gen(1, 0); await rdPoll();
+}
+$("rdgo").onclick = () => (rd.on ? rdStop() : rdStart());
+$("rdup").onclick = () => rdNext(1); $("rddown").onclick = () => rdNext(-1); $("rdskip").onclick = () => rdNext(0);
+$("rdgenre").onchange = async () => { const G = rdGen(); if (G) { await G.gen(2, +$("rdgenre").value); await G.gen(1, 0); await rdPoll(); } };
+$("rdmood").onchange = async () => { const G = rdGen(); if (G) { await G.gen(3, +$("rdmood").value); await rdPoll(); } };
 /* ------------------------------------------------------------------------------------------- how it works */
 /* each firmware's ideas (learn-fm.json, learn-byte.json): sectors (the concept, the engines, the sequencers, the
  * effects, the modulators, the generators, the songs), each item its statement, how it works, where it is on the
@@ -1539,7 +1636,7 @@ const TOUR = [
   { k: "Target", sel: "#targetseg" },
   { k: "Dev", sel: "#devchip", view: "home" },
   { k: "Find", sel: "#find", view: "home" },
-  ...["install", "editor", "screen", "emu", "rec", "proj", "wt", "learn", "docs", "rescue", "ports"].map((v) => ({ k: "V_" + v, sel: `nav.views [data-go="${v}"]` })),
+  ...["install", "editor", "screen", "emu", "rec", "proj", "wt", "radio", "learn", "docs", "rescue", "ports"].map((v) => ({ k: "V_" + v, sel: `nav.views [data-go="${v}"]` })),
   { k: "Lang", sel: "#lang" },
   { k: "End", sel: "#tourbtn" },
 ];
@@ -2015,6 +2112,7 @@ function render() {
   if (state.view === "ports") renderPorts();
   if (state.view === "proj") renderProj();
   if (state.view === "wt") renderWtDev();
+  if (state.view === "radio") renderRadio();
   document.querySelector('nav.views [data-go="wt"]').hidden = state.fw !== "byte";
   if (state.view === "learn") renderLearn();
   if (state.view === "rescue") { if (!rsStarted) rs.src = state.fw; rsRender(); }
