@@ -153,6 +153,14 @@ try {
        /^c[0-9a-f]{24}$/.test(b0.client) && posts[0].h.apikey && posts[1].b.seed !== b0.seed && /: 2/.test(count) && parts0 === 9 && noParts && posts[1].b.parts === 0,
       `radio: ${now}, 👍 and 👎 posted (${posts.map((p) => p.b.vote).join(" ")}, a 409 taken), ⏭ nothing; parts 9 (a 400 sent again without it), none chosen 0 after 4 s; "${count}"`);
   }
+  /* analysis: the simulated FM-1's six tracks, their parameters by name, steps, the song, in a summary */
+  {
+    const q = await page("?mock=1#an", { width: 1280, height: 900 });
+    await q.click("#ango"); await q.waitForTimeout(12000);
+    const txt = await q.textContent("#anpre");
+    ok(/T1 ANALOG preset 1/.test(txt) && /CUT=90 \(def 64\)/.test(txt) && /steps with notes: 16/.test(txt) && /SONG 2 rows: Ax1 Bx2/.test(txt) && (await q.textContent("#anstat")) === "Done.",
+      `analysis: 6 tracks, parameters by name, steps and the song in the summary (${txt.split("\n").length} lines)`);
+  }
   /* rescue: the published JIANT FM and JieLi's loader fetched and checked, a board's fm1-rescue.uf2 made */
   {
     const ctx = await b.newContext({ viewport: { width: 1280, height: 900 }, acceptDownloads: true });

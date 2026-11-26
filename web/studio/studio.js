@@ -12,12 +12,14 @@ import { scrDecode, scrEncode, wavFile, zipStored, midiFile, SCR } from "./studi
 import { Daw } from "./daw.js";
 import { Player, anim } from "./learn.js";
 import { Ecosystem, Levels } from "./radio-vis.js";
+import { capture as anCapture, text as anText } from "./analysis.js";
 import { makeTable, toI16, pack as wtPack, unpack as wtUnpack, parseInfo as parseWtInfo, render as wtRender, wav as wtWav, WT, FRAMES, LEN, CHUNKS } from "./wavetable.js";
 import { captureBackup, restoreBackup, readBackup, songsNotRestored, BACKUP_IDS, bkU32, bkR32, bkCrc, bkPack, bkUnpack } from "./fm1backup.js";
 
 const $ = (id) => document.getElementById(id);
 const QS = new URLSearchParams(location.search);
 const MOCK = QS.get("mock") === "1";
+let mockSel = 0;                                               // (the simulated FM-1's selected track)
 
 /* ------------------------------------------------------------------------------------------------- the words */
 const TEXT = {
@@ -71,6 +73,10 @@ const TEXT = {
     rsSafe: "Solo se escribe la zona del firmware (0x4000–0x92FFF), sector por sector, cada uno releído y comparado; la cabecera de arranque y tus datos no se tocan. Sin firmware dentro, la placa queda como un FM-1 Transporter común. Basado en FM-1 Transporter (Hügelton Instruments), MvaveFM1Unbricker (Quixotic7), jl-uboot-tool (kagaimiq) y la guía de GoodPerson42. Usalo con la batería cargada y bajo tu responsabilidad: todavía no se probó en un FM-1 real.",
     rdLiked: "¿Qué te gustó? (opcional)", rdDisliked: "¿Qué no te gustó? (opcional)", rdNext: "Siguiente", rdpDrums: "Batería", rdpBass: "Bajo", rdpChords: "Acordes", rdpLead: "Lead", rdpArp: "Arp", rdpSound: "Sonido/mezcla",
     rdStarting: "Prendiendo…", rdEmuOn: "Prendiendo el emulador…",
+    vAn: "Análisis", anTitle: "Análisis: los datos exactos", anLead: "Lee del FM-1 o del emulador todo lo que tiene: cada pista con su motor, preset, nivel y cada parámetro con su nombre y valor (y cuáles cambiaron), los globales y los efectos, los pasos, la canción y el generador. Con el emulador escucha además unos segundos: nivel, picos, cuánto sostiene cada pista y su espectro. Bajá el archivo o copiá el resumen y pasalo tal cual.",
+    anGo: "Analizar", anSteps: "Incluir los pasos", anAudio: "Escuchar 8 s del emulador", anFrom: "De: %s (elige la pista de a una un instante y vuelve a la tuya)", anNoDev: "Conectá el FM-1 o prendé el emulador.",
+    anDone: "Listo.", anFail: "No se pudo leer todo", anJson: "Bajar el archivo (JSON)", anCopy: "Copiar el resumen", anCopied: "Resumen copiado.", anNoCopy: "No se pudo copiar: seleccioná el texto.",
+    tourV_anT: "Análisis", tourV_an: "Los datos exactos del equipo o del emulador en un archivo, para mandar cuando algo suena raro.", tourV_anH: "Con el emulador también mide cómo suena cada pista.",
     vRadio: "Radio", rdTitle: "Votá las piezas del generador", rdLead: "Piezas nuevas del generador, una tras otra, y un ecosistema que vive de la música: cada pista mueve a sus seres. Decí si te gusta cada pieza; con tus votos el generador mejora. Subí el volumen.",
     rdStart: "Empezar", rdStop: "Parar", rdGenre: "Género", rdMood: "MOOD", rdSeed: "semilla", rdThanks: "Votos: %n · ¡gracias!",
     rdNoEmu: "No se pudo prender el emulador: probá de nuevo, o prendelo en la pestaña Emulador.", rdOld: "El emulador publicado todavía no tiene RADIO para esta página: llega con su próxima versión.",
@@ -241,6 +247,10 @@ const TEXT = {
     rsSafe: "Only the firmware area (0x4000–0x92FFF) is written, sector by sector, each read back and compared; the boot head and your data are not touched. Without a firmware inside, the board is a plain FM-1 Transporter. Built on FM-1 Transporter (Hügelton Instruments), MvaveFM1Unbricker (Quixotic7), jl-uboot-tool (kagaimiq) and GoodPerson42's guide. Use it with a charged battery and at your own risk: it has not been tried on a real FM-1 yet.",
     rdLiked: "What did you like? (optional)", rdDisliked: "What didn't you like? (optional)", rdNext: "Next", rdpDrums: "Drums", rdpBass: "Bass", rdpChords: "Chords", rdpLead: "Lead", rdpArp: "Arp", rdpSound: "Sound/mix",
     rdStarting: "Starting…", rdEmuOn: "Switching the emulator on…",
+    vAn: "Analysis", anTitle: "Analysis: the exact data", anLead: "Reads everything the FM-1 or the emulator holds: each track with its engine, preset, level and every parameter by name and value (and which ones changed), the globals and effects, the steps, the song and the generator. From the emulator it also listens for a few seconds: level, peaks, how long each track sustains and its spectrum. Download the file or copy the summary and pass it on as it is.",
+    anGo: "Analyze", anSteps: "Include the steps", anAudio: "Listen to 8 s of the emulator", anFrom: "From: %s (selects each track for an instant and goes back to yours)", anNoDev: "Connect the FM-1 or switch the emulator on.",
+    anDone: "Done.", anFail: "Not everything could be read", anJson: "Download the file (JSON)", anCopy: "Copy the summary", anCopied: "Summary copied.", anNoCopy: "Could not copy: select the text.",
+    tourV_anT: "Analysis", tourV_an: "The device's or the emulator's exact data in a file, to send when something sounds wrong.", tourV_anH: "From the emulator it also measures how each track sounds.",
     vRadio: "Radio", rdTitle: "Vote on the generator's pieces", rdLead: "New pieces from the generator, one after another, and an ecosystem that lives on the music: each track moves its beings. Say whether you like each piece; your votes make the generator better. Turn the volume up.",
     rdStart: "Start", rdStop: "Stop", rdGenre: "Genre", rdMood: "MOOD", rdSeed: "seed", rdThanks: "Votes: %n · thank you!",
     rdNoEmu: "The emulator could not be switched on: try again, or switch it on in the Emulator tab.", rdOld: "The published emulator does not have RADIO for this page yet: it comes with its next version.",
@@ -535,7 +545,7 @@ try {
   window.navShow = () => { const b = nv.querySelector('[aria-current="page"]'); if (b) nv.scrollTo({ left: b.offsetLeft - (nv.clientWidth - b.offsetWidth) / 2, behavior: "smooth" }); edges(); };
   setTimeout(edges, 50);
 }
-const VIEWS = ["home", "install", "editor", "screen", "emu", "rec", "proj", "wt", "radio", "learn", "docs", "rescue", "ports"];
+const VIEWS = ["home", "install", "editor", "screen", "emu", "rec", "proj", "wt", "radio", "an", "learn", "docs", "rescue", "ports"];
 function go(view, push = true) {
   if (!VIEWS.includes(view)) view = "home";
   state.view = view;
@@ -1541,6 +1551,7 @@ async function rdStart() {
     const r = await G.gen(0, 1, true);
     if (!r.ok) { rdSay(t("rdOld")); return; }
     rd.on = true;
+    await G.gen(1, 0);                                           // a piece of its own first (RADIO on has nothing yet to play)
     await G.gen(4, 1);
     clearInterval(rd.timer); rd.timer = setInterval(rdPoll, 1000);
     rdFeed();
@@ -1590,6 +1601,38 @@ $("rdfull").onclick = () => { const st = $("rdstage"); document.fullscreenElemen
 $("rdup").onclick = () => rdAsk(1); $("rddown").onclick = () => rdAsk(-1); $("rdskip").onclick = () => { rd.pending = null; rdNext(); }; $("rdnext").onclick = () => rdNext();
 $("rdgenre").onchange = async () => { const G = rdGen(); if (G) { await G.gen(2, +$("rdgenre").value); await G.gen(1, 0); await rdPoll(); } };
 $("rdmood").onchange = async () => { const G = rdGen(); if (G) { await G.gen(3, +$("rdmood").value); await rdPoll(); } };
+/* ------------------------------------------------------------------------------------------------- analysis */
+/* the exact state (and, from the emulator, how it sounds) in one file to hand over (analysis.js) */
+const an = { data: null, busy: false };
+const anSay = (x) => { $("anstat").textContent = x; };
+function renderAn() {
+  if (!$("ango")) return;
+  const L = projLink(), emu = emuApi();
+  $("anwho").textContent = L ? t("anFrom").replace("%s", L.name) : t("anNoDev");
+  $("ango").disabled = !L || an.busy; $("anaudio").disabled = !emu; if (!emu) $("anaudio").checked = false;
+  $("anout").hidden = !an.data;
+}
+$("ango").onclick = async () => {
+  const L = projLink(); if (!L || an.busy) return;
+  an.busy = true; an.data = null; renderAn(); $("anprog").hidden = false;
+  const e = emuApi();
+  try {
+    an.data = await anCapture((c, a, to, m) => L.link.request(c, a, to, m), {
+      source: L.name, steps: $("ansteps").checked,
+      audio: $("anaudio").checked && e ? (f) => e.tap(f) : null, secs: 8,
+      gen: e && e.gen ? async () => { const r = await e.gen(null, 0, true); const i = rdInfo(r && r.info); return i ? { radio: !!i[0], genre: i[1] >= 0 && r.genres ? r.genres[i[1]] : i[1], seed: i[2], mood: i[3], energy: i[4], form: RD_FORMS[i[5]], piece: i[6] } : null; } : null,
+    }, (x, f) => { anSay(x); $("anbar").style.width = `${Math.round(f * 100)}%`; });
+    $("anpre").textContent = anText(an.data); anSay(t("anDone"));
+  } catch (err) { anSay(t("anFail") + (err && err.message ? ` (${err.message})` : "")); }
+  an.busy = false; $("anprog").hidden = true; renderAn();
+};
+$("anjson").onclick = () => {
+  if (!an.data) return;
+  const a = document.createElement("a"), stamp = an.data.made.replace(/[:.]/g, "-").slice(0, 19);
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(an.data, null, 1)], { type: "application/json" }));
+  a.download = `jiant-analysis-${state.fw}-${(an.data.firmware || "").replace(/\s+/g, "_")}-${stamp}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+};
+$("ancopy").onclick = async () => { try { await navigator.clipboard.writeText($("anpre").textContent); anSay(t("anCopied")); } catch (_) { anSay(t("anNoCopy")); } };
 /* ------------------------------------------------------------------------------------------- how it works */
 /* each firmware's ideas (learn-fm.json, learn-byte.json): sectors (the concept, the engines, the sequencers, the
  * effects, the modulators, the generators, the songs), each item its statement, how it works, where it is on the
@@ -1717,7 +1760,7 @@ const TOUR = [
   { k: "Target", sel: "#targetseg" },
   { k: "Dev", sel: "#devchip", view: "home" },
   { k: "Find", sel: "#find", view: "home" },
-  ...["install", "editor", "screen", "emu", "rec", "proj", "wt", "radio", "learn", "docs", "rescue", "ports"].map((v) => ({ k: "V_" + v, sel: `nav.views [data-go="${v}"]` })),
+  ...["install", "editor", "screen", "emu", "rec", "proj", "wt", "radio", "an", "learn", "docs", "rescue", "ports"].map((v) => ({ k: "V_" + v, sel: `nav.views [data-go="${v}"]` })),
   { k: "Lang", sel: "#lang" },
   { k: "End", sel: "#tourbtn" },
 ];
@@ -2193,6 +2236,7 @@ function render() {
   if (state.view === "ports") renderPorts();
   if (state.view === "proj") renderProj();
   if (state.view === "wt") renderWtDev();
+  if (state.view === "an") renderAn();
   if (state.view === "radio" || rd.vis) renderRadio();
   document.querySelector('nav.views [data-go="wt"]').hidden = state.fw !== "byte";
   if (state.view === "learn") renderLearn();
@@ -2328,7 +2372,12 @@ function mockAccess() {
       }, 250); }
       deliver(frame(22, [f.a[0] ? 31 : 0])); return;
     }
-    if (f.cmd === 4) { deliver(frame(4, [0, 0])); return; }    // DUMP (the engine and preset are all the guide reads)
+    const e14 = (v) => [(v + 8192) & 127, (v + 8192) >> 7];
+    if (f.cmd === 4) { deliver(frame(4, [0, 0, ...Array.from({ length: 140 }, (_, i) => e14(i % 7 ? 64 : 0)).flat()])); return; }   // DUMP: the engine, the preset, 100 + 40 values
+    if (f.cmd === 27) { if (f.a.length) mockSel = f.a[0]; deliver(frame(27, [mockSel, 6, ...[0, 2, 3, 4, 0, 5].flatMap((en, t) => [en, t, ...e14(100), t === 5 ? 1 : 0, 0])])); return; }   // TRACK
+    if (f.cmd === 29) { deliver(frame(29, [f.a[0], 0, f.a[0], ...Array.from({ length: 100 }, (_, i) => e14(i === 3 ? 90 : 64)).flat()])); return; }   // TRACK_DUMP
+    if (f.cmd === 30) { const [t, i] = f.a, on = i % 4 === 0; deliver(frame(30, [t, i, on ? 1 : 0, on ? 36 + t : 0, 0, 0, 0, 2, 0, 100])); return; }   // TRACK_STEP
+    if (f.cmd === 33) { deliver(frame(33, [0, 0, 2, 0, 0, 0, 0, 1, 1, 2])); return; }   // SONG: A x1, B x2
     if (f.cmd === 5) {                                          // DESC: CUT on any id
       const s = (x) => [...x].map((c) => c.charCodeAt(0)).concat(0), e = (v) => [(v + 8192) & 127, (v + 8192) >> 7];
       deliver(frame(5, [f.a[0], f.a[1], 0, ...e(0), ...e(127), ...e(64), ...s("CUT"), ...s("")])); return;
