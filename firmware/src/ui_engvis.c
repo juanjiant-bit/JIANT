@@ -1968,18 +1968,172 @@ typedef struct { const engine_t *e; uint8_t k, kind, n, pa, pb, pc, uk; int8_t d
 static const vxg_t VX_G[] = {
     {&ENG_ANALOG, 3, GK_CELL, 3, 4, 5, 6, 112, 32},      /* CUT RES DRIVE */
     {&ENG_WHEEL, 5, GK_TUBES, 9, 6, 5, 4, 100, 0},       /* DRIVE CLICK PERC */
-    {&ENG_PHASE, 7, GK_SNAIL, 96, 2, 7, 6, 110, 24},     /* DCW FB SUB */
+    {&ENG_PHASE, 7, GK_SNAIL, 96, 2, 7, 6, 110, 48},     /* DCW FB SUB */
     {&ENG_LOFI, 8, GK_CHAIN, 8, 1, 2, 3, 112, 0},
     {&ENG_STRING, 7, GK_WEB, 6, 2, 4, 3, 95, 0},         /* BRIGHT STRETCH POS */
 };
 static int32_t vx_gw(int32_t i) { return vxs.wv[i & 127]; }   /* the wave out, Q12 (-4096 .. 4096) */
+static __attribute__((noinline)) void vx_gsnail(const track_t *t, const vxf_t *fp, uint32_t mt, uint32_t age, int32_t en, int32_t sq,
+                                               int32_t pa, int32_t pb, int32_t pc)
+{   /* (V10.8.55: in the image, the segment full) */
+    const int16_t *p = t->p;
+    vxf_t f = *fp;
+    uint32_t i;
+    int32_t j, q[2 * 25], x = 0, y = 0, X, Y, r;
+    (void)pa; (void)pb; (void)pc; (void)p;
+                                     /* (V10.8.55, the owner: as the CARACOL was drawn) a snail crawling
+                                                     * to the left: its head and eyestalks there (pulling in on a note,
+                                                     * the mouth shouting with the level), its foot's sole the wave on
+                                                     * the ground, its shell on its back (the spiral, FB frays it, its
+                                                     * chambers crowding with DCW, SUB's outer whorl breathing), a little
+                                                     * one following when DETUNE or RING */
+    int32_t c[4] = {0, -96 - sq / 4, 256, 235}, hx = -44 * 16, hy = 18 * 16, sh = age < 100u, st = (sh ? 130 : 144) * (256 + en / 5) / 256, mo = en * 42 >> 8;
+    q[0] = -42 * 16; q[1] = 14 * 16; q[2] = -30 * 16; q[3] = 18 * 16; q[4] = -10 * 16; q[5] = 21 * 16; q[6] = 16 * 16; q[7] = 21 * 16;
+    q[8] = 38 * 16; q[9] = 30 * 16;
+    vx_curve(&f, q, 5, 0, 61 + en / 4);              /* its back */
+    for (i = 0; i <= 84u; i++) {                     /* its sole: the wave */
+        int32_t s = vx_gw((int32_t)(i * 127u / 84u));
+        X = (-44 + (int32_t)i) * 16; Y = 31 * 16 + ((s * (26 + (en * 38 >> 8))) >> 12);
+        if (i) vx_line(&f, x, y, X, Y, 64 + (s < 0 ? -s : s) * 102 / 4096 + en / 4);
+        x = X; y = Y;
+    }
+    vx_line(&f, -60 * 16, 36 * 16, 60 * 16, 36 * 16, 26);
+    for (j = 0; j < 2; j++) {                        /* the eyestalks */
+        uint32_t a = 65536u - 20316u - (uint32_t)j * 4588u + (uint32_t)((og_sin(vx_ang(mt, 50) + (uint32_t)j * 10430u) * 834) >> 15);
+        x = hx + 48 + ((og_cos(a) * st) >> 15); y = hy - 48 + ((og_sin(a) * st) >> 15);
+        q[0] = hx + 32 + j * 32; q[1] = hy - 48; q[2] = hx + 48 + ((og_cos(a) * st) >> 16); q[3] = hy - 48 + ((og_sin(a) * st) >> 16);
+        q[4] = x; q[5] = y;
+        vx_curve(&f, q, 3, 0, 77 + en / 4);
+        vx_ring(&f, x, y, 26, 26, 154);
+        vx_dot(&f, x, y, sh ? 8 : 16, 243);
+    }
+    vx_line(&f, hx - 16, hy + 64, hx - 64, hy + 80, 77); vx_line(&f, hx - 16, hy + 64, hx - 64, hy + 112, 77);
+    q[0] = hx + 96; q[1] = hy - 64; q[2] = hx; q[3] = hy - 64; q[4] = hx - 48; q[5] = hy + 32; q[6] = hx; q[7] = hy + 128;
+    q[8] = hx + 96; q[9] = hy + 160;
+    vx_curve(&f, q, 5, 0, 77 + (en * 77 >> 8));      /* the head */
+    if (mo > 10) vx_ring(&f, hx + 16, hy + 80, 13 + (mo * 77 >> 8), 13 + (mo * 141 >> 8), 218);
+    else vx_line(&f, hx, hy + 80, hx + 32, hy + 80, 154);
+    for (i = 0, r = 0; i <= 120u; i++) {             /* the shell: the spiral (2.15 turns), FB frays it */
+        int32_t u = (int32_t)(i * 1174u), rr = (40 * vx_x2(u * 441 >> 16) >> 12) + (vx_hash(i + (mt >> 8)) - 128) * pb / 256 * 26 / 256 * (int32_t)i / 120;
+        uint32_t a = (uint32_t)u + 16384u;
+        if (i) vx_pl(&f, c, a - 1174u, r, a, rr, 64 + en / 4 + pb / 5 + (int32_t)i * 77 / 120);
+        r = rr;
+    }
+    for (i = 0; i < 24u; i++) {                      /* its chambers, crowding toward the mouth with DCW (a bent phase) */
+        uint32_t b0 = i * 2731u, xk = 32768u + (uint32_t)pa * 128u, bb = b0 < xk ? b0 * 32768u / xk : 32768u + (b0 - xk) * 32767u / (65535u - xk);
+        uint32_t u = 65536u + ((bb * 75366u) >> 16);
+        int32_t s = vx_gw((int32_t)i * 5);
+        if (bb <= 62915u)
+            vx_pl(&f, c, u + 16384u, 40 * vx_x2((int32_t)(u - 65536u) * 441 >> 16) >> 12, u + 16384u, 40 * vx_x2((int32_t)u * 441 >> 16) >> 12,
+                  51 + (s < 0 ? -s : s) * 128 / 4096 + en / 4);
+    }
+    if (pc > 26) {                                   /* SUB: the outer whorl, breathing */
+        vxs.dal = (int16_t)(256 - pc * (128 + (og_sin(vx_ang(mt, 60)) >> 8)) / 256);
+        for (i = 0, r = 0; i <= 39u; i++) {
+            int32_t u = 101580 + (int32_t)i * 1008, rr = (40 * vx_x2(u * 441 >> 16) >> 12) + 38;
+            if (i) vx_pl(&f, c, (uint32_t)u + 15376u, r, (uint32_t)u + 16384u, rr, 141);
+            r = rr;
+        }
+        vxs.dal = 0;
+    }
+    if (p[P_E4] || p[P_E5]) {                        /* DETUNE / RING: a little one following, its shell turning */
+        static const int32_t C2[4] = {50 * 16, 22 * 16, 256, 256};
+        q[0] = 41 * 16; q[1] = 30 * 16; q[2] = 46 * 16; q[3] = 27 * 16; q[4] = 54 * 16; q[5] = 27 * 16; q[6] = 59 * 16; q[7] = 30 * 16;
+        vx_curve(&f, q, 4, 0, 64 + en / 5);
+        for (i = 0, r = 0; i <= 49u; i++) {
+            int32_t u = (int32_t)i * 2875, rr = (40 * vx_x2(u * 441 >> 16) >> 12) * 38 / 100;
+            uint32_t a = (uint32_t)u + 16384u + vx_ang(mt, p[P_E4] * 202 >> 8);
+            if (i) vx_pl(&f, C2, a - 2875u, r, a, rr, 77 + (en * 77 >> 8));
+            r = rr;
+        }
+    }
+    }
+static __attribute__((noinline)) void vx_gchain(const track_t *t, const vxf_t *fp, uint32_t mt, uint32_t age, int32_t en, int32_t sq,
+                                               int32_t pa, int32_t pb, int32_t pc)
+{   /* (V10.8.55: in the image, the segment full) */
+    const int16_t *p = t->p;
+    vxf_t f = *fp;
+    uint32_t i;
+    int32_t j, q[2 * 25], x = 0, y = 0, X, Y, r;
+    (void)pa; (void)pb; (void)pc; (void)p;
+                                     /* (V10.8.55, the owner: as the caterpillar was drawn) its spine
+                                                     * crawling in a wave, the head at the right, 8 segments back
+                                                     * thinning to the tail: rings lit by the byte's bits (their heat),
+                                                     * a dot in a lit one, legs lifting with them, its two skins the
+                                                     * sound itself, the antennae tipped by the lowest bits */
+    int32_t sx[9], sy[9], bt[8], tx = 0, ty = 0, bx = 0, by = 0;
+    uint32_t cr = mt * (uint32_t)(307 + 4 * en) >> 8, by8 = (uint32_t)(vx_gw(127) / 32 + 128) & 255u;
+    for (i = 0; i < 8u; i++) bt[i] = (by8 >> i & 1u) ? en : 0;
+    for (i = 0; i <= 8u; i++) {
+        int32_t amp = (26 + (en * 54 >> 8)) * (77 + (int32_t)i * 179 / 8) / 256;
+        sx[i] = i ? 27 * 16 - ((int32_t)i - 1) * 149 : 38 * 16;
+        sy[i] = 6 * 16 + ((og_sin(cr * 22u / 10u - i * 8344u) * amp) >> 15) - (i ? 0 : 64) - sq / 6;
+    }
+#define VR(i) ((i) ? 147 - (i) * 8 : 176)
+    vx_line(&f, -54 * 16, 33 * 16, 54 * 16, 33 * 16, 26);
+    for (i = 1; i <= 8u; i++) {                      /* legs: lifted where the bit is high */
+        int32_t rr = VR(i), b = bt[8 - i], sw = (og_sin(cr * 4u + i * 13560u) * 22) >> 15;
+        for (j = -1; j <= 1; j += 2) {
+            q[0] = sx[i] + j * 29; q[1] = sy[i] + (rr * 179 >> 8);
+            q[2] = sx[i] + j * 45 + sw; q[3] = sy[i] + rr + 38 - (b * 19 >> 8);
+            q[4] = sx[i] + j * 35 + (sw * 333 >> 8); q[5] = sy[i] + rr + 96 - (b * 48 >> 8);
+            q[5] = q[5] < 33 * 16 ? q[5] : 33 * 16;
+            vx_poly(&f, q, 3, 0, 51 + b / 5);
+        }
+    }
+    for (j = 0; j <= 40; j++) {                      /* the two skins: the wave along the body, thinner to the tail */
+        int32_t u = 256 + j * 7 * 256 / 40, i0 = u >> 8 < 7 ? u >> 8 : 7, fu = u - i0 * 256, X0, Y0, dx, dy, L;
+        int32_t s1 = vx_gw(j * 3), s2 = vx_gw(64 + j * 3), rr = (VR(i0) + (VR(i0 + 1) - VR(i0)) * fu / 256) * (256 - j * j * 141 / 1600 / 2) / 256 + 26;
+        X0 = sx[i0] + (sx[i0 + 1] - sx[i0]) * fu / 256; Y0 = sy[i0] + (sy[i0 + 1] - sy[i0]) * fu / 256;
+        dx = sx[i0 + 1] - sx[i0]; dy = sy[i0 + 1] - sy[i0];
+        L = (dx < 0 ? -dx : dx) + (dy < 0 ? -dy : dy) * 3 / 8 + 1;
+        x = X0 + dy * (rr + (s1 * 38 >> 12)) / L; y = Y0 - dx * (rr + (s1 * 38 >> 12)) / L;
+        X = X0 - dy * (rr + (s2 * 38 >> 12)) / L; Y = Y0 + dx * (rr + (s2 * 38 >> 12)) / L;
+        if (j) {
+            vx_line(&f, tx, ty, x, y, 46 + (s1 < 0 ? -s1 : s1) * 130 / 4096 + (en * 40 >> 8));
+            vx_line(&f, bx, by, X, Y, 46 + (s2 < 0 ? -s2 : s2) * 130 / 4096 + (en * 40 >> 8));
+        }
+        tx = x; ty = y; bx = X; by = Y;
+    }
+    q[0] = tx; q[1] = ty; q[2] = sx[8] - 96; q[3] = sy[8]; q[4] = bx; q[5] = by;
+    vx_curve(&f, q, 3, 0, 60);
+    for (i = 8; i >= 1; i--) {                       /* the segments */
+        int32_t rr = VR(i), v = vx_gw((int32_t)i * 15), m;
+        v = bt[8 - i] ? bt[8 - i] : clamp((v < 0 ? -v : v) * 115 / 100, 0, 4096) * 218 / 4096 + 13;
+        for (m = 0; m < 18; m++) {
+            uint32_t a = (uint32_t)m * 65536u / 18u;
+            int32_t w = 4096 + vx_gw((int32_t)i * 29 + m * 9) * 9 / 100;
+            q[2 * m] = sx[i] + ((((og_cos(a) * rr * 66 / 100) >> 15) * w) >> 12);
+            q[2 * m + 1] = sy[i] + ((((og_sin(a) * rr * 8 / 10) >> 15) * w) >> 12);
+        }
+        vx_poly(&f, q, 18, 1, 44 + (v * 200 >> 8));
+        vx_ring(&f, sx[i], sy[i], rr * 77 >> 8, rr * 97 >> 8, 28 + (v * 150 >> 8));
+        if (v > 115) vx_dot(&f, sx[i], sy[i], (v - 51) * f.s / 4267, 184 + (v * 72 >> 8));
+    }
+#undef VR
+    for (j = -1; j <= 1; j += 2) {                   /* the antennae, curling, tipped by the two lowest bits */
+        int32_t b = bt[j < 0 ? 0 : 1];
+        x = sx[0] + 48 + j * 96 + (b * 32 >> 8);
+        y = sy[0] - 320 - (b * 64 >> 8) + ((og_sin(cr * 3u + (uint32_t)(j * 10430)) * 24) >> 15);
+        q[0] = sx[0] + j * 48; q[1] = sy[0] - 144; q[2] = sx[0] + j * 80; q[3] = sy[0] - 240; q[4] = x; q[5] = y;
+        vx_curve(&f, q, 3, 0, 77 + b / 5);
+        vx_dot(&f, x, y, ((256 + (b * 307 >> 8)) * f.s * 6 / 10) >> 12, 128 + b / 2);
+    }
+    {   /* the head: a bicho shouting with the level, squashed by the note */
+        int32_t hx = sx[0], hy = sy[0];
+        vxb_t hb = {hx, 0, hy, 288, 256 + (sq * 77 >> 8), 256 - (sq * 77 >> 8), 4, 8 + (en * 30 >> 8), 40 + (en * 100 >> 8), en * 80 >> 8, 4, 1};
+        og_node(f.cx + ((hx * f.s) >> 8), f.cy + ((hy * f.s) >> 8), (10 * f.s) >> 8, T_SURF);
+        vx_body(&f, &hb, 168, 112, mt * (uint32_t)(60 + (en * 260 >> 8)) >> 8, 51 + (en * 77 >> 8), 102 + (en * 77 >> 8), 72, 40);
+        vx_bface(&f, hx + 16, hy, 168, en * 333 >> 8, age < 177u, pa);
+    }
+    }
 static VX_SEG void vx_gx(const track_t *t, const int32_t *A, int32_t en_home, const vxg_t *g)
 {
     const int16_t *p = t->p;
     vxf_t f = vx_uf(A, g->uk, g->dy);
     uint32_t k = g->k, mt = vxs.mt[k], age, w0 = scope_w - 256u, i, n = g->n;
     int32_t en = vx_level(t, k, en_home), pa = p[P_E0 + g->pa] * 2, pb = p[P_E0 + g->pb] * 2, pc = p[P_E0 + g->pc] * 2;
-    int32_t pk = 3000, j, sq, q[2 * 25], x, y, r, sway = (og_sin(vx_ang(mt, 60)) * en) >> 15;
+    int32_t pk = 3000, j, sq, q[2 * 25], x, y, X, Y, r, sway = (og_sin(vx_ang(mt, 60)) * en) >> 15;
     age = vx_age(t, k, 0);
     sq = vx_sq(102 + (en * 154 >> 8), age);
     vxs.kc = 1;
@@ -2050,55 +2204,8 @@ static VX_SEG void vx_gx(const track_t *t, const int32_t *A, int32_t en_home, co
             vx_face(&f, hx, hy - 6, 18, 16, age < 90u && l > 3, hy + 19, 10, 0, 10, 243, 218, 154);
         }
         break;
-    case GK_SNAIL: {                                     /* a snail: its shell the wave on a spiral, chambered, its body
-                                                         * and foot the wave, eyestalks pulling in on a note */
-        int32_t cx = -8 * 16, cy = -10 * 16 - sq / 4, a2 = 24 + pb / 8, ox = 0, oy = 0, X, Y;
-        for (i = 0; i < n; i++) {
-            uint32_t a = i * 65536u * 5u / 2u / n + vx_ang(mt, 3);
-            r = (int32_t)i * 26 * 16 / (int32_t)n + 32 + (vx_gw((int32_t)i) * a2 >> 12) * (int32_t)i / (int32_t)n;
-            x = cx + ((og_cos(a) * r) >> 15); y = cy + ((og_sin(a) * r * 9 / 10) >> 15);
-            if (i) vx_line(&f, ox, oy, x, y, 80 + (int32_t)i * 140 / (int32_t)n + en / 4);
-            if (i % 6u == 0u) vx_line(&f, cx, cy, x, y, 60 + (int32_t)i * 120 / (int32_t)n);
-            ox = x; oy = y;
-        }
-        for (i = 0, x = 0; i <= 48u; i++) {              /* the body (over the foot) */
-            int32_t X = (-50 + (int32_t)i * 2) * 16, Y = 14 * 16 + (vx_gw((int32_t)i * 2) * (2 + pc / 32) >> 8) - (i > 36u ? ((int32_t)i - 36) * 16 : 0);
-            if (i) { vx_line(&f, x, y, X, Y, 120 + en / 2); vx_line(&f, x, y + 24, X, Y + 24, 90 + en / 2); }
-            x = X; y = Y;
-        }
-        for (i = 0, x = -50 * 16, y = 14 * 16; i <= 12u; i++) {   /* its tail, curled */
-            uint32_t a = i * 5461u + 16384u;
-            r = 96 - (int32_t)i * 6;
-            X = -58 * 16 + ((og_cos(a) * r) >> 15); Y = 8 * 16 + ((og_sin(a) * r) >> 15);
-            vx_line(&f, x, y, X, Y, 154 + en / 4);
-            x = X; y = Y;
-        }
-        vx_line(&f, -54 * 16, 20 * 16, 54 * 16, 20 * 16, 30 + en / 4);
-        r = age < 300u ? 6 : 12;
-        for (j = -1; j <= 1; j += 2) {
-            vx_line(&f, 46 * 16, -6 * 16, (46 + j * 4) * 16, (-6 - r) * 16, 154);
-            vx_dot(&f, (46 + j * 4) * 16, (-6 - r) * 16, 40, 243);
-        }
-        vx_bface(&f, 46 * 16, -2 * 16, 120, en * 294 >> 8, age < 90u, pa);
-        break;
-    }
-    case GK_CHAIN:                                       /* a caterpillar: its back the wave, its segments the byte's bits
-                                                         * (their heat along it), legs lifting with them */
-        for (i = 0; i < n; i++) {
-            int32_t X = (-50 + (int32_t)i * 11) * 16, Y = (vx_gw((int32_t)i * 16) * 5 * 16 >> 12) - sq / 6, bit = vx_gw(127) >> (i + 4) & 1;
-            vx_ring(&f, X, Y, 104 + bit * 16, 104 + bit * 16, 20 + (int32_t)i * 22 + en / 5);
-            vx_ring(&f, X, Y, 88 + bit * 16, 88 + bit * 16, 40 + (int32_t)i * 22 + en / 5);
-            vx_ring(&f, X, Y, 40, 40, 30 + (int32_t)i * 22);
-            vx_line(&f, X - 40, Y + 100, X - 56, Y + 170 - bit * 30, 30 + (int32_t)i * 22);
-            vx_line(&f, X + 40, Y + 100, X + 56, Y + 170 - bit * 30, 30 + (int32_t)i * 22);
-        }
-        y = (vx_gw(127) * 5 * 16 >> 12) - sq / 6;
-        vx_line(&f, 42 * 16, y - 160, 36 * 16, y - 320, 154); vx_line(&f, 50 * 16, y - 160, 56 * 16, y - 320, 154);
-        vx_dot(&f, 36 * 16, y - 320, 32, 243); vx_dot(&f, 56 * 16, y - 320, 32, 243);
-        vx_ring(&f, 46 * 16, y, 190, 190, 200 + en / 5);
-        vx_bface(&f, 46 * 16, y, 170, en * 294 >> 8, age < 90u, pa);
-        vx_line(&f, -60 * 16, 26 * 16, 60 * 16, 26 * 16, 30 + en / 4);
-        break;
+    case GK_SNAIL: vx_gsnail(t, &f, mt, age, en, sq, pa, pb, pc); break;
+    case GK_CHAIN: vx_gchain(t, &f, mt, age, en, sq, pa, pb, pc); break;
     case GK_WEB: {                                       /* a spider on its web: the rings the string's wave, POS its place
                                                          * on the top thread, its cocoon under it */
         int32_t cx = -6 * 16, cy = -6 * 16, R = 44 * 16;
