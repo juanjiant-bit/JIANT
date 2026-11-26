@@ -1565,7 +1565,8 @@ tienen su propio dibujo.
 
 ### Grabación en vivo
 
-Apretá **REC** en cualquier lado (no en STEP con el transporte parado): la pista queda armada y arranca el transporte.
+Apretá **REC** en cualquier lado (no en STEP con el transporte parado): la pista queda armada; parado, el transporte no arranca:
+lo arranca PLAY (con cuenta previa si COUNT-IN está prendido).
 Lo que tocás se graba en el patrón, cuantizado a sus pasos, en overdub. Los movimientos de perilla en la pista
 seleccionada se graban como **automatización**. MENU > AUDIO tiene el **CLICK** (OFF / REC / ON), **CLICK LEVEL** y
 **COUNT-IN** (OFF, 1 BAR, 2 BARS).
@@ -2416,7 +2417,7 @@ De qué está hecha una pieza:
   chip, teclas, drone, ruido, textura, hoover, un muro shoegaze, una guitarra con trémolo. Una receta elige un motor,
   un sonido de fábrica cuyo nombre encaja, mueve un poco sus parámetros, da forma a la envolvente, al filtro (tipo,
   corte, resonancia, la envolvente sobre él), un LFO lento, saturación, chorus, glide, el modo de voz. El **kit** es
-  uno de siete (909, 808, click, industrial, suave, dub, breaks) escrito sobre el kit DRUM-X de fábrica, con el TONE,
+  uno de siete (el de fábrica tal cual, 909, 808, click, industrial, suave, breaks; el kit dub no existe desde V10.6p) escrito sobre el kit DRUM-X de fábrica, con el TONE,
   DECAY, NOISE y DRIVE de la pista de batería.
 - **Mezcla**: nivel, paneo y envíos por rol y según la humedad del género; **HUMAN** fija el HUMAN de SEQ > TRACK en cada pista
   según el rol (hats y leads más, el bombo nada) escalado por qué tan humano es el género (una banda más que una
@@ -3251,9 +3252,9 @@ Cualquier perilla del sonido de una pista a cualquier CC de tu controlador, en e
 - Un CC mueve un parámetro y un parámetro tiene un CC: aprenderlo de nuevo reemplaza el anterior. Como máximo **diez**
   (**LEARN FULL**: liberá uno aprendiendo su CC en otra perilla, o todos con LEARN **CLEAR ALL**).
 - **Nunca se aprenden** (**CC7 RESERVED**, y siguen haciendo lo suyo): CC0 / 32 (bank select), CC1 (rueda de
-  modulación), CC6 / 38 / 96–101 (data entry, RPN), CC11 (expresión), CC64 (sustain), CC120–127 (modos de canal) y
-  todos los CC del mapa estándar de arriba (CC5 7 10 16–23 71–75 91 93 94 102–105). Así un CC aprendido y el mapa nunca
-  se pisan.
+  modulación), CC6 / 38 / 96–101 (data entry, RPN), CC11 (expresión), CC64 (sustain), CC120–127 (modos de canal). Los CC del mapa
+  estándar (CC5 7 10 16–23 71–75 91 93 94 102–105) sí se aprenden: con MIDI MAP en CUSTOM ADD, el CC aprendido le gana
+  al significado que ese número tiene en el mapa.
 - **Se guarda con la configuración** (no en un proyecto; un backup de la configuración lo lleva); **MENU › CONTROL ›
   LEARN CLEAR ALL** (al cerrar el MENU) los olvida todos. ROUTE sigue decidiendo qué canales se escuchan (CH1-6 ignora los canales 7–16).
 - **MENU › CONTROL › MIDI MAP** decide qué hacen los CC: **FACTORY** solo el mapa estándar, **CUSTOM ADD** el mapa y

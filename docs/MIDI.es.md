@@ -60,7 +60,8 @@ Cómo averiguarlo con lo que tenés:
 4. La documentación de M-VAVE para el FM-1, o el adaptador que vino en la caja, también pueden decir de qué tipo es.
 
 En V10.8.48 el FM-1 no tiene una luz de actividad MIDI para el jack TRS (la página de estado GLO › SYSTEM 2 se fue en
-V10.8.38), así que la prueba es simplemente: ¿suena una pista?
+V10.8.38), así que la prueba es simplemente: ¿suena una pista? (Con una computadora en la consola serie USB, los contadores
+`uart_rx_bytes`, `uart_rx_msgs` y `uart_rx_drops` muestran lo que llega.)
 
 ## 3. Tocar JIANT desde un teclado
 
@@ -141,16 +142,16 @@ Fuente: `firmware/src/midi_control.c`, `MIDI_CC_MAP` y `MIDI_CC_ENG` (líneas 23
 | Motor | CC74 | CC71 |
 | --- | --- | --- |
 | ANALOG | E5 (CUT) | E6 (RES) |
-| PHASE | E3 | — |
+| PHASE | E3 (DCW) | — |
 | MATH | el CUT de la página FILTER (como CC102) | el RES de la página FILTER (como CC103) |
-| VOICE | — | E7 |
+| VOICE | — | E7 (Q) |
 | WHEEL | — | — |
-| STRING | E3 | E2 |
+| STRING | E3 (BRIGHT) | E2 (DECAY) |
 | DRUM | E3 (TONE) | — |
 | WEST | E1 (FOLD) | E7 (RES) |
-| FM6 | E3 | — |
-| ADD | E2 | E6 |
-| ANIMAL | E2 | E3 |
+| FM6 | E3 (MLVL) | — |
+| ADD | E2 (BRIGHT) | E6 (FORMNT) |
+| ANIMAL | E2 (PRESS) | E3 (la perilla siguiente: TOUCH, CLICK, BUZZ o MOUTH según el animal) |
 | EXT | — | — |
 
 "—": ese motor ignora el CC. Los números de slot salen del código; los nombres entre paréntesis son los que muestra
@@ -177,10 +178,6 @@ Para aprender (cualquier perilla del sonido de una pista a cualquier CC):
 - Aprender con MIDI MAP en FACTORY lo pasa a CUSTOM ADD.
 - Un CC aprendido responde en cualquier canal que ROUTE escuche (con CH1-6, no en 7–16). Se guarda con los ajustes,
   no en un proyecto.
-
-> La sección MIDI LEARN del manual dice que los CC del mapa fijo (5, 7, 10, 16–23 …) nunca se aprenden. En el código
-> de V10.8.48 **sí** se pueden aprender: solo se rechaza la lista de arriba, y en CUSTOM ADD un CC aprendido le gana
-> al mapa.
 
 ### 4.3 NRPN: todos los parámetros, 14 bits
 
@@ -342,5 +339,4 @@ Todo comprobado en el código salvo donde se indica.
 - h2midi: si sus jacks son TRS (de qué tipo) o DIN, si su puerto host alimenta y acepta al FM-1 (un dispositivo MIDI
   + audio USB).
 - El Circuit Tracks directo al USB HOST del FM-1 (camino 3): no probado.
-- Los nombres de los slots E de CC74 / CC71 en PHASE, VOICE, STRING, FM6, ADD y ANIMAL (los números de slot están
-  verificados).
+- Los nombres de la tabla de CC74 / CC71 salen de los comentarios del código; el de CC71 en ANIMAL no está confirmado.

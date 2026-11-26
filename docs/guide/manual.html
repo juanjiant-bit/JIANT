@@ -3008,7 +3008,8 @@ with its keys). The page's own marks go over it. EUCLID, TRACK GEN and DRONE CLA
   LEN is over 16. Knobs: STEP, LANE, HIT, ACC.</li>
 </ul>
 <h3 id="live-recording">Live recording</h3>
-<p>Press <strong>REC</strong> anywhere (not on STEP while stopped): the track is armed and the transport starts. What you play is
+<p>Press <strong>REC</strong> anywhere (not on STEP while stopped): the track is armed; while stopped the transport does not
+start: PLAY starts it (with a count-in if COUNT-IN is on). What you play is
 recorded into the pattern, quantized to its steps, overdubbing. Knob moves on the selected track are recorded as
 <strong>automation</strong>. MENU &gt; AUDIO has the <strong>CLICK</strong> (OFF / REC / ON), <strong>CLICK LEVEL</strong> and <strong>COUNT-IN</strong> (OFF, 1 BAR, 2 BARS).</p>
 <p>How a note is held is recorded too (V10.6z4): its <strong>length</strong> goes into the step it ends in (the step's LEN, in 1/16 of a
@@ -4053,8 +4054,8 @@ you open GEN), follows <strong>no genre</strong> and breaks their rules on purpo
   strings, choir, organ (WHEEL), electric piano, stab, dub chord, pluck, bell, lead, vox lead, chip, keys, drone,
   noise, texture, hoover, a shoegaze wall, a tremolo guitar. A recipe picks an engine, a factory sound whose name fits,
   moves its parameters a little, shapes the envelope, the filter (type, cutoff, resonance, the envelope on it), a slow
-  LFO, drive, chorus, glide, the voice mode. The <strong>kit</strong> is one of seven (909, 808, click, industrial, soft, dub,
-  breaks) written over the factory DRUM-X kit, the drum track's TONE, DECAY, NOISE and DRIVE with it.</li>
+  LFO, drive, chorus, glide, the voice mode. The <strong>kit</strong> is one of seven (the factory kit as it is, 909, 808, click,
+  industrial, soft, breaks; the dub kit is gone since V10.6p) written over the factory DRUM-X kit, the drum track's TONE, DECAY, NOISE and DRIVE with it.</li>
 <li><strong>Mix</strong>: level, pan and sends by role and by how wet the genre is; <strong>HUMAN</strong> sets SEQ &gt; TRACK's HUMAN on every track by
   the role (hats and leads more, the kick none) scaled by how human the genre is (a band more than a machine);
   SWING the genre's unless set; DUCK, CLIP and PUNCH on the master; the delay's TYPE, PING-PONG and TIME and the
@@ -5163,8 +5164,8 @@ does: notes, CC, program change, bend, the clock and start / stop (CLOCK USB +BT
 <li>One CC sets one parameter; a parameter has one CC: learning it again replaces the old one. <strong>Ten</strong> at most
   (<strong>LEARN FULL</strong>: clear one by learning its CC to another knob, or everything with LEARN <strong>CLEAR ALL</strong>).</li>
 <li><strong>Never learned</strong> (<strong>CC7 RESERVED</strong>, and they keep doing their own): CC0 / 32 (bank select), CC1 (mod wheel), CC6 /
-  38 / 96–101 (data entry, RPN), CC11 (expression), CC64 (sustain), CC120–127 (channel modes) and every CC of the
-  standard map above (CC5 7 10 16–23 71–75 91 93 94 102–105). So a learned CC and the map never meet.</li>
+  38 / 96–101 (data entry, RPN), CC11 (expression), CC64 (sustain) and CC120–127 (channel modes). The standard map's CCs (CC5 7 10 16–23 71–75 91 93 94 102–105)
+  can be learned: with MIDI MAP on CUSTOM ADD, a learned CC wins over the map's meaning of that number.</li>
 <li><strong>Kept with the settings</strong> (not in a project; a settings backup carries it); <strong>MENU › CONTROL › LEARN CLEAR ALL</strong> (when the MENU closes) forgets
   them all. ROUTE still decides which channels are heard (CH1-6 ignores channels 7–16).</li>
 <li><strong>MENU › CONTROL › MIDI MAP</strong> decides what the CCs do: <strong>FACTORY</strong> the standard map alone, <strong>CUSTOM ADD</strong> the map and

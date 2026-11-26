@@ -60,7 +60,8 @@ How to find out with what you have:
 4. M-VAVE's own documentation for the FM-1, or the adapter that came in its box, may also say which type it is.
 
 The FM-1 has no MIDI activity light for the TRS jack in V10.8.48 (the old GLO › SYSTEM 2 status page was removed in
-V10.8.38), so the test is simply: does a track sound?
+V10.8.38), so the test is simply: does a track sound? (With a computer on the USB serial console, the counters
+`uart_rx_bytes`, `uart_rx_msgs` and `uart_rx_drops` show what arrives.)
 
 ## 3. Play JIANT from a keyboard
 
@@ -139,16 +140,16 @@ Source: `firmware/src/midi_control.c`, `MIDI_CC_MAP` and `MIDI_CC_ENG` (lines 23
 | Engine | CC74 | CC71 |
 | --- | --- | --- |
 | ANALOG | E5 (CUT) | E6 (RES) |
-| PHASE | E3 | — |
+| PHASE | E3 (DCW) | — |
 | MATH | the FILTER page's CUT (as CC102) | the FILTER page's RES (as CC103) |
-| VOICE | — | E7 |
+| VOICE | — | E7 (Q) |
 | WHEEL | — | — |
-| STRING | E3 | E2 |
+| STRING | E3 (BRIGHT) | E2 (DECAY) |
 | DRUM | E3 (TONE) | — |
 | WEST | E1 (FOLD) | E7 (RES) |
-| FM6 | E3 | — |
-| ADD | E2 | E6 |
-| ANIMAL | E2 | E3 |
+| FM6 | E3 (MLVL) | — |
+| ADD | E2 (BRIGHT) | E6 (FORMNT) |
+| ANIMAL | E2 (PRESS) | E3 (the next knob: TOUCH, CLICK, BUZZ or MOUTH by animal) |
 | EXT | — | — |
 
 "—": that engine ignores the CC. The slot numbers come from the code; the names in brackets are the ones that engine's
@@ -175,9 +176,6 @@ To learn (any knob of a track's sound to any CC):
 - Learning while MIDI MAP is FACTORY switches it to CUSTOM ADD.
 - A learned CC answers on any channel ROUTE hears (with CH1-6, not on 7–16). Kept with the settings, not in a
   project.
-
-> The manual's MIDI LEARN section says the fixed map's CCs (5, 7, 10, 16–23 …) can never be learned. In the V10.8.48
-> code they **can** be: only the list above is refused, and in CUSTOM ADD a learned CC overrides the map.
 
 ### 4.3 NRPN: every parameter, 14 bits
 
@@ -334,4 +332,4 @@ All checked in the code unless marked otherwise.
 - h2midi: whether its jacks are TRS (which type) or DIN, whether its host port powers and accepts the FM-1 (a USB
   MIDI + audio device).
 - Circuit Tracks straight into the FM-1's USB HOST (route 3): not tested.
-- The E-slot names of CC74 / CC71 on PHASE, VOICE, STRING, FM6, ADD and ANIMAL (the slot numbers are verified).
+- The names in the CC74 / CC71 table come from the code's comments; ANIMAL's CC71 name is not confirmed.
