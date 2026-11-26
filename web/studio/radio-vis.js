@@ -6,7 +6,7 @@
  * feed(levels[6]) about ten times a second; event("up"|"down"|"next"); setInfo({ genre, seed, mood, form }) */
 const TAU = Math.PI * 2, rnd = (a, b) => a + Math.random() * (b - a), clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 export const TRACK_COLORS = ["#ffe14d", "#ff8a1f", "#ff4a5a", "#ff4ad0", "#9d6bff", "#3b9cff"];
-const NAMES = ["PROTOZOA", "SCHOOL", "IMPULSION", "COLONY", "MEDUSAE", "FOREST"];
+const NAMES = ["PROTOZOA", "MATTER", "IMPULSION", "COLONY", "MEDUSAE", "FOREST"];
 const mix = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
 const SPEED = [[246, 235, 200], [242, 193, 78], [224, 57, 74]];   // the paths: cream (slow) .. yellow .. red (fast)
 const speedCol = (t, a) => { t = clamp(t, 0, 1); const c = t < .5 ? mix(SPEED[0], SPEED[1], t * 2) : mix(SPEED[1], SPEED[2], t * 2 - 1); return `rgba(${c},${a})`; };
