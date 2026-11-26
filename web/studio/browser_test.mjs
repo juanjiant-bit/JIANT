@@ -150,7 +150,7 @@ try {
     posts.shift();                                               // the first answer a 400 (no parts column): sent again without it
     const b0 = posts[0] && posts[0].b, count = await q.textContent("#rdcount");
     ok(now === "HOUSE" && posts.length === 2 && b0.device === "FM" && b0.vote === 1 && posts[1].b.vote === -1 && b0.genre === "HOUSE" && b0.version === "V10.8.44" &&
-       /^c[0-9a-f]{24}$/.test(b0.client) && posts[0].h.apikey && posts[1].b.seed !== b0.seed && /2/.test(count) && parts0 === 9 && noParts && posts[1].b.parts === 0,
+       /^c[0-9a-f]{24}$/.test(b0.client) && posts[0].h.apikey && posts[1].b.seed !== b0.seed && /: 2/.test(count) && parts0 === 9 && noParts && posts[1].b.parts === 0,
       `radio: ${now}, 👍 and 👎 posted (${posts.map((p) => p.b.vote).join(" ")}, a 409 taken), ⏭ nothing; parts 9 (a 400 sent again without it), none chosen 0 after 4 s; "${count}"`);
   }
   /* rescue: the published JIANT FM and JieLi's loader fetched and checked, a board's fm1-rescue.uf2 made */
