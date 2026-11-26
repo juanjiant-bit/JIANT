@@ -73,6 +73,12 @@ const TEXT = {
     rsSafe: "Solo se escribe la zona del firmware (0x4000–0x92FFF), sector por sector, cada uno releído y comparado; la cabecera de arranque y tus datos no se tocan. Sin firmware dentro, la placa queda como un FM-1 Transporter común. Basado en FM-1 Transporter (Hügelton Instruments), MvaveFM1Unbricker (Quixotic7), jl-uboot-tool (kagaimiq) y la guía de GoodPerson42. Usalo con la batería cargada y bajo tu responsabilidad: todavía no se probó en un FM-1 real.",
     rdLiked: "¿Qué te gustó? (opcional)", rdDisliked: "¿Qué no te gustó? (opcional)", rdNext: "Siguiente", rdpDrums: "Batería", rdpBass: "Bajo", rdpChords: "Acordes", rdpLead: "Lead", rdpArp: "Arp", rdpSound: "Sonido/mezcla",
     rdStarting: "Prendiendo…", rdEmuOn: "Prendiendo el emulador…",
+    gPlay: "Tocar", gMake: "Crear", gLearn: "Aprender", gDevice: "Equipo",
+    pathFm1E: "Tengo un FM-1", pathFm1: "Conectarlo y usarlo", pathFm1T: "Instalar JIANT, editar los sonidos, guardar proyectos, grabar y mirar su pantalla.",
+    pathTryE: "No tengo uno", pathTry: "Probarlo sin equipo", pathTryT: "La radio y el emulador: el FM-1 entero en el navegador, sonando ya.",
+    pathLearnE: "Quiero aprender", pathLearn: "Cómo funciona", pathLearnT: "Cada motor, secuenciador y efecto, animado, y los manuales.",
+    cNone: "Sin equipo conectado.", cFm1: "FM-1 conectado: %s", cBusy: "El FM-1 está ocupado (instalando o en otra pestaña).", cLooking: "Buscando el FM-1…",
+    cEmuOn: "Usando el emulador (encendido).", cEmuOff: "Usando el emulador (apagado).", cFind: "Buscar mi FM-1", cUseEmu: "Usar el emulador", cUseFm1: "Usar mi FM-1", cOpenEmu: "Abrir el emulador",
     vAn: "Análisis", anTitle: "Análisis: los datos exactos", anLead: "Lee del FM-1 o del emulador todo lo que tiene: cada pista con su motor, preset, nivel y cada parámetro con su nombre y valor (y cuáles cambiaron), los globales y los efectos, los pasos, la canción y el generador. Con el emulador escucha además unos segundos: nivel, picos, cuánto sostiene cada pista y su espectro. Bajá el archivo o copiá el resumen y pasalo tal cual.",
     anGo: "Analizar", anSteps: "Incluir los pasos", anAudio: "Escuchar 8 s del emulador", anFrom: "De: %s (elige la pista de a una un instante y vuelve a la tuya)", anNoDev: "Conectá el FM-1 o prendé el emulador.",
     anDone: "Listo.", anFail: "No se pudo leer todo", anJson: "Bajar el archivo (JSON)", anCopy: "Copiar el resumen", anCopied: "Resumen copiado.", anNoCopy: "No se pudo copiar: seleccioná el texto.",
@@ -89,7 +95,7 @@ const TEXT = {
     wtFrames: "Los 8 cuadros", wtFramesHelp: "WAVE barre del cuadro 1 al 8 con su perilla de posición; tocá un cuadro para verlo al frente.", wtPlay: "Escuchar el barrido", wtWav: "Bajar WAV",
     wtSlots: "Ranuras USER del equipo", wtReadSlots: "Leer ranuras", wtSlot: "Ranura", wtName: "Nombre", wtSend: "Mandar al equipo", wtLoad: "Traer del equipo", wtEmpty: "vacía",
     wtByteOnly: "Las wavetables de usuario son de JIANT BYTE: elegí BYTE arriba.", wtNoDev: "Conectá el FM-1 con JIANT BYTE (o prendé el emulador) para mandarla.", wtAsk: "Leé las ranuras para ver qué tiene el equipo.",
-    wtSlotsHelp: "Las ranuras USER de %s; la tabla suena apenas llega y queda guardada al terminar.", wtSent: "Listo: %n en %s.", wtLoaded: "%s traída del equipo.", wtOld: "El equipo no respondió: hace falta JIANT BYTE con wavetables de usuario (protocolo 1.5).",
+    wtSlotsHelp: "Las ranuras USER de %s; la tabla suena apenas llega y queda guardada al terminar.", wtSent: "Listo: %n en %s.", wtLoaded: "%s traída del equipo.", wtOld: "El equipo no respondió: hace falta una versión de JIANT BYTE con wavetables de usuario. Actualizalo desde Instalar.",
     wtBusy: "El equipo está guardando: probá de nuevo en un momento.", wtSlotBad: "Esa ranura no existe en el equipo.",
     tourV_wtT: "Wavetables", tourV_wt: "Convertí cualquier sonido en una wavetable para WAVE de JIANT BYTE y mandala al equipo.", tourV_wtH: "Funciona mejor con sonidos sostenidos: una voz, una cuerda, un drone.",
     vProj: "Proyectos", projTitle: "Proyectos y backups",
@@ -113,7 +119,7 @@ const TEXT = {
     docSnd: "Hoja de ayuda · Sonido", docSndText: "Los motores, sus parámetros y los efectos en una hoja.", docView: "Ver", docPdf: "PDF", docPng: "Imagen",
     docSoon: "en camino", docNew: "Lo nuevo", docNewText: "Qué cambió en la última versión, con capturas.", docMap: "Mapa de navegación", docMapText: "Cada sección, sus grupos y páginas en el orden en que se recorren.",
     docPorts: "Manuales de otros aparatos", docPortsText: "SMK-37, MPC Sample, el plugin de MPC y el plugin VST3 · AU · LV2.",
-    other: "English", vPorts: "Otros aparatos", vHome: "Inicio", vInstall: "Instalar", vEditor: "Editor", vScreen: "Pantalla", vEmu: "Emulador", vRec: "Grabar",
+    other: "English", vPorts: "Otros equipos", vHome: "Inicio", vInstall: "Instalar", vEditor: "Editor", vScreen: "Pantalla en vivo", vEmu: "Emulador", vRec: "Grabar",
     tFm1: "FM-1", tEmu: "Emulador", target: "Destino",
     eyebrow: "Un firmware libre para la M-VAVE FM-1",
     leadFm: "Síntesis, secuencias, mutación y escena en vivo. Instalalo, editalo, mirá su pantalla en grande y grabá, todo desde acá.",
@@ -248,6 +254,12 @@ const TEXT = {
     rsSafe: "Only the firmware area (0x4000–0x92FFF) is written, sector by sector, each read back and compared; the boot head and your data are not touched. Without a firmware inside, the board is a plain FM-1 Transporter. Built on FM-1 Transporter (Hügelton Instruments), MvaveFM1Unbricker (Quixotic7), jl-uboot-tool (kagaimiq) and GoodPerson42's guide. Use it with a charged battery and at your own risk: it has not been tried on a real FM-1 yet.",
     rdLiked: "What did you like? (optional)", rdDisliked: "What didn't you like? (optional)", rdNext: "Next", rdpDrums: "Drums", rdpBass: "Bass", rdpChords: "Chords", rdpLead: "Lead", rdpArp: "Arp", rdpSound: "Sound/mix",
     rdStarting: "Starting…", rdEmuOn: "Switching the emulator on…",
+    gPlay: "Play", gMake: "Make", gLearn: "Learn", gDevice: "Device",
+    pathFm1E: "I have an FM-1", pathFm1: "Connect it and use it", pathFm1T: "Install JIANT, edit the sounds, keep projects, record and watch its screen.",
+    pathTryE: "I don't have one", pathTry: "Try it without one", pathTryT: "The radio and the emulator: the whole FM-1 in the browser, playing now.",
+    pathLearnE: "I want to learn", pathLearn: "How it works", pathLearnT: "Every engine, sequencer and effect, animated, and the manuals.",
+    cNone: "No device connected.", cFm1: "FM-1 connected: %s", cBusy: "The FM-1 is busy (installing or in another tab).", cLooking: "Looking for the FM-1…",
+    cEmuOn: "Using the emulator (on).", cEmuOff: "Using the emulator (off).", cFind: "Find my FM-1", cUseEmu: "Use the emulator", cUseFm1: "Use my FM-1", cOpenEmu: "Open the emulator",
     vAn: "Analysis", anTitle: "Analysis: the exact data", anLead: "Reads everything the FM-1 or the emulator holds: each track with its engine, preset, level and every parameter by name and value (and which ones changed), the globals and effects, the steps, the song and the generator. From the emulator it also listens for a few seconds: level, peaks, how long each track sustains and its spectrum. Download the file or copy the summary and pass it on as it is.",
     anGo: "Analyze", anSteps: "Include the steps", anAudio: "Listen to 8 s of the emulator", anFrom: "From: %s (selects each track for an instant and goes back to yours)", anNoDev: "Connect the FM-1 or switch the emulator on.",
     anDone: "Done.", anFail: "Not everything could be read", anJson: "Download the file (JSON)", anCopy: "Copy the summary", anCopied: "Summary copied.", anNoCopy: "Could not copy: select the text.",
@@ -264,7 +276,7 @@ const TEXT = {
     wtFrames: "The 8 frames", wtFramesHelp: "WAVE sweeps from frame 1 to 8 with its position knob; tap a frame to bring it to the front.", wtPlay: "Hear the sweep", wtWav: "Download WAV",
     wtSlots: "The device's USER slots", wtReadSlots: "Read slots", wtSlot: "Slot", wtName: "Name", wtSend: "Send to the device", wtLoad: "Get from the device", wtEmpty: "empty",
     wtByteOnly: "User wavetables are JIANT BYTE's: pick BYTE above.", wtNoDev: "Connect the FM-1 with JIANT BYTE (or switch the emulator on) to send it.", wtAsk: "Read the slots to see what the device holds.",
-    wtSlotsHelp: "%s's USER slots; the table sounds as soon as it arrives and is saved when it is done.", wtSent: "Done: %n in %s.", wtLoaded: "%s fetched from the device.", wtOld: "The device did not answer: this needs JIANT BYTE with user wavetables (protocol 1.5).",
+    wtSlotsHelp: "%s's USER slots; the table sounds as soon as it arrives and is saved when it is done.", wtSent: "Done: %n in %s.", wtLoaded: "%s fetched from the device.", wtOld: "The device did not answer: this needs a JIANT BYTE version with user wavetables. Update it from Install.",
     wtBusy: "The device is saving: try again in a moment.", wtSlotBad: "That slot does not exist on the device.",
     tourV_wtT: "Wavetables", tourV_wt: "Turn any sound into a wavetable for JIANT BYTE's WAVE and send it to the device.", tourV_wtH: "Works best with held sounds: a voice, a string, a drone.",
     vProj: "Projects", projTitle: "Projects and backups",
@@ -288,7 +300,7 @@ const TEXT = {
     docSnd: "Cheat sheet · Sound", docSndText: "The engines, their parameters and the effects on one sheet.", docView: "View", docPdf: "PDF", docPng: "Image",
     docSoon: "on its way", docNew: "What's new", docNewText: "What changed in the latest version, with screenshots.", docMap: "Navigation map", docMapText: "Every section, its groups and pages in the order you walk them.",
     docPorts: "Manuals for other devices", docPortsText: "SMK-37, MPC Sample, the MPC plugin and the VST3 · AU · LV2 plugin.",
-    other: "Español", vPorts: "Other devices", vHome: "Home", vInstall: "Install", vEditor: "Editor", vScreen: "Screen", vEmu: "Emulator", vRec: "Record",
+    other: "Español", vPorts: "Other devices", vHome: "Home", vInstall: "Install", vEditor: "Editor", vScreen: "Live screen", vEmu: "Emulator", vRec: "Record",
     tFm1: "FM-1", tEmu: "Emulator", target: "Target",
     eyebrow: "A free firmware for the M-VAVE FM-1",
     leadFm: "Synthesis, sequencing, mutation and performance. Install it, edit it, see its screen big and record, all from here.",
@@ -2193,6 +2205,18 @@ function openManual(url, title) {
 $("manclose").addEventListener("click", () => { $("mantry").hidden = true; $("f-manual").src = "about:blank"; });
 
 /* ------------------------------------------------------------------------------------------- the whole page */
+/* the connection line under the bar: what Studio is talking to, and the next thing to do */
+function renderConn() {
+  const d = state.dev, emu = state.target === "emu", on = emuOn();
+  const dot = $("conndot"), acts = [];
+  if (emu) { dot.className = "dot" + (on ? " ok" : ""); $("conntext").textContent = t(on ? "cEmuOn" : "cEmuOff"); if (!on) acts.push(["cOpenEmu", () => go("emu")]); acts.push(["cUseFm1", () => setTarget("fm1")]); }
+  else if (state.busy) { dot.className = "dot warn"; $("conntext").textContent = t("cBusy"); }
+  else if (state.looking) { dot.className = "dot warn"; $("conntext").textContent = t("cLooking"); }
+  else if (d) { dot.className = "dot ok"; $("conntext").textContent = t("cFm1").replace("%s", devName(d)); }
+  else { dot.className = "dot"; $("conntext").textContent = t("cNone"); acts.push(["cFind", () => $("find").click()], ["cUseEmu", () => setTarget("emu")]); }
+  $("connacts").replaceChildren(...acts.map(([k, f]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t(k); b.onclick = f; return b; }));
+}
+document.addEventListener("click", (e) => { const p = e.target.closest("[data-path]"); if (p) { e.preventDefault(); setTarget("fm1"); $("step1").scrollIntoView({ behavior: "smooth", block: "center" }); $("find").focus({ preventScroll: true }); } });
 function render() {
   const d = state.dev, fwName = state.fw === "byte" ? "BYTE" : "FM";
   $("brandfw").textContent = fwName; $("herofw").textContent = fwName;
@@ -2202,6 +2226,7 @@ function render() {
   document.querySelectorAll("[data-install]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.install === state.fw)));
   document.querySelectorAll("[data-target]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.target === state.target)));
   document.querySelectorAll("nav.views button").forEach((b) => b.setAttribute("aria-current", b.dataset.go === state.view ? "page" : "false"));
+  renderConn();
   // the device chip
   const dot = $("devdot");
   dot.className = "dot" + (state.busy ? " warn" : d ? " ok" : "");

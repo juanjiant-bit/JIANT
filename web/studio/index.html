@@ -309,6 +309,19 @@
     body.radiodock .rdstage { height: 70vh; margin: 0; }
   }
   .anpre { margin: 0; max-height: 60vh; overflow: auto; font: 12px/1.5 var(--mono); white-space: pre-wrap; color: var(--fg); }
+  /* the views' groups, the connection line, the home page's three ways in */
+  nav.views .navgrp { align-self: center; padding: 0 6px 0 14px; font: 9px/1 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--hud); opacity: .8; white-space: nowrap; border-left: var(--border) solid var(--line); margin-left: 6px; }
+  .connbar { max-width: 1180px; margin: 10px auto 0; padding: 7px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font: 12px/1.3 var(--mono); color: var(--dim); }
+  .connbar .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
+  .connbar .dot.ok { background: var(--ok); box-shadow: 0 0 8px var(--ok); } .connbar .dot.warn { background: var(--warn); }
+  .connacts { display: inline-flex; gap: 6px; flex-wrap: wrap; } .connacts button { font: 12px/1 var(--mono); padding: 5px 10px; background: none; color: var(--fg); border: var(--border) solid var(--line); cursor: pointer; }
+  .connacts button:hover { border-color: var(--hud); color: var(--hud); }
+  .paths { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin: 18px 0 22px; }
+  .pathcard { text-align: left; background: var(--panel); border: var(--border) solid var(--line); padding: 16px 18px; cursor: pointer; color: var(--fg); position: relative; }
+  .pathcard h3 { margin: 6px 0 4px; font: 18px/1.2 var(--display); } .pathcard p { margin: 0; color: var(--dim); font-size: 14px; }
+  .pathcard:hover { border-color: var(--hud); box-shadow: 0 0 18px color-mix(in srgb, var(--hud) 25%, transparent); }
+  body.radiodock .connbar { max-width: 1640px; }
+  @media (max-width: 640px) { #devchip { display: none; } }
   .wtframes { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin: 8px 0; }
   .wtframes canvas { width: 100%; aspect-ratio: 1; background: var(--field); border-radius: var(--radius-s); cursor: pointer; }
   .wtframes canvas.on { outline: 2px solid var(--accent); }
@@ -506,16 +519,20 @@
     <nav class="views" aria-label="Studio">
       <button data-go="radio" data-t="vRadio" class="navradio"></button>
       <button data-go="home" data-t="vHome"></button>
-      <button data-go="install" data-t="vInstall"></button>
-      <button data-go="editor" data-t="vEditor"></button>
-      <button data-go="screen" data-t="vScreen"></button>
+      <span class="navgrp" data-t="gPlay"></span>
       <button data-go="emu" data-t="vEmu"></button>
+      <button data-go="screen" data-t="vScreen"></button>
       <button data-go="rec" data-t="vRec"></button>
+      <span class="navgrp" data-t="gMake"></span>
+      <button data-go="editor" data-t="vEditor"></button>
       <button data-go="proj" data-t="vProj"></button>
       <button data-go="wt" data-t="vWt"></button>
-      <button data-go="an" data-t="vAn"></button>
+      <span class="navgrp" data-t="gLearn"></span>
       <button data-go="learn" data-t="vLearn"></button>
       <button data-go="docs" data-t="vDocs"></button>
+      <span class="navgrp" data-t="gDevice"></span>
+      <button data-go="install" data-t="vInstall"></button>
+      <button data-go="an" data-t="vAn"></button>
       <button data-go="rescue" data-t="vRescue"></button>
       <button data-go="ports" data-t="vPorts"></button>
     </nav><button class="navarrow r" id="navr" type="button" aria-label="→" tabindex="-1">›</button></div>
@@ -532,6 +549,7 @@
     </div>
   </div>
 </header>
+<div class="connbar" id="connbar" role="status"><span class="dot" id="conndot"></span><span id="conntext"></span><span class="connacts" id="connacts"></span></div>
 
 <main>
   <!-- ======================================================================================= home -->
@@ -539,6 +557,11 @@
     <p class="eyebrow" data-t="eyebrow"></p>
     <h1>JIANT <span class="fw" id="herofw">FM</span></h1>
     <p class="lead" id="herolead"></p>
+    <div class="paths">
+      <button class="pathcard" type="button" data-path="fm1"><span class="eyebrow" data-t="pathFm1E"></span><h3 data-t="pathFm1"></h3><p data-t="pathFm1T"></p></button>
+      <button class="pathcard" type="button" data-go="radio"><span class="eyebrow" data-t="pathTryE"></span><h3 data-t="pathTry"></h3><p data-t="pathTryT"></p></button>
+      <button class="pathcard" type="button" data-go="learn"><span class="eyebrow" data-t="pathLearnE"></span><h3 data-t="pathLearn"></h3><p data-t="pathLearnT"></p></button>
+    </div>
     <div class="chips"><span class="chip" data-t="needBrowser"></span><span class="chip" data-t="needCable"></span><span class="chip" data-t="needPhone"></span></div>
     <p><a class="btn ghost" id="sitelink" href="../"></a></p>
     <div class="steps">
