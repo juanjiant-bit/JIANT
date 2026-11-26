@@ -648,9 +648,9 @@ static int lock_ui(void)
     lk_down(k4);
     press(B_EDIT);
     lk_up(k4);
-    bad += check("a step held + [EDIT]: its locks go, the step and the others' locks stay", motion_lock_count(t) == 2u &&
-        !motion_lock_get(t, 4, P_E0, &v) && motion_lock_get(t, 0, P_E3, &v) && (t->step[4].hit & 1u) &&
-        str_eq(ui.msg, "LOCKS CLEARED"));
+    bad += check("(V10.8.50) a step held + [EDIT]: the step cleared (its hits, its locks), the others' locks stay",
+        motion_lock_count(t) == 2u && !motion_lock_get(t, 4, P_E0, &v) && motion_lock_get(t, 0, P_E3, &v) &&
+        !(t->step[4].hit & 1u) && str_eq(ui.msg, "CLEAR 5"));
     bad += check("the steps with a lock (the grid marks them): step 1", motion_lock_steps(3) == 1u);
     open_family(FAM_FX);                                 /* the lock's knobs: the sound page shown last */
     open_family(FAM_SEQ);
@@ -724,11 +724,8 @@ static int lock_undo(void)
     lk_down(k4);
     press(B_EDIT);
     lk_up(k4);
-    bad += check("  a step held + [EDIT] clears it", !motion_lock_count(t) && str_eq(ui.msg, "LOCKS CLEARED"));
-    lk_down(k4);
-    press(B_EDIT);
-    lk_up(k4);
-    bad += check("  again: NO LOCKS", !motion_lock_count(t) && str_eq(ui.msg, "NO LOCKS"));
+    bad += check("  a step held + [EDIT] clears it (V10.8.50: the step with its locks)", !motion_lock_count(t) &&
+        str_eq(ui.msg, "CLEAR 5"));
     return bad;
 }
 /* 1.1.5: SEQ > AUTO LIST (ui_events.c) */

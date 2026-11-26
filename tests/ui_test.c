@@ -8034,14 +8034,14 @@ static int test_copy_paste(void)
     ok &= cur_page()->graph == GR_ROLL && !grid_on() && !clip_tag(tag);
     cp_keys_down(2, 3);                                  /* steps 3 and 4 held, SELECT turned */
     turn(EN_SELECT, 1);
-    ok &= clip.n == 2u && msg_is("COPIED 2 STEPS") && clip.nl == 1u && clip_tag(tag) && str_eq(tag, "[2]") && !song.rec;
+    ok &= clip.n == 2u && msg_is("COPY 3-4") && clip.nl == 1u && clip_tag(tag) && str_eq(tag, "[2]") && !song.rec;
     cp_keys_up();
     bad += check("seq2h COPY: two step keys + SELECT copy the range (its notes, TIE, components, a lock), the footer's [2]", ok);
     cp_keys_down(9, 9);                                  /* step 10 held, REC tapped: PASTE */
     press(B_REC);
     cp_keys_up();
     ok = !memcmp(&t->step[9], &t->step[2], 2 * sizeof(step_t)) && motion_lock_get(t, 9, P_PAN, &v) && v == 20 &&
-         !motion_lock_get(t, 10, P_PAN, &v) && msg_is("PASTED 2 STEPS") && song.rec == 0u && transport_req == 0u;
+         !motion_lock_get(t, 10, P_PAN, &v) && msg_is("PASTE 10-11") && song.rec == 0u && transport_req == 0u;
     bad += check("  a step key + REC pastes there (notes, length, components, the lock equal), REC not armed", ok);
     ok = !undo_do() && t->step[9].time != ST_NOTE && !t->step[9].n && !motion_lock_get(t, 9, P_PAN, &v) && t->step[2].n == 2u;
     bad += check("  UNDO (GLO + G4) takes the paste back", ok);
@@ -8064,7 +8064,7 @@ static int test_copy_paste(void)
     cp_keys_down(0, 0);
     press(B_REC);
     cp_keys_up();
-    ok = clip.n == 16u && msg_is("PASTED 16 STEPS") && !memcmp(trk[1].step, keep, 16 * sizeof(step_t)) &&
+    ok = clip.n == 16u && msg_is("PASTE 1-16") && !memcmp(trk[1].step, keep, 16 * sizeof(step_t)) &&
          motion_lock_get(&trk[1], 2, P_PAN, &v) && motion_lock_get(&trk[1], 15, P_PAN, &v) && v == 20;
     bad += check("  keys 1 + 16 copy the bar; another track pastes it (its steps, the lock)", ok);
     track_select(2); frame();
@@ -8084,7 +8084,7 @@ static int test_copy_paste(void)
     press(B_REC);
     cp_keys_up();
     ok = clip.drum && !memcmp(&trk[2].step[4], &keep[4], sizeof(step_t)) && !memcmp(&trk[2].step[8], &keep[4], sizeof(step_t)) &&
-         msg_is("PASTED 1 STEP");
+         msg_is("PASTE 9");
     track_select(0); frame();
     cp_keys_down(5, 5);
     press(B_REC);
@@ -8102,6 +8102,42 @@ static int test_copy_paste(void)
     ok &= song.rec == 1u;
     song.rec = 0;
     bad += check("  REC alone still arms; a step key held with the clipboard empty too", ok);
+    {   /* (V10.8.50) the owner: "copy, paste, duplicate; select": SEQ TOOLS C5 DUP, step keys held + EDIT clear them */
+        char kn[16];
+        t = &trk[0]; track_select(0); frame();
+        for (i = 0; i < NSTEP; i++) step_clear(&t->step[i]);
+        t->p[P_SLEN] = 8;
+        for (i = 4; i < 8u; i++) { t->step[i].time = ST_NOTE; t->step[i].n = 1; t->step[i].note[0] = (uint8_t)(60 + i); t->step[i].vel = 100; }
+        ok = motion_set_lock(t, 5, P_PAN, 30) == 0;
+        memset(&clip, 0, sizeof clip);
+        (void)ly_keyname(LAYER_SEQ, 0, TL_DUP, kn);
+        ok &= str_eq(kn, "DUP");
+        ly_white(B_SEQ, TL_DUP);
+        ok &= msg_is("NOTHING COPIED") && t->p[P_SLEN] == 8;
+        cp_keys_down(4, 7);                              /* steps 5..8 held, SELECT turned */
+        turn(EN_SELECT, 1);
+        cp_keys_up();
+        ok &= clip.n == 4u && clip.lo == 4u && msg_is("COPY 5-8");
+        ly_white(B_SEQ, TL_DUP);
+        ok &= t->p[P_SLEN] == 12 && msg_is("DUP 9-12") && !memcmp(&t->step[8], &t->step[4], 4 * sizeof(step_t)) &&
+              motion_lock_get(t, 9, P_PAN, &v) && v == 30 && motion_lock_get(t, 5, P_PAN, &v);
+        bad += check("V10.8.50 DUP (SEQ + C5, its name on the map): steps 5-8 again at 9-12, LEN 8 -> 12, the lock too", ok);
+        ok = !undo_do() && t->p[P_SLEN] == 8 && t->step[8].time != ST_NOTE && !motion_lock_get(t, 9, P_PAN, &v);
+        bad += check("  UNDO takes the DUP back (LEN too)", ok);
+        cp_keys_down(5, 6);                              /* steps 6 and 7 held + EDIT: cleared */
+        press(B_EDIT);
+        cp_keys_up();
+        ok = msg_is("CLEAR 6-7") && t->step[5].time != ST_NOTE && t->step[6].time != ST_NOTE && t->step[4].time == ST_NOTE &&
+             t->step[7].time == ST_NOTE && !motion_lock_get(t, 5, P_PAN, &v) && t->p[P_SLEN] == 8;
+        bad += check("  step keys 6 + 7 held + EDIT clear those steps (notes, the lock), the others stay", ok);
+        ok = !undo_do() && t->step[5].time == ST_NOTE && motion_lock_get(t, 5, P_PAN, &v);
+        bad += check("  UNDO takes the CLEAR back", ok);
+        clip.lo = 60; clip.n = 4;
+        ly_white(B_SEQ, TL_DUP);
+        ok = msg_is("NO ROOM") && t->p[P_SLEN] == 8;
+        bad += check("  DUP with no room left in 64 steps refused", ok);
+        memset(&clip, 0, sizeof clip);
+    }
     return bad;
 }
 static int test_foot_steps(void)

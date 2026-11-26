@@ -1068,7 +1068,7 @@ static int clip_tag(char *b)
 }
 static __attribute__((noinline)) void draw_crumbs(int32_t y, uint16_t fg, uint16_t last)
 {
-    char cnt[8], ct[8];
+    char cnt[8], ct[12];
     int32_t cw = crumb_count(cnt), mx = cw ? 234 - cw - 8 : 234;
     char b[48];
     uint32_t i, k = 0;

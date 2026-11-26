@@ -596,6 +596,7 @@ static void rec_key(uint32_t p)
 #define SK_NAME 11u                                     /* (0.9.2) C5: NAME, the slot's rename (EDIT's until 0.9.1) */
 #define TL_COPY 13u
 #define TL_PASTE 14u
+#define TL_DUP 11u                                      /* (V10.8.50) C5: DUP (ui_input.c cp_seq) */
 #define TL_STEP 15u                                     /* (0.9.2) SEQ's G5: CLR STEP (ui_input.c seq_clr_step) */
 static void song_key(uint32_t p)
 {
@@ -758,8 +759,8 @@ static __attribute__((noinline)) void layer_key(uint32_t l, uint32_t k)
         if (!key_black(k) && p < 4u)
             rec_key(p);
     } else if (l == LAYER_SEQ) {
-        if (!key_black(k) && (p == TL_COPY || p == TL_PASTE))
-            cp_seq(p == TL_PASTE);
+        if (!key_black(k) && (p == TL_COPY || p == TL_PASTE || p == TL_DUP))
+            cp_seq(p == TL_DUP ? 2u : p - TL_COPY);
         else if (!key_black(k) && p == TL_STEP)
             seq_clr_step();                             /* (0.9.2) G5: CLR STEP (AUTO LIST: the record) */
         else if (!key_black(k))
@@ -923,7 +924,7 @@ static uint32_t layer_leds(uint32_t *br)
             on = !dx_lane_muted(p);
         } else if (l == LAYER_SEQ) {                    /* the tools breathe (not while a song plays); DRUM: the lane */
             on = b && p < NLANE && drum_track(TSEL) && p == ui.lane;   /* lit, the other lanes breathe */
-            can = b ? (p < NLANE && drum_track(TSEL)) || ((p == 8u || p == 9u) && !chain_busy()) : p == TL_COPY ? 1u : p == TL_PASTE ? clip.n && !chain_busy() : tl_cell(TSEL, p) && !chain_busy() &&
+            can = b ? (p < NLANE && drum_track(TSEL)) || ((p == 8u || p == 9u) && !chain_busy()) : p == TL_COPY ? 1u : p == TL_PASTE || p == TL_DUP ? clip.n && !chain_busy() : tl_cell(TSEL, p) && !chain_busy() &&
                   (p != TL_CAUTO || motion_count(TSEL));   /* (CLR AUTO: automation to clear; REVERT: an anchor) */
         } else if (l == LAYER_SAVE && !b) {             /* the section playing lit, the saved ones and the */
             on = (p < SK_STORE && live.cur == (int8_t)p) || (p == SK_REC && live.srec) ||   /* actions breathe */
@@ -1079,9 +1080,9 @@ static uint32_t ly_keyname(uint32_t l, int blk, uint32_t p, char *nm)
             }
             return LS_OFF;
         }
-        if (p == TL_COPY || p == TL_PASTE) {
-            str_cpy(nm,p == TL_COPY ? "COPY SEQ" : "PASTE SEQ",12);
-            return p == TL_PASTE && (!clip.n || chain_busy()) ? LS_DIM : LS_OFF;
+        if (p == TL_COPY || p == TL_PASTE || p == TL_DUP) {
+            str_cpy(nm,p == TL_COPY ? "COPY SEQ" : p == TL_DUP ? "DUP" : "PASTE SEQ",12);
+            return p != TL_COPY && (!clip.n || chain_busy()) ? LS_DIM : LS_OFF;
         }
         if (p == TL_STEP) {                             /* (0.9.2) G5 */
             str_cpy(nm, cur_page()->graph == GR_EVENTS ? "DEL REC" : "CLR STEP", 12);

@@ -811,7 +811,8 @@ static void lock_clear(uint64_t held)
  * tapped PASTES the clipboard from that step on (round within LEN). REC tapped with no step key, or the clipboard empty,
  * arms / disarms as ever. A melodic track armed: its keys write or record notes, no copy or paste (DRUM: the white
  * keys stay the steps). DRUM <-> melodic refused. UNDO (GLO + G4, project.c) takes the paste back */
-static uint64_t cp_held(void)
+static uint8_t cp_lo, cp_hi;                            /* (V10.8.50) cp_held's range: the first and the last */
+static __attribute__((noinline)) uint64_t cp_held(void)
 {
     const track_t *t = TSEL;
     uint32_t k, len = (uint32_t)clamp(t->p[P_SLEN], 1, NSTEP), keys = fm1_in.notes & ~kb_layer;
@@ -819,9 +820,14 @@ static uint64_t cp_held(void)
     if (!keys || ui.home || ui.menu || ui.confirm || name_on() || !song.seq_mode ||
         cur_page()->graph != GR_ROLL || (!drum_track(t) && ((song.rec >> song.sel) & 1u)))
         return 0;
-    for (k = 0; k < 27u; k++)
-        if (((keys >> k) & 1u) && !key_black(k) && ui.bank * 16u + key_place(k) < len)
-            m |= (uint64_t)1 << (ui.bank * 16u + key_place(k));
+    for (k = 0; k < 27u; k++) {
+        uint32_t i = ui.bank * 16u + key_place(k);
+        if (((keys >> k) & 1u) && !key_black(k) && i < len) {
+            if (!m) cp_lo = (uint8_t)i;                 /* (V10.8.50) the first and the last held (keys low to high) */
+            cp_hi = (uint8_t)i;
+            m |= (uint64_t)1 << i;
+        }
+    }
     return m;
 }
 
@@ -840,12 +846,18 @@ static void cp_keys_used(track_t *t, uint64_t held)
     cp_add &= ~held;
 }
 
-static void cp_say(const char *what, uint32_t n)
+/* (V10.8.50) "COPY 5-8": a word and the steps lo + 1 .. lo + n (one: "5") */
+BTAPP_FN static void cp_say(const char *what, uint32_t lo, uint32_t n)   /* (V10.8.50) "COPY 5-8", "PASTE 9" */
 {
-    char b[24];
+    char b[24], *e;
     str_cpy(b, what, sizeof b);
-    fmt_int(b + str_len(b), (int32_t)n);
-    str_cpy(b + str_len(b), n == 1u ? " STEP" : " STEPS", 8);
+    e = b + str_len(b);
+    fmt_int(e, (int32_t)lo + 1);
+    if (n > 1u) {
+        e += str_len(e);
+        *e++ = '-';
+        fmt_int(e, (int32_t)(lo + n));
+    }
     ui_message(b);
 }
 
@@ -855,6 +867,7 @@ static void cp_copy(uint64_t held)
     uint32_t lo = (uint32_t)__builtin_ctzll(held), hi = 63u - (uint32_t)__builtin_clzll(held), i, k = trk_index(t), f;
     cp_keys_used(t, held);
     clip.n = (uint8_t)(hi - lo + 1u);
+    clip.lo = (uint8_t)lo;
     clip.drum = (uint8_t)drum_track(t);
     clip.engine = (uint8_t)eng_idx(t->eng_req);
     memcpy(clip.st, &t->step[lo], clip.n * sizeof clip.st[0]);
@@ -869,17 +882,22 @@ static void cp_copy(uint64_t held)
         clip.lk[clip.nl++].v = MOTION_VAL(e);
     }
     motion_unguard(f);
-    cp_say("COPIED ", clip.n);
+    cp_say("COPY ", lo, clip.n);
     ui.force = 1;
 }
 
-/* Shared by range paste and SEQ > PASTE SEQ. One clipboard and one undo level. */
+/* Shared by range paste (whole 0), SEQ > PASTE SEQ (1), (V10.8.50) SEQ TOOLS' DUP (2: right after where it was
+ * copied from, LEN grown to hold it, 64 at most) and the steps held cleared (3: cp_held's range, [EDIT]). One clipboard
+ * and one undo level. */
 static void cp_put(track_t *t, uint32_t a, uint32_t whole)
 {
-    uint32_t j, len = whole ? clip.n : (uint32_t)clamp(t->p[P_SLEN],1,NSTEP), n = clip.n < len ? clip.n : len;
-    if (clip.drum != (uint8_t)drum_track(t)) { ui_message("DRUM <-> NOTES: NO"); return; }
+    uint32_t j, len = whole == 1u ? clip.n : (uint32_t)clamp(t->p[P_SLEN],1,NSTEP), n;
+    if (whole != 3u && clip.drum != (uint8_t)drum_track(t)) { ui_message("DRUM <-> NOTES: NO"); return; }
     undo_mark();
-    if (whole) {
+    if (whole == 2u && a + clip.n > len)
+        t->p[P_SLEN] = (int16_t)(len = a + clip.n < NSTEP ? a + clip.n : NSTEP);
+    n = whole == 3u ? cp_hi - cp_lo + 1u : clip.n < len ? clip.n : len;
+    if (whole == 1u) {
         motion_clear_locks(t,NSTEP);
         for(j=0;j<NSTEP;j++) step_clear(&t->step[j]);
         t->p[P_SLEN]=(int16_t)len;
@@ -887,20 +905,23 @@ static void cp_put(track_t *t, uint32_t a, uint32_t whole)
     }
     for(j=0;j<n;j++) {
         uint32_t d=(a+j)%len;
-        if(!whole) motion_clear_locks(t,d);
-        t->step[d]=clip.st[j];
+        if(whole != 1u) motion_clear_locks(t,d);
+        if (whole == 3u) step_clear(&t->step[d]);
+        else t->step[d]=clip.st[j];
     }
-    for(j=0;j<clip.nl;j++)
+    for(j=0;whole != 3u && j<clip.nl;j++)
         if(clip.lk[j].off<n && (clip.engine==eng_idx(t->eng_req) || clip.lk[j].id<P_E0) &&
            motion_set_lock(t,(a+clip.lk[j].off)%len,clip.lk[j].id,clip.lk[j].v)==2)break;
-    cp_say("PASTED ",n);ui.force=1;
+    cp_say(whole > 1u ? whole > 2u ? "CLEAR " : "DUP " : "PASTE ", a, n);
+    ui.force=1;
 }
-static void cp_seq(uint32_t paste)
+static void cp_seq(uint32_t paste)                      /* 0 COPY SEQ, 1 PASTE SEQ, (V10.8.50) 2 DUP */
 {
     if(paste) {
         if(!clip.n) ui_message("NOTHING COPIED");
         else if(chain_busy()) ui_message("SONG PLAYS: STOP IT TO EDIT");
-        else cp_put(TSEL,0,1);
+        else if(paste == 2u && clip.lo + clip.n >= NSTEP) ui_message("NO ROOM");
+        else cp_put(TSEL,paste == 2u ? clip.lo + clip.n : 0u,paste);
     } else {
         uint32_t len=(uint32_t)clamp(TSEL->p[P_SLEN],1,NSTEP);
         cp_add=cp_add_acc=0;
@@ -2340,10 +2361,14 @@ static uint32_t ly_bit(uint32_t l);
 static int page_tap(uint32_t b)
 {
     uint32_t f;
-    if (b == B_EDIT && song.seq_mode && !ui.home && cur_page()->graph == GR_ROLL && lock_held()) {
-        if (chain_busy()) ui_message("SONG PLAYS: STOP IT TO EDIT");
-        else lock_clear(lock_held());
-        return 1;
+    if (b == B_EDIT && song.seq_mode && !ui.home && cur_page()->graph == GR_ROLL) {
+        uint64_t ch = cp_held(), lh = ch ? ch : lock_held();   /* (V10.8.50) step keys held: those steps cleared */
+        if (lh) {
+            if (chain_busy()) ui_message("SONG PLAYS: STOP IT TO EDIT");
+            else if (ch) { cp_keys_used(TSEL, ch); cp_put(TSEL, cp_lo, 3u); }
+            else lock_clear(lh);
+            return 1;
+        }
     }
     for (f = FAM_HOME + 1u; f < FAM_COUNT; f++)
         if (FAM_BTN[f] == b) {

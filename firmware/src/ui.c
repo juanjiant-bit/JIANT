@@ -792,7 +792,8 @@ static void seg_missing(void)
  * DRUM hits, accents and lane modes, the components), their parameter locks by offset; n 0: empty (the footer's [n]) */
 #define CLIP_LOCKS MOTION_MAX
 static struct {
-    uint8_t n, drum, nl, engine;                           /* steps held, from a DRUM track, locks held */
+    uint8_t n, drum, nl, engine, lo;                       /* steps held, from a DRUM track, locks held; (V10.8.50) where
+                                                           * they were copied from (DUP) */
     step_t st[NSTEP];
     struct { uint8_t off, id; int16_t v; } lk[CLIP_LOCKS];
 } clip;
