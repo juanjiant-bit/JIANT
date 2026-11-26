@@ -1485,6 +1485,7 @@ function renderRadio() {
   if (!rd.info) return;
   const [, g, seed, mood, energy, form] = rd.info;
   $("rdnow").textContent = rdGenre(g);
+  if (rd.vis) rd.vis.setInfo({ genre: rdGenre(g), seed, mood, form: RD_FORMS[form] });
   $("rdmeta").textContent = `${t("rdMood")} ${mood > 0 ? "+" : ""}${mood} · ${RD_FORMS[form] || "?"} · ${t("rdSeed")} ${seed} · ${rd.version || ""}`;
   $("rdcount").textContent = rd.votes ? t("rdThanks").replace("%n", rd.votes) : "";
   for (const id of ["rdup", "rddown", "rdskip"]) $(id).disabled = !rd.on;

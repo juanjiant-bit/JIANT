@@ -270,13 +270,14 @@
   #rdvis { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .rdtopl { position: absolute; left: 34px; top: 22px; display: flex; gap: 10px; align-items: center; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; }
   .rdfwtag { padding: 2px 6px; border: 1px solid rgba(235,235,255,.4); }
-  .rdfull { position: absolute; right: 120px; top: 16px; font-size: 18px; min-height: 34px; padding: 2px 10px; }
+  .rdfull { position: absolute; right: 16px; bottom: 16px; z-index: 2; font-size: 18px; min-height: 34px; padding: 2px 10px; }
   .rdcenter { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; gap: 10px; background: radial-gradient(closest-side, rgba(5,4,9,.75), transparent); }
   .rdcenter h1 { margin: 0; font-size: clamp(26px, 5vw, 48px); } .rdcenter p { max-width: 560px; margin: 0; color: rgba(241,238,252,.8); }
   .rdplay { font-size: 20px; padding: 14px 30px; margin-top: 8px; border-radius: 999px; }
   .rdstat { min-height: 1.2em; font-family: var(--mono); font-size: 12px; }
-  .rdhud { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 34px 22px; text-align: center; background: linear-gradient(transparent, rgba(5,4,9,.85) 45%); }
-  .rdnow { margin: 0; font: 700 clamp(26px, 4.5vw, 44px)/1.05 var(--display); letter-spacing: .04em; text-shadow: 0 0 24px rgba(201,162,255,.45); }
+  @media (min-width: 900px) { .rdhud { right: 30% !important; } }
+  .rdhud { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 34px 22px; text-align: center; background: linear-gradient(transparent, rgba(2,2,8,.8) 50%); }
+  .rdnow { margin: 0; font: 700 clamp(26px, 4.5vw, 44px)/1.05 var(--display); letter-spacing: .06em; color: #e9f25a; text-shadow: 0 0 18px rgba(233,242,90,.55); }
   .rdmeta { margin: 4px 0 12px; font-family: var(--mono); font-size: 12px; color: rgba(241,238,252,.7); letter-spacing: .06em; }
   .rdvote { display: flex; gap: 22px; justify-content: center; align-items: center; margin-bottom: 26px; }
   .rdbig { position: relative; width: 92px; height: 92px; border: 0; background: radial-gradient(circle, rgba(5,6,26,.85) 55%, transparent 70%); cursor: pointer; color: var(--c); --c: var(--hud); display: grid; place-items: center; }
@@ -295,7 +296,7 @@
   .rdctl { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: center; align-items: center; font-family: var(--mono); font-size: 12px; color: rgba(241,238,252,.75); }
   .rdctl select { max-width: 160px; } .rdstop { font-size: 12px; padding: 3px 10px; }
   .rdpriv { margin-top: 10px; font-size: 12px; }
-  @media (max-width: 640px) { .rdstage { height: calc(100vh - 170px); margin: -8px -8px 0; } .rdtopl { left: 18px; } .rdfull { right: 100px; top: 12px; } .rdbig { width: 76px; height: 76px; } .rdbig.skip { width: 58px; height: 58px; } .rdhud { padding: 12px 12px 16px; } }
+  @media (max-width: 640px) { .rdstage { height: calc(100vh - 170px); margin: -8px -8px 0; } .rdtopl { left: 18px; } .rdfull { right: 10px; bottom: 10px; } .rdbig { width: 76px; height: 76px; } .rdbig.skip { width: 58px; height: 58px; } .rdhud { padding: 12px 12px 16px; } }
   .wtframes { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin: 8px 0; }
   .wtframes canvas { width: 100%; aspect-ratio: 1; background: var(--field); border-radius: var(--radius-s); cursor: pointer; }
   .wtframes canvas.on { outline: 2px solid var(--accent); }
