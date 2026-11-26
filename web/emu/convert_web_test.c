@@ -3,7 +3,7 @@
 /* (studio's converter, /emu-convert/: V10.8.50 + web_proj_load / web_proj_save) a project of before V10.7, which
  * V10.8.51 refuses (OLD PROJECT: OPEN IN STUDIO), loaded here and saved in this build's FUNC: the saved bytes have
  * the SLICER block and no old GM drum part, so V10.8.51's proj_import takes them. argv[1]: the saved bytes written
- * there (for a check against the later code). */
+ * there (for a check against the later code); argv[2], argv[3]: the two old projects built (tests/fixtures/old-project-*.bin). */
 #include "felucca_web.c"
 static int bad;
 static void ck(const char *what, int ok) { printf("%-66s %s\n", what, ok ? "ok" : "FAIL"); bad += !ok; }
@@ -39,6 +39,7 @@ int main(int argc, char **argv)
     run(8);
     for (kind = 0; kind < 2u; kind++) {
         n = old_image((int)kind, &old);
+        if (argc > 2 + (int)kind) { FILE *f = fopen(argv[2 + kind], "wb"); if (f) { fwrite(&old, 1, n, f); fclose(f); } }   /* (studio's fixtures) */
         ck(kind ? "a project of before 0.6.3 (no SLICER block) built" : "a project with the old GM drum part built", n != 0);
         memcpy(web_bk_buf(), &old, n);
         ck("  web_proj_load(1, len): 0 (converted, loaded)", web_proj_load(1, n) == 0);
