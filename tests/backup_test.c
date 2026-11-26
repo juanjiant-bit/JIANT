@@ -458,6 +458,33 @@ int main(void)
         b.nslot = 3;
         bad += check("a bank with the wrong slot count is refused", put_all(7, &b, sizeof b, st_crc32(&b, sizeof b)) == 2u);
     }
+    {   /* (V10.8.54) Studio's project library: PROJ_LIST / PROJ_NAME / PROJ_OP */
+        static const uint8_t cp[4] = {0, 0, 2, 0}, mv[4] = {1, 2, 3, 0}, del[4] = {2, 3, 0, 0}, nm[5] = {2, 0, 'N', 'E', 'W'};
+        reset();
+        trk[0].step[0] = (step_t){{60}, 1, ST_NOTE, 0, 96, 0, 0};
+        project_save_as(0, "MYSONG");
+        call(ED_PROJ_OP, cp, 4);
+        bad += check("PROJ_OP COPY 1 -> 3: done", rep_n == 4u && rep[3] == 0u);
+        call(ED_PROJ_LIST, 0, 0);
+        bad += check("PROJ_LIST: project 3 has part A, named MYSONG", rep[0] == 0u && rep[1] == NSONG && rep[2 + 2u * 15u] == 2u &&
+                     rep[2 + 2u * 15u + 1u] == 1u && !memcmp(&rep[2 + 2u * 15u + 3u], "MYSONG", 6));
+        call(ED_PROJ_OP, cp, 4);
+        bad += check("PROJ_OP COPY over it again, force 0: 4 (occupied)", rep[3] == 4u);
+        call(ED_PROJ_NAME, nm, 5);
+        call(ED_PROJ_LIST, 0, 0);
+        bad += check("PROJ_NAME 3 A NEW: renamed in flash", !memcmp(&rep[2 + 2u * 15u + 3u], "NEW", 4));
+        call(ED_PROJ_OP, mv, 4);
+        call(ED_PROJ_LIST, 0, 0);
+        bad += check("PROJ_OP MOVE 3 -> 4: 3 empty, 4 NEW", rep[2 + 2u * 15u + 1u] == 0u && rep[2 + 3u * 15u + 1u] == 1u &&
+                     !memcmp(&rep[2 + 3u * 15u + 3u], "NEW", 4));
+        call(ED_PROJ_OP, del, 4);
+        call(ED_PROJ_LIST, 0, 0);
+        bad += check("PROJ_OP DELETE 4: empty", rep[2 + 3u * 15u + 1u] == 0u);
+        song.playing = 1;
+        call(ED_PROJ_OP, cp, 4);
+        bad += check("playing: 3 (STOP first)", rep[3] == 3u);
+        song.playing = 0;
+    }
     printf("backup test %s\n", bad ? "FAILED" : "passed");
     return bad != 0;
 }

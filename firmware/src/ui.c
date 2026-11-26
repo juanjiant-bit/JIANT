@@ -687,6 +687,7 @@ static uint32_t page_first(uint32_t fam)
 static int lens_on(void) { return !ui.home && !page_over && PAGES[ui.page].fam == FAM_SEQ; }
 static int save_on(void) { return !ui.home && !page_over && PAGES[ui.page].fam == FAM_SAVE; }
 static void page_entered(void);
+static uint32_t lz_hint_ms __attribute__((section(".pool")));   /* (V10.8.54) the page entered at: its OCT+ hint (ui_draw.c lz_hint) */
 static void page_flash(void);
 #define FX_NMOD 6u
 static const char *const FX_MOD[FX_NMOD] = {"DELAY", "REVERB", "CHORUS", "SLICER", "PUNCH IN", "MASTER"};   /* (snd2: MASTER */
@@ -882,6 +883,7 @@ static void page_entered(void)
     br_armed = 0;
     if (pg->graph == GR_SLOTS && !song_draft) song_save_target = song_cur;   /* (PROJECTS: this project picked first) */
     ui.knob_ms = fm1_ms;                         /* (0.9.0) HUD: the knob row whole again on a new page */
+    lz_hint_ms = fm1_ms;                         /* (V10.8.54) its OCT+ gestures said in the footer */
     if (!ui.home && pg->fam == FAM_FX && fx_trk_k(ui.page) < 0 && pg->graph != GR_BUSES)
         ui.fxmod = (uint8_t)fx_mod_of(ui.page);  /* (FX: the effect shown, BUSES' tile lit) */
     if (!ui.home && pg->graph == GR_EVENTS)      /* AUTO LIST: + ADD LOCK on the SEQ cursor's step */

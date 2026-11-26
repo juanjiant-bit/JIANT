@@ -264,8 +264,88 @@ static __attribute__((noinline)) uint32_t ed_bk_write(const uint8_t *a, uint32_t
     memcpy(ED_BK_RAW + ed_bk_pos, ed_bk_buf, count); ed_bk_pos += count;
     return 0;
 }
+/* (V10.8.54, Studio's project library; the owner: "renombrar cada parte y proyecto desde Studio en tiempo real y hacer
+ * management de proyectos desde el celular") three requests, stopped only for the writes:
+ *   95 PROJ_LIST  () -> rc 0, NSONG, per project: n, parts (bit k: A..D stored), flags (1 open, 2 a GEN draft), its
+ *                 name (section A's), 12 bytes 0-padded
+ *   96 PROJ_NAME  (n, part 0..3, ASCII .. up to 12) -> n, part, rc: the part's name (part A's: the project's), live
+ *   97 PROJ_OP    (op 0 COPY / 1 MOVE / 2 DELETE, from, to, force) -> op, from, to, rc: COPY / MOVE a whole project to
+ *                 another (not the open one); an occupied target only with force 1 (Studio backs it up first: BACKUP_GET)
+ * rc 0 done, 1 refused (a bad request, the open project as the target, an empty part), 2 the flash failed (as it was), 3
+ * playing (STOP first), 4 the target holds a project (force 0) */
+enum { ED_PROJ_LIST = 95, ED_PROJ_NAME, ED_PROJ_OP };
+#if FELUCCA_FLASH
+BTAPP_FN static uint32_t ed_pj_name(uint32_t s, uint32_t k, const char *nm)   /* a part of another project renamed */
+{
+    int n = st_load(ed_bk_song_obj(s, k), &proj_wire, sizeof proj_wire);
+    if (n <= 0 || !proj_import(&proj_scratch, &proj_wire, n)) return 1;
+    if (!proj_name_pack(&proj_scratch, nm)) return 2;
+    return st_save(ed_bk_song_obj(s, k), &proj_wire, sizeof proj_wire) ? 2u : 0u;
+}
+BTAPP_FN static uint32_t ed_pj_copy(uint32_t from, uint32_t to)   /* its four parts, then its rows in the index */
+{
+    song_index_t *index = (song_index_t *)proj_wire_u.raw;
+    for (uint32_t k = 0; k < 4u; k++) {
+        int n = from == song_cur ? (project_used(k) ? (int)sizeof proj_wire : 0) : st_load(ed_bk_song_obj(from, k), &proj_wire, sizeof proj_wire);
+        if (from == song_cur && n) memcpy(&proj_wire, &proj_slot[k], sizeof proj_wire);
+        if (st_save(ed_bk_song_obj(to, k), &proj_wire, n > 0 ? (uint32_t)n : 0u)) return 2;
+    }
+    if (song_saved_index(index)) return 2;
+    index->rows[to] = index->rows[from];
+    memcpy(index->scene[to], index->scene[from], sizeof index->scene[to]);
+    memcpy(index->tsrc[to], index->tsrc[from], sizeof index->tsrc[to]);
+    memcpy(index->tvar[to], index->tvar[from], sizeof index->tvar[to]);
+    if (st_save(OBJ_SONGIDX, index, sizeof *index)) return 2;
+    song_index_target(index, to);
+    return 0;
+}
+#endif
+static uint32_t ed_pj_handle(uint32_t cmd, const uint8_t *a, uint32_t n)
+{
+    char nm[PROJ_NAME_LEN + 1u];
+    uint32_t rc = transport_busy() ? 3u : !bt_hw_seg() || !flash_ok ? 2u : 0u, s, k;
+    if (cmd == ED_PROJ_LIST) {
+        ed_b(0); ed_b(NSONG);
+        for (s = 0; s < NSONG; s++) {
+            uint32_t m = lib_scan(s, nm);
+            ed_b(s); ed_b(m); ed_b((s == song_cur) | (s == song_cur && song_draft) << 1);
+            for (k = 0; k < PROJ_NAME_LEN; k++) ed_b(k < str_len(nm) ? (uint8_t)nm[k] & 127u : 0u);
+        }
+        return 1;
+    }
+    if (cmd == ED_PROJ_NAME) {
+        s = n ? a[0] : 127u; k = n > 1u ? a[1] : 127u;
+        for (uint32_t i = 0; i < PROJ_NAME_LEN + 1u; i++) nm[i] = (char)(i + 2u < n && i < PROJ_NAME_LEN ? a[i + 2u] : 0);
+        if (!rc && (n < 2u || n > 14u || s >= NSONG || k > 3u)) rc = 1;
+        if (!rc) rc = s == song_cur ? (uint32_t)project_rename(k, nm) :
+#if FELUCCA_FLASH
+                      ed_pj_name(s, k, nm);
+#else
+                      1u;
+#endif
+        proj_wire_gen++;
+        ed_b(s); ed_b(k); ed_b(rc);
+        return 1;
+    }
+    if (cmd == ED_PROJ_OP) {
+        uint32_t op = n == 4u ? a[0] : 127u, from = n == 4u ? a[1] : 127u, to = n == 4u ? a[2] : 127u;
+        if (!rc && (op > 2u || from >= NSONG || (op < 2u && (to >= NSONG || to == from || to == song_cur || song_draft)) || (op == 1u && from == song_cur))) rc = 1;
+        if (!rc && op < 2u && !a[3] && lib_scan(to, nm)) rc = 4;
+#if FELUCCA_FLASH
+        if (!rc && op < 2u) rc = ed_pj_copy(from, to);
+#endif
+        if (!rc && op) rc = song_erase_parts(from, 0) ? 2u : 0u;
+        proj_wire_gen++;
+        ed_b(op); ed_b(from); ed_b(to); ed_b(rc);
+        if (!rc) ui_message(op == 2u ? "PROJECT DELETED" : op ? "PROJECT MOVED" : "PROJECT COPIED");
+        return 1;
+    }
+    return 0;
+}
 static int ed_backup_handle(uint32_t cmd, const uint8_t *a, uint32_t n)
 {
+    if (cmd >= ED_PROJ_LIST && cmd <= ED_PROJ_OP)
+        return (int)ed_pj_handle(cmd, a, n);
     if (cmd == ED_BACKUP_LIST) {
         uint32_t rc = n ? 1u : ed_bk_capture();
         ed_b(1); ed_b(rc); ed_b(rc ? 0u : ED_BK_N);

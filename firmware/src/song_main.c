@@ -351,7 +351,8 @@ static int section_jump(uint32_t s)
     if (song_stage(s, SEC_LIVE))
         return 1;
     live.req = (int8_t)s;
-    ui_say(b, " NEXT BAR");
+    if (live.cur >= 0 && live.cur != (int8_t)s) { b[0] = (char)('A' + live.cur); b[1] = ' '; b[2] = '>'; b[3] = ' '; b[4] = (char)('A' + s); b[5] = 0; }
+    ui_say(b, " NEXT BAR");                           /* (V10.8.54: "A > B NEXT BAR") */
     return 0;
 }
 /* (V10.6s) SAVE > CLIPS: track k's cell of part s in on the next bar (stopped: now, and PLAY): the other tracks play on

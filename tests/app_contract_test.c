@@ -360,6 +360,32 @@ static void backup(void)
     transport_req = 0;
 }
 
+/* (V10.8.54) Studio's project library: PROJ_LIST 95, PROJ_NAME 96, PROJ_OP 97 (editor_backup.c ed_pj_handle) */
+static void projects(void)
+{
+    const uint8_t *r;
+    uint32_t n, i, k;
+    reset();
+    ok("PROJ_LIST / PROJ_NAME / PROJ_OP are 95 96 97", ED_PROJ_LIST == 95 && ED_PROJ_NAME == 96 && ED_PROJ_OP == 97);
+    APP0(ED_PROJ_LIST);
+    r = frame(ED_PROJ_LIST, &n);
+    g_new(); g_b(0, "rc"); g_b(NSONG, "NSONG");
+    for (i = 0; i < NSONG; i++) { g_b(i, "n"); g_any("parts"); g_any("flags"); for (k = 0; k < 12u; k++) g_any("name"); }
+    g_check("PROJ_LIST: rc, NSONG, NSONG x (n, parts, flags, 12 name bytes)", r, n);
+    ok("PROJ_LIST: the open project flagged", r && n >= 5u && (r[2 + song_cur * 15u + 2u] & 1u));
+    APP(ED_PROJ_NAME, 9, 0, 'X');                       /* (no such project) */
+    r = frame(ED_PROJ_NAME, &n);
+    g_new(); g_b(9, "n"); g_b(0, "part"); g_any("rc");
+    ok("PROJ_NAME 9 0 X: n, part, rc (refused: 1, or 2 without flash)", g_check("PROJ_NAME: n, part, rc", r, n) && r[2] && r[2] != 3u);
+    { int a_[4] = {0, 1, (int)song_cur, 0}; app(ED_PROJ_OP, a_, 4); }   /* (a copy over the open project) */
+    r = frame(ED_PROJ_OP, &n);
+    g_new(); g_b(0, "op"); g_b(1, "from"); g_b(song_cur, "to"); g_any("rc");
+    ok("PROJ_OP COPY onto the open project: refused (1, or 2 without flash)", g_check("PROJ_OP: op, from, to, rc", r, n) && r[3] && r[3] != 3u);
+    APP(ED_PROJ_OP, 5, 0, 1, 0);                         /* (no such op) */
+    r = frame(ED_PROJ_OP, &n);
+    ok("PROJ_OP 5: refused", r && n == 4u && r[3]);
+}
+
 /* ------------------------------------------------------------------ the pushes */
 static void pushes(void)
 {
@@ -812,6 +838,7 @@ int main(int argc, char **argv)
     contract_constants();
     requests();
     backup();
+    projects();
     pushes();
     pushes_10();
     push_ui();

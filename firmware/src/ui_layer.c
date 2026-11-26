@@ -744,6 +744,7 @@ static void session_dice(uint32_t seed)
 static const char *const GLO_GROUP[4];                /* (the DRUM group's names, below) */
 #define GLO_ALL ((uint32_t)NTRK)
 #define GLO_TAP 7u
+#define GLO_RESOUND 9u                                  /* (V10.8.54) A4: RESOUND, new sounds for the whole song (gen.c) */
 #define GLO_UNDO 8u                                     /* (0.6.21) G4: UNDO the last big change (project.c undo_do) */
                                                         /* (V10.6) A4 FREEZE, B4 REVERT ALL and SEQ's D5 REVERT gone with MUTATE */
 static __attribute__((noinline)) void layer_key(uint32_t l, uint32_t k)
@@ -770,12 +771,15 @@ static __attribute__((noinline)) void layer_key(uint32_t l, uint32_t k)
             glo_tap();
         } else if (p == GLO_UNDO) {
             undo_ui();
+        } else if (p == GLO_RESOUND) {
+            gen_resound_key();
         }
     } else if (l == LAYER_SCL) {
         TSEL->p[P_ROOT] = (int16_t)((k + 5u) % 12u);    /* the key's note name (F3 = F) */
         ui_say("ROOT ", NN12[TSEL->p[P_ROOT]]);
     } else if (l == LAYER_EDIT && key_black(k) && p < NLANE && drum_track(TSEL)) {
         dx_mute_set(dx_mute ^ DXM_LANE(p));             /* DRUM: black keys 1..8 mute each sound (lit = sounding) */
+        ui_say(drum_lane_abbr(TSEL, p), dx_mute & DXM_LANE(p) ? " MUTED" : " ON");
     } else if (l == LAYER_EDIT && !key_black(k) && p <= LY_RECALL) {
         if (chain_busy())
             ui_message("SONG PLAYS: STOP IT TO EDIT");
@@ -793,8 +797,10 @@ static __attribute__((noinline)) void layer_key(uint32_t l, uint32_t k)
             nudge_key(p == 9u);                         /* (V10.8.49) C#5 / D#5: NUDGE < / > */
         else if (p == 10u)
             se_undo();                                  /* (V10.8.52) F#5: UNDO / REDO the last edit */
-        else if (p < NLANE && drum_track(TSEL))
+        else if (p < NLANE && drum_track(TSEL)) {
             ui.lane = (uint8_t)p;                       /* (black keys 1..8: the lane, as on the grid) */
+            ui_say("LANE ", drum_lane_abbr(TSEL, p));
+        }
     } else if (l == LAYER_SAVE && !key_black(k)) {
         song_key(p);
     }
@@ -834,12 +840,22 @@ static void layer_knob(uint32_t k, int32_t s)
         se_knob(k, s);
         ui.force = 1;
     } else if (l == LAYER_SAVE) {                       /* KNOB 1: the song (in when SAVE lets go); 2..4: none */
-        if (k == 0u)
+        if (k == 0u) {
+            char b[4];
             lys.song = (uint8_t)(clamp((int32_t)(lys.song ? lys.song - 1u : song_cur) + (s > 0 ? 1 : -1), 0,
                                        NSONG - 1) + 1);
+            fmt_int(b, lys.song);
+            ui_say("PROJECT ", b);                      /* (V10.8.54: in when SAVE lets go) */
+            str_cpy(ui.msg2, "LET GO: OPEN", sizeof ui.msg2);
+        }
     } else if (l == LAYER_REC) {                        /* K1 CLICK, K2 REC Q */
-        if (k == 1u)
+        if (k == 1u) {
+            char b[6];
             TSEL->p[P_HRQ] = (int16_t)clamp(TSEL->p[P_HRQ] + accel(EN_K2, s, 127), 0, 127);
+            fmt_int(b, TSEL->p[P_HRQ] * 100 / 127);
+            str_cpy(b + str_len(b), "%", 2);
+            ui_say("REC GRID ", b);
+        }
         else if (k < RL_N)
             rec_set(k, (uint32_t)clamp((int32_t)rp_get(RL_F[k]) + s, 0, 2));
     } else if (l) {                                     /* the page's knobs, wherever the page is */
@@ -871,6 +887,7 @@ static int layer_play(void)
         ui_message("RESTART: CLK IS EXT");
         return 1;
     }
+    if (song.playing) ui_message("RESTART");
     transport_req = song.playing ? 3u : 1u;
     return 1;
 }
@@ -1562,6 +1579,7 @@ static __attribute__((noinline)) void layer_state(uint32_t l)
         for (k = 0; glo_drums() && k < 4u; k++)
             lst_chip(GLO_GROUP[k], (dx_mute >> k) & 1u ? "MUTE" : "ON", !((dx_mute >> k) & 1u));
         lst_chip("UNDO", undo_ok ? "READY" : "-", undo_ok);
+        lst_chip("A4", "RESOUND", 1);
     } else if (l == LAYER_REC) {
         b[0] = 'T'; b[1] = (char)('1' + song.sel); b[2] = 0;
         lst_chip("ARMED", b, (song.rec >> song.sel) & 1u);

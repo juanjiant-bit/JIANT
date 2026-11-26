@@ -1103,6 +1103,20 @@ static __attribute__((noinline)) void draw_crumbs(int32_t y, uint16_t fg, uint16
         cv_free_text(x, y, f, b + k, last, T_BG, mx - x);
     }
 }
+/* (V10.8.54, the owner: "que cada función diga lo que hace") a lens page with OCT+ gestures: its footer says them, 1.5 s
+ * on entering the page and while OCT+ is held, in place of the breadcrumb. Its page's title, then what OCT+ does */
+static const char *const LZ_HINT[] = {"EDIT 1", "HOLD: K4 GAIN", "FILTER", "HOLD: K2 KEY TRK", "REVERB", "HOLD: K4 GATE",
+    "DLY", "HOLD: K4 GATE", "EUCLID", "MUTATE \xB7 HOLD: K4 EVERY", "PRESETS", "KEEP",
+    "SCENE", "DICE", "PUNCH IN", "EDITOR", "TRACK GEN", "MAKE", "ARRANGE", "ADD ROW", "TAKE", "GO", "SYSTEM", "OPEN"};
+static const char *lz_hint(void)
+{
+    uint32_t i;
+    if (ui.home || (fm1_ms - lz_hint_ms > 1500u && !((fm1_in.buttons >> panel.btn[B_OCTUP]) & 1u)))
+        return 0;
+    for (i = 0; i < NELEM(LZ_HINT); i += 2u)
+        if (str_eq(cur_page()->title, LZ_HINT[i])) return LZ_HINT[i + 1u];
+    return 0;
+}
 static void draw_foot(void)
 {
     char s[48], ti[20];
@@ -1122,6 +1136,7 @@ static void draw_foot(void)
         sig += str_hash(str_hash(act_ready() ? 7u : 3u, ha), hb);
     }
     sig += (uint32_t)accw * 977u + (uint32_t)clip.n * 7919u;   /* (seq2h) the clipboard's [n] */
+    sig += lz && lz_hint() ? 31337u : 0u;
     if (!ui.force && sig == ui.foot_sig)
         return;
     ui.foot_sig = sig;
@@ -1140,6 +1155,10 @@ static void draw_foot(void)
             GFX_HOOK_ALIGN(0, 0, 240, 0, AL_H | AL_CELLS | AL_N(16), "footer step bars centred");
         (void)foot_strip(12, 1, 0);
     }
+    if (lz && lz_hint()) {                            /* (V10.8.54) OCT+'s gestures said */
+        khint_t kh = {KC_OCTUP, lz_hint()};
+        cv_key_row(8, 232, ry - 2, &kh, 1, 3u, T_BG);
+    } else
     draw_crumbs(ry, T_DIM, accw ? T_ACCENT : T_DIM);   /* (0.8.5) row 2: the breadcrumb (the track's engine and sound:
                                                          * the header's centre) */
     cv_blit(0, foot_y());

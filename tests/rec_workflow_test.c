@@ -71,6 +71,17 @@ int main(void)
     bad += test_rec();
     bad += test_rec_layer();
     bad += test_rec_combos();
+    {   /* (V10.8.54) GLO + A4: RESOUND, the notes kept, new sounds; GLO + G4 the sounds back */
+        uint32_t e0, p0, sig;
+        ui_power_on(); song.sel = 0;
+        my_steps(&trk[0]); sig = steps_sig(&trk[0]);
+        e0 = trk[0].eng_req; p0 = trk[0].preset;
+        ly_white(B_GLO, GLO_RESOUND);
+        bad += check("GLO+A4 RESOUND: the notes kept, another sound, its banner",
+                     steps_sig(&trk[0]) == sig && (trk[0].eng_req != e0 || trk[0].preset != p0) && !strncmp(ui.msg, "RESOUND #", 9));
+        ly_white(B_GLO, GLO_UNDO);
+        bad += check("GLO+G4 after RESOUND: the sound back", trk[0].eng_req == e0 && trk[0].preset == p0 && steps_sig(&trk[0]) == sig);
+    }
     return bad != 0;
 }
 

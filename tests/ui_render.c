@@ -868,8 +868,8 @@ static void nav_scene(uint32_t sec, const char *nm)
                 ui.home = 0; ui.page = (uint8_t)i; page_entered(); pf_on = 0;
                 return;
             }
-        fprintf(stderr, "nav_scene: no page \"%s\"\n", nm);
-        exit(2);
+        fprintf(stderr, "nav_scene: no page \"%s\" (a page since gone: the scene drawn where it is)\n", nm);
+        return;
     }
     pf_on = 0;
 }
@@ -1086,7 +1086,7 @@ static void setup(int s)
         ui.home = 1; page_flash(); pf_ms = fm1_ms - 200u;
         break;
     case S_DXIMG:                                       /* (0.6.48) DRUM IMAGE 40 */
-        set_engine_of(TSEL, ENGI_DRUM); TSEL->p[P_DXIMG] = 40; go_title("STEREO");
+        set_engine_of(TSEL, ENGI_DRUM); TSEL->p[P_DXIMG] = 40; go_page(GR_DXIMG);   /* (its title "" now: the tabs name it) */
         break;
     case S_DXSEND:                                      /* (0.6.48) SEND: the snare to the REVERB, 70 % */
         set_engine_of(TSEL, ENGI_DRUM); dx_ui_lane = 1; dx_snd[1] = 3u << 6 | 47u; dx_lay[1] = 0x26; go_title("SOUND 4");
@@ -1244,7 +1244,7 @@ static void setup(int s)
     case S_DLG_DICE_SOUND: case S_DLG_DICE_SEQ: case S_DLG_DICE_FX: {   /* (0.8.5) the DICE dialog: BEFORE / NOW */
         uint32_t k = s == S_DLG_DICE_SOUND ? CF_DICE_SOUND : s == S_DLG_DICE_SEQ ? CF_DICE_SEQ : CF_DICE_FX;
         go_title("EDIT 1"); song.playing = 0;
-        dk_keep(k); dk_vis_take();
+        dk_vis_take();                                  /* (V10.8.21: dk_keep gone with the SEQ dice) */
         if (k == CF_DICE_SOUND) { TSEL->p[ENGINES[TSEL->eng_req]->knob[0]] = 100; TSEL->p[ENGINES[TSEL->eng_req]->knob[2]] = 5; }
         else if (k == CF_DICE_SEQ) for (uint32_t i = 0; i < 16u; i += 3u) { TSEL->step[i].time = ST_NOTE; TSEL->step[i].n = 1; TSEL->step[i].note[0] = (uint8_t)(48 + i); }
         else { TSEL->p[P_DIST] = 90; TSEL->p[P_CHOR] = 60; }

@@ -61,6 +61,9 @@
  *   ADD     (MEDUSA, the jellyfish of its partials, until V10.7.13: gone for GEN's FORM MY LOOP; the being now)
  * Each takes a rectangle (vx_draw: EDIT's left panel, HOME's middle, or a whole panel) and scales to it.
  * State: vxs (in the pool: no global of the RAM region moves). MENU > ANIM OFF: they rest. */
+#ifndef VX_GX
+#define VX_GX 1                                          /* (V10.8.54: the creatures through vx_gx; 0: their own) */
+#endif
 #define VX_POOL __attribute__((section(".pool")))
 #define VX_CODE __attribute__((noinline))                 /* (each creature its own function: its size on its own) */
 #define VX_SEG BTAPP_FN                                  /* (V10.48) LOFI's, ANIMAL's and STRING's creatures in the Bluetooth
@@ -1530,6 +1533,8 @@ static VX_CODE void vx_west(const track_t *t, const int32_t *A, int32_t en_home)
     vxs.kc = 0;
 }
 
+#define VX_K_STRING 7u
+#if !VX_GX   /* (prototype, codex/gx-creatures: vx_gx draws them) */
 /* -------------------------------------------------------------------------------------------- PHASE --- */
 /* the bent phase of PHASE's wave w at dcw (0..65535), as eng_phase.c's pd_wave bends it (the mock-up's pdPhase) */
 static uint32_t vx_pd(uint32_t w, uint32_t dcw, uint32_t ph)
@@ -1762,7 +1767,6 @@ static VX_SEG void vx_lofi(const track_t *t, const int32_t *A, int32_t en_home)
 /* (0.9.9-snd5) STRING and ADD keep their time, level and newest note in vxs's slots of PHASE (7) and WHEEL (5): one creature
  * is drawn at a time (EDIT's, HOME's), so a slot shared costs a glance at most when the track changes, and no byte of the
  * pool (at its floor) */
-#define VX_K_STRING 7u
 /* ---------------------------------------------------------------------------------------- (snd5) STRING --- */
 /* TEJEDORA II: a radial web, a ray a voice (its line, one period, along it); the spider stands on the newest ray at POS
  * and plucks it with the exciter EXCITE draws; STRETCH warps the spiral, BODY and SIZE the cocoon hanging at the side */
@@ -1864,6 +1868,7 @@ static VX_SEG void vx_string(const track_t *t, const int32_t *A, int32_t en_home
     vxs.kc = 0;
 }
 
+#endif
 /* (snd5) ADD's creature: gone in V10.7.13+ (room for GEN's FORM MY LOOP): ADD draws the being (ui_being.c) */
 
 /* (V10.54) INPUT: the audio interface's two inputs as meters (lit: the ones SOURCE takes), GATE's level across them,
@@ -1951,6 +1956,174 @@ static VX_SEG void vx_input(const track_t *t, const int32_t *A, int32_t en_home)
     }
 }
 
+/* ---------------------------------------------------------------- (prototype, codex/gx-creatures) one engine --- */
+/* (the owner: "todos los gráficos del sistema vengan del mismo motor") ANALOG's cell, WHEEL's tube worms, WEST's folded
+ * wave, PHASE's snail, LOFI's caterpillar and STRING's spider drawn by one routine from a row of VX_G: the wave each
+ * draws is the sound out (the scope's last 256 samples, as LOFI's was), not each engine's own model of it; the shape
+ * (kind), its count (n) and the three knobs it follows (pa pb pc: P_E0 + them) its row's. They keep the family's face
+ * (vx_bface), the heat, the squash of a note and the time that runs with the sound */
+#if VX_GX
+enum { GK_CELL, GK_TUBES, GK_SNAIL, GK_CHAIN, GK_WEB };
+typedef struct { const engine_t *e; uint8_t k, kind, n, pa, pb, pc, uk; int8_t dy; } vxg_t;
+static const vxg_t VX_G[] = {
+    {&ENG_ANALOG, 3, GK_CELL, 3, 4, 5, 6, 112, 32},      /* CUT RES DRIVE */
+    {&ENG_WHEEL, 5, GK_TUBES, 9, 6, 5, 4, 100, 0},       /* DRIVE CLICK PERC */
+    {&ENG_PHASE, 7, GK_SNAIL, 96, 2, 7, 6, 110, 24},     /* DCW FB SUB */
+    {&ENG_LOFI, 8, GK_CHAIN, 8, 1, 2, 3, 112, 0},
+    {&ENG_STRING, 7, GK_WEB, 6, 2, 4, 3, 95, 0},         /* BRIGHT STRETCH POS */
+};
+static int32_t vx_gw(int32_t i) { return vxs.wv[i & 127]; }   /* the wave out, Q12 (-4096 .. 4096) */
+static VX_SEG void vx_gx(const track_t *t, const int32_t *A, int32_t en_home, const vxg_t *g)
+{
+    const int16_t *p = t->p;
+    vxf_t f = vx_uf(A, g->uk, g->dy);
+    uint32_t k = g->k, mt = vxs.mt[k], age, w0 = scope_w - 256u, i, n = g->n;
+    int32_t en = vx_level(t, k, en_home), pa = p[P_E0 + g->pa] * 2, pb = p[P_E0 + g->pb] * 2, pc = p[P_E0 + g->pc] * 2;
+    int32_t pk = 3000, j, sq, q[2 * 25], x, y, r, sway = (og_sin(vx_ang(mt, 60)) * en) >> 15;
+    age = vx_age(t, k, 0);
+    sq = vx_sq(102 + (en * 154 >> 8), age);
+    vxs.kc = 1;
+    for (i = 0; i < 256u; i++) { j = scope_buf[(w0 + i) & (SCOPE_N - 1u)]; j = j < 0 ? -j : j; pk = j > pk ? j : pk; }
+    for (i = 0; i < 128u; i++) {                         /* (two samples a point, smoothed) */
+        int32_t a0 = scope_buf[(w0 + 2u * i - 1u) & (SCOPE_N - 1u)] + scope_buf[(w0 + 2u * i) & (SCOPE_N - 1u)] * 2 +
+                     scope_buf[(w0 + 2u * i + 1u) & (SCOPE_N - 1u)];
+        vxs.wv[i] = en ? (int16_t)(a0 * 1024 / pk) : 0;
+    }
+    switch (g->kind) {
+    case GK_CELL: {                                      /* a cell: three isotherms of the wave (mirrored: closed), DRIVE's
+                                                         * spikes where it clips, RES a ring at CUT, its cilia, the two
+                                                         * oscillators orbiting under it */
+        int32_t R = 432 + (en * 52 >> 8), am = 72 + (en * 64 >> 8), c[4] = {0, 32, 256 + sq / 5, 256 - sq / 5};
+        uint32_t a0 = vx_ang(mt, 4), a1 = vx_ang(mt, 100);
+        for (j = 0; j < 3; j++) {
+            int32_t sc = 256 - j * 70, pr = 0;
+            uint32_t pt = 0;
+            for (i = 0; i <= 64u; i++) {
+                uint32_t th = i * 1024u + a0;
+                r = (R * sc >> 8) + ((vx_gw((int32_t)(i <= 32u ? i : 64u - i) * 4) * am >> 12) * sc >> 8) + ((og_sin(3u * th + a1) * 10) >> 15);
+                if (i) vx_pl(&f, c, pt, pr, th, r, 36 + j * 54 + en / 4 + pc / 5);
+                pt = th; pr = r;
+            }
+        }
+        for (i = 0; i < 48u; i++) {                      /* the spikes (DRIVE's length where the wave is high), the cilia */
+            int32_t v = vx_gw((int32_t)(i <= 24u ? i : 48u - i) * 5);
+            uint32_t th = i * 65536u / 48u + a0;
+            v = v < 0 ? -v : v;
+            if (v > 1200) vx_pl(&f, c, th, R + 40, th, R + 120 + pc + v / 40, 154 + pc / 4);
+            vx_pl(&f, c, th, R + am + 16, th + 1043u, R + am + 32 + vx_hash(i + (mt >> 8)) / 8, 50 + en / 4);
+        }
+        if (pb > 20) vx_ring(&f, 0, 32, R * (56 + pa / 2) / 256, R * (56 + pa / 2) / 256, 102 + pb / 2);
+        for (j = 0; j < 2; j++) {                        /* the two oscillators, orbiting */
+            uint32_t a = j ? 32768u - vx_ang(mt, 30) : vx_ang(mt, 30);
+            vx_ring(&f, (og_cos(a) * 64) >> 15, 32 + 144 + ((og_sin(a) * 26) >> 15), j ? 30 : 42, j ? 30 : 42, 200 + en / 5);
+        }
+        vx_bface(&f, 0, -48, 240, en * 294 >> 8, age < 90u, pc);
+        break;
+    }
+    case GK_TUBES:                                       /* tube worms: a drawbar each (its digit under it) out of its tube,
+                                                         * waving at its harmonic, its crown as many tentacles as that; the
+                                                         * sound sways them */
+        vx_line(&f, -62 * 16, 30 * 16, 62 * 16, 30 * 16, 31 + (en * 77 >> 8));
+        for (i = 0; i < n; i++) {
+            int32_t l = drw_level(p, i), X = (-48 + (int32_t)i * 12) * 16, top = 30 * 16 - (6 + l * 7) * 16, th = 64 + l * 35, hx = X, hy, m;
+            int32_t b = (og_sin(vx_ang(mt, 90) + i * 7000u) * (8 + en / 3)) >> 15;
+            th = th < 30 * 16 - top ? th : 30 * 16 - top;
+            hy = 30 * 16 - th;
+            vx_line(&f, X - 42, 30 * 16, X - 38, hy, 46 + en / 5); vx_line(&f, X + 42, 30 * 16, X + 38, hy, 46 + en / 5);
+            vx_ring(&f, X, hy, 42, 14, 64 + en / 5);
+            if (!vx_small) { char d[2] = {(char)('0' + l), 0}; vx_text(f.cx + ((X * f.s) >> 8), f.cy + ((36 * 16 * f.s) >> 8), d, l ? T_MID : T_DIM); }
+            if (!l) continue;
+            for (j = 1; j <= 8; j++) {                   /* (two walls, waving at the drawbar's harmonic) */
+                x = X + b * j * j / 64 + ((og_sin((uint32_t)(j * VW_RAT[i] * 65536 / 256) - vx_ang(mt, 200 + (int32_t)i * 16)) * (8 + en / 10)) >> 15);
+                y = 30 * 16 - th - j * (30 * 16 - th - top) / 8;
+                vx_line(&f, hx - 26, hy, x - 26, y, 51 + l * 10 + en / 6); vx_line(&f, hx + 26, hy, x + 26, y, 51 + l * 10 + en / 6);
+                hx = x; hy = y;
+            }
+            hy -= 42;
+            m = clamp(((int32_t)VW_RAT[i] + 4) / 8, 2, 8);
+            for (j = 0; j < m; j++) {                    /* its crown */
+                uint32_t a = 65536u - (uint32_t)(4915 + 22938 * j / (m - 1));
+                r = 104 + ((og_sin(vx_ang(mt, 200) + (uint32_t)(j + (int32_t)i) * 10430u) * 20 >> 15) * (64 + en) >> 8);
+                vx_pl(&f, (const int32_t[4]){hx, hy, 256, 256}, a, 52, a, r, 77 + l * 13);
+            }
+            vx_ring(&f, hx, hy, 51, 48, 82 + l * 13 + en / 6);
+            vx_face(&f, hx, hy - 6, 18, 16, age < 90u && l > 3, hy + 19, 10, 0, 10, 243, 218, 154);
+        }
+        break;
+    case GK_SNAIL: {                                     /* a snail: its shell the wave on a spiral, chambered, its body
+                                                         * and foot the wave, eyestalks pulling in on a note */
+        int32_t cx = -8 * 16, cy = -10 * 16 - sq / 4, a2 = 24 + pb / 8, ox = 0, oy = 0, X, Y;
+        for (i = 0; i < n; i++) {
+            uint32_t a = i * 65536u * 5u / 2u / n + vx_ang(mt, 3);
+            r = (int32_t)i * 26 * 16 / (int32_t)n + 32 + (vx_gw((int32_t)i) * a2 >> 12) * (int32_t)i / (int32_t)n;
+            x = cx + ((og_cos(a) * r) >> 15); y = cy + ((og_sin(a) * r * 9 / 10) >> 15);
+            if (i) vx_line(&f, ox, oy, x, y, 80 + (int32_t)i * 140 / (int32_t)n + en / 4);
+            if (i % 6u == 0u) vx_line(&f, cx, cy, x, y, 60 + (int32_t)i * 120 / (int32_t)n);
+            ox = x; oy = y;
+        }
+        for (i = 0, x = 0; i <= 48u; i++) {              /* the body (over the foot) */
+            int32_t X = (-50 + (int32_t)i * 2) * 16, Y = 14 * 16 + (vx_gw((int32_t)i * 2) * (2 + pc / 32) >> 8) - (i > 36u ? ((int32_t)i - 36) * 16 : 0);
+            if (i) { vx_line(&f, x, y, X, Y, 120 + en / 2); vx_line(&f, x, y + 24, X, Y + 24, 90 + en / 2); }
+            x = X; y = Y;
+        }
+        for (i = 0, x = -50 * 16, y = 14 * 16; i <= 12u; i++) {   /* its tail, curled */
+            uint32_t a = i * 5461u + 16384u;
+            r = 96 - (int32_t)i * 6;
+            X = -58 * 16 + ((og_cos(a) * r) >> 15); Y = 8 * 16 + ((og_sin(a) * r) >> 15);
+            vx_line(&f, x, y, X, Y, 154 + en / 4);
+            x = X; y = Y;
+        }
+        vx_line(&f, -54 * 16, 20 * 16, 54 * 16, 20 * 16, 30 + en / 4);
+        r = age < 300u ? 6 : 12;
+        for (j = -1; j <= 1; j += 2) {
+            vx_line(&f, 46 * 16, -6 * 16, (46 + j * 4) * 16, (-6 - r) * 16, 154);
+            vx_dot(&f, (46 + j * 4) * 16, (-6 - r) * 16, 40, 243);
+        }
+        vx_bface(&f, 46 * 16, -2 * 16, 120, en * 294 >> 8, age < 90u, pa);
+        break;
+    }
+    case GK_CHAIN:                                       /* a caterpillar: its back the wave, its segments the byte's bits
+                                                         * (their heat along it), legs lifting with them */
+        for (i = 0; i < n; i++) {
+            int32_t X = (-50 + (int32_t)i * 11) * 16, Y = (vx_gw((int32_t)i * 16) * 5 * 16 >> 12) - sq / 6, bit = vx_gw(127) >> (i + 4) & 1;
+            vx_ring(&f, X, Y, 104 + bit * 16, 104 + bit * 16, 20 + (int32_t)i * 22 + en / 5);
+            vx_ring(&f, X, Y, 88 + bit * 16, 88 + bit * 16, 40 + (int32_t)i * 22 + en / 5);
+            vx_ring(&f, X, Y, 40, 40, 30 + (int32_t)i * 22);
+            vx_line(&f, X - 40, Y + 100, X - 56, Y + 170 - bit * 30, 30 + (int32_t)i * 22);
+            vx_line(&f, X + 40, Y + 100, X + 56, Y + 170 - bit * 30, 30 + (int32_t)i * 22);
+        }
+        y = (vx_gw(127) * 5 * 16 >> 12) - sq / 6;
+        vx_line(&f, 42 * 16, y - 160, 36 * 16, y - 320, 154); vx_line(&f, 50 * 16, y - 160, 56 * 16, y - 320, 154);
+        vx_dot(&f, 36 * 16, y - 320, 32, 243); vx_dot(&f, 56 * 16, y - 320, 32, 243);
+        vx_ring(&f, 46 * 16, y, 190, 190, 200 + en / 5);
+        vx_bface(&f, 46 * 16, y, 170, en * 294 >> 8, age < 90u, pa);
+        vx_line(&f, -60 * 16, 26 * 16, 60 * 16, 26 * 16, 30 + en / 4);
+        break;
+    case GK_WEB: {                                       /* a spider on its web: the rings the string's wave, POS its place
+                                                         * on the top thread, its cocoon under it */
+        int32_t cx = -6 * 16, cy = -6 * 16, R = 44 * 16;
+        for (j = 1; j <= 4; j++) {
+            for (i = 0; i < 24u; i++) {
+                uint32_t a = i * 65536u / 24u;
+                r = R * j / 4 + (vx_gw((int32_t)(i <= 12u ? i : 24u - i) * 9 + j * 17) * (8 + pb / 16) * 16 >> 12) * (5 - j) / 4;
+                q[2 * i] = cx + ((og_cos(a) * r) >> 15); q[2 * i + 1] = cy + ((og_sin(a) * r * 4 / 5) >> 15);
+            }
+            vx_curve(&f, q, 24, 1, 24 + pa / 8 + en / 6);
+        }
+        for (i = 0; i < n * 2u; i++) { uint32_t a = i * 65536u / (n * 2u); vx_line(&f, cx, cy, cx + ((og_cos(a) * R) >> 15), cy + ((og_sin(a) * R * 4 / 5) >> 15), 20 + pa / 8); }
+        x = cx + (pc - 128) * 3; y = cy - 40 + sway / 4;
+        for (j = -1; j <= 1; j += 2)
+            for (i = 0; i < 4u; i++) vx_line(&f, x, y, x + j * (90 + (int32_t)i * 20), y - 90 + (int32_t)i * 60, 205);
+        vx_ring(&f, x, y, 70, 70, 230);
+        vx_dot(&f, x - 20, y - 10, 24, 255); vx_dot(&f, x + 20, y - 10, 24, 255);
+        vx_line(&f, cx + 34 * 16, cy, cx + 34 * 16, cy + R, 40);
+        vx_ring(&f, cx + 34 * 16, cy + R + 60, 50 + pc / 4, 90 + pc / 4, 64 + en / 2);
+        break;
+    }
+    }
+    vxs.kc = 0;
+}
+#endif
 /* ------------------------------------------------------------------------------------------------ the glue --- */
 /* the engine's own creature in the rectangle x y w h (px: EDIT's left panel 8 14 108 112, HOME's middle 146 x 112, or a
  * whole panel: each fits itself to it), en_home: HOME's level for the track (-1: its own); 0 when the engine has none
@@ -1960,14 +2133,17 @@ static int32_t vx_fit(int32_t w, int32_t h, int32_t uw, int32_t uh)   /* a unit'
     return w * 256 / uw < h * 256 / uh ? w * 256 / uw : h * 256 / uh;
 }
 typedef struct { const engine_t *e; void (*f)(const track_t *, const int32_t *, int32_t); } vxe_t;
+#if !VX_GX
 static const vxe_t VX_F[] = {{&ENG_ANALOG, vx_analog}, {&ENG_WHEEL, vx_wheel}, {&ENG_WEST, vx_west}, {&ENG_PHASE, vx_phase},
                              {&ENG_LOFI, vx_lofi}, {&ENG_STRING, vx_string}};   /* (0.9.9-snd5; V10.7.13+: ADD's gone, room for
                                                          * FORM MY LOOP: it draws the being) */
+#endif
 static int vx_draw(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h, int32_t en_home)
 {
     const engine_t *e = trk_engp(t);
     int32_t A[4] = {x, y, w, h}, cx = x * 16 + w * 8, cy = y * 16 + h * 8, s;
-    if (!bt_hw_seg() && (e == &ENG_LOFI || e == &ENG_ANIMAL || e == &ENG_STRING || e == &ENG_PHASE))
+    if (!bt_hw_seg() && (e == &ENG_LOFI || e == &ENG_ANIMAL || e == &ENG_STRING || e == &ENG_PHASE ||
+                         (VX_GX && (e == &ENG_ANALOG || e == &ENG_WHEEL))))
         return 0;                                        /* (V10.48: those creatures live in the segment; V10.6g PHASE's too) */
     if (e == &ENG_FORMANT) {                             /* (the tract ~80 x 62 units about (-20, 37): the crown off) */
         s = vx_fit(w, h, 80, 62);
@@ -1985,10 +2161,18 @@ static int vx_draw(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h,
         vx_fm6(t, A, en_home, 6u, 0);
     else {                                               /* (0.9.9-snd5: the creatures drawn the same way, a table) */
         uint32_t i;
+#if VX_GX
+        if (e == &ENG_WEST) { vx_west(t, A, en_home); return 1; }   /* (WEST keeps its own: a diagram, not a being) */
+        for (i = 0; i < NELEM(VX_G) && VX_G[i].e != e; i++) {}
+        if (i == NELEM(VX_G))
+            return 0;
+        vx_gx(t, A, en_home, &VX_G[i]);
+#else
         for (i = 0; i < NELEM(VX_F) && VX_F[i].e != e; i++) {}
         if (i == NELEM(VX_F))
             return 0;
         VX_F[i].f(t, A, en_home);
+#endif
     }
     return 1;
 }

@@ -3006,6 +3006,7 @@ static void ui_input_frame(void)
             }
             if (b == B_OCTUP && !fm1_in.notes && !ui.home && !ui.menu && !ui.confirm && cur_page()->scope == SC_TRK) {
                 mix_k4 ^= 1u;                           /* (V10.8.38, the owner) MIXER: OCT+ turns KNOB 4 BPM <-> DJ FILTER */
+                ui_message(mix_k4 ? "KNOB 4: DJ FILTER" : "KNOB 4: BPM");   /* (V10.8.54: said) */
                 ui.force = 1;
                 break;
             }
