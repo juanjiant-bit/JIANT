@@ -226,6 +226,13 @@ PORT_DOCS = {
 }
 
 
+
+def gh_slug(value, separator="-"):
+    """GitHub's heading ids (the manual's links are written for GitHub): lowercase, accents and other letters kept,
+    punctuation (› · , . : ( ) …) dropped, each space a hyphen."""
+    value = re.sub(r"[^\w\- ]", "", value.strip().lower(), flags=re.UNICODE)
+    return value.replace(" ", separator)
+
 def topbar(current, lang="en"):
     cur = ' aria-current="page"'
     docs = "".join(f'<a href="{href}"{cur if k == current else ""}>{html.escape(t)}</a>' for k, href, t in PAGES)
@@ -313,7 +320,7 @@ M-VAVE, FM-1, SMK-37, Akai and MPC are trademarks of their owners; JIANT is not 
 
 def convert(text, src_rel):
     md = markdown.Markdown(extensions=["tables", "toc", "fenced_code", "sane_lists"],
-                           extension_configs={"toc": {"toc_depth": "2-3"}})
+                           extension_configs={"toc": {"toc_depth": "2-3", "slugify": gh_slug}})
     body = md.convert(text)
     body = fix_links(body, src_rel)
     body = re.sub(r"<table>", '<div class="tw"><table>', body).replace("</table>", "</table></div>")
