@@ -325,7 +325,7 @@ int main(void)
 #endif
     {   /* (JIANT) GRAIN (8) and SLICE (13) tracks, retired: ANALOG's first preset, their engine motion gone, the rest kept */
         static project_t g, h;
-        static project_store_t gs;
+        static project_store_t gs, ps0;
         memset(&g, 0, sizeof g);
         g.magic = PROJ_MAGIC; g.size = sizeof g; g.parts = NPART; g.phys = PROJ_PHYS;
         chain_defaults(&g.chain);
@@ -340,11 +340,11 @@ int main(void)
         g.motion.event[0] = (motion_event_t){2u << 6 | 1u, P_E2, 30};
         g.motion.event[1] = (motion_event_t){2u << 6 | 2u, P_REV, 40};
         g.sum = proj_sum(&g);
-        ok = proj_pack(&gs, &g) && proj_import(&h, &gs, sizeof gs) && h.t[1].engine == ENGI_PHYS_TO &&
-             h.t[2].engine == ENGI_PHYS_TO && h.t[2].p[P_LEVEL] == 66 && h.motion.count == 2u && proj_ok(&h) &&
-             h.t[2].p[P_E0] == ENGINES[ENGI_PHYS_TO]->presets[0].e[0] && !eng_ok(ENGI_PHYS) && eng_ok(ENGI_STRING) && eng_ok(ENGI_ADD) &&
-             !eng_ok(ENGI_SAMPLE) && eng_live(ENGI_PHYS) == ENGI_PHYS_TO;
-        bad += check("JIANT: SAMPLE and PHYS tracks (retired) load as ANALOG's first preset (V10.7.13+: its motion as it was), LEVEL and sends kept", ok);
+        ok = proj_pack(&gs, &g);
+        memcpy(&ps0, &gs, sizeof gs);
+        ok = ok && !proj_import(&h, &gs, sizeof gs) && proj_sl_found == 2 && !memcmp(&ps0, &gs, sizeof gs) &&
+             !eng_ok(ENGI_PHYS) && eng_ok(ENGI_STRING) && eng_ok(ENGI_ADD) && !eng_ok(ENGI_SAMPLE) && eng_live(ENGI_PHYS) == ENGI_PHYS_TO;
+        bad += check("V10.8.51: SAMPLE and PHYS tracks (retired before V10.7): refused as old (OPEN IN STUDIO), the bytes untouched", ok);
     }
     {   /* (JIANT 0.6) FUNC: six tracks in FUNB's 3840 bytes, only the steps that are not empty stored */
         static project_t f, g, h;
@@ -440,6 +440,43 @@ int main(void)
             ok = proj_pack(&fs, &s1) && proj_import(&s2, &fs, sizeof fs) &&
                  !memcmp(&s2.g[G_SLMODE], &s1.g[G_SLMODE], G_SL_N * sizeof s1.g[0]);
             bad += check("FUNC: the SLICER bus (mode, pattern, rate, depth, T1..T6 FX, pitch LEN QNT, 16 steps) round trips", ok);
+        }
+        {   /* (V10.8.51) projects of before V10.7 are no longer migrated as they load: refused as old (proj_sl_found 2:
+             * proj_fetch says OLD PROJECT: OPEN IN STUDIO), the stored bytes never written; today's load as before */
+            static project_t o1, o2;
+            static project_store_t a1, a2, keep;
+            uint32_t at = 0, hz, n2;
+            o1 = f; o1.g[G_SLMODE] = 0; o1.sum = proj_sum(&o1);
+            o2 = f; o2.g[G_SLMODE] = 1; o2.sum = proj_sum(&o2);
+            ok = proj_pack(&a1, &o1) && proj_pack(&a2, &o2);
+            while (at < PROJ_STORE_SIZE && a1.raw[at] == a2.raw[at]) at++;
+            at -= 2u;                                    /* the SLICER's block: 'S' 'L', its globals */
+            ok &= a1.raw[at] == 'S' && a1.raw[at + 1u] == 'L' && proj_import(&o2, &a1, sizeof a1) && proj_sl_found == 1;
+            bad += check("V10.8.51: today's FUNC loads (its SLICER block: proj_sl_found 1)", ok);
+            n2 = 2u + G_SL_N;                            /* (0.6.3) before the SLICER's bus: no such block */
+            memmove(a1.raw + at, a1.raw + at + n2, PROJC_PFX_OFF - at - n2);
+            memset(a1.raw + PROJC_PFX_OFF - n2, 0, n2);
+            hz = proj_hash(a1.raw, PROJ_STORE_SIZE - 4u); memcpy(a1.raw + PROJ_STORE_SIZE - 4u, &hz, 4);
+            keep = a1;
+            ok = !proj_import(&o2, &a1, sizeof a1) && proj_sl_found == 2 && !memcmp(&keep, &a1, sizeof a1);
+            bad += check("V10.8.51: a project of before 0.6.3 (no SLICER block): refused as old, the bytes untouched", ok);
+            o1 = f; o1.t[3].preset = PROJ_DEF_KEEP; o1.sum = proj_sum(&o1);   /* (before 1.0) the old GM drum part */
+            ok = proj_pack(&a1, &o1);
+            keep = a1;
+            ok = ok && !proj_import(&o2, &a1, sizeof a1) && proj_sl_found == 2 && !memcmp(&keep, &a1, sizeof a1);
+            bad += check("V10.8.51: a project with the old GM drum part (before 1.0): refused as old, the bytes untouched", ok);
+            ok = !proj_import(&o2, &a1, 100) && proj_sl_found != 2;   /* (not a project: EMPTY SLOT, as before) */
+            bad += check("V10.8.51: bytes that are not a project: refused, not called old", ok);
+            o1 = f;                                      /* (V10.8.51) the matrix AMT -128..127: the old ends as they were */
+            o1.t[0].p[P_M1AMT] = 63; o1.t[0].p[P_M2AMT] = -64; o1.t[0].p[P_M3AMT] = -128; o1.t[0].p[P_M4AMT] = 127;
+            o1.mx[2] = (uint8_t)(int8_t)-128; o1.mx[5] = 127; o1.mx[8] = (uint8_t)(int8_t)-64;
+            o1.sum = proj_sum(&o1);
+            ok = proj_pack(&a1, &o1) && proj_import(&o2, &a1, sizeof a1) && o2.t[0].p[P_M1AMT] == 63 &&
+                 o2.t[0].p[P_M2AMT] == -64 && o2.t[0].p[P_M3AMT] == -128 && o2.t[0].p[P_M4AMT] == 127 &&
+                 (int8_t)o2.mx[2] == -128 && o2.mx[5] == 127 && (int8_t)o2.mx[8] == -64;
+            bad += check("V10.8.51: matrix AMT 63 -64 (V10.8.50's ends) and -128 127 (-200 / +198 %), a macro's too: round trip", ok);
+            o1.t[0].p[P_M3AMT] = -129; o1.sum = proj_sum(&o1);
+            bad += check("  AMT -129: not packed (out of range)", !proj_pack(&a1, &o1));
         }
         {   /* damaged on purpose with the hash made right: refused or loaded, never read past the room (ASan) */
             static project_store_t z;

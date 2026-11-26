@@ -231,7 +231,7 @@ static void proj_mx_get(const project_t *p)
     for (k = 0; k < MX_N; k++) {
         mx_r[k].m = p->mx[3u * k] & 3u;
         mx_r[k].d = p->mx[3u * k + 1u] < MD_N ? p->mx[3u * k + 1u] : 0u;
-        mx_r[k].a = (int8_t)clamp((int8_t)p->mx[3u * k + 2u], -64, 63);
+        mx_r[k].a = (int8_t)p->mx[3u * k + 2u];        /* (V10.8.51: -128..127, -200 .. +198 %) */
     }
 }
 static void proj_mx_def(project_t *p)
@@ -330,12 +330,6 @@ static void proj_phys_gone(project_t *q)
             d->p[P_FTYPE] = 0;
             hit = 1;
         }
-        if (!eng_gone(d->engine))
-            continue;
-        d->engine = ENGI_PHYS_TO;                       /* (V10.7.66: its values as they were, ANALOG's ranges) */
-        if (d->preset < PROJ_DEF_KEEP)
-            d->preset = 0;
-        hit = 1;
     }
     if (q->phys < PROJ_PHYS) {                          /* (V10.7.36: engine 11 was NOISE; V10.8.28: its sound as near
                                                          * as WEST's DUST gets: core.h west_from_noise) */
@@ -367,48 +361,23 @@ static int proj_engines_ok(const project_t *q)
 /* (JIANT 0.6.3) a project of before the SLICER's bus (no block of it): the first track's SLICER that was on is the bus's
  * (its mode, pattern, rate, depth), the tracks whose SLICER was on go in, the effects' returns not (the old one cut the
  * dry sound before the sends); none on: the bus at its defaults (OFF, everything in) */
-static uint8_t proj_sl_found;                           /* proj_unpack_c read the SLICER's block */
-/* (JIANT 0.6.9) the old SLICER's slots are AUTO PAN's now (core.h): read by the migration, then AUTO PAN off */
-static void proj_ap_clear(project_t *q)
-{
-    uint32_t i;
-    for (i = 0; i < NTRK; i++) {
-        q->t[i].p[P_APDEP] = TP[P_APDEP].def;
-        q->t[i].p[P_APRATE] = TP[P_APRATE].def;
-        q->t[i].p[P_APWAVE] = TP[P_APWAVE].def;
-        q->t[i].p[P_APSYNC] = TP[P_APSYNC].def;
-    }
-}
-static void proj_sl_migrate(project_t *q)
-{
-    uint32_t i, first = NTRK;
-    for (i = 0; i < G_SL_N; i++)
-        q->g[G_SLMODE + i] = GP[G_SLMODE + i].def;
-    for (i = 0; i < NTRK; i++)
-        if (q->t[i].p[P_SLCR] > 0 && q->t[i].p[P_SLCR] <= 2 && first == NTRK)
-            first = i;
-    if (first == NTRK) {
-        proj_ap_clear(q);
-        return;
-    }
-    q->g[G_SLMODE] = q->t[first].p[P_SLCR];
-    q->g[G_SLPAT] = (int16_t)clamp(q->t[first].p[P_SLPAT], 1, 16);
-    q->g[G_SLRATE] = (int16_t)clamp(q->t[first].p[P_SLRATE], 0, 5);
-    q->g[G_SLDEP] = (int16_t)clamp(q->t[first].p[P_SLDEPTH], 0, 127);
-    for (i = 0; i < NTRK; i++)
-        q->g[G_SLT1 + i] = (int16_t)(q->t[i].p[P_SLCR] > 0 && q->t[i].p[P_SLCR] <= 2);
-    q->g[G_SLFX] = 0;
-    proj_ap_clear(q);
-}
+static uint8_t proj_sl_found;                           /* proj_unpack_c read the SLICER's block; (V10.8.51) 2: a project of
+                                                         * before V10.7 (proj_import: refused, "OPEN IN STUDIO") */
+/* (V10.8.51, the owner: pre-V10.7 compatibility to JIANT Studio) a project of before V10.7 that needed a migration on
+ * load (no SLICER block: before 0.6.3; a CP_* component: before 0.9.9-seq2d; a retired engine or the old GM drum
+ * part: before V10.7) is not loaded here: "OLD PROJECT: OPEN IN STUDIO" (Studio's converter, an emulator of V10.8.50,
+ * loads it and saves it as today's). Its slot is never written or erased */
 static int proj_import(project_t *q, const void *b, int n)
 {
+    uint32_t k;
     proj_sl_found = 0;
     if (!proj_import_any(q, b, n) || !proj_engines_ok(q))
         return 0;
-    if (!proj_sl_found) {
-        proj_sl_migrate(q);
-        q->sum = proj_sum(q);
-    }
+    for (k = 0; k < NTRK; k++)
+        if (eng_gone(q->t[k].engine) || q->t[k].preset == PROJ_DEF_KEEP)
+            proj_sl_found = 0;
+    if (proj_sl_found != 1)
+        return proj_sl_found = 2, 0;
     proj_fm4(q);
     proj_phys_gone(q);
     return 1;
@@ -648,7 +617,7 @@ static int proj_pack(project_store_t *out, const project_t *q)
             if (q->fm6[t][i] > 127u) return 0;
         proj_why = '4';
         for (i = 0; i < P_COUNT; i++)
-            if (q->t[t].p[i] < -64 || q->t[t].p[i] > 127) return 0;
+            if (q->t[t].p[i] < -128 || q->t[t].p[i] > 127) return 0;   /* (V10.8.51: -128, a matrix AMT's -200 %) */
         for (i = 0; i < NSTEP; i++) {
             const step_t *s = &q->t[t].step[i];
             proj_why = '5';
@@ -884,7 +853,7 @@ static int proj_pack_vb(project_store_t *out, const project_t *q)
     memcpy(b + 8, q->g, G_NSTORE * 2u); b[62] = q->sel; b[63] = q->parts; b[64] = q->phys; b[66] = P_COUNT;
     for (t = 0; t < PROJ_LT; t++) {
         for (i = 0; i < P_COUNT; i++) {
-            if (q->t[t].p[i] < -64 || q->t[t].p[i] > 127) return 0;
+            if (q->t[t].p[i] < -128 || q->t[t].p[i] > 127) return 0;   /* (V10.8.51: -128, a matrix AMT's -200 %) */
             b[pos++] = (uint8_t)(q->t[t].p[i] + 64);
         }
         b[pos++] = q->t[t].engine; b[pos++] = q->t[t].preset;
@@ -964,8 +933,8 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
                 values[i] = def[i < nc ? i : P_E0 + i - nc];
                 continue;
             }
-            if (pos >= room || b[pos] > 191u) return 0;
-            values[i] = (int16_t)b[pos++] - 64;
+            if (pos >= room) return 0;
+            values[i] = (int8_t)(b[pos++] - 64);        /* (V10.8.51: 192..255 are -128..-65, a matrix AMT's) */
         }
         params_by_count(q->t[t].p, values, np, def);
         if (b[65] != PROJ_VEL_MARK && e != ENGI_DIGITAL)   /* (V10.7.6) a FUNC of before VEL: its slot was MUTATE's */
@@ -1026,15 +995,15 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
                 if (pos + 4u > room) return 0;
                 s->clen[0] = b[pos++]; s->clen[1] = b[pos++]; s->cnm[0] = b[pos++]; s->cnm[1] = b[pos++];
                 if (s->clen[0] >= CL_MAX || s->clen[1] >= CL_MAX) return 0;
-            } else {                                    /* (before seq2d: its CP_*, EVERY, migrated below) */
-                if (s->comp) s->clen[0] = CL_LEGACY;
-                if (s->comp2) s->clen[1] = CL_LEGACY;
-                if (!s->comp && !s->comp2) s->cwhen &= 0xF0u;
+                if ((CO_ACT(s->comp) == CA_RAMP && !CV_RAMP_OK(s->carg)) || (CO_ACT(s->comp2) == CA_RAMP && !CV_RAMP_OK(s->carg2)))
+                    return proj_sl_found = 2, 0;            /* (V10.8.51: a JUMP of before V10.6v no RAMP can mean: Studio's) */
+            } else {                                    /* (before seq2d: a CP_*: V10.8.51, Studio's) */
+                if (s->comp || s->comp2) return proj_sl_found = 2, 0;
+                s->cwhen &= 0xF0u;
             }
             r |= (x >> 1) & 2u;
             step_set_ratchet(s, r + 1u);
         }
-        comp_migrate(q->t[t].step, (uint32_t)clamp(q->t[t].p[P_SLEN], 1, NSTEP));   /* (seq2d) a CP_* of before */
     }
     if (pos + sizeof q->chain + 4u > room) return 0;
     memcpy(&q->chain, b + pos, sizeof q->chain); pos += sizeof q->chain;
@@ -1280,30 +1249,6 @@ static int proj_motion_ids(motion_store_t *m, uint32_t np)
 }
 
 #ifndef PROJ_HOST
-/* the GM drum part of a project of before 1.0 (preset PROJ_DEF_KEEP, as firmware before V10.6s stored it): DRUM's first kit, as a preset load sets it
- * (until 1.0.2 the SAMPLE engine's PERC set, retired since) */
-static void proj_legacy_drums(track_t *t)
-{
-    static const uint8_t FX_DEF[4] = {0, 24, 28, 36};
-    const preset_t *pr = &ENGINES[ENGI_DRUM]->presets[0];
-    uint32_t i;
-    t->eng_req = ENGI_DRUM;
-    t->preset = 0;
-    for (i = 0; i < P_E0; i++)
-        if (!param_kept(i))
-            t->p[i] = TP[i].def;
-    for (i = 0; i < 8u; i++)
-        t->p[P_E0 + i] = pr->e[i];
-    t->p[P_ATK] = pr->env[0];
-    t->p[P_DEC] = pr->env[1];
-    t->p[P_SUS] = pr->env[2];
-    t->p[P_REL] = pr->env[3];
-    t->p[P_ED_FLT] = pr->fenv;
-    t->p[P_VOICE] = PR_MONO(pr) ? V_LEGATO : V_POLY;
-    for (i = 0; i < 4u; i++)
-        t->p[P_DIST + i] = (int16_t)(pr->fx[i] ? pr->fx[i] - 1 : FX_DEF[i]);
-}
-
 static project_t proj_scratch __attribute__((section(".pool")));   /* (0.8.5: the pool again, LOWBUF full with the steps'
                                                          * lane modes; 0.6.78 .. 0.8.4 LOWBUF) */   /* decoded main-loop work, never audio ISR (0.6: pool) */
 static char proj_name[PROJ_NAME_LEN + 1u]    /* the name of the music as it is now (loaded, saved, the editor's */
@@ -1361,21 +1306,22 @@ static void proj_bound(project_t *q)
 
 #if FELUCCA_FLASH
 /* slot from flash into RAM (format 7, or format 6 / 5 / 4 / 3 / 2 / 1 converted) */
-static void proj_fetch(uint32_t slot)
+static int proj_fetch(uint32_t slot)                   /* 1: an old project (left in flash as it is, untouched) */
 {
     project_store_t *q = &proj_slot[slot & 3u];
     int n;
     proj_wire_gen++;
     n = st_load(proj_obj(slot), &proj_wire, sizeof proj_wire);
     if (!proj_import(&proj_scratch, &proj_wire, n)) {
-        memset(q->raw, 0, 4);
-        if (proj_old(&proj_wire, n))                    /* (JIANT 0.1 .. 0.5's: no longer read) */
-            ui_message("OLD PROJECT: NOT READ");
+        memset(q->raw, 0, 4);                           /* (the RAM copy only: the flash object is never written) */
+        if (proj_sl_found == 2 || proj_old(&proj_wire, n))     /* (JIANT 0.1 .. 0.5's; V10.8.51: before V10.7) */
+            return ui_message("OLD PROJECT: OPEN IN STUDIO"), 1;
     } else {
         proj_bound(&proj_scratch);
         if (!proj_pack(q, &proj_scratch))
             memset(q->raw, 0, 4);
     }
+    return 0;
 }
 #endif
 
@@ -1739,18 +1685,9 @@ static int project_restore_runtime(const project_t *input)
     load_depth++;                                       /* (ui.c) these loads are the project's, not the user's */
     for (k = 0; k < NTRK; k++) {                        /* the power-on sounds: format 1 (tracks 2..4), old drums */
         track_t *t = &trk[k];
-        int16_t keep[P_COUNT];
         if (p->t[k].preset == PROJ_DEF_SOUND) {
             apply_preset_to(t, TRK_OLD[k][1]);          /* (0.9.9: 0.9.8's power-on sound, engines.c TRK_OLD) */
             track_defaults_steps(t);
-        } else if (p->t[k].preset == PROJ_DEF_KEEP) {   /* the steps, LEVEL PAN MUTE, LEN DIV SWING GATE kept */
-            memcpy(keep, t->p, sizeof keep);
-            fm1_irq_off();                           /* publish the legacy sound as one bounded parameter batch */
-            proj_legacy_drums(t);                     /* (keeps the SLICER: param_kept) */
-            t->p[P_REV] = keep[P_REV];                  /* and the drums' reverb send */
-            for (i = P_AMODE; i <= P_TRANS; i++)        /* the drum part had no arp or scale */
-                t->p[i] = TP[i].def;
-            fm1_irq_on();
         }
         pat_sig[k] = ~steps_sig(t);                     /* a project's steps are the user's */
     }
@@ -1936,10 +1873,15 @@ static int undo_sound(uint32_t k)
 
 static void project_load(uint32_t slot)
 {
+    int old = 0;
 #if FELUCCA_FLASH
-    if (flash_ok && !proj_import(&proj_scratch, &proj_slot[slot & 3u], sizeof(project_store_t))) proj_fetch(slot);
+    if (flash_ok && !proj_import(&proj_scratch, &proj_slot[slot & 3u], sizeof(project_store_t))) old = proj_fetch(slot);
 #endif
-    if (!proj_import(&proj_scratch, &proj_slot[slot & 3u], sizeof(project_store_t))) { ui_message("EMPTY SLOT"); return; }
+    if (!proj_import(&proj_scratch, &proj_slot[slot & 3u], sizeof(project_store_t))) {
+        ui_message(old || proj_sl_found == 2 ? "OLD PROJECT: OPEN IN STUDIO" : "EMPTY SLOT");   /* (V10.8.51: an old one:
+                                                         * from flash, or the RAM slot's) */
+        return;
+    }
     proj_bound(&proj_scratch);                          /* a retained RAM slot of an older format: as from flash */
     if (!project_restore_runtime(&proj_scratch)) {
         proj_cur = (uint8_t)(slot & 3u);

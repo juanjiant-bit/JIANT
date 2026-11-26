@@ -288,7 +288,7 @@ static const preset_t STRING_PRESETS[] = {
     {"PLUCK BASS", {SX_PLUCK, 62, 36, 20, 0, 50, 10, 0}, {0, 64, 127, 80}, 0, 1 | TAG(BASS), FX(0, 0, 0, 5), PAT(2),
      MODS(P_GLIDE, 8, MMOD(1, PS_VEL, PD_SHP, 30))},                                      /* legato: a slide */
     {"BOWED", {SX_NOISE, 118, 46, 30, 0, 50, 40, 70}, {30, 64, 127, 96}, 0, TAG(PAD), FX(0, 20, 10, 60), PAT(5),
-     MODS(MENV2(50, 64, 127, 70), MMOD(1, PS_ENV2, PD_AMP, 64), P_LRATE, 86, P_LD_PIT, 1,
+     MODS(MENV2(50, 64, 127, 70), MMOD(1, PS_ENV2, PD_AMP, 63), P_LRATE, 86, P_LD_PIT, 1,
           MMOD(2, PS_AT, PD_E(7), 30))},                                                  /* swells in; AT: the bow */
     {"INIT STRING", {SX_PLUCK, 72, 60, 28, 0, 40, 40, 0}, {0, 64, 127, 90}, 0, TAG(PLUCK), FX(0, 0, 0, 0)},
     {"METAL STR", {SX_NOISE, 100, 120, 10, 112, 0, 0, 0}, {0, 64, 127, 104}, 0, TAG(PLUCK), FX(0, 0, 20, 45), PAT(3),

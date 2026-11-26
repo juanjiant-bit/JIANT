@@ -31,7 +31,7 @@ int main(void)
     ui_power_on();
     {   /* (V10.8.40) MOOD MID: the pieces V10.8.39's, byte for byte (from power-on: the tracks' values and steps, the
          * song's, the kit; a checksum of 8 seeds in EXPLORE, RANDOM and HOUSE; V10.8.39's own, the same tool) */
-        static const uint32_t MID[3] = {0x852ad865u, 0x1221f22cu, 0x0ef1b587u};   /* (V10.8.48: the envelopes by role, the filter types; V10.8.47: JAZZ's hats; V10.8.46 recorded again: a part never still; V10.8.45: the envelopes' rules; V10.8.42 too; V10.8.41: the generator rewritten genre by genre:
+        static const uint32_t MID[3] = {0xee6fe401u, 0x8fd7e736u, 0x5a231927u};   /* (V10.8.51: a genre's headroom, GTRIM; V10.8.48: the envelopes by role, the filter types; V10.8.47: JAZZ's hats; V10.8.46 recorded again: a part never still; V10.8.45: the envelopes' rules; V10.8.42 too; V10.8.41: the generator rewritten genre by genre:
          * this version's own pieces, recorded with GEN_MID=1; a change to the generator records them again) */
         uint32_t md, hs = 0, r, i;
         for (r = 1; r <= NGENRE; r++) if (str_eq(GENRE[r - 1u].name, "HOUSE")) hs = r;

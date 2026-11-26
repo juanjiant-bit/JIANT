@@ -125,15 +125,22 @@ static uint32_t tl_fill(track_t *t, uint32_t len, uint32_t l)
 
 /* ----------------------------------------------------------- melodic --- */
 /* ------------------------------------------------------------ actions --- */
-/* (V10.8.49) SEQ TOOLS' STRETCH x2 / SQUEEZE /2 / REPEAT x2 (the Bluetooth segment's: the image has no room) */
-static uint32_t tl_stretch(track_t *t, int32_t k);
-static uint32_t tl_repeat(track_t *t, uint32_t k);
-BTAPP_FN static const char *tl_shape(track_t *t, uint32_t p, uint32_t len, char *b)
+/* (V10.8.49) SEQ TOOLS' STRETCH x2 / SQUEEZE /2 / REPEAT x2; (V10.8.51) on the range held on SEQ's roll (SEL 5-8: cp_sel,
+ * taken once) or else the whole track */
+static uint32_t tl_reshape(track_t *t, int32_t k, uint32_t lo, uint32_t n, uint32_t len);
+static const char *tl_shape(track_t *t, uint32_t p, uint32_t len, char *b)
 {
-    uint32_t n = p == TL_BEAT ? tl_repeat(t, 2u) : tl_stretch(t, p == TL_RANDOM ? 2 : -2);
-    if (!n) { ui_message(p == TL_COOK ? "TOO SHORT" : "64 STEPS ALREADY"); return 0; }
+    uint32_t s = (uint16_t)cp_sel, sel = s >> 15, lo = sel ? s & 63u : 0u, n = sel ? ((s >> 8) & 63u) - lo + 1u : len, nl;
+    cp_sel = 0;
+    if (lo + n > len) lo = 0, n = len, sel = 0;          /* (LEN shortened since: the whole track) */
+    nl = tl_reshape(t, p == TL_BEAT ? 0 : p == TL_RANDOM ? 2 : -2, lo, n, len);
+    if (!nl) { ui_message(p == TL_COOK ? "TOO SHORT" : "64 STEPS ALREADY"); return 0; }
+    if (sel) {
+        cp_say(p == TL_BEAT ? "REPEAT " : p == TL_RANDOM ? "STRETCH " : "SQUEEZE ", lo, n);
+        return ui.msg;
+    }
     str_cpy(b, "LEN ", 24); fmt_int(b + 4, (int32_t)len); str_cpy(b + str_len(b), " > ", 4);
-    fmt_int(b + str_len(b), (int32_t)n);
+    fmt_int(b + str_len(b), (int32_t)nl);
     return b;
 }
 /* (V10.8.49, the owner) SEQ TOOLS' C#5 / D#5: NUDGE, every note step's MICRO d 64ths of a step later (d < 0: earlier)
@@ -216,89 +223,62 @@ static __attribute__((noinline)) const char *tl_do(track_t *t, uint32_t p, uint3
 }
 
 /* ------------------------------------------------- (0.6.85) SEQ > STRETCH --- */
-/* the selected track's steps 1..LEN as a whole, its automation and locks with them (tl_src: the steps before):
- *   STRETCH xk: step i to step i*k (LEN x k, up to 64: what falls past 64 is cut); a note held into the next step (a TIE
- *     after it) keeps holding over the new steps, a short note stays short (its gate), a hit stays a hit
- *   STRETCH /k: step j takes the first step that plays among i = j*k .. j*k+k-1 (a TIE if the note before holds on);
- *     LEN / k (rounded up)
- *   REPEAT xk: steps 1..LEN again after them, k times in all (LEN x k, up to 64; TO 64: as many whole times as fit),
- *     the automation and locks copied while there is room
+/* (V10.8.51) steps lo .. lo+n-1 of the selected track (tl_src: the steps before), the steps after them moved along, LEN
+ * with them (64 at most: what falls past is cut), their automation and locks with their steps:
+ *   k 2, STRETCH x2: step i to step 2i; a note held into the next step (a TIE after it) holds over the new one
+ *   k -2, SQUEEZE /2: step j takes the first that plays of 2j, 2j+1 (a TIE if the note before holds on)
+ *   k 0, REPEAT x2: the steps again right after them, their automation and locks copied while there is room
  * Returns the new LEN (0: nothing to do) */
-BTAPP_FN static void tl_motion_map(track_t *t, uint32_t olen, uint32_t num, uint32_t den, uint32_t nlen)   /* event step s < olen
-                                                                                                * -> s*num/den */
+BTAPP_FN static uint32_t tl_reshape(track_t *t, int32_t k, uint32_t lo, uint32_t n, uint32_t len)
 {
-    uint32_t i, n = 0, k = trk_index(t), f = motion_guard();
-    for (i = 0; i < motion.count; i++) {
-        motion_event_t e = motion.event[i];
-        if (MOTION_TRK(&e) == k && MOTION_STEP(&e) >= olen && MOTION_STEP(&e) < nlen) continue;   /* (its step cleared) */
-        if (MOTION_TRK(&e) == k && MOTION_STEP(&e) < olen) {
-            uint32_t s = MOTION_STEP(&e) * num / den;
-            if (s >= nlen) continue;                    /* (cut with its step) */
-            e.place = (uint8_t)((e.place & 0xC0u) | s);
-        }
-        motion.event[n++] = e;
-    }
-    memset(motion.event + n, 0, (MOTION_MAX - n) * sizeof motion.event[0]);
-    motion.count = (uint8_t)n;
-    RING_PUBLISH();
-    motion_unguard(f);
-}
-BTAPP_FN static uint32_t tl_stretch(track_t *t, int32_t k)
-{
-    uint32_t len = tl_len(t), nlen, i, j;
-    if (k >= 2) {
-        uint32_t m = (uint32_t)k;
-        nlen = len * m > NSTEP ? NSTEP : len * m;
-        tl_take(t);
-        for (j = 0; j < nlen; j++) step_clear(&t->step[j]);   /* (the steps past the new LEN stay, as every tool's) */
-        for (i = 0; i < len && i * m < NSTEP; i++) {
-            const step_t *s = &tl_src[i];
-            int hold = s->time == ST_TIE || (s->time == ST_NOTE && s->n && i + 1u < len && tl_src[i + 1u].time == ST_TIE);
-            t->step[i * m] = *s;
-            for (j = 1; j < m && i * m + j < NSTEP; j++)
-                if (hold) { t->step[i * m + j].time = ST_TIE; t->step[i * m + j].vel = s->vel; }
-        }
-        tl_motion_map(t, len, m, 1, nlen);
-    } else if (k <= -2) {
-        uint32_t d = (uint32_t)-k;
-        nlen = (len + d - 1u) / d;
-        tl_take(t);
-        for (j = 0; j < len; j++) step_clear(&t->step[j]);
-        for (j = 0; j < nlen; j++) {
-            uint32_t pick = NSTEP, tie = 0;
-            for (i = j * d; i < j * d + d && i < len; i++) {
-                if (tl_src[i].time == ST_NOTE && (tl_src[i].n || tl_src[i].hit)) { pick = i; break; }
-                tie |= tl_src[i].time == ST_TIE;
-            }
-            if (pick < NSTEP) t->step[j] = tl_src[pick];
-            else if (tie && j) { t->step[j].time = ST_TIE; t->step[j].vel = tl_src[j * d].vel; }
-        }
-        tl_motion_map(t, len, 1, d, nlen);
-    } else
-        return 0;
-    t->p[P_SLEN] = (int16_t)(nlen ? nlen : 1u);
-    return nlen;
-}
-BTAPP_FN static uint32_t tl_repeat(track_t *t, uint32_t k)       /* k: 2..8 times, 0: to 64 */
-{
-    uint32_t len = tl_len(t), nlen, j, i, n, tk = trk_index(t), f;
-    nlen = k ? len * k : (NSTEP / len) * len;
+    uint32_t nn = k < 0 ? (n + 1u) / 2u : n * 2u, nlen = len - n + nn, i, j, c, f, tk = trk_index(t);
     if (nlen > NSTEP) nlen = NSTEP;
-    if (nlen <= len) return 0;
-    for (j = len; j < nlen; j++)
-        t->step[j] = t->step[j % len];
-    tl_motion_map(t, len, 1, 1, nlen);                  /* (what the copies cover loses its own automation) */
-    f = motion_guard();                                 /* the automation and locks of steps 1..LEN on each copy */
-    n = motion.count;
-    for (i = 0; i < n; i++) {
-        motion_event_t e = motion.event[i];
-        uint32_t s = MOTION_STEP(&e);
-        if (MOTION_TRK(&e) != tk || s >= len) continue;
-        for (j = s + len; j < nlen && motion.count < MOTION_MAX; j += len) {
-            motion_event_t c = e;
-            c.place = (uint8_t)((c.place & 0xC0u) | j);
-            motion.event[motion.count++] = c;
+    if (nlen == len) return 0;
+    undo_mark();                                        /* (V10.8.51: one UNDO point) */
+    for (j = lo; j < (len > nlen ? len : nlen); j++) step_clear(&t->step[j]);   /* (past both LENs: as they were) */
+    for (i = lo + n; i < len; i++)                      /* the steps after the range */
+        if (i - n + nn < NSTEP) t->step[i - n + nn] = tl_src[i];
+    for (i = 0; i < nn && lo + i < NSTEP; i++) {
+        step_t *d = &t->step[lo + i];
+        if (k > 0) {                                    /* STRETCH: the even ones */
+            const step_t *s = &tl_src[lo + i / 2u];
+            if (!(i & 1u)) *d = *s;
+            else if (s->time == ST_TIE || (s->time == ST_NOTE && s->n && lo + i / 2u + 1u < len &&
+                                           tl_src[lo + i / 2u + 1u].time == ST_TIE))
+                d->time = ST_TIE, d->vel = s->vel;
+        } else if (!k)                                  /* REPEAT */
+            *d = tl_src[lo + i % n];
+        else {                                          /* SQUEEZE */
+            uint32_t a = lo + 2u * i, tie = 0;
+            for (j = a; j < a + 2u && j < lo + n; j++) {
+                if (tl_src[j].time == ST_NOTE && (tl_src[j].n || tl_src[j].hit)) break;
+                tie |= tl_src[j].time == ST_TIE;
+            }
+            if (j < a + 2u && j < lo + n) *d = tl_src[j];
+            else if (tie && lo + i) d->time = ST_TIE, d->vel = tl_src[a].vel;
         }
+    }
+    f = motion_guard();
+    for (i = c = 0; i < motion.count; i++) {
+        motion_event_t e = motion.event[i];
+        uint32_t st = MOTION_STEP(&e);
+        if (MOTION_TRK(&e) == tk) {
+            if (st >= len) { if (st < nlen) continue; }  /* (its step covered now) */
+            else if (st >= lo + n) st = st - n + nn;
+            else if (st >= lo) st = k < 0 ? lo + (st - lo) / 2u : k ? lo + (st - lo) * 2u : st;
+            if (st >= nlen) continue;                   /* (cut with its step) */
+            e.place = (uint8_t)((e.place & 0xC0u) | st);
+        }
+        motion.event[c++] = e;
+    }
+    memset(motion.event + c, 0, (MOTION_MAX - c) * sizeof motion.event[0]);
+    motion.count = (uint8_t)c;
+    for (i = 0; !k && i < c; i++) {                     /* REPEAT: the range's on the copy */
+        motion_event_t e = motion.event[i];
+        uint32_t st = MOTION_STEP(&e);
+        if (MOTION_TRK(&e) != tk || st < lo || st >= lo + n || st + n >= nlen || motion.count >= MOTION_MAX) continue;
+        e.place = (uint8_t)((e.place & 0xC0u) | (st + n));
+        motion.event[motion.count++] = e;
     }
     RING_PUBLISH();
     motion_unguard(f);

@@ -517,9 +517,8 @@ static int test_sound_loads(void)
     apply_preset_to(t, 0);
     track_defaults_steps(t);
     project_load(0);
-    bad += check("saved SAMPLE PERC project (V10.6s): ANALOG's first (SAMPLE retired), its mix and every step kept",
-                 t->eng_req == ENGI_PHYS_TO && t->preset == 0u && t->p[P_LEVEL] == 71 && t->p[P_REV] == 33 &&
-                 !memcmp(t->step, before.step, sizeof t->step));
+    bad += check("saved SAMPLE PERC project (V10.6s; V10.8.51: retired before V10.7): not loaded, OLD PROJECT: OPEN IN STUDIO",
+                 msg_is("OLD PROJECT: OPEN IN STUDIO") && memcmp(t->step, before.step, sizeof t->step));   /* (the music as it was) */
     {   /* a user preset of SAMPLE PERC (UP_PUT from an older editor, or a bank read): (V10.7.13+) ANALOG, as any retired engine's */
         up_rec_t r;
         int16_t keep[P_COUNT];
@@ -8137,6 +8136,52 @@ static int test_copy_paste(void)
         ok = msg_is("NO ROOM") && t->p[P_SLEN] == 8;
         bad += check("  DUP with no room left in 64 steps refused", ok);
         memset(&clip, 0, sizeof clip);
+    }
+    {   /* (V10.8.51) the owner: "select, stretch and squeeze": step keys held on the roll, SEL 5-8; SEQ TOOLS' C4 D4 E4
+         * (STRETCH SQUEEZE REPEAT) then on that range only, once (no range: the whole track); the steps after it move
+         * along, LEN with it; its locks with their steps; one UNDO */
+        track_t *t = &trk[0];
+        int16_t v;
+        track_select(0); frame();
+        for (i = 0; i < NSTEP; i++) step_clear(&t->step[i]);
+        t->p[P_SLEN] = 8;
+        for (i = 0; i < 8u; i++) { t->step[i].time = ST_NOTE; t->step[i].n = 1; t->step[i].note[0] = (uint8_t)(60 + i); t->step[i].vel = 100; }
+        motion_clear(t);
+        ok = motion_set_lock(t, 5, P_PAN, 30) == 0 && motion_set_lock(t, 7, P_PAN, 40) == 0;
+        cp_keys_down(4, 7); frame();
+        ok &= msg_is("SEL 5-8");
+        cp_keys_up(); frame();
+        ly_white(B_SEQ, TL_RANDOM);
+        ok &= msg_is("STRETCH 5-8") && t->p[P_SLEN] == 12 && t->step[3].note[0] == 63 && t->step[4].note[0] == 64 &&
+              t->step[6].note[0] == 65 && t->step[8].note[0] == 66 && t->step[10].note[0] == 67 && t->step[5].time != ST_NOTE &&
+              motion_lock_get(t, 6, P_PAN, &v) && v == 30 && motion_lock_get(t, 10, P_PAN, &v) && v == 40 &&
+              !motion_lock_get(t, 5, P_PAN, &v);
+        bad += check("V10.8.51 SEL 5-8 + STRETCH (SEQ + C4): steps 5-8 over 5-12, LEN 8 -> 12, the locks with their steps", ok);
+        ok = !undo_do() && t->p[P_SLEN] == 8 && t->step[5].note[0] == 65 && motion_lock_get(t, 5, P_PAN, &v);
+        bad += check("  one UNDO takes it back", ok);
+        ly_white(B_SEQ, TL_RANDOM);
+        ok = msg_is("LEN 8 > 16") && t->p[P_SLEN] == 16 && t->step[14].note[0] == 67;
+        bad += check("  the range used once: STRETCH again is the whole track (LEN 8 > 16)", ok);
+        (void)undo_do();
+        cp_keys_down(4, 7); frame(); cp_keys_up(); frame();
+        ly_white(B_SEQ, TL_COOK);
+        ok = msg_is("SQUEEZE 5-8") && t->p[P_SLEN] == 6 && t->step[4].note[0] == 64 && t->step[5].note[0] == 66 &&
+             motion_lock_get(t, 5, P_PAN, &v) && v == 40;
+        bad += check("  SEL 5-8 + SQUEEZE (D4): 5-8 into 5-6, LEN 8 -> 6, step 8's lock on step 6", ok);
+        (void)undo_do();
+        cp_keys_down(4, 7); frame(); cp_keys_up(); frame();
+        ly_white(B_SEQ, TL_BEAT);
+        ok = msg_is("REPEAT 5-8") && t->p[P_SLEN] == 12 && t->step[8].note[0] == 64 && t->step[11].note[0] == 67 &&
+             motion_lock_get(t, 9, P_PAN, &v) && v == 30 && motion_lock_get(t, 5, P_PAN, &v);
+        bad += check("  SEL 5-8 + REPEAT (E4): 5-8 again at 9-12, LEN 8 -> 12, its locks copied", ok);
+        (void)undo_do();
+        cp_keys_down(4, 7); frame(); cp_keys_up(); frame();
+        cp_keys_down(1, 1); frame(); cp_keys_up(); frame();   /* (a step outside it alone: the selection gone) */
+        ly_white(B_SEQ, TL_RANDOM);
+        ok = msg_is("LEN 8 > 16");
+        bad += check("  a step outside the range pressed alone drops it (the whole track again)", ok);
+        (void)undo_do();
+        motion_clear(t);
     }
     return bad;
 }

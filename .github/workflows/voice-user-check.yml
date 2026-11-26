@@ -196,6 +196,9 @@ jobs:
           build/song-check/gen-lines 0 24 | tee build/song-check/gen-lines.log
           cc -O2 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src -Itests tests/gen_stems.c -lm -o build/song-check/gen-mix
           build/song-check/gen-mix 3 0 c | tee build/song-check/gen-mix.log
+          # (V10.8.51) no generated piece's stem or mix over -1 dBFS before the master (Studio's analysis: +3.1 dBFS, clipped)
+          cc -O2 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src -Itests tests/gen_peak.c -lm -o build/song-check/gen-peak
+          build/song-check/gen-peak 3 12 c | tee build/song-check/gen-peak.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/harmony_test.c -lm -o build/song-check/harmony
           build/song-check/harmony | tee build/song-check/harmony.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/euclid_mel_test.c -lm -o build/song-check/euclid-mel

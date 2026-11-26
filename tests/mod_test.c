@@ -262,6 +262,71 @@ static void test_math(void)
     check("KEY below C4 negative, VEL 1 -> AMP almost closed", m.cutoff == -((12 * 512 * 63) >> 7) && m.amp1 < 600);
     mod_end(t);
 
+    /* (V10.8.51, the owner: "the MOD MATRIX does not open the parameters fully at 100; past 100, a big move with a little")
+     * AMT -128..127: 64 (100 %) a full source sweeps the destination's whole range, 127 (+198 %) twice, clamped at its
+     * limits (never round); a project's AMT 63 / -64 (the old ends) as they were */
+    {
+        const param_desc_t *da = &TP[P_M1AMT];
+        char vb[12]; const char *un;
+        fresh(0, 0);
+        lfo_at(t, 32767);
+        slot(t, 0, MS_LFO, MD_CUT, 64);
+        mod_begin(t);
+        check("AMT range -128..127; LFO -> VOICE CUT 100 %: +-64 steps (the LFO sweeps 128: the whole 0..127)",
+              da->min == -128 && da->max == 127 && MOD.cut / 256 == 63);
+        mod_end(t);
+        slot(t, 0, MS_LFO, MD_CUT, 127);
+        mod_begin(t);
+        check("  +198 %: +-127 steps (a unipolar source: the whole 0..127)", MOD.cut / 256 == 126);
+        mod_end(t);
+        param_format(da, 127, vb, &un);
+        check("  AMT 127 reads +198 %, -128 -200 %", str_eq(vb, "+198"));
+        param_format(da, -128, vb, &un);
+        check("  (-200)", str_eq(vb, "-200"));
+        t->p[P_REV] = 0;
+        t->mw = 127;
+        slot(t, 0, MS_MODW, MD_REV, 64);
+        mod_begin(t);
+        check("MODW -> REV 100 %: a full wheel from 0 to the top (126 of 127: the wheel's 127 a hair under 1)", t->p[P_REV] >= 126);
+        mod_end(t);
+        t->mw = 64;
+        mod_begin(t);
+        check("  half the wheel: half way (63)", t->p[P_REV] == 63);
+        mod_end(t);
+        slot(t, 0, MS_MODW, MD_REV, 127);
+        mod_begin(t);
+        check("  AMT +198 %: half the wheel reaches the top (x2)", t->p[P_REV] == 125 || t->p[P_REV] == 126);
+        mod_end(t);
+        t->mw = 32;
+        mod_begin(t);
+        check("  a quarter of the wheel: half way (x2 of 100 %'s 31)", t->p[P_REV] == 62 || t->p[P_REV] == 63);
+        mod_end(t);
+        t->mw = 127;
+        mod_begin(t);
+        check("  a full wheel: clamped at 127 (no wraparound)", t->p[P_REV] == 127);
+        mod_end(t);
+        t->p[P_REV] = 100;
+        slot(t, 0, MS_MODW, MD_REV, -128);
+        mod_begin(t);
+        check("  AMT -200 %: clamped at 0", t->p[P_REV] == 0);
+        mod_end(t);
+        check("  restored after the block", t->p[P_REV] == 100);
+        t->p[P_PAN] = 0;
+        slot(t, 0, MS_MODW, MD_PAN, 64);
+        mod_begin(t);
+        check("MODW -> PAN 100 %: from the middle to the right end (+63)", t->p[P_PAN] == 63);
+        mod_end(t);
+        slot(t, 0, MS_LFO, MD_PITCH, 64);
+        lfo_at(t, 32767);
+        mod_begin(t);
+        check("LFO -> PITCH 100 %: +12 semitones (192 sixteenths), as before", MOD.pit == 191 || MOD.pit == 192);
+        mod_end(t);
+        slot(t, 0, MS_LFO, MD_PITCH, 127);
+        mod_begin(t);
+        check("  +198 %: about two octaves", MOD.pit >= 378 && MOD.pit <= 381);
+        mod_end(t);
+        slot(t, 0, MS_OFF, MD_OFF, 0);
+    }
     /* clamping of the per-voice sums */
     fresh(0, 0);
     lfo_at(t, 32767);

@@ -75,14 +75,13 @@ static int up_valid(const up_rec_t *r)
 {
     if (!(r->used == UP_USED && r->ver >= 1u && r->ver <= UP_VER_GRID && r->engine < NENGINES &&
           r->np >= 8u && r->np <= (r->ver >= 4u ? UP_PMAX * 2u : UP_PMAX) && r->name[0])) return 0;
-    if (r->ver >= 4u) for (uint32_t i = 0; i < r->np; i++) if (r->packed[i] > 191u) return 0;
     return 1;
 }
 
 static int up_used(uint32_t k) { return k < UP_SLOTS && up_valid(up_rec(k)); }
 
 static int up_grid(const up_rec_t *r) { return r->ver == 3u || r->ver == UP_VER_GRID; }
-static int16_t up_value(const up_rec_t *r, uint32_t k) { return r->ver >= 4u ? (int16_t)r->packed[k] - 64 : r->p[k]; }
+static int16_t up_value(const up_rec_t *r, uint32_t k) { return r->ver >= 4u ? (int8_t)(r->packed[k] - 64) : r->p[k]; }   /* (V10.8.51: 192..255 -128..-65) */
 static void up_set_value(up_rec_t *r, uint32_t k, int16_t v)
 {
     if (r->ver >= 4u) r->packed[k] = (uint8_t)(v + 64); else r->p[k] = v;
@@ -219,7 +218,7 @@ static __attribute__((noinline)) int up_parse(const uint8_t *a, uint32_t na, up_
     for (i = 0; i < P_COUNT; i++, k += 2u)
         {
             int32_t value = (int32_t)((a[k] & 127u) | (a[k + 1] & 127u) << 7) - 8192;
-            if (value < -64 || value > 127) return 1;
+            if (value < -128 || value > 127) return 1;
             up_set_value(r, i, (int16_t)value);
         }
     if (na >= k + 33u + 16u && a[k + 32u] == 1u) {    /* a drum grid */

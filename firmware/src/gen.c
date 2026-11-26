@@ -1996,10 +1996,18 @@ static __attribute__((noinline)) void gen_drums_m(track_t *t, uint32_t len)
         for (i = 0; i < len; i += ghalf() ? 16u : grd.mood >= 40 ? 4u : 8u) gdrum_hit(t, i, DV_KICK, 118, 1);
 }
 /* the mix and the humanity of a role */
+/* (V10.8.51, JIANT Studio's analysis: an EXPLORE piece's drums +1.5 dBFS, its mix +3.1, thousands of samples clipped) every
+ * part of a genre's piece down by its genre's trim (LEVEL steps, 0.5 dB), the mix's balance as it was: measured before the
+ * master (tests/gen_peak.c, the stems' and the mix's peaks over the genres x MOOD -50 / 0 / +50) its loudest piece's mix
+ * under -1 dBFS (were up to +13 dBFS, the leveler at its floor and the limiter taking the rest: the distortion); the
+ * LEVELER (fx.c lev_block) brings the whole back to its loudness. The last EXPLORE's */
+static const uint8_t GTRIM[] BTAPP_RO = {29, 29, 26, 20, 21, 31, 29, 14, 21, 20, 24, 19, 16, 12, 15, 19, 14, 26, 20, 19, 12, 18,
+                                         31, 24, 21, 16, 24, 17, 14, 21};
+_Static_assert(sizeof GTRIM == NGENRE + 1u, "GTRIM: a genre each, EXPLORE last");
 static __attribute__((noinline)) void gen_mix(track_t *t, uint32_t r)
 {
     const ggenre_t *g = gs.g;
-    int32_t wet = (int32_t)g->wet + (gs.energy < 34 ? 20 : gs.energy > 66 ? -15 : 0), hum = (int32_t)(gs.human);
+    int32_t wet = (int32_t)g->wet + (gs.energy < 34 ? 20 : gs.energy > 66 ? -15 : 0), hum = (int32_t)(gs.human), lv;
     static const uint8_t HV[RL_N] = {20, 25, 45, 60, 35, 40}, HT[RL_N] = {0, 0, 30, 25, 10, 60}, HG[RL_N] = {0, 10, 10, 40, 30, 0};
     wet = clamp(wet, 0, 100);
     /* (gen3) the parts round the drums given their room back (gen2 left the drums 60 .. 93 % of the parts' energy in
@@ -2010,11 +2018,13 @@ static __attribute__((noinline)) void gen_mix(track_t *t, uint32_t r)
     /* (p3, the owner: "the leads eat the drums and everything else; the drums always in front, the rest accompanies")
      * the drums up, the bass under them, the chords and the arp back, the lead ~6 dB under gen3's; the genre's lift at
      * half and on the bass and the chords only */
-    t->p[P_LEVEL] = (int16_t)clamp((r == RL_DRUM ? 110 + (grd.mood < -25 ? grd.mood * 2 / 3 + 12 : grd.mood / 5) : r == RL_BASS ? 114 : r == RL_LEAD ? (g->lead == LD_RIFF ? 108 : 92) : r == RL_ARP ? 96 :
+    lv = ((r == RL_DRUM ? 110 + (grd.mood < -25 ? grd.mood * 2 / 3 + 12 : grd.mood / 5) : r == RL_BASS ? 114 : r == RL_LEAD ? (g->lead == LD_RIFF ? 108 : 92) : r == RL_ARP ? 96 :
                                     r == RL_TEX ? (g->tex == SR_NOISE ? 56 : 66) : 100) +
                                    (r == RL_BASS || r == RL_PAD ? GG_LIFT(GGR) / 2 : 0) +   /* (the genre's own: GGRAM) */
                                    (gs.gi < NGENRE ? (r == RL_TEX ? 8 : 3) * ((int8_t)(GMIX[gs.gi][r >> 1] << (r & 1u ? 0 : 4)) >> 4) : 0) +
-                                   (r == RL_DRUM ? 0 : t->p[P_LEVEL] - 112), 1, 127);   /* (gen_sound's trim) */
+                                   (r == RL_DRUM ? 0 : t->p[P_LEVEL] - 112));   /* (gen_sound's trim) */
+    t->p[P_LEVEL] = (int16_t)clamp(clamp(lv, 1, 127) - GTRIM[gs.gi < NGENRE ? gs.gi : NGENRE], 1, 127);   /* (V10.8.51: the genre's
+                                                         * headroom, after LEVEL's top: every part down by as much) */
                                                         /* (the GENE mix pass) a role's level as the genre's mix wants it
                                                          * (gen_tables.c GMIX, 1.5 dB steps, the texture's 4 dB;
                                                          * measured on the parts' stems) */

@@ -618,7 +618,7 @@ static void song_key(uint32_t p)
         section_store(p - SK_STORE);
     } else if (p == SK_MODE) {
         live.mode ^= 1u;
-        ui_message(live.mode ? "PLAY: THE SONG" : "PLAY: THE LOOP");
+        ui_message(live.mode ? "PLAY: THE SONG" : "PLAY: THE PART");
     } else if (p == SK_REC) {
         song_rec_toggle();
     } else if (p == SK_NAME) {                          /* (0.9.2) SAVE + C5: USER's slot, PROJECT's project or section */
@@ -1644,7 +1644,6 @@ static __attribute__((noinline)) void draw_layer(void)
 }
 
 static void tl_take(const track_t *t);                 /* (V10.8.8: GLO > LIVE, ui_live.c, gone; its prototypes stay) */
-static uint32_t tl_stretch(track_t *t, int32_t k);
 static uint16_t pk_fill(uint32_t st, int blk, int n, uint16_t *ink);
 static void tracks_edit(uint32_t slot, int32_t steps);
 

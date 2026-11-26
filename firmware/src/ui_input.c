@@ -861,6 +861,25 @@ BTAPP_FN static void cp_say(const char *what, uint32_t lo, uint32_t n)   /* (V10
     ui_message(b);
 }
 
+/* (V10.8.51) step keys held on SEQ's roll, two or more: "SEL 5-8", the range kept (cp_sel: its first | its last << 8, bit
+ * 15 on) for SEQ TOOLS' STRETCH SQUEEZE REPEAT (ui_tools.c tl_shape: once). Only a key pressed changes it (keys let go
+ * keep it): two or more held, their range; one alone, none. (In clay.c's clay_sp, unused since V10.8.21: no RAM of its
+ * own, nothing of the sound moved; [1] the bar's keys held the pass before) */
+#define cp_sel (clay_sp[0])
+static void sel_poll(void)
+{
+    uint64_t m;
+    uint32_t cur, was = (uint16_t)clay_sp[1];
+    if (ui.ly) return;                                  /* (a layer held, EDIT's: the keys as they were) */
+    m = cp_held();
+    cur = (uint16_t)(m >> (ui.bank * 16u));
+    clay_sp[1] = (int16_t)cur;
+    if (!(cur & ~was)) return;                          /* (none pressed since: let go, or as it was) */
+    if (cp_hi == cp_lo) { cp_sel = 0; return; }
+    cp_sel = (int16_t)(0x8000u | (uint32_t)cp_hi << 8 | cp_lo);
+    cp_say("SEL ", cp_lo, (uint32_t)cp_hi - cp_lo + 1u);
+}
+
 static void cp_copy(uint64_t held)
 {
     track_t *t = TSEL;
@@ -1182,8 +1201,6 @@ static __attribute__((noinline)) void comp_knob(uint32_t slot, int32_t steps)
 static void tl_take(const track_t *t);
 static void tl_shift(track_t *t, uint32_t len, uint32_t d);
 static void tl_order(track_t *t, uint32_t len, const uint8_t *src);
-static uint32_t tl_stretch(track_t *t, int32_t k);
-static uint32_t tl_repeat(track_t *t, uint32_t k);
 /* (0.8.5) EDIT > FOCUS: KNOB 1 the parameter (E1..E8 with a name, no wrap), 2 its value, 3 the SRC of the MOD slot aimed
  * at it (from OFF: a free slot takes it, its DEST E1..E8; back to OFF: the slot free again), 4 that slot's AMT */
 static __attribute__((noinline)) void focus_knob(uint32_t slot, int32_t steps)
@@ -3064,6 +3081,7 @@ static void ui_input_frame(void)
     song.grid = (uint8_t)keys_mode();                 /* (seq.c: the keys are the grid's) */
     seq_fill = (uint8_t)((fm1_in.buttons >> panel.btn[B_FX]) & 1u);   /* (0.6.42) FILL steps: FX held */
     lock_keys();                                        /* (a grid key on a hit let go: the hit goes) */
+    sel_poll();                                         /* (V10.8.51) step keys held: SEL 5-8 */
     if (ckeys_on())                                     /* (V10.8.8) STEP FX: the keys held, components */
         sfx_keys();
     else

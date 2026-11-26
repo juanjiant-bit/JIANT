@@ -480,6 +480,35 @@ static int songs_test(void)
 #include "eq_save_cases.h"
 
 #ifndef PERSISTENCE_TEST_NO_MAIN
+/* (V10.8.51) a project of before V10.7 in flash (the old GM drum part, before 1.0): LOAD shows OLD PROJECT: OPEN IN
+ * STUDIO (not EMPTY SLOT), nothing erased or written, the flash object byte for byte as it was, the music as it was */
+static int old_project_test(void)
+{
+    static project_store_t st, back;
+    int ok;
+    uint32_t e0, len0;
+    reset();
+    song_cur = 0;
+    trk[0].p[P_SLEN] = 6;
+    project_capture(&proj_scratch);
+    proj_scratch.t[3].preset = PROJ_DEF_KEEP;
+    proj_scratch.sum = proj_sum(&proj_scratch);
+    ok = proj_pack(&st, &proj_scratch) && !st_save(proj_obj(2), &st, sizeof st);
+    memset(&proj_slot[2], 0, sizeof proj_slot[2]);
+    e0 = erases; len0 = trk[0].p[P_SLEN];
+    project_load(2);
+    ok &= str_eq(ui.msg, "OLD PROJECT: OPEN IN STUDIO") && erases == e0 && trk[0].p[P_SLEN] == (int)len0 &&
+          st_load(proj_obj(2), &back, sizeof back) == (int)sizeof back && !memcmp(&st, &back, sizeof st);
+    project_load(2);                                    /* (again: the same, still untouched) */
+    ok &= str_eq(ui.msg, "OLD PROJECT: OPEN IN STUDIO") && erases == e0 &&
+          st_load(proj_obj(2), &back, sizeof back) == (int)sizeof back && !memcmp(&st, &back, sizeof st);
+    memset(&proj_slot[3], 0, sizeof proj_slot[3]);
+    project_load(3);
+    ok &= str_eq(ui.msg, "EMPTY SLOT");
+    return check("V10.8.51: an old project in flash: LOAD says OLD PROJECT: OPEN IN STUDIO, the slot never erased or "
+                 "written, the music kept; an empty slot still EMPTY SLOT", ok);
+}
+
 int main(void)
 {
     int bad = 0, ok;
@@ -489,6 +518,7 @@ int main(void)
     project_v5_t v5;
     up_bank_t bank;
     up_rec_t r;
+    bad += old_project_test();
     reset();
     settings_init();
     {
@@ -692,7 +722,8 @@ int main(void)
         for (i = 0; i < P_COUNT; i++) {
             uint32_t e;
             for (e = 0; e < NENGINES; e++)
-                if (param_desc_of(e, i)->min < -64 || param_desc_of(e, i)->max > 127) {
+                if (param_desc_of(e, i)->min < (i == P_M1AMT || i == P_M2AMT || i == P_M3AMT || i == P_M4AMT ? -128 : -64) ||
+                    param_desc_of(e, i)->max > 127) {   /* (V10.8.51: a matrix AMT -128..127, its byte 192..255 the negatives) */
                     printf("param %u engine %u: range %d..%d does not fit FUN7's byte\n", i, e,
                            param_desc_of(e, i)->min, param_desc_of(e, i)->max);
                     bad++;

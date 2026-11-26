@@ -694,6 +694,30 @@ EXPORT uint32_t web_bk_len(uint32_t id)   /* the object as it is now, into web_b
     }
     return 0;
 }
+/* (V10.8.51) Studio's converter: projects of before V10.7 are no longer read by the firmware (proj_import: OLD PROJECT:
+ * OPEN IN STUDIO); a build that still reads them (V10.8.50 and before) converts them through these two, without the UI.
+ *   web_proj_load(slot, len): the len bytes in web_bk_buf() (a project as a slot stores it, any format this build reads)
+ *     into section slot (0..3) of the current song, in RAM and flash, then loaded as LOAD does (project_load: it plays).
+ *     0 = done, 2 = not a project, 3 = too old for this build (OPEN IN STUDIO), 4 = flash error.
+ *   web_proj_save(): the project playing now, packed in this build's format (FUNC, PROJ_STORE_SIZE bytes) into
+ *     web_bk_buf(); its length, 0 = could not be packed. Send those bytes to the FM-1 as a slot (transfer.js). */
+EXPORT uint32_t web_proj_load(uint32_t slot, uint32_t len)
+{
+    uint8_t *raw = proj_wire_u.raw;
+    if (slot > 3u || len > sizeof proj_wire_u.raw) return 2;
+    if (!proj_import(&proj_scratch, raw, (int)len)) return proj_sl_found == 2 || proj_old(raw, (int)len) ? 3u : 2u;
+    proj_bound(&proj_scratch);
+    if (!proj_pack((project_store_t *)raw, &proj_scratch)) return 2;
+    memcpy(&proj_slot[slot], raw, sizeof proj_slot[0]);
+    if (st_save(proj_obj(slot), raw, sizeof(project_store_t))) return 4;
+    project_load(slot);
+    return 0;
+}
+EXPORT uint32_t web_proj_save(void)
+{
+    project_capture(&proj_scratch);
+    return proj_pack((project_store_t *)proj_wire_u.raw, &proj_scratch) ? (uint32_t)sizeof(project_store_t) : 0u;
+}
 EXPORT void web_mix_skip(uint32_t mask) { mix_skip = (uint8_t)mask; }
 EXPORT uint32_t web_song_select(uint32_t n) { return (uint32_t)song_switch(n, 1); }   /* 0 = done (stopped, n < 8) */
 EXPORT uint32_t web_song_cur(void) { return song_cur; }

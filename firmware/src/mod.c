@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
  * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
-/* Modulation matrix: per track four slots, each SRC -> DST by AMT (-64..63), added to the fixed
+/* Modulation matrix: per track four slots, each SRC -> DST by AMT (-128..127: 64 = 100 %, 127 = +198 %, -128 = -200 %; V10.8.51, was -64..63), added to the fixed
  * routings (ENV DEST, LFO DEST). Runs in the audio ISR (fx.c mix_part, voice.c track_render).
  *
  * Sources, Q15:
@@ -19,7 +19,7 @@
  * Destinations:
  *   per voice (vmod_t, like the fixed routings):
  *     PITCH  AMT 63 at a full source = +-11.8 semitones (as LFO DEST PIT)
- *     CUT    m->cutoff, SHP m->shape: AMT 63 = +-63 steps (as ENV DEST); the sums are clamped to what
+ *     CUT    m->cutoff, SHP m->shape: AMT 64 = +-64 steps (as ENV DEST; V10.8.51: 127 = +-127, the whole 0..127 from a unipolar source); the sums are clamped to what
  *            the fixed routings can reach, so the engines see no new range
  *     AMP    a gain <= 1: AMT > 0 the source opens it (AMT 64: silent at 0, full at 1), AMT < 0 closes it
  *            (bipolar sources as 0..1, as LFO DEST AMP); several AMP slots multiply

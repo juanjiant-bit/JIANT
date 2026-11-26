@@ -153,16 +153,17 @@ static int ramp_tests(void)
         glane[3].comp = CO_MAKE(CA_RAMP, CC_ALWAYS); glane[3].val = 5; glane[3].mask = 63; glane[3].nm = CNM_MAKE(1u, 2u);
         project_capture(&proj_scratch);
         ok = proj_pack(&st, &proj_scratch);
-        ok &= proj_import(&proj_scratch, &st, sizeof st) && !project_restore_runtime(&proj_scratch);
+        ok &= !proj_import(&proj_scratch, &st, sizeof st) && proj_sl_found == 2;   /* (V10.8.51: refused as old, OPEN IN
+                                                         * STUDIO: before V10.6v's RAMP; a build that still migrates it converts) */
+        comp_migrate(trk[0].step, 16u);                 /* (the migration itself, GEN's and DICE's: in memory) */
         ok &= !trk[0].step[1].comp && !trk[0].step[2].comp && !trk[0].step[4].comp && !trk[0].step[5].comp;
         ok &= trk[0].step[3].comp2 == CO_MAKE(CA_RAMP, CC_ALWAYS) && trk[0].step[3].carg2 == 3u;
-        ok &= CO_ACT(trk[0].step[0].comp) == CA_RAMP;   /* (V10.8.21: the global lane gone, its bytes kept, read by nothing) */
         memset(ls, 0, sizeof ls);
         comp_legacy(&ls[0], 0, CP_JUMP, 2); comp_legacy(&ls[1], 0, CP_REV, 1); comp_legacy(&ls[2], 1, CP_JUMP, 0x80u | 3u);
         comp_migrate(ls, 4);
         ok &= !ls[0].comp && !ls[1].comp && !ls[2].comp2 && ls[0].clen[0] != CL_LEGACY && ls[2].clen[1] != CL_LEGACY;
         seq_start(); rrun(&trk[0], 40, v); seq_stop();
-        rcheck("old projects: JUMP whose VALUE is no RAMP none (REV, steps 33..64, 12..15), one that is a RAMP; "
+        rcheck("old projects (V10.8.51: refused, OPEN IN STUDIO; migrated in memory): JUMP whose VALUE is no RAMP none (REV, steps 33..64, 12..15), one that is a RAMP; "
                "CP_JUMP / CP_REV none; the global lane's none; it plays", ok);
     }
     {   /* (V10.7.62) its END: HOLD stays at the lock's value past its LENGTH (8 steps of a 16), till the next launch; BOUNCE

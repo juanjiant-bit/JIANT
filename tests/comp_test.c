@@ -312,7 +312,14 @@ static int format(void)
     project_capture(&proj_scratch);
     ok = proj_pack(&st, &proj_scratch);
     proj_comp_legacy = 0;
-    ok &= proj_import(&proj_scratch, &st, sizeof st) && !project_restore_runtime(&proj_scratch);
+    {   /* (V10.8.51) a project of before seq2d (V10.7's are all after it) is no longer migrated as it loads: refused as
+         * old (OPEN IN STUDIO: Studio's converter, a build that still migrates it), its bytes untouched */
+        static project_store_t st0;
+        memcpy(&st0, &st, sizeof st);
+        bad += check("FORMAT: a project of before seq2d: refused as old (proj_sl_found 2), the bytes untouched",
+                     ok && !proj_import(&proj_scratch, &st, sizeof st) && proj_sl_found == 2 && !memcmp(&st0, &st, sizeof st));
+    }
+    comp_migrate(trk[0].step, 8u);                       /* (GEN's, DICE's: the same migration, in memory) */
     t = &trk[0];
     ok &= t->step[0].comp == CO_MAKE(CA_ARP, CC_ALWAYS) && t->step[0].carg == CP_ARG(0u, 0u, 0u) && t->step[0].clen[0] == 2u;
     ok &= t->step[3].comp == CO_MAKE(CA_MUTE, CC_NNM) && t->step[3].cnm[0] == CNM_MAKE(1u, 2u) && !t->step[3].clen[0];
@@ -322,7 +329,7 @@ static int format(void)
     ok &= t->step[6].comp == CO_MAKE(CA_MUTE, CC_NFILL);
     ok &= t->step[7].comp == CO_MAKE(CA_TRANS, CC_NM) && t->step[7].cnm[0] == CNM_MAKE(1u, 2u) &&
           CV_TR_MOVE(t->step[7].carg) == 1 && CV_TR_RANGE(t->step[7].carg) == 4u;
-    bad += check("FORMAT: a project of before seq2d migrates: ARP over its TIEs, TRIG -> MUTE !1:2, EVERY 1:4 -> OCT+ 1:4, "
+    bad += check("FORMAT: CP_* of before seq2d migrate (comp_migrate): ARP over its TIEs, TRIG -> MUTE !1:2, EVERY 1:4 -> OCT+ 1:4, "
                  "ARP SEQ -> SEQ, ECHO -> RATCHET x3 DOWN, FILL -> MUTE !FILL, WALK -> TRANSPOSE R4 at 1:2", ok);
     {   /* .. and plays as it did: the arpeggio 60 64 | 67 60 | 64 67 over the TIEs, 62 on the first pass (TRIG 1:2), 76 */
         static const uint8_t W[7] = {60, 64, 67, 60, 64, 67, 62};

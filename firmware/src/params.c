@@ -157,7 +157,7 @@ static const param_desc_t TP[P_COUNT] = {
     [P_APWAVE] = PE("WAVE", N_LWAVE, 1),
     [P_APSYNC] = PE("SYNC", N_APSYNC, 1),
 #define MSLOT(k) [P_M##k##SRC] = PE("SRC" #k, N_MSRC, 0), [P_M##k##DST] = PE("DEST" #k, N_MDST, 0), \
-                 [P_M##k##AMT] = PD("AMT" #k, F_BIPCT, -64, 63, 0)
+                 [P_M##k##AMT] = PD("AMT" #k, F_BIPCT, -128, 127, 0)
     MSLOT(1), MSLOT(2), MSLOT(3), MSLOT(4),
 #undef MSLOT
 /* the OP ENV / OP LEVEL values of DIGITAL (ids 61..80): with FELUCCA_FM4 its operator envelopes; without it
@@ -719,7 +719,7 @@ static mx_t mx_r[MX_N];
  * the destinations add up, a macro moves as many as it is given), 4 its next destination set (the count shown) */
 #define ID_MX0 0xECu
 static const char *const N_MXM[] = {"M1", "M2", "M3", "M4"};
-static const param_desc_t MX_DESC[4] = {PE("MACRO", N_MXM, 0), PE("DEST", N_MDST, 0), PD("AMOUNT", F_BIPCT, -64, 63, 0),
+static const param_desc_t MX_DESC[4] = {PE("MACRO", N_MXM, 0), PE("DEST", N_MDST, 0), PD("AMOUNT", F_BIPCT, -128, 127, 0),
                                         PD("DESTS", F_INT, 0, MX_N, 0)};
 static int16_t mx_ui[4] = {0, 2, 0, 0};                 /* (the macro, the destination: MD_CUT; the views) */
 /* (V10.7.62, the owner: "the tracks interacting, completely audible, as light as it can be") LIFE: HOME > LIFE, ECO's
