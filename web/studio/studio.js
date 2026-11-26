@@ -540,6 +540,9 @@ function go(view, push = true) {
   if (!VIEWS.includes(view)) view = "home";
   state.view = view;
   for (const v of VIEWS) $("v-" + v).hidden = v !== view;
+  const dock = view === "radio";                                 // Radio: the emulator beside it (above on a phone)
+  document.body.classList.toggle("radiodock", dock);
+  if (dock) { $("v-emu").hidden = false; loadFrame("emu"); }
   if (push && !(view === "learn" && /^#learn\//.test(location.hash))) history.replaceState(null, "", location.pathname + location.search + "#" + view);
   showFrames();
   render();
@@ -1505,6 +1508,8 @@ function rdFeed() {
   } catch (_) {}
 }
 document.addEventListener("visibilitychange", () => rd.vis && rdVis());
+/* switched on from its own button beside the radio: the radio follows */
+setInterval(() => { if (state.view === "radio" && !rd.on && !rd.starting && !rdMock && emuOn()) rdStart(); }, 1000);
 /* the emulator switched on from here (its page in the hidden Emulator tab; the click carries this one's gesture) */
 async function rdEmu() {
   loadFrame("emu");
