@@ -9,6 +9,8 @@ Este manual es para músicos que acaban de instalar JIANT FM y quieren saber có
 y, sobre todo, **cómo guardar su trabajo sin perder nada**. Sigue el firmware tal como está en esa versión: cada
 botón, perilla y mensaje aparece nombrado exactamente como lo muestra el equipo.
 
+> *¿Nunca usaste un sintetizador ni un secuenciador? Empezá por [Primeros pasos](FIRST-STEPS.es.md): seis recorridos cortos, botón por botón.*
+
 Si vas a leer un solo capítulo, leé [12. Guardar y cargar](#12-guardar-y-cargar). Si venís de la V10.6c (la última
 versión pública) o de antes: [Qué hay de nuevo en esta versión](#qué-hay-de-nuevo-en-esta-versión).
 
@@ -2273,29 +2275,29 @@ arquetipo), la onda del oscilador, el tipo de filtro, su corte, resonancia y env
 glide, drive y chorus, un LFO sobre el filtro, cada uno con un rango chico al azar para que dos semillas difieran sin
 dejar de ser ese sonido. Algunos:
 
-| Arquetipo | Dónde (los nombres de género son los de la lista de la 0.9.9) | El sonido |
+| Arquetipo | Dónde (los géneros de V10.8.48) | El sonido |
 |---|---|---|
-| **ACID** (la 303) | ACID HOUSE, BREAKS | (0.9.9-gen2, según el Open303 de X0X) ANALOG sierra (o cuadrada), un oscilador, sin ruido; LP bajo (~400 Hz en reposo), RES 104–120 (alta, nunca sonando sola), la envolvente alta sobre él (~2 kHz en el pico) con un decay corto (400–900 ms) sobre un sustain (el cuerpo de la nota: la única envolvente de ANALOG es también la del nivel); un **ACCENT** abre el filtro ~2 octavas más y suena más fuerte; LEGATO, así que un **SLIDE** sostiene el gate y la nota siguiente se desliza (MODE TIME, ~55 ms sea cual sea el intervalo) **sin redisparar** la envolvente; DIST después |
-| **TECH BASS** | TECHNO, TECH HOUSE, HARD TECHNO, HYPNOTIC | ANALOG sierra o cuadrada, corto, LP resonante, envolvente, drive |
-| **EBM BASS** | EBM, DARKWAVE, MINIMAL SYNTH | ANALOG cuadrada por el filtro **LP** con resonancia (V10.8.35; antes el MS20), corto, envolvente, drive |
-| **808** | TRAP | el bum largo de un seno, glide 30+, con drive |
+| **ACID** (la 303) | BREAKBEAT | (0.9.9-gen2, según el Open303 de X0X) ANALOG sierra (o cuadrada), un oscilador, sin ruido; LP bajo (~400 Hz en reposo), RES 104–120 (alta, nunca sonando sola), la envolvente alta sobre él (~2 kHz en el pico) con un decay corto (400–900 ms) sobre un sustain (el cuerpo de la nota: la única envolvente de ANALOG es también la del nivel); un **ACCENT** abre el filtro ~2 octavas más y suena más fuerte; LEGATO, así que un **SLIDE** sostiene el gate y la nota siguiente se desliza (MODE TIME, ~55 ms sea cual sea el intervalo) **sin redisparar** la envolvente; DIST después |
+| **TECH BASS** | HARD TECHNO, TECH HOUSE, TRIBAL, TECHNO ROCK | ANALOG sierra o cuadrada, corto, LP resonante, envolvente, drive |
+| **EBM BASS** | EBM, ELECTRO METAL | ANALOG cuadrada por el filtro **LP** con resonancia (V10.8.35; antes el MS20), corto, envolvente, drive |
+| **808** | REGGAETON, DEMBOW, PHONK, BAILE FUNK, HIP HOP | el bum largo de un seno, glide 30+, con drive |
 | **WOBBLE** | DUBSTEP | sierras gordas, LP resonante movido por un LFO **a tempo** (1/8) |
-| **REESE** | DRUM & BASS, UK GARAGE | SAW3 desafinada, un LFO lento en el filtro, chorus |
-| **BAJO DE OCTAVAS** | ITALO, SYNTH POP, ELECTRO, DETROIT, TRANCE | ANALOG sierra o cuadrada pulsada por la envolvente del filtro |
-| **CONTRABAJO** | JAZZ, BOSSA, BOOM BAP | un triángulo, corto y pulsado |
-| **SUB** | DEEP HOUSE, DUB, STEPPERS, DUB TECHNO, AMBIENT, SOUNDTRACK | un seno, LP bajo |
+| **REESE** | DRUM & BASS | SAW3 desafinada, un LFO lento en el filtro, chorus |
+| **BAJO DE OCTAVAS** | ELECTRO | ANALOG sierra o cuadrada pulsada por la envolvente del filtro |
+| **CONTRABAJO** | JAZZ | un triángulo, corto y pulsado |
+| **SUB** | MINIMAL TECHNO, DEEP HOUSE, IDM AMBIENT, DREAM POP | un seno, LP bajo |
 | **DONK** (V10.8.42, en el lugar de SUPERSAW) | HARD BASS | PHASE (RESO DROPS / FB BASS), mono, con drive, un SUB debajo |
-| **FM BASS** | HOUSE, MICRO HOUSE, FUNK, MAN MACHINE, IDM, BROKEN | FM6 FM BASS / HARD BASS |
+| **FM BASS** | HOUSE, CUMBIA, IDM GLITCH, IDM WEIRD | FM6 FM BASS / HARD BASS |
 
 Sobre el mapa de batería, los arquetipos de bajo, el toque de los acordes, el arpegio y el lead del género, una
 **gramática de patrones** por género agrega: en el bajo, ACCENTs fuera del bombo, SLIDEs hacia la nota siguiente (su
-glide), saltos de octava en las semicorcheas a contratiempo (cada uno 0–3 según el género: FUNK y DISCO saltan, TRAP y
-DUBSTEP ligan, EBM y HARD TECHNO acentúan; el bajo ácido sigue las reglas de la 303, según el TB-3PO de X0X (0.9.9-gen2):
+glide), saltos de octava en las semicorcheas a contratiempo (cada uno 0–3 según el género: ELECTRO es el que más salta, REGGAETON,
+DRUM & BASS, PHONK, HIP HOP y DUBSTEP ligan, EBM y HARD TECHNO acentúan; el bajo ácido sigue las reglas de la 303, según el TB-3PO de X0X (0.9.9-gen2):
 una línea de 16 pasos, ~68 % de los pasos una nota (el primero del compás siempre), los grados del modo sobre el acorde
 (la raíz la que más), una octava arriba un tercio de las veces y abajo de vez en cuando, ACCENTs en ~30 % de las notas,
 SLIDEs en ~25 % (nunca hacia un silencio), de vez en cuando un TIE, un compás sí y otro no unas notas re-sorteadas); **GLUE de DRUM-X** donde el género comprime el bus (la familia
 techno, EBM, DnB, dubstep); de vez en cuando el hat cerrado **redoblado en la última semicorchea del tiempo, una vuelta
-sí y otra no** (TRAP, DnB, UK GARAGE, BREAKS, ELECTRO, HARD TECHNO, IDM); El sonido de un rol es siempre su arquetipo (ya no se cambia por una receta vecina).
+sí y otra no** (HARD TECHNO, REGGAETON, DEMBOW, ELECTRO, BREAKBEAT, DRUM & BASS, IDM GLITCH, IDM WEIRD, TECHNO ROCK, PHONK, HIP HOP); El sonido de un rol es siempre su arquetipo (ya no se cambia por una receta vecina).
 
 **Leads y batería** (0.9.9-gen2). El vibrato de un lead es el de un cantante, no el de una sirena: LFO PITCH 1 (~19
 cents), 5,1–6,3 Hz, con fundido de entrada de 160–450 ms para que el ataque quede limpio y el LFO del filtro apagado
@@ -2346,8 +2348,8 @@ De qué está hecha una pieza:
 - **La tonalidad** (0.8.3): un modo de siete notas para cada género (de su lista: mayor, menor, dórico, mixolidio,
   frigio, lidio, menor armónica y melódica), **escrito en la página SCALE** (ROOT, SCALE, y QUANT SNAP salvo que hayas
   elegido otro QUANT) en todas las pistas, así que las teclas que toques después, la página CHORD, ALL TR y la reverb
-  RESO están en la tonalidad de la pieza. Un género que canta en pentatónica o blues (deep house, funk, boom bap, D&B,
-  afrobeat ..) recibe el modo que la contiene (dórico o eólico; mayor para la pentatónica mayor) y su **lead** se queda
+  RESO están en la tonalidad de la pieza. Un género que canta en pentatónica o blues (en V10.8.48:
+  DEEP HOUSE) recibe el modo que la contiene (dórico o eólico; mayor para la pentatónica mayor) y su **lead** se queda
   en las notas de la pentatónica: los acordes siguen siendo acordes de verdad y todas las notas siguen en la escala de
   la página SCALE. La **página CHORD** de la pista de acordes queda con los acordes de la pieza (TRIAD, 7TH, ADD9, SUS2
   o SUS4, según cómo esté coloreada su progresión), VOICING LEAD, un strum donde los toca una guitarra; CHORD queda
@@ -2358,11 +2360,11 @@ De qué está hecha una pieza:
   bVII, la andaluza i bVII bVI V, la eólica bVI bVII i, i7 bIIImaj7 bVII7 iv7, ii7 V7 Imaj7, Imaj7 vi7 ii7 V7, la de
   bossa Imaj7 II7 ii7 V7, I bVII IV I .. Un modo que volvería disminuido uno de sus acordes (el vi del dórico, el #iv
   del lidio) nunca toma esa progresión: la siguiente del género, si no el loop propio del modo. Después las cadencias y
-  colores que el género permite: la **dominante de la tonalidad menor subida antes de su tónica** (la sensible: trance,
-  italo, synth pop, cine, jazz), el **turnaround del jazz** (ii–V en el último compás), una **dominante secundaria** en
-  la segunda mitad del acorde anterior a su destino (V/vi, V/ii, V/IV: indie, disco, jazz, cine; con COMPLEX), el **IV
-  que se vuelve menor** antes del I en mayor (mixtura: synth pop, indie, shoegaze, cine), el lado bemol prestado en
-  mayor (bVII, bVI: motorik, indie, soundtrack). Ritmo armónico por género: un acorde por compás, cada dos o cuatro
+  colores que el género permite: la **dominante de la tonalidad menor subida antes de su tónica** (la sensible: HARD BASS,
+  CUMBIA, NEO CLASSIC, JAZZ, HIP HOP), el **turnaround del jazz** (ii–V en el último compás), una **dominante secundaria** en
+  la segunda mitad del acorde anterior a su destino (V/vi, V/ii, V/IV: NEO CLASSIC, JAZZ; con COMPLEX), el **IV
+  que se vuelve menor** antes del I en mayor (mixtura: KRAUT, NEO CLASSIC), el lado bemol prestado en
+  mayor (bVII, bVI: KRAUT, NEO CLASSIC). Ritmo armónico por género: un acorde por compás, cada dos o cuatro
   compases, o un solo acorde para todo el loop. Los acordes son tríadas, séptimas, novenas (nunca una b9), add9, sus2 /
   sus4 (solo con cuarta justa), sextas, pilas cuartales, power chords, recoloreados por el género (simples, ricos,
   suspendidos, cuartales, power, paralelos).
@@ -2425,14 +2427,14 @@ De qué está hecha una pieza:
   (un break: sin batería ni bajo) y **C** (un drop: la batería más densa) y llena ARRANGE con A B A C (PLAY toca el
   tema, como hacía el DICE ALL de 0.6.81). (0.8.3) Las secciones son una misma pieza en una tonalidad: B empieza el
   loop en su predominante (los mismos acordes rotados: IV–I–V–vi para I–V–vi–IV; un loop de un acorde va a su
-  subdominante y vuelve), el motivo y las figuras los mismos, llevados a esos acordes; en los géneros pop (ITALO, SYNTH
-  POP, INDIE, DISCO) **C está un tono arriba**, un cambio de tonalidad real guardado en la sección con su página SCALE (el
-  último estribillo del pop). Los loops modales (techno, house minimal, dub ..) conservan su loop en todas las secciones.
+  subdominante y vuelve), el motivo y las figuras los mismos, llevados a esos acordes; donde el género sube (en V10.8.48 ninguno de los 29;
+  EXPLORE más o menos una vez de cada tres) **C está un tono arriba**, un cambio de tonalidad real guardado en la sección con su página SCALE (el
+  último estribillo del pop). Los loops modales (MINIMAL TECHNO, TECH HOUSE, EBM, KRAUT ..) conservan su loop en todas las secciones.
   **SONG** escribe una forma de club: **A** el drop, **B** la intro (batería y
   bajo), **C** el build (entran los acordes, su filtro se abre a lo largo del loop, un redoble al final, el delay
   lanzado en el último paso) y **D** el break (sin batería ni bajo, los acordes más húmedos; 0.8.3: en su predominante,
-  salvo en los loops modales), en ARRANGE como B C A D C A con filas de la mitad de compases que antes de V10.8.45, ninguna de más de ~24 s (a tempos lentos, menos compases). Los géneros ambient y
-  post-rock reciben un arco (fino, entra, ápice: en su predominante). Las secciones tuyas (guardadas por vos, no por GEN) nunca se pisan: entonces la pieza queda en un loop.
+  salvo en los loops modales), en ARRANGE como B C A D C A con filas de la mitad de compases que antes de V10.8.45, ninguna de más de ~24 s (a tempos lentos, menos compases). Los géneros escritos como arco (IDM GLITCH, IDM AMBIENT, IDM WEIRD, KRAUT,
+  NEO CLASSIC, DREAM POP, SHOEGAZE; y EXPLORE) reciben un arco (fino, entra, ápice: en su predominante). Las secciones tuyas (guardadas por vos, no por GEN) nunca se pisan: entonces la pieza queda en un loop.
 
 Cada pieza reemplaza los pasos, sonidos, kit, mezcla y automatización de todas las pistas. Los mutes quedan como
 estaban. Los roles que suenan van en las primeras pistas (la batería en la pista DRUM), así que con TRACKS 4 escuchás
@@ -3106,6 +3108,8 @@ protección desvaneció): una foto de esa pantalla ayuda cuando reportás un pro
 ---
 
 ## 14. MIDI y USB
+
+**Una guía práctica** (tocar desde un teclado, CC, clock, una receta con el Circuit Tracks, lo que no puede hacer): [docs/MIDI.es.md](MIDI.es.md).
 
 - **USB** es MIDI y audio class-compliant: la salida master le llega a la computadora como una entrada de audio USB.
 - **MIDI IN** por USB y por el jack **TRS**. **ROUTE** decide qué pista toca cada canal (ver

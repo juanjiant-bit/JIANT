@@ -9,6 +9,8 @@ This manual is for musicians who have just installed JIANT FM and want to know h
 and, above all, **save their work without losing anything**. It follows the firmware as it is in that version: every
 button, knob and message is named exactly as the device shows it.
 
+> *Never used a synth or a step sequencer? Start with [First steps](FIRST-STEPS.md): six short tours, button by button.*
+
 If you only read one chapter, read [12. Saving and loading](#12-saving-and-loading). Coming from V10.6c (the last
 public version) or earlier: [What's new in this version](#whats-new-in-this-version).
 
@@ -2171,28 +2173,28 @@ engine's real parameters: the engine and its factory preset (a bass always the a
 wave, the filter type, cutoff, resonance and envelope amount, the amp envelope, glide, drive and chorus, an LFO on the
 filter, each with a small random range so two seeds differ but stay the sound. Some of them:
 
-| Archetype | Where (the genre names are 0.9.9's list) | The sound |
+| Archetype | Where (V10.8.48's genres) | The sound |
 |---|---|---|
-| **ACID** (the 303) | ACID HOUSE, BREAKS | (0.9.9-gen2, after X0X's Open303) ANALOG saw (or square), one oscillator, no noise; LP low (~400 Hz at rest), RES 104–120 (high, never ringing on its own), the envelope high on it (~2 kHz at the peak) with a short decay (400–900 ms) over a sustain (the note's body: ANALOG's one envelope is the level's too); an **ACCENT** opens the filter ~2 octaves more and plays louder; LEGATO, so a **SLIDE** holds the gate and the next note glides (MODE TIME, ~55 ms whatever the interval) **without retriggering** the envelope; DIST after |
-| **TECH BASS** | TECHNO, TECH HOUSE, HARD TECHNO, HYPNOTIC | ANALOG saw or square, short, resonant LP, envelope, drive |
-| **EBM BASS** | EBM, DARKWAVE, MINIMAL SYNTH | ANALOG square through the resonant **LP** filter (V10.8.35; the MS20 before), short, envelope, drive |
-| **808** | TRAP | a sine's long boom, glide 30+, driven |
+| **ACID** (the 303) | BREAKBEAT | (0.9.9-gen2, after X0X's Open303) ANALOG saw (or square), one oscillator, no noise; LP low (~400 Hz at rest), RES 104–120 (high, never ringing on its own), the envelope high on it (~2 kHz at the peak) with a short decay (400–900 ms) over a sustain (the note's body: ANALOG's one envelope is the level's too); an **ACCENT** opens the filter ~2 octaves more and plays louder; LEGATO, so a **SLIDE** holds the gate and the next note glides (MODE TIME, ~55 ms whatever the interval) **without retriggering** the envelope; DIST after |
+| **TECH BASS** | HARD TECHNO, TECH HOUSE, TRIBAL, TECHNO ROCK | ANALOG saw or square, short, resonant LP, envelope, drive |
+| **EBM BASS** | EBM, ELECTRO METAL | ANALOG square through the resonant **LP** filter (V10.8.35; the MS20 before), short, envelope, drive |
+| **808** | REGGAETON, DEMBOW, PHONK, BAILE FUNK, HIP HOP | a sine's long boom, glide 30+, driven |
 | **WOBBLE** | DUBSTEP | fat saws, resonant LP moved by an LFO **on the beat** (1/8) |
-| **REESE** | DRUM & BASS, UK GARAGE | SAW3 detuned, a slow LFO on the filter, chorus |
-| **OCTAVE BASS** | ITALO, SYNTH POP, ELECTRO, DETROIT, TRANCE | ANALOG saw or square plucked by the filter envelope |
-| **UPRIGHT** | JAZZ, BOSSA, BOOM BAP | a triangle, short and plucked |
-| **SUB** | DEEP HOUSE, DUB, STEPPERS, DUB TECHNO, AMBIENT, SOUNDTRACK | a sine, LP low |
+| **REESE** | DRUM & BASS | SAW3 detuned, a slow LFO on the filter, chorus |
+| **OCTAVE BASS** | ELECTRO | ANALOG saw or square plucked by the filter envelope |
+| **UPRIGHT** | JAZZ | a triangle, short and plucked |
+| **SUB** | MINIMAL TECHNO, DEEP HOUSE, IDM AMBIENT, DREAM POP | a sine, LP low |
 | **DONK** (V10.8.42, in SUPERSAW's place) | HARD BASS | PHASE (RESO DROPS / FB BASS), mono, driven, a SUB under it |
-| **FM BASS** | HOUSE, MICRO HOUSE, FUNK, MAN MACHINE, IDM, BROKEN | FM6 FM BASS / HARD BASS |
+| **FM BASS** | HOUSE, CUMBIA, IDM GLITCH, IDM WEIRD | FM6 FM BASS / HARD BASS |
 
 Over the genre's drum map, bass archetypes, chord play, arp and lead, a **pattern grammar** a genre adds: on the bass,
 ACCENTs off the kick, SLIDEs into the next note (its glide), octave jumps on the offbeat sixteenths (each 0–3 by
-genre: FUNK and DISCO jump, TRAP and DUBSTEP slide, EBM and HARD TECHNO accent; the acid bass keeps the 303's own
+genre: ELECTRO jumps most, REGGAETON, DRUM & BASS, PHONK, HIP HOP and DUBSTEP slide, EBM and HARD TECHNO accent; the acid bass keeps the 303's own
 rules, after X0X's TB-3PO (0.9.9-gen2): one 16-step line, ~68 % of the steps a note (the bar's first always), the mode's
 degrees over the chord (the root most), an octave up a third of the time and down now and then, ACCENTs on ~30 % of the
 notes, SLIDEs on ~25 % (never into a rest), now and then a TIE, every other bar a few notes re-rolled); **DRUM-X GLUE** where the genre bus-compresses
 (the techno family, EBM, DnB, dubstep); now and then the closed hat **rolled on the beat's last sixteenth every other
-loop** (TRAP, DnB, UK GARAGE, BREAKS, ELECTRO, HARD TECHNO, IDM); A role's sound is always its archetype (no more neighbour recipes swapped in).
+loop** (HARD TECHNO, REGGAETON, DEMBOW, ELECTRO, BREAKBEAT, DRUM & BASS, IDM GLITCH, IDM WEIRD, TECHNO ROCK, PHONK, HIP HOP); A role's sound is always its archetype (no more neighbour recipes swapped in).
 
 **Leads and drums** (0.9.9-gen2). A lead's vibrato is a singer's, not a siren's: LFO PITCH 1 (~19 cents), 5.1–6.3 Hz,
 faded in over 160–450 ms so the attack is clean, the filter's LFO off under it; otherwise no pitch LFO, only a slow,
@@ -2238,7 +2240,7 @@ What a piece is made of:
 - **The key** (0.8.3): a mode of seven notes for every genre (its list: major, minor, dorian, mixolydian, phrygian,
   lydian, harmonic and melodic minor), **written to the SCALE page** (ROOT, SCALE, and QUANT SNAP unless you chose
   another QUANT) on every track, so the keys you play afterwards, the CHORD page, ALL TR and the RESO reverb are in the
-  piece's key. A genre that sings pentatonic or blues (deep house, funk, boom bap, D&B, afrobeat ..) gets the mode that
+  piece's key. A genre that sings pentatonic or blues (in V10.8.48: DEEP HOUSE) gets the mode that
   holds it (dorian or aeolian; major for the major pentatonic) and its **lead** keeps to the pentatonic notes: the
   chords stay real chords and every note is still in the SCALE page's scale. The chord track's **CHORD page** is set
   to the piece's chords (TRIAD, 7TH, ADD9, SUS2 or SUS4, as its progression is coloured), VOICING LEAD, a strum where
@@ -2249,11 +2251,11 @@ What a piece is made of:
   the Andalusian i bVII bVI V, the Aeolian bVI bVII i, i7 bIIImaj7 bVII7 iv7, ii7 V7 Imaj7, Imaj7 vi7 ii7 V7, the
   bossa's Imaj7 II7 ii7 V7, I bVII IV I .. A mode that would turn one of its chords diminished (dorian's vi, lydian's
   #iv) never takes that progression: the genre's next one, else the mode's own loop. Then the cadences and colours the
-  genre allows: the minor key's **dominant raised before its tonic** (the leading tone: trance, italo, synth pop,
-  film, jazz), **jazz's turnaround** (ii–V in the last bar), a **secondary dominant** on the second half of the chord
-  before its target (V/vi, V/ii, V/IV: indie, disco, jazz, film; with COMPLEX), a major key's **IV going minor** before
-  I (mixture: synth pop, indie, shoegaze, film), the flat side borrowed in major (bVII, bVI: motorik, indie,
-  soundtrack). Harmonic rhythm by genre: a chord every bar, every two or four bars, or one chord for the whole loop.
+  genre allows: the minor key's **dominant raised before its tonic** (the leading tone: HARD BASS, CUMBIA,
+  NEO CLASSIC, JAZZ, HIP HOP), **jazz's turnaround** (ii–V in the last bar), a **secondary dominant** on the second half of the chord
+  before its target (V/vi, V/ii, V/IV: NEO CLASSIC, JAZZ; with COMPLEX), a major key's **IV going minor** before
+  I (mixture: KRAUT, NEO CLASSIC), the flat side borrowed in major (bVII, bVI: KRAUT,
+  NEO CLASSIC). Harmonic rhythm by genre: a chord every bar, every two or four bars, or one chord for the whole loop.
   Chords are triads, sevenths, ninths (never a b9), add9, sus2 / sus4 (a perfect fourth only), sixths, quartal stacks,
   power chords, recoloured by the genre (plain, rich, suspended, quartal, power, parallel).
 - **Bass** from about fifty **archetypes written against the kick**: house offbeat and bounce, deep walking
@@ -2309,12 +2311,12 @@ What a piece is made of:
   no drums, no bass) and **C** (a drop: the drums denser) and fills ARRANGE with A B A C (PLAY plays the song, as
   0.6.81's DICE ALL did). (0.8.3) The sections are one piece in one key: B starts the loop on its predominant (the
   same chords turned: IV–I–V–vi for I–V–vi–IV; a one-chord loop goes to its subdominant and back), the motif and the
-  figures the same, moved onto those chords; in the pop genres (ITALO, SYNTH POP, INDIE, DISCO) **C is a whole step
-  up**, a real key change stored in the section with its SCALE page (pop's last chorus). The modal loops (techno, house
-  minimal, dub ..) keep their loop in every section. **SONG** writes a club form: **A** the drop, **B** the intro (drums and bass), **C** the build
+  figures the same, moved onto those chords; where the genre lifts (in V10.8.48 none of the 29 does; EXPLORE about a third of the time) **C is a whole step
+  up**, a real key change stored in the section with its SCALE page (pop's last chorus). The modal loops (MINIMAL TECHNO, TECH
+  HOUSE, EBM, KRAUT ..) keep their loop in every section. **SONG** writes a club form: **A** the drop, **B** the intro (drums and bass), **C** the build
   (the chords in, their filter opening over the loop, a roll at its end, the delay thrown on the last step) and **D**
   the break (no drums, no bass, the chords wetter; 0.8.3: on its predominant, but in the modal loops), in ARRANGE as
-  B C A D C A with rows half as long as before V10.8.45, none longer than about 24 s (fewer bars at slow tempos). Ambient and post-rock genres get an arc instead (thin, in, apex: on its
+  B C A D C A with rows half as long as before V10.8.45, none longer than about 24 s (fewer bars at slow tempos). The genres written as an arc (IDM GLITCH, IDM AMBIENT, IDM WEIRD, KRAUT, NEO CLASSIC, DREAM POP, SHOEGAZE; and EXPLORE) get an arc instead (thin, in, apex: on its
   predominant). Sections of yours (stored by you, not by GEN) are never
   overwritten: then the piece stays one loop.
 
@@ -2951,6 +2953,8 @@ faded): a photo of that screen helps when you report a problem.
 ---
 
 ## 14. MIDI and USB
+
+**A practical guide** (playing from a keyboard, CCs, clock, a Circuit Tracks recipe, what it cannot do): [docs/MIDI.md](MIDI.md).
 
 - **USB** is class-compliant MIDI and audio: the master output reaches the computer as a USB audio input.
 - **MIDI IN** over USB and the **TRS** jack. **ROUTE** decides which track each channel plays (see

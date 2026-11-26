@@ -2471,7 +2471,7 @@
      },
      "how": {
       "es": [
-       "GENRE: EXPLORE (todas las reglas rotas), RANDOM o uno de 29 géneros: techno, house, cumbia, reggaetón, dembow, IDM, jazz, hip hop, phonk, dubstep…",
+       "GENRE: EXPLORE (todas las reglas rotas), RANDOM o uno de 29 géneros: MINIMAL TECHNO, HOUSE, CUMBIA, REGGAETON, DEMBOW, IDM AMBIENT, JAZZ, HIP HOP, PHONK, DUBSTEP…",
        "SEED, ENERGY y FORM (LOOP, PARTS, SONG, MY LOOP).",
        "DRUMS, BASS, CHORDS, ARP, LEAD: OFF, 10–100 % o AUTO; COMPLEX, SWING, HUMAN; KEY (NEW / KEEP) y ENTRY (ALL / BUILD).",
        "OCT+ arma la pieza; con los ajustes sin tocar tira otra semilla, y girando una perilla cambia solo esa parte.",
@@ -2480,7 +2480,7 @@
        "SEQ › TRACK GEN escribe solo la pista elegida: GENRE, SEED, ROLE (BUSY en un kit) y ENERGY; OCT+ la arma (MAKE)."
       ],
       "en": [
-       "GENRE: EXPLORE (every rule broken), RANDOM or one of 29 genres: techno, house, cumbia, reggaeton, dembow, IDM, jazz, hip hop, phonk, dubstep…",
+       "GENRE: EXPLORE (every rule broken), RANDOM or one of 29 genres: MINIMAL TECHNO, HOUSE, CUMBIA, REGGAETON, DEMBOW, IDM AMBIENT, JAZZ, HIP HOP, PHONK, DUBSTEP…",
        "SEED, ENERGY and FORM (LOOP, PARTS, SONG, MY LOOP).",
        "DRUMS, BASS, CHORDS, ARP, LEAD: OFF, 10–100 % or AUTO; COMPLEX, SWING, HUMAN; KEY (NEW / KEEP) and ENTRY (ALL / BUILD).",
        "OCT+ builds the piece; with settings untouched it throws a new seed, and turning one knob changes only that part.",
