@@ -506,6 +506,15 @@ static void tools_key(uint32_t p)
     ui.force = 1;
 }
 
+/* (V10.8.49, the owner) SEQ TOOLS' black C#5 / D#5: NUDGE the track's notes a 16th of a step earlier / later */
+static void nudge_key(uint32_t up)
+{
+    const char *m;
+    if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
+    undo_mark();
+    if ((m = tl_nudge(TSEL, up ? 4 : -4))) { ui_message(m); ui.force = 1; }
+}
+
 /* Shared by GLO + G4 and REC + A3. One global undo/redo snapshot. */
 static void undo_ui(void)
 {
@@ -755,6 +764,8 @@ static __attribute__((noinline)) void layer_key(uint32_t l, uint32_t k)
             seq_clr_step();                             /* (0.9.2) G5: CLR STEP (AUTO LIST: the record) */
         else if (!key_black(k))
             tools_key(p);
+        else if (p == 8u || p == 9u)
+            nudge_key(p == 9u);                         /* (V10.8.49) C#5 / D#5: NUDGE < / > */
         else if (p < NLANE && drum_track(TSEL))
             ui.lane = (uint8_t)p;                       /* (black keys 1..8: the lane, as on the grid) */
     } else if (l == LAYER_SAVE && !key_black(k)) {
@@ -912,7 +923,7 @@ static uint32_t layer_leds(uint32_t *br)
             on = !dx_lane_muted(p);
         } else if (l == LAYER_SEQ) {                    /* the tools breathe (not while a song plays); DRUM: the lane */
             on = b && p < NLANE && drum_track(TSEL) && p == ui.lane;   /* lit, the other lanes breathe */
-            can = b ? p < NLANE && drum_track(TSEL) : p == TL_COPY ? 1u : p == TL_PASTE ? clip.n && !chain_busy() : tl_cell(TSEL, p) && !chain_busy() &&
+            can = b ? (p < NLANE && drum_track(TSEL)) || ((p == 8u || p == 9u) && !chain_busy()) : p == TL_COPY ? 1u : p == TL_PASTE ? clip.n && !chain_busy() : tl_cell(TSEL, p) && !chain_busy() &&
                   (p != TL_CAUTO || motion_count(TSEL));   /* (CLR AUTO: automation to clear; REVERT: an anchor) */
         } else if (l == LAYER_SAVE && !b) {             /* the section playing lit, the saved ones and the */
             on = (p < SK_STORE && live.cur == (int8_t)p) || (p == SK_REC && live.srec) ||   /* actions breathe */
@@ -946,7 +957,7 @@ static const char B_NOTE[11] = {'F', 'G', 'A', 'C', 'D', 'F', 'G', 'A', 'C', 'D'
 static const uint8_t PK_BLK[11] = {1, 2, 3, 5, 6, 8, 9, 10, 12, 13, 15};   /* a black key: left of white key n */
 enum { LS_OFF, LS_SEL, LS_HELD, LS_WAIT, LS_DIM, LS_MUTE };
 static const char *const GLO_GROUP[4] = {"KICK", "SNARE", "HAT", "PERC"};
-static const char *const TL_NAME[TL_N] = {"CLEAR", "REVERSE", "SHIFT <", "SHIFT >", "RANDOM", "COOK", "BEAT", "CLR AUTO",
+static const char *const TL_NAME[TL_N] = {"CLEAR", "REVERSE", "SHIFT <", "SHIFT >", "STRETCH", "SQUEEZE", "REPEAT", "CLR AUTO",
     "CLR", "REV", "FILL", "RND"};
 #define LMC_TW 140                                       /* MACRO's routes: their width (x 92 .. 232) */
 static uint32_t macro_routes(uint32_t m, char *b, uint32_t n)
@@ -1061,6 +1072,10 @@ static uint32_t ly_keyname(uint32_t l, int blk, uint32_t p, char *nm)
             if (p < NLANE && drum_track(TSEL)) {
                 str_cpy(nm, drum_lane_abbr(TSEL, p), 12);
                 return p == ui.lane % NLANE ? LS_SEL : LS_OFF;
+            }
+            if (p == 8u || p == 9u) {                   /* (V10.8.49) NUDGE */
+                str_cpy(nm, p == 9u ? "NUDGE >" : "NUDGE <", 12);
+                return busy;
             }
             return LS_OFF;
         }

@@ -26,7 +26,7 @@ static uint32_t tl_lane(const step_t *s, uint32_t l) { return (step_lanes_of(TSE
 /* place p's action is there for this track (the lane row and BEAT: DRUM only) */
 static int tl_cell(const track_t *t, uint32_t p)    /* (V10.6) RANDOM COOK BEAT and the lane's RANDOM gone: EUCLID */
 {
-    return p < TL_RANDOM || p == TL_CAUTO || (drum_track(t) && p >= TL_LCLR && p < TL_LRND);
+    return p <= TL_CAUTO || (drum_track(t) && p >= TL_LCLR && p < TL_LRND);
 }
 
 /* the steps of t as they are now, before an action */
@@ -125,8 +125,40 @@ static uint32_t tl_fill(track_t *t, uint32_t len, uint32_t l)
 
 /* ----------------------------------------------------------- melodic --- */
 /* ------------------------------------------------------------ actions --- */
+/* (V10.8.49) SEQ TOOLS' STRETCH x2 / SQUEEZE /2 / REPEAT x2 (the Bluetooth segment's: the image has no room) */
+static uint32_t tl_stretch(track_t *t, int32_t k);
+static uint32_t tl_repeat(track_t *t, uint32_t k);
+BTAPP_FN static const char *tl_shape(track_t *t, uint32_t p, uint32_t len, char *b)
+{
+    uint32_t n = p == TL_BEAT ? tl_repeat(t, 2u) : tl_stretch(t, p == TL_RANDOM ? 2 : -2);
+    if (!n) { ui_message(p == TL_COOK ? "TOO SHORT" : "64 STEPS ALREADY"); return 0; }
+    str_cpy(b, "LEN ", 24); fmt_int(b + 4, (int32_t)len); str_cpy(b + str_len(b), " > ", 4);
+    fmt_int(b + str_len(b), (int32_t)n);
+    return b;
+}
+/* (V10.8.49, the owner) SEQ TOOLS' C#5 / D#5: NUDGE, every note step's MICRO d 64ths of a step later (d < 0: earlier)
+ * together, each held at MICRO's range (no step passes another); the first note's MICRO said */
+static __attribute__((noinline)) const char *tl_nudge(track_t *t, int32_t d)
+{
+    static char b[16];
+    uint32_t len = tl_len(t), i, n = 0, f = 0;
+    int32_t m = 0, v;
+    for (i = 0; i < len; i++) {
+        step_t *s = &t->step[i];
+        if (s->time != ST_NOTE)
+            continue;
+        v = clamp(ST_MICRO(s) + d, MICRO_MIN, MICRO_MAX);
+        if (!f++) m = v;
+        if (v != ST_MICRO(s)) { ST_MICRO_SET(s, v); n++; }
+    }
+    if (!n) { ui_message(f ? "NUDGE: AT ITS LIMIT" : "NO NOTES"); return 0; }
+    str_cpy(b, m > 0 ? "NUDGE +" : "NUDGE ", sizeof b);
+    fmt_int(b + str_len(b), m);
+    str_cpy(b + str_len(b), "/64", 4);
+    return b;
+}
 /* the action of place p on track t (lane l): its message; 0 = nothing done (said why) */
-static const char *tl_do(track_t *t, uint32_t p, uint32_t l)
+static __attribute__((noinline)) const char *tl_do(track_t *t, uint32_t p, uint32_t l)
 {
     static char b[24];
     uint32_t len = tl_len(t), i, n = 0;
@@ -156,6 +188,8 @@ static const char *tl_do(track_t *t, uint32_t p, uint32_t l)
     case TL_REV: tl_reverse(t, len); msg = "REVERSED"; break;
     case TL_LEFT: tl_shift(t, len, len - 1u); msg = "SHIFTED LEFT"; break;
     case TL_RIGHT: tl_shift(t, len, 1u); msg = "SHIFTED RIGHT"; break;
+    case TL_RANDOM: case TL_COOK: case TL_BEAT:         /* (V10.8.49, the owner) SEQ TOOLS: STRETCH x2, SQUEEZE /2, REPEAT x2 */
+        return tl_shape(t, p, len, b);
     default:                                            /* the lane's */
         str_cpy(b, drum_lane_name(t, l), sizeof b);
         if (p == TL_LCLR) {
@@ -190,7 +224,7 @@ static const char *tl_do(track_t *t, uint32_t p, uint32_t l)
  *   REPEAT xk: steps 1..LEN again after them, k times in all (LEN x k, up to 64; TO 64: as many whole times as fit),
  *     the automation and locks copied while there is room
  * Returns the new LEN (0: nothing to do) */
-static void tl_motion_map(track_t *t, uint32_t olen, uint32_t num, uint32_t den, uint32_t nlen)   /* event step s < olen
+BTAPP_FN static void tl_motion_map(track_t *t, uint32_t olen, uint32_t num, uint32_t den, uint32_t nlen)   /* event step s < olen
                                                                                                 * -> s*num/den */
 {
     uint32_t i, n = 0, k = trk_index(t), f = motion_guard();
@@ -209,7 +243,7 @@ static void tl_motion_map(track_t *t, uint32_t olen, uint32_t num, uint32_t den,
     RING_PUBLISH();
     motion_unguard(f);
 }
-static uint32_t tl_stretch(track_t *t, int32_t k)
+BTAPP_FN static uint32_t tl_stretch(track_t *t, int32_t k)
 {
     uint32_t len = tl_len(t), nlen, i, j;
     if (k >= 2) {
@@ -245,7 +279,7 @@ static uint32_t tl_stretch(track_t *t, int32_t k)
     t->p[P_SLEN] = (int16_t)(nlen ? nlen : 1u);
     return nlen;
 }
-static uint32_t tl_repeat(track_t *t, uint32_t k)       /* k: 2..8 times, 0: to 64 */
+BTAPP_FN static uint32_t tl_repeat(track_t *t, uint32_t k)       /* k: 2..8 times, 0: to 64 */
 {
     uint32_t len = tl_len(t), nlen, j, i, n, tk = trk_index(t), f;
     nlen = k ? len * k : (NSTEP / len) * len;

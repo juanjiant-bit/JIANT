@@ -151,46 +151,6 @@ static int32_t menu_lines(const uint8_t *packed, int32_t y, int draw)
 
 /* (0.6.17) the audio's load since power-on (voice.c load_diag): to tell what happened when it clicked. (V10.13) In the
  * segment (bt.c BTAPP_FN): without it ABOUT goes on with the CPU lines */
-BTAPP_FN static int32_t about_load(int32_t y, int draw)
-{
-    char b[40];
-    y = menu_text("AUDIO LOAD", y, T_THEME, draw);
-    str_cpy(b, "NOW ", sizeof b); fmt_int(b + str_len(b), (int32_t)((song.cpu_q8 * 100u) >> 8));
-    str_cpy(b + str_len(b), "%  PEAK ", 10); fmt_int(b + str_len(b), (int32_t)load_diag.peak);
-    str_cpy(b + str_len(b), "%", 2);
-    y = menu_text(b, y, T_TEXT, draw);
-    str_cpy(b, "LATE ", sizeof b); fmt_int(b + str_len(b), (int32_t)load_diag.late);
-    str_cpy(b + str_len(b), "  SHED ", 8); fmt_int(b + str_len(b), (int32_t)load_diag.shed);
-    y = menu_text(b, y, T_TEXT, draw);
-    y = menu_text(cpu_status(), y, T_TEXT, draw);   /* (the second core: fx.c; p1: MENU > CPU CORES, cpu_safe.c) */
-    /* Existing per-block scheduler timings, read while main is running:
-     * audio IRQ dispatches and joins core 1 before returning to this UI.
-     * These elapsed times overlap across cores; do not add them as load. */
-    {
-        uint32_t k;
-        char d[96];
-        str_cpy(d, "VOICES ", sizeof d); fmt_int(d + str_len(d), voices_busy());
-        str_cpy(d+str_len(d), " CAP ", 6); fmt_int(d + str_len(d), voice_cap());
-        y = menu_text(d, y, T_TEXT, draw);
-        str_cpy(d, "ALLOC CUT ", sizeof d); fmt_int(d + str_len(d), voice_kills-voice_trims-shed_count);
-        str_cpy(d+str_len(d), " TRIM ", 7); fmt_int(d + str_len(d), voice_trims);
-        y = menu_text(d, y, T_TEXT, draw);
-        str_cpy(d, "FX ", sizeof d); fmt_int(d + str_len(d), mc_fx_tk/24u);
-        str_cpy(d+str_len(d), " us/block", 10);
-        y = menu_text(d, y, T_TEXT, draw);
-        for (k=0; k<trk_live && k<NTRK; k++) {
-            uint32_t v, live=0;
-            for (v=0; v<NVOICE; v++) live += trk[k].v[v].active;
-            str_cpy(d, "T", sizeof d); fmt_int(d + str_len(d), k+1);
-            str_cpy(d+str_len(d), " ", 2); str_cpy(d+str_len(d), ENGINES[trk[k].engine]->name, 20);
-            str_cpy(d+str_len(d), " V", 3); fmt_int(d + str_len(d), live);
-            str_cpy(d+str_len(d), " ", 2); fmt_int(d + str_len(d), mc_tk[k]/24u);
-            str_cpy(d+str_len(d), " us", 4);
-            y = menu_text(d, y, T_TEXT, draw);
-        }
-    }
-    return y;
-}
 static int32_t menu_document(int32_t y, int draw)
 {
     if (draw) {
@@ -207,8 +167,6 @@ static int32_t menu_document(int32_t y, int draw)
         draw_about_qr(158, y + 122);
     }
     y = menu_lines(ABOUT_PROJECT_PACK, y + 216, draw);
-    if (bt_hw_seg())                                    /* (V10.13: in the segment) */
-        y = about_load(y, draw);
     {   /* (V10.8.46, the owner: only the CPU's lines were to go) the last crash, kept across power-off (cpu_safe.c) */
         char b[40];
         y = menu_text("LAST CRASH", y + 4, T_THEME, draw);

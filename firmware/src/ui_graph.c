@@ -1152,18 +1152,6 @@ static void seq_col(uint32_t dr, uint32_t i, int32_t *x, int32_t *w)
 }
 /* (V10.6v) SEQ > COMP, a RAMP on the cursor step (column k of the bar shown): its CURVE over the steps it lasts (cold UI:
  * in the Bluetooth segment, as gen.c's cards) */
-BTAPP_FN static void ramp_draw_bt(const track_t *t, uint32_t dr, int32_t top, uint32_t k)
-{
-    const step_t *cs = &seq_steps(t)[ui.cursor % NSTEP];
-    uint32_t v = comp_arg(cs), nc = v & CV_RAMP_BARS ? 16u : cs->clen[comp_slot()] + 1u;
-    int32_t x, w, x1, w1, px;
-    nc = nc < 16u - k ? nc : 16u - k;
-    seq_col(dr, k, &x, &w);
-    seq_col(dr, k + nc - 1u, &x1, &w1);
-    w = x1 + w1 - x;
-    for (px = 0; px < w; px++)
-        cv_rect(x + px, top + 12 - (ramp_curve(CV_RAMP_CURVE(v), px * 32768 / w) * 12 >> 15), 1, 2, T_TEXT);
-}
 /* (V10.8.9, the owner) a key held: what it plays large, centred over the graph, its key under it, REC (red) recording */
 static __attribute__((noinline)) void hold_banner(const char *nm, uint32_t k, int rec)
 {
@@ -1216,8 +1204,6 @@ static __attribute__((noinline)) void seq_overlay(const track_t *t, const page_t
                 cv_rect(x + 2, top - 2, w - 4, 1, T_MID);
         }
         k = ui.cursor % NSTEP;
-        if (mine == CA_RAMP && k >= base && k < base + 16u && bt_hw_seg())
-            ramp_draw_bt(t, dr, top, k - base);
         if (bn_on(1))                                   /* (V10.8.8) the component held, large (V10.8.9; V10.8.13: 0.6 s on) */
             hold_banner(bn_nm, bn_k, rec_on(t));   /* (V10.8.27: the "HOLD A KEY" hint gone) */
     } else if (pg->graph == GR_MOTION || pg->graph == GR_EVENTS) {

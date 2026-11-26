@@ -1622,7 +1622,13 @@ static int test_dx_glue(void)
     ok = dx_glue == 15;
     for (k = 0; k < 7u; k++) { turn(EN_K3, -1); frame(); }
     ok &= dx_glue == 8 && dx_hands == 0u;
-    bad += check("DRUM-X GLUE on KIT 2 KNOB 3 (V10.7.63): 0 .. 15, the other knobs untouched", ok);
+    {                                                   /* (V10.8.49, the owner: "two GAINs on DRUM-X") KNOB 4 empty */
+        int16_t *hv, g = dx_gain;
+        ok &= !page_desc(cur_page(), 3, &hv);
+        turn(EN_K4, 3); frame();
+        ok &= dx_gain == g;
+    }
+    bad += check("DRUM-X GLUE on KIT 2 KNOB 3 (V10.7.63): 0 .. 15, the other knobs untouched; V10.8.49 no GAIN on KNOB 4", ok);
     project_capture(&before);
     ok = proj_pack(&a, &before) && proj_import(&after, &a, sizeof a) && after.dx_hands >> 4 == 8u;
     dx_glue = 0;
@@ -8289,23 +8295,63 @@ static int test_seq_tools(void)
     btn_up(B_SEQ); frame();
     bad += check("  OCT-: nothing put back (TONIC: no undo), no octave; KNOB 1..4 LEN DIV SWING GATE", ok);
 
-    /* (V10.6) C4 RANDOM, D4 COOK, E4 BEAT and C5 the lane's RANDOM gone (SEQ > EUCLID generates): nothing happens */
+    /* (V10.8.49, the owner: "nudge") black C#5 / D#5: NUDGE < / >, every note's MICRO 4 64ths earlier / later together,
+     * held at MICRO's range: no step moves to another place */
     ui_power_on();
     tl_melody();
-    memcpy(ref, TSEL->step, sizeof ref);
     go_page(GR_ROLL); frame();
     btn_down(B_SEQ); frame();
-    tl_key(4); tl_key(5); tl_key(6); tl_key(11);
-    ok = !memcmp(TSEL->step, ref, sizeof ref);
+    {
+        uint32_t j, f = NSTEP;
+        memcpy(ref, TSEL->step, sizeof ref);
+        for (j = 0; j < NSTEP; j++) if (TSEL->step[j].time == ST_NOTE) { f = j; break; }
+        key_down(black(9)); frame(); key_up(black(9)); frame();
+        ok = f < NSTEP && ST_MICRO(&TSEL->step[f]) == ST_MICRO(&ref[f]) + 4;
+        key_down(black(8)); frame(); key_up(black(8)); frame();
+        key_down(black(8)); frame(); key_up(black(8)); frame();
+        ok &= ST_MICRO(&TSEL->step[f]) == ST_MICRO(&ref[f]) - 4;
+        for (j = 0; j < 20u; j++) { key_down(black(9)); frame(); key_up(black(9)); frame(); }
+        ok &= ST_MICRO(&TSEL->step[f]) == MICRO_MAX;
+        for (j = 0; j < NSTEP; j++)
+            ok &= TSEL->step[j].time == ref[j].time && TSEL->step[j].n == ref[j].n && TSEL->step[j].note[0] == ref[j].note[0];
+    }
+    btn_up(B_SEQ); frame();
+    bad += check("  V10.8.49 C#5 / D#5 NUDGE < / >: the notes' MICRO together, held at its range, no step moved", ok);
+    /* (V10.8.49, the owner: "nudge, mover, estirar, comprimir y repetir") C4 STRETCH x2, D4 SQUEEZE /2, E4 REPEAT x2 (the
+     * old SEQ > STRETCH's, on SEQ TOOLS); C5 (the lane's RANDOM) still nothing */
+    ui_power_on();
+    tl_melody();
+    go_page(GR_ROLL); frame();
+    btn_down(B_SEQ); frame();
+    {
+        uint32_t l0 = (uint32_t)TSEL->p[P_SLEN], j;
+        memcpy(ref, TSEL->step, sizeof ref);
+        tl_key(4);
+        ok = (uint32_t)TSEL->p[P_SLEN] == 2u * l0 && TSEL->step[2].time == ref[1].time && TSEL->step[2].n == ref[1].n;
+        tl_key(5);
+        ok &= (uint32_t)TSEL->p[P_SLEN] == l0;
+        tl_key(6);
+        ok &= (uint32_t)TSEL->p[P_SLEN] == 2u * l0;
+        for (j = 0; j < l0; j++) ok &= !memcmp(&TSEL->step[l0 + j], &TSEL->step[j], sizeof TSEL->step[0]);
+        TSEL->p[P_SLEN] = (int16_t)l0;
+        memcpy(ref, TSEL->step, sizeof ref);
+        tl_key(11);
+        ok &= !memcmp(TSEL->step, ref, sizeof ref);
+    }
     btn_up(B_SEQ); frame();
     ui_power_on();
     tl_drum();
     go_page(GR_ROLL); frame();
-    memcpy(ref, TSEL->step, sizeof ref);
     btn_down(B_SEQ); frame();
-    tl_key(4); tl_key(5); tl_key(6); tl_key(11);
-    ok &= !memcmp(TSEL->step, ref, sizeof ref);
-    bad += check("  V10.6 C4 RANDOM, D4 COOK, E4 BEAT, C5 RANDOM: gone (melodic and DRUM), the steps untouched", ok);
+    {
+        uint32_t l0 = (uint32_t)TSEL->p[P_SLEN];
+        tl_key(4); ok &= (uint32_t)TSEL->p[P_SLEN] == 2u * l0;
+        tl_key(5); ok &= (uint32_t)TSEL->p[P_SLEN] == l0;
+        memcpy(ref, TSEL->step, sizeof ref);
+        tl_key(11);
+        ok &= !memcmp(TSEL->step, ref, sizeof ref);
+    }
+    bad += check("  V10.8.49 C4 STRETCH x2, D4 SQUEEZE /2, E4 REPEAT x2 (melodic and DRUM); C5 nothing", ok);
     for (i = 0; i < 16u; i++) {                         /* (the basic beat, by hand) */
         step_clear(&TSEL->step[i]);
         if (i % 4u == 0u) grid_hit(TSEL, i, DV_KICK, 1);
@@ -8335,7 +8381,7 @@ static int test_seq_tools(void)
     bad += check("  A4 / G4: the lane reversed (its accents with it), cleared; the others stay", ok);
     a = leds_at(0); b2 = leds_at(250);
     ok = ((a ^ b2) >> white(0)) & 1u && !(((a | b2) >> white(11)) & 1u) && !(((a | b2) >> white(7)) & 1u) &&
-         ((a & b2) >> black(DV_TOM)) & 1u && ((a ^ b2) >> black(0)) & 1u && !(((a | b2) >> black(8)) & 1u);
+         ((a & b2) >> black(DV_TOM)) & 1u && ((a ^ b2) >> black(0)) & 1u && ((a ^ b2) >> black(8)) & 1u;   /* (V10.8.49: C#5 NUDGE breathes) */
     btn_up(B_SEQ); frame();
     ui_power_on();
     tl_melody();
@@ -8343,13 +8389,13 @@ static int test_seq_tools(void)
     btn_down(B_SEQ); frames(500);                       /* (the map: a peek) */
     memcpy(ref, TSEL->step, sizeof ref);
     a = leds_at(0); b2 = leds_at(250);
-    ok &= ((a ^ b2) >> white(3)) & 1u && !(((a | b2) >> white(5)) & 1u) && !(((a | b2) >> white(6)) & 1u) &&
-          !(((a | b2) >> black(0)) & 1u);                 /* (V10.6: SHIFT breathes, COOK and BEAT gone) */
-    tl_key(6); tl_key(10);
+    ok &= ((a ^ b2) >> white(3)) & 1u && ((a ^ b2) >> white(5)) & 1u && ((a ^ b2) >> white(6)) & 1u &&
+          !(((a | b2) >> black(0)) & 1u);                 /* (V10.8.49: SHIFT, SQUEEZE and REPEAT breathe) */
+    tl_key(11); tl_key(10);
     key_down(black(2)); frame(); key_up(black(2)); frame();
     ok &= !memcmp(TSEL->step, ref, sizeof ref) && ui.lane == 0u && !gates();
     btn_up(B_SEQ); frame();
-    bad += check("  LEDs: the tools breathe, the lane lit (DRUM); a melodic track: no lane keys; V10.6: no RANDOM COOK BEAT", ok);
+    bad += check("  LEDs: the tools breathe, the lane lit (DRUM); a melodic track: no lane keys; V10.8.49: STRETCH SQUEEZE REPEAT lit", ok);
 
     /* a song playing */
     ui_power_on();

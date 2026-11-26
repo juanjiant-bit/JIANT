@@ -1009,11 +1009,13 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
                                                          * KIT  MORPH ATTACK TONE DECAY (TUNE off the panel, kept)
                                                          * KIT 2 NOISE BODY GLUE GAIN (KIT 3, BUS, gone: its GLUE here; its
                                                          * DRIVE off the panel: SENDS's DIST) */
-        static const param_desc_t GLUE_DESC = {"GLUE", F_INT, 0, 15, 0, 0}, GAIN_DESC = {"GAIN", F_INT, 0, 12, 0, 0};
+        static const param_desc_t GLUE_DESC = {"GLUE", F_INT, 0, 15, 0, 0};
         if (id == P_E1) { *valp = &TSEL->p[P_E5]; return track_desc(TSEL, P_E5); }
         if (id == P_E5) { *valp = &TSEL->p[P_E6]; return track_desc(TSEL, P_E6); }
-        *valp = id == P_E6 ? &dx_glue : &dx_gain;
-        return id == P_E6 ? &GLUE_DESC : &GAIN_DESC;
+        if (id != P_E6) { *valp = 0; return 0; }        /* (V10.8.49, the owner: "two GAINs on DRUM-X") KIT 2's GAIN off
+                                                         * the panel: LEVEL's the one; a kit's stored gain still plays */
+        *valp = &dx_glue;
+        return &GLUE_DESC;
     }
     if (ENGINES[eng_idx(TSEL->eng_req)] == &ENG_DRUM && pg->fam == FAM_EDIT && slot == 3u && id == P_SIMG &&
         pg->title[0] == 'F') {                          /* (V10.7.63) a kit's FILTER: its IMAGE (STEREO gone; DIST: SENDS's) */

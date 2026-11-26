@@ -400,7 +400,8 @@ def late_fns():
              "ed_bk_r32", "set_engine", "step_lanes", "song_copy_section", "palette_from_stored",
              "proj_steps", "splash_sig", "up_name_ok", "song_idx_touch", "song_end_row",
              "scr_rows", "vx_swarm", "gen_make", "bt_hw_status",
-             "gen_radio", "gen_tick", "gen_draw_sig", "bt_get", "hold_banner"}   # (V10.8.39) GEN's radio: UI, past the tables   # (V10.8.26) the screen mirror's row check: past the tables
+             "gen_radio", "gen_tick", "gen_draw_sig", "bt_get", "hold_banner",
+             "tl_do", "tl_stretch", "tl_repeat", "tl_motion_map", "seq_overlay", "tl_nudge", "nudge_key"}   # (V10.8.49) SEQ TOOLS STRETCH SQUEEZE REPEAT   # (V10.8.39) GEN's radio: UI, past the tables   # (V10.8.26) the screen mirror's row check: past the tables
     for f in LATE_SRC:
         names |= set(re.findall(r"^static [^;=()]*?\b(\w+)\((?![^)]*\)\s*;)", (FW / "src" / f).read_text(), flags=re.M))
     return names
