@@ -1241,23 +1241,23 @@
   },
   "SLOT": {
    "es": {
-    "what": "Elige la parte del proyecto, A a D (1 = A … 4 = D), sobre la que actúan LOAD, SAVE y ERASE en SAVE › PROJECT.",
+    "what": "Elige la parte del proyecto, A a D (1 = A … 4 = D), sobre la que actúan PLAY/EDIT, SAVE y ERASE en SAVE › PROJECT.",
     "how": "Mirá bien la letra antes de guardar, para no pisar una parte que querías conservar."
    },
    "en": {
-    "what": "Picks the project's part, A to D (1 = A … 4 = D), that LOAD, SAVE and ERASE act on, on SAVE › PROJECT.",
+    "what": "Picks the project's part, A to D (1 = A … 4 = D), that PLAY/EDIT, SAVE and ERASE act on, on SAVE › PROJECT.",
     "how": "Check the letter before saving so you don't overwrite a part you wanted to keep."
    },
    "learn": "save"
   },
   "LOAD": {
    "es": {
-    "what": "Carga el proyecto elegido.",
-    "how": "Poné GO para abrir el tema guardado. Guardá antes el actual si no querés perder lo que cambiaste."
+    "what": "Abre la parte del proyecto que elige SLOT (A–D); en SAVE › PROJECT se llama PLAY/EDIT.",
+    "how": "Poné GO para tocarla y editarla. Guardá antes la actual si no querés perder lo que cambiaste."
    },
    "en": {
-    "what": "Loads the chosen project.",
-    "how": "Set GO to open the saved song. Save the current one first if you don't want to lose your changes."
+    "what": "Opens the project's part that SLOT picks (A–D); on SAVE › PROJECT it is called PLAY/EDIT.",
+    "how": "Set GO to play and edit it. Save the current one first if you don't want to lose your changes."
    },
    "learn": "save"
   },
