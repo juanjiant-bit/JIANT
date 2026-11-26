@@ -589,6 +589,167 @@ static void web_gen_run(void)
     web_gen_count_piece();
 }
 
+/* (the owner, on the RADIO: "a song I like but not its sounds") RESOUND: every track's notes, steps, arrangement and
+ * song kept, new sounds for all of them at once, each by its role (a bass a bass's, the chords a chord's, the drums a
+ * kit), out of GEN's own picker (gen_sound, gen_kit, gen_mix, gen_fxs, gen_evolve) with a seed of its own. A GEN piece
+ * (a draft: its roles and its genre known): that genre's sounds (EXPLORE: EXPLORE's); a project of the player's: the roles
+ * by what each track plays (gls_role, FROM LOOP's), the genre a seed's among those whose tempo is near the song's. The
+ * four parts in proj_slot given the same new sounds (web_rs_part), so the song's next section brings them; nothing
+ * loaded, the music plays on; the staged next section dropped (song_poll stages it again). One UNDO point (GLO + G4:
+ * the playing part) and, from the page, web_gen_resound_undo: the parts and the music's sounds as they were.
+ *   web_gen_resound(seed): seed 0..9999; 0 = done, 1 = nothing to resound (no track with a part), 2 = could not pack.
+ *   web_gen_resound_seed(): the last seed applied (0xFFFFFFFF: none, or undone).
+ *   web_gen_resound_undo(): 0 = back as it was, 1 = nothing to undo (a new piece since, or none).
+ * The emulator's alone: nothing here is in the FM-1's binary. */
+#define WEB_RL_N (RL_TEX + 1u)                          /* (gen's RL_N: ui_layer.c, after it, has its own) */
+static project_store_t web_rs_bk[4];                    /* the parts before the last RESOUND */
+static uint8_t web_rs_ok, web_rs_role[NTRK];
+static int16_t web_rs_gi;                               /* the genre's index, -1 EXPLORE */
+static uint16_t web_rs_seed;
+static uint32_t web_rs_last = 0xFFFFFFFFu, web_rs_sig;
+static void web_rs_apply(void)                          /* the sounds on the tracks playing (gs gp gmut gx gq: the caller's) */
+{
+    uint32_t i, k, n;
+    memset(&gs, 0, sizeof gs); memset(&gx, 0, sizeof gx); gx.eng = -1;
+    gp.seed = web_rs_seed;
+    for (i = 0; i < GP_N; i++) gp.amt[i] = GA_AUTO;
+    gseed(GS_PICK);
+    if (web_rs_gi < 0) { gx.on = 1; gx_genre(&gmut); gs.gi = NGENRE; }
+    else { gs.gi = (uint8_t)web_rs_gi; gmut = GENRE[gs.gi]; }
+    gs.g = &gmut;
+    gen_pick();
+    gmut.kit = (uint8_t)((gmut.kit + 1u + gr() % (KIT_N - 1u)) % KIT_N);   /* (another kit than the genre's) */
+    gs.energy = gp.energy; gs.complex = (uint8_t)(gp.complex ? gp.complex : 50u);
+    for (k = 0; k < WEB_RL_N; k++) gs.trk_of[k] = NTRK;
+    for (k = 0; k < NTRK; k++) {
+        uint32_t r = web_rs_role[k];
+        gs.role[k] = (uint8_t)(r < WEB_RL_N ? r : RL_TEX);
+        if (r >= WEB_RL_N) continue;
+        gs.act[r] = 1;
+        if (gs.trk_of[r] == NTRK) gs.trk_of[r] = (uint8_t)k;
+    }
+    gs.fm6 = 0; gs.ftl = 0;
+    gseed(GS_SOUND);
+    for (n = gr() % NTRK, k = 0; k < NTRK; k++) {       /* (gen_make's order: from a throw's own track on) */
+        uint32_t ti = (k + n) % NTRK, r = web_rs_role[ti];
+        track_t *t = &trk[ti];
+        if (ti >= trk_live || r >= WEB_RL_N) continue;
+        if (r == RL_DRUM) { if (drum_track(t)) gen_kit(t); continue; }
+        if (drum_track(t)) continue;                    /* (a kit's track playing a melody: its kit kept) */
+        {   /* (another sound than the one it had: GEN's picker asked again, up to 8 times, till the engine or the preset
+             * differs; its FM6 count and filter type as before each ask) */
+            uint32_t e0 = t->eng_req, p0 = t->preset, tries;
+            uint8_t fm6 = gs.fm6, ftl = gs.ftl, odd = gx.odd;
+            for (tries = 0; tries < 8u; tries++) {
+                gs.fm6 = fm6; gs.ftl = ftl; gx.odd = odd;
+                if (gx.on) gx.eng = gx_engine(r);
+                gen_sound(t, r, r == RL_BASS ? gmut.snd[GP_BASS] : r == RL_PAD ? gmut.snd[GP_CHORDS] : r == RL_LEAD ? gmut.snd[GP_LEAD] :
+                                r == RL_ARP ? gmut.snd[GP_ARP] : gmut.tex);
+                gx.eng = -1;
+                if (gx.on) gx_sound(t, r);
+                if (t->eng_req != e0 || t->preset != p0) break;
+            }
+        }
+    }
+    gseed(GS_MIX);
+    for (k = 0; k < NTRK && k < trk_live; k++)
+        if (web_rs_role[k] < WEB_RL_N) { gen_mix(&trk[k], web_rs_role[k]); gen_fxs(&trk[k], web_rs_role[k]); gen_evolve(&trk[k], web_rs_role[k]); }
+}
+/* a stored part's sounds made the new ones (its steps, pattern, mutes kept): every track with a part its engine, preset,
+ * sound parameters (not param_kept's), FM6 patch, GAIN, KEY TRK; LEVEL and PAN the new ones where the part had the old
+ * ones (a part's own mix kept); the DRUM-X kit where a track plays drums */
+static project_t web_rs_old, web_rs_new;
+static void web_rs_part(project_t *S, const project_t *N, const project_t *O)
+{
+    uint32_t k, i, dr = 0;
+    for (k = 0; k < NTRK; k++) {
+        if (web_rs_role[k] >= WEB_RL_N) continue;
+        dr |= web_rs_role[k] == RL_DRUM;
+        for (i = 0; i < P_COUNT; i++)
+            if (!param_kept(i) || ((i == P_LEVEL || i == P_PAN) && S->t[k].p[i] == O->t[k].p[i])) S->t[k].p[i] = N->t[k].p[i];
+        S->t[k].engine = N->t[k].engine; S->t[k].preset = N->t[k].preset;
+        memcpy(S->fm6[k], N->fm6[k], sizeof S->fm6[k]);
+        S->tgain[k] = N->tgain[k]; S->dnz[NTRK + 1u + k] = N->dnz[NTRK + 1u + k];
+    }
+    if (dr) {
+        memcpy(S->dx, N->dx, sizeof S->dx); memcpy(S->dx_mot, N->dx_mot, sizeof S->dx_mot);
+        S->dx_tone = N->dx_tone; S->dx_hands = N->dx_hands;
+        memcpy(S->dx_snd, N->dx_snd, sizeof S->dx_snd); memcpy(S->dx_lay, N->dx_lay, sizeof S->dx_lay);
+        memcpy(S->dx_fml, N->dx_fml, sizeof S->dx_fml);
+    }
+}
+static void web_rs_parts(const project_t *N, const project_t *O)   /* the four stored parts (an empty one left) */
+{
+    uint32_t s;
+    for (s = 0; s < 4u; s++) {
+        if (!proj_import(&proj_scratch, &proj_slot[s], sizeof proj_slot[s])) continue;
+        web_rs_part(&proj_scratch, N, O);
+        if (proj_pack(&proj_wire, &proj_scratch)) { memcpy(&proj_slot[s], &proj_wire, sizeof proj_slot[s]); live.dirty |= (uint8_t)(1u << s); }
+    }
+    proj_wire_gen++;
+    fm1_irq_off(); sec_stage.ready = 0; snd_held = snd_seen = 0; fm1_irq_on();   /* (the next section staged with the old
+                                                         * sounds: staged again; no sound held as the player's) */
+}
+EXPORT uint32_t web_gen_resound_seed(void) { return web_rs_last; }
+EXPORT uint32_t web_gen_resound(uint32_t seed)
+{
+    struct { __typeof__(gp) p; __typeof__(gs) s; ggenre_t g; __typeof__(gx) x; uint32_t q; } save = {gp, gs, gmut, gx, gq};
+    uint32_t k, any = 0, h = seed % 10000u, gen = song_draft && gs.g;
+    if (!bt_hw_seg()) return 1;
+    for (k = 0; k < NTRK; k++) {                         /* the roles: GEN's own, else by what each track plays */
+        uint32_t r = gen && k < trk_live ? gs.role[k] : k < trk_live ? gls_role(&trk[k]) : WEB_RL_N;
+        if (k < trk_live && drum_track(&trk[k])) r = RL_DRUM;
+        else if (r == RL_DRUM) r = WEB_RL_N;                 /* (a part GEN gave the drums on a track not DRUM-X's) */
+        web_rs_role[k] = (uint8_t)(r < WEB_RL_N ? r : WEB_RL_N);
+        any |= r < WEB_RL_N;
+    }
+    if (!any) return 1;
+    if (gen) web_rs_gi = (int16_t)(gs.gi < NGENRE ? gs.gi : -1);
+    else {                                              /* (a seed's genre, its tempo near the song's: gls_genre's EXPLORE) */
+        uint32_t bpm = (uint32_t)song.g[G_BPM], x = h * 2654435761u + 1u, i, gi = 0;
+        for (i = 0; i < 32u; i++) {
+            x ^= x << 13; x ^= x >> 17; x ^= x << 5;
+            gi = x % NGENRE;
+            if (bpm + 24u >= GENRE[gi].bpm_lo && bpm <= GENRE[gi].bpm_hi + 24u) break;
+        }
+        web_rs_gi = (int16_t)gi;
+    }
+    web_rs_seed = (uint16_t)h;
+    undo_mark();                                        /* (GLO + G4: the part playing as it was) */
+    project_capture(&web_rs_old);
+    memcpy(web_rs_bk, proj_slot, sizeof proj_slot);
+    web_rs_apply();
+    gp = save.p; gs = save.s; gmut = save.g; gx = save.x; gq = save.q;
+    project_capture(&web_rs_new);
+    web_rs_parts(&web_rs_new, &web_rs_old);
+    web_rs_ok = 1; web_rs_last = h; web_rs_sig = gp.sig;
+    {
+        char b[8];
+        fmt_int(b, (int32_t)h);
+        ui_say("RESOUND #", b);
+    }
+    ui.force = 1;
+    return 0;
+}
+EXPORT uint32_t web_gen_resound_undo(void)
+{
+    uint32_t k;
+    if (!web_rs_ok || gp.sig != web_rs_sig) return 1;
+    memcpy(proj_slot, web_rs_bk, sizeof proj_slot);
+    live.dirty |= 15u; proj_wire_gen++;
+    for (k = 0; k < NTRK && k < trk_live; k++) {         /* the music playing: each track's sound as it was, it plays on */
+        if (web_rs_role[k] >= WEB_RL_N) continue;
+        sound_put(&web_rs_old, k);
+        trk[k].p[P_LEVEL] = web_rs_old.t[k].p[P_LEVEL]; trk[k].p[P_PAN] = web_rs_old.t[k].p[P_PAN];
+        trk_gain[k] = web_rs_old.tgain[k] > 12u ? 12 : web_rs_old.tgain[k];
+        kt_v[k] = web_rs_old.dnz[NTRK + 1u + k] & 3u;
+    }
+    fm1_irq_off(); sec_stage.ready = 0; snd_held = snd_seen = 0; fm1_irq_on();
+    web_rs_ok = 0; web_rs_last = 0xFFFFFFFFu;
+    ui_message("SOUNDS BACK"); ui.force = 1;
+    return 0;
+}
+
 /* for the test and the bench (web/emu/emu_test.mjs), a heavy song straight into the tracks (as hostsim's
  * renders set them): T1 FM6 PAD, T2 TRIO (its first preset; PHYS, retired in TONIC, was here), T3 VOICE CHOIR AAH (GRAIN, retired in JIANT, was here), 4-note chords on all 16
  * steps, held; T4 DRUM, kick snare and hats. PLAY is the page's (or the test's) to press */

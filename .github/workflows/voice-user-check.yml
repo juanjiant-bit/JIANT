@@ -311,6 +311,8 @@ jobs:
           build/emu/native-check build/emu/native.f32
           cc -O2 -ffp-contract=off -w -Wno-implicit-function-declaration -Wno-incompatible-pointer-types -Ibuild/gen -Ifirmware/src web/emu/gen_web_test.c -lm -o build/emu/gen-web-test   # (studio's RADIO page: web_gen_info / web_gen_cmd)
           build/emu/gen-web-test
+          cc -O2 -ffp-contract=off -w -Wno-implicit-function-declaration -Wno-incompatible-pointer-types -Ibuild/gen -Ifirmware/src web/emu/resound_web_test.c -lm -o build/emu/resound-web-test   # (studio's RADIO page: RESOUND)
+          build/emu/resound-web-test
           node web/emu/emu_test.mjs build/emu/felucca.wasm build/emu/native.f32
           sha256sum build/emu/felucca.wasm                 # (for web/SPLIT_BETA.json emulator_sha256)
       - uses: actions/upload-artifact@v4
