@@ -68,10 +68,13 @@
       document.title = "[" + (v ? v.version : sha) + "] " + document.title.replace(/^\[[^\]]*\] /, "");
       note();
     };
-    sel.addEventListener("change", () => { put(KEY, sel.value); open(sel.value); });
+    // (the owner: "aparece la 48 en el emulador") the version picked is reopened only while the beta is the one it was
+    // picked over: a new beta opens as itself
+    sel.addEventListener("change", () => { put(KEY, sel.value === "beta" ? null : sel.value + "@" + pageVer.trim()); open(sel.value); });
     if (!inVersion) {
-      const saved = get(KEY);
-      if (saved && saved !== "beta" && list.some((v) => v.sha7 === saved && v.ok)) { sel.value = saved; open(saved); }
+      const saved = (get(KEY) || "").split("@");
+      if (saved[0] && saved[1] === pageVer.trim() && list.some((v) => v.sha7 === saved[0] && v.ok)) { sel.value = saved[0]; open(saved[0]); }
+      else if (saved[0]) put(KEY, null);
     }
   });
 })();
