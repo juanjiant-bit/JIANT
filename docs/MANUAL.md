@@ -1938,7 +1938,7 @@ That's 24 sections in total (6 × 4).
    row, **KNOB 4** right: **SCENE STORED** (left: SCENE CLEARED).
 7. **Play it**: stopped, press **PLAY** on ARRANGE. The song plays from the top; PLAY again stops it and the music you
    had before comes back (**SONG END**). From any other page: hold SAVE + **D5** (**PLAY: THE SONG**) and PLAY plays the
-   song; SAVE + D5 again goes back to **PLAY: THE LOOP** (PLAY's mode **PART**). With no rows it says **ADD A SONG ROW**; a row on an empty
+   song; SAVE + D5 again goes back to PLAY's mode **PART** (V10.8.48's banner still reads PLAY: THE LOOP). With no rows it says **ADD A SONG ROW**; a row on an empty
    section: the song won't start (**PART EMPTY**).
 8. **Delete a row**: stopped, on ARRANGE, **KNOB 1** to the row, **OCT−**: **DELETE SONG ROW?**. **OCT+**
    deletes it, OCT− keeps it. It cannot be undone.
@@ -2314,7 +2314,7 @@ What a piece is made of:
   minimal, dub ..) keep their loop in every section. **SONG** writes a club form: **A** the drop, **B** the intro (drums and bass), **C** the build
   (the chords in, their filter opening over the loop, a roll at its end, the delay thrown on the last step) and **D**
   the break (no drums, no bass, the chords wetter; 0.8.3: on its predominant, but in the modal loops), in ARRANGE as
-  B C A D C A with 16-bar rows (the drop 32; since V10.8.45 half of that, shorter at slow tempos). Ambient and post-rock genres get an arc instead (thin, in, apex: on its
+  B C A D C A with rows half as long as before V10.8.45, none longer than about 24 s (fewer bars at slow tempos). Ambient and post-rock genres get an arc instead (thin, in, apex: on its
   predominant). Sections of yours (stored by you, not by GEN) are never
   overwritten: then the piece stays one loop.
 
@@ -3244,7 +3244,8 @@ Chrome or Edge on a computer, or Chrome on Android (USB OTG), the FM-1 connected
 ### Velocity view — <https://juanjiant-bit.github.io/JIANT/webapp/vel/>
 
 (V10.6z5, V10.6z7) Each note's velocity and each key's calibration, live, over USB (Chrome or Edge; protocol 1.1 or
-later). See [Key velocity and aftertouch](#key-velocity-and-aftertouch-v106z7). The velocity diagnostic (the presses
+later). From V10.8.45 on the firmware has no velocity diagnostic: the page connects but shows no presses or captures
+(the keys' velocity and pressure work as always). See [Key velocity and aftertouch](#key-velocity-and-aftertouch-v106z7). The velocity diagnostic (the presses
 it captured) left the firmware in V10.8.45: the step-by-step test in [VELOCITY_DIAG.es.md](VELOCITY_DIAG.es.md) is
 for older versions.
 

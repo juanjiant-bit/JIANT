@@ -2026,7 +2026,7 @@ Son 24 secciones en total (6 × 4).
    los querés, **KNOB 1** a la fila, **KNOB 4** a la derecha: **SCENE STORED** (a la izquierda: SCENE CLEARED).
 7. **Tocalo**: parado, apretá **PLAY** en ARRANGE. El tema suena desde el principio; PLAY otra vez lo para y vuelve la
    música que tenías antes (**SONG END**). Desde cualquier otra página: mantené SAVE + **D5** (**PLAY: THE SONG**) y PLAY
-   toca el tema; SAVE + D5 otra vez vuelve a **PLAY: THE LOOP** (el modo **PART** de PLAY). Sin filas dice **ADD A SONG ROW**; con una fila sobre
+   toca el tema; SAVE + D5 otra vez vuelve al modo **PART** de PLAY (en V10.8.48 el cartel todavía dice PLAY: THE LOOP). Sin filas dice **ADD A SONG ROW**; con una fila sobre
    una sección vacía el tema no arranca (**PART EMPTY**).
 8. **Borrar una fila**: parado, en ARRANGE, **KNOB 1** a la fila, **OCT−**: **DELETE SONG ROW?**. **OCT+** la borra,
    OCT− la deja. No se puede deshacer.
@@ -2431,7 +2431,7 @@ De qué está hecha una pieza:
   **SONG** escribe una forma de club: **A** el drop, **B** la intro (batería y
   bajo), **C** el build (entran los acordes, su filtro se abre a lo largo del loop, un redoble al final, el delay
   lanzado en el último paso) y **D** el break (sin batería ni bajo, los acordes más húmedos; 0.8.3: en su predominante,
-  salvo en los loops modales), en ARRANGE como B C A D C A con filas de 16 compases (el drop 32; desde V10.8.45 la mitad, más cortas a tempos lentos). Los géneros ambient y
+  salvo en los loops modales), en ARRANGE como B C A D C A con filas de la mitad de compases que antes de V10.8.45, ninguna de más de ~24 s (a tempos lentos, menos compases). Los géneros ambient y
   post-rock reciben un arco (fino, entra, ápice: en su predominante). Las secciones tuyas (guardadas por vos, no por GEN) nunca se pisan: entonces la pieza queda en un loop.
 
 Cada pieza reemplaza los pasos, sonidos, kit, mezcla y automatización de todas las pistas. Los mutes quedan como
@@ -3415,7 +3415,8 @@ Chrome o Edge en una computadora, o Chrome en Android (USB OTG), con el FM-1 con
 ### Vista de velocidad — <https://juanjiant-bit.github.io/JIANT/webapp/vel/>
 
 (V10.6z5, V10.6z7) La velocidad de cada nota y la calibración de cada tecla, en vivo, por USB (Chrome o Edge;
-protocolo 1.1 o posterior). Ver [Velocidad y aftertouch](#velocidad-y-aftertouch-de-las-teclas-v106z7). El
+protocolo 1.1 o posterior). Desde V10.8.45 el firmware no tiene el diagnóstico de velocidad: la página conecta pero
+no muestra pulsaciones ni capturas (la velocidad y la presión de las teclas funcionan igual). Ver [Velocidad y aftertouch](#velocidad-y-aftertouch-de-las-teclas-v106z7). El
 diagnóstico de velocidad (los toques que capturaba) salió del firmware en V10.8.45: la prueba paso a paso de
 [VELOCITY_DIAG.es.md](VELOCITY_DIAG.es.md) es para versiones anteriores.
 

@@ -3552,7 +3552,7 @@ starts from the key, as before.</p>
    row, <strong>KNOB 4</strong> right: <strong>SCENE STORED</strong> (left: SCENE CLEARED).</li>
 <li><strong>Play it</strong>: stopped, press <strong>PLAY</strong> on ARRANGE. The song plays from the top; PLAY again stops it and the music you
    had before comes back (<strong>SONG END</strong>). From any other page: hold SAVE + <strong>D5</strong> (<strong>PLAY: THE SONG</strong>) and PLAY plays the
-   song; SAVE + D5 again goes back to <strong>PLAY: THE LOOP</strong> (PLAY's mode <strong>PART</strong>). With no rows it says <strong>ADD A SONG ROW</strong>; a row on an empty
+   song; SAVE + D5 again goes back to PLAY's mode <strong>PART</strong> (V10.8.48's banner still reads PLAY: THE LOOP). With no rows it says <strong>ADD A SONG ROW</strong>; a row on an empty
    section: the song won't start (<strong>PART EMPTY</strong>).</li>
 <li><strong>Delete a row</strong>: stopped, on ARRANGE, <strong>KNOB 1</strong> to the row, <strong>OCT−</strong>: <strong>DELETE SONG ROW?</strong>. <strong>OCT+</strong>
    deletes it, OCT− keeps it. It cannot be undone.</li>
@@ -4066,7 +4066,7 @@ you open GEN), follows <strong>no genre</strong> and breaks their rules on purpo
   minimal, dub ..) keep their loop in every section. <strong>SONG</strong> writes a club form: <strong>A</strong> the drop, <strong>B</strong> the intro (drums and bass), <strong>C</strong> the build
   (the chords in, their filter opening over the loop, a roll at its end, the delay thrown on the last step) and <strong>D</strong>
   the break (no drums, no bass, the chords wetter; 0.8.3: on its predominant, but in the modal loops), in ARRANGE as
-  B C A D C A with 16-bar rows (the drop 32; since V10.8.45 half of that, shorter at slow tempos). Ambient and post-rock genres get an arc instead (thin, in, apex: on its
+  B C A D C A with rows half as long as before V10.8.45, none longer than about 24 s (fewer bars at slow tempos). Ambient and post-rock genres get an arc instead (thin, in, apex: on its
   predominant). Sections of yours (stored by you, not by GEN) are never
   overwritten: then the piece stays one loop.</li>
 </ul>
@@ -5322,7 +5322,8 @@ ALGORITHM; <strong>Shift-click</strong> holds a button. Great for learning the l
 </ul>
 <h3 id="velocity-view--httpsjuanjiant-bitgithubiojiantwebappvel">Velocity view — <a href="https://juanjiant-bit.github.io/JIANT/webapp/vel/">https://juanjiant-bit.github.io/JIANT/webapp/vel/</a></h3>
 <p>(V10.6z5, V10.6z7) Each note's velocity and each key's calibration, live, over USB (Chrome or Edge; protocol 1.1 or
-later). See <a href="#key-velocity-and-aftertouch-v106z7">Key velocity and aftertouch</a>. The velocity diagnostic (the presses
+later). From V10.8.45 on the firmware has no velocity diagnostic: the page connects but shows no presses or captures
+(the keys' velocity and pressure work as always). See <a href="#key-velocity-and-aftertouch-v106z7">Key velocity and aftertouch</a>. The velocity diagnostic (the presses
 it captured) left the firmware in V10.8.45: the step-by-step test in <a href="https://github.com/juanjiant-bit/JIANT/blob/main/docs/VELOCITY_DIAG.es.md">VELOCITY_DIAG.es.md</a> is
 for older versions.</p>
 <h3 id="editor--httpsjuanjiant-bitgithubiojiantwebappeditor">Editor — <a href="https://juanjiant-bit.github.io/JIANT/webapp/editor/">https://juanjiant-bit.github.io/JIANT/webapp/editor/</a></h3>
