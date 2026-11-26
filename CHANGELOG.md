@@ -6,6 +6,8 @@ Custom firmware for the M-VAVE FM-1 by Juan Jiant. Newest version first.
 
 | Version | Date | Status |
 | --- | --- | --- |
+| **V10.8.48** | 2026-11-25 | **Public** |
+| V10.8.43 … V10.8.47 | 2026-11-25 | Beta |
 | **V10.8.42** | 2026-11-25 | **Public** |
 | V10.8.26 … V10.8.41 | 2026-11-24 | Beta |
 | **V10.8.25** | 2026-11-24 | **Public** |
@@ -45,6 +47,35 @@ The sections marked **Compatibility notes** are the ones to check before you ins
 > 31 October 2026 are much older builds with the same names; they are covered under "Older versions" at the end.
 
 ---
+
+## V10.8.48 — real envelopes in the generator (2026-11-25)
+
+- The generator gives each part an envelope by its role (none at full sustain except organs and drones); the leads with little sustain and a long release.
+- The generated parts use varied filter types (band-pass and high-pass with KEY TRK 100) and the track's GAIN makes up the level.
+
+## V10.8.47 — the parts' words (2026-11-25, beta)
+
+- PART SLOTS: KNOB 2 is **PLAY/EDIT** (while playing, it comes in on the next bar). SAVE layer: **SAVE A … D** (was STORE). PLAY's mode is **PART** (was LOOP) and a song's end **REPEAT** (was LOOP).
+- The boxes A … D show **n BARS** and **PLAYING**; JAM and TAKE say **PART** and **SWITCH**. Jazz hats at half.
+
+## V10.8.46 — the generator moves inside each section (2026-11-25, beta)
+
+- Slow free LFOs on filter, shape and pan; envelopes by role; phonk with drift only. MENU › ABOUT shows LAST CRASH again.
+
+## V10.8.45 — the ARP on the grid, shorter sections (2026-11-25, beta)
+
+- The ARP runs on the transport's grid and is recorded quantised.
+- The header's load is a number (0 … 99); the velocity diagnostic is gone (the velocity web page is for older versions).
+- The generator's sections are half as long and never come back identical; RADIO changes every 16, 8 or 4 bars.
+
+## V10.8.44 — GATE on reverb and delay, a LEVEL page (2026-11-25, beta)
+
+- **GATE** on FX › REVERB and FX › DLY (OCT+ held + KNOB 4): 0 off, 16 a sixteenth, 64 a quarter, 127 two quarters; it cuts the tail when the time is up. Saved with the project.
+- A **LEVEL** page after the EDIT pages on every engine: GAIN (0 … 12 dB), LEVEL, PAN. GAIN is no longer on ANALOG's and PHASE's MORE.
+
+## V10.8.43 — RADIO's STOP, HARMONY respected (2026-11-25, beta)
+
+- STOP on the last bar stops RADIO; the generator respects SCL › HARMONY; chord parts without the leads' vibrato.
 
 ## V10.8.42 — generator: hard bass with a donk, dream pop in two arrangements (2026-11-25)
 

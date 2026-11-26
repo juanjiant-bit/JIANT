@@ -6,6 +6,8 @@ Firmware personalizado para el M-VAVE FM-1, de Juan Jiant. Primero la versión m
 
 | Versión | Fecha | Estado |
 | --- | --- | --- |
+| **V10.8.48** | 2026-11-25 | **Pública** |
+| V10.8.43 … V10.8.47 | 2026-11-25 | Beta |
 | **V10.8.42** | 2026-11-25 | **Pública** |
 | V10.8.26 … V10.8.41 | 2026-11-24 | Beta |
 | **V10.8.25** | 2026-11-24 | **Pública** |
@@ -46,6 +48,35 @@ Antes de instalar, revisá los apartados **Compatibilidad**.
 > al final.
 
 ---
+
+## V10.8.48 — envolventes reales en el generador (2026-11-25)
+
+- El generador da a cada parte una envolvente según su rol (ninguna con sustain al máximo salvo órganos y drones); los leads con poco sustain y release largo.
+- Las partes generadas usan tipos de filtro variados (pasabanda y pasaaltos con KEY TRK 100) y el GAIN de la pista compensa el nivel.
+
+## V10.8.47 — nombres de las partes (2026-11-25, beta)
+
+- PART SLOTS: la KNOB 2 es **PLAY/EDIT** (si está sonando, entra en el próximo compás). Capa SAVE: **SAVE A … D** (antes STORE). El modo de PLAY es **PART** (antes LOOP) y el fin de canción **REPEAT** (antes LOOP).
+- Los cuadros A … D muestran **n BARS** y **PLAYING**; JAM y TAKE dicen **PART** y **SWITCH**. Hats de jazz a la mitad.
+
+## V10.8.46 — el generador evoluciona dentro de cada sección (2026-11-25, beta)
+
+- LFO lentos y libres sobre filtro, forma y paneo; envolventes por rol; phonk solo con drift. MENU › ABOUT vuelve a mostrar LAST CRASH.
+
+## V10.8.45 — ARP en la grilla, secciones más cortas (2026-11-25, beta)
+
+- El ARP corre en la grilla del transporte y se graba cuantizado.
+- La carga del encabezado es un número (0 … 99); ya no hay diagnóstico de velocidad (la página web de velocidad queda para versiones viejas).
+- Las secciones del generador duran la mitad y no vuelven idénticas; RADIO cambia cada 16, 8 o 4 compases.
+
+## V10.8.44 — GATE en reverb y delay, página LEVEL (2026-11-25, beta)
+
+- **GATE** en FX › REVERB y FX › DLY (OCT+ mantenido + KNOB 4): 0 apagado, 16 una semicorchea, 64 una negra, 127 dos negras; corta la cola cuando vence. Se guarda con el proyecto.
+- Página **LEVEL** después de las de EDIT en todos los motores: GAIN (0 … 12 dB), LEVEL, PAN. GAIN ya no está en MORE de ANALOG y PHASE.
+
+## V10.8.43 — STOP de RADIO, HARMONY respetada (2026-11-25, beta)
+
+- STOP en el último compás detiene RADIO; el generador respeta SCL › HARMONY; las partes de acordes sin el vibrato de los leads.
 
 ## V10.8.42 — generador: hard bass con donk, dream pop con dos arreglos (2026-11-25)
 
