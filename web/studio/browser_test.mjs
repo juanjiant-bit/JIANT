@@ -143,15 +143,17 @@ try {
     await q.route("https://tjscbsiofkxshzckmmhk.supabase.co/**", (r) => { posts.push({ h: r.request().headers(), b: JSON.parse(r.request().postData()) }); r.fulfill({ status: posts.length === 1 ? 400 : posts.length === 3 ? 409 : 201, body: "" }); });
     await q.click("#rdgo"); await q.waitForTimeout(1500);
     const now = await q.textContent("#rdnow");
+    await q.click("#rdsound"); await q.waitForTimeout(400);
+    const undoShown = await q.isVisible("#rdundo");
     await q.click("#rdup"); await q.click("#rdparts button:nth-child(1)"); await q.click("#rdparts button:nth-child(4)"); await q.click("#rdnext"); await q.waitForTimeout(800);
     await q.click("#rddown"); await q.waitForTimeout(5000);
     await q.click("#rdskip"); await q.waitForTimeout(800);
-    const parts0 = posts[0] && posts[0].b.parts, noParts = posts[1] && !("parts" in posts[1].b);
+    const parts0 = posts[0] && posts[0].b.parts, rs0 = posts[0] && posts[0].b.resound, noParts = posts[1] && !("parts" in posts[1].b) && !("resound" in posts[1].b);
     posts.shift();                                               // the first answer a 400 (no parts column): sent again without it
     const b0 = posts[0] && posts[0].b, count = await q.textContent("#rdcount");
     ok(now === "HOUSE" && posts.length === 2 && b0.device === "FM" && b0.vote === 1 && posts[1].b.vote === -1 && b0.genre === "HOUSE" && b0.version === "V10.8.44" &&
-       /^c[0-9a-f]{24}$/.test(b0.client) && posts[0].h.apikey && posts[1].b.seed !== b0.seed && /: 2/.test(count) && parts0 === 9 && noParts && posts[1].b.parts === 0,
-      `radio: ${now}, 👍 and 👎 posted (${posts.map((p) => p.b.vote).join(" ")}, a 409 taken), ⏭ nothing; parts 9 (a 400 sent again without it), none chosen 0 after 4 s; "${count}"`);
+       /^c[0-9a-f]{24}$/.test(b0.client) && posts[0].h.apikey && posts[1].b.seed !== b0.seed && /: 2/.test(count) && parts0 === 9 && noParts && posts[1].b.parts === 0 && Number.isInteger(rs0) && undoShown && !("resound" in posts[1].b),
+      `radio: ${now}, 👍 and 👎 posted (${posts.map((p) => p.b.vote).join(" ")}, a 409 taken), ⏭ nothing; another sound (resound ${rs0}), parts 9 (a 400 sent again without them), none chosen 0 after 4 s; "${count}"`);
   }
   /* analysis: the simulated FM-1's six tracks, their parameters by name, steps, the song, in a summary */
   {

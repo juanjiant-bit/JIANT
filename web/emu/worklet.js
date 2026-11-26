@@ -166,7 +166,10 @@ if (typeof registerProcessor === "function") {
         if (out.length) this.port.postMessage({ type: "sysex", msgs: out });
       }
       else if (m.type === "gen") {                 // (studio RADIO) the generator: a command (web_gen_cmd), then its state
-        if (m.cmd != null && ex.web_gen_cmd) ex.web_gen_cmd(m.cmd >>> 0, m.arg | 0);
+        let rc = null;                             // 10 RESOUND (arg: a seed 0..9999), 11 its undo; else web_gen_cmd
+        if (m.cmd === 10) rc = ex.web_gen_resound ? ex.web_gen_resound(m.arg >>> 0) : null;
+        else if (m.cmd === 11) rc = ex.web_gen_resound_undo ? ex.web_gen_resound_undo() : null;
+        else if (m.cmd != null && ex.web_gen_cmd) ex.web_gen_cmd(m.cmd >>> 0, m.arg | 0);
         let info = null, genres = null;
         if (ex.web_gen_info) {
           const p = ex.web_gen_info();                // a static int32[8] of the firmware's
@@ -179,7 +182,8 @@ if (typeof registerProcessor === "function") {
             genres.push(String.fromCharCode(...b.subarray(0, z < 0 ? 32 : z)));
           }
         }
-        this.port.postMessage({ type: "gen", id: m.id, ok: !!ex.web_gen_info, info, genres });
+        const rs = ex.web_gen_resound_seed ? ex.web_gen_resound_seed() >>> 0 : 0xFFFFFFFF;
+        this.port.postMessage({ type: "gen", id: m.id, ok: !!ex.web_gen_info, info, genres, rc, resound: !!ex.web_gen_resound, rs: rs === 0xFFFFFFFF ? null : rs });
       }
       else if (m.type === "visible") this.period = m.on ? 1 / 30 : 1 / 4;
       else if (m.type === "meter") {               // the output's level since the last ask (tests, the page)
