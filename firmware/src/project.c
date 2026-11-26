@@ -1803,6 +1803,17 @@ static int undo_do(void)                                /* 0: done */
 {
     char name[PROJ_NAME_LEN + 1u];
     uint8_t cur = proj_cur, play = song.playing;
+    if (undo_ok == 2u) {                                /* a SAVE: the part back (again: the save again) */
+        uint32_t s = undo_sv & 3u;
+        if (undo_sv >> 2 != (song_draft << 5 | song_cur))
+            return 1;
+        undo_st[1] = proj_slot[s];
+        proj_slot[s] = undo_st[0];
+        undo_st[0] = undo_st[1];
+        live.dirty |= (uint8_t)(1u << s);
+        proj_wire_gen++;
+        return 0;
+    }
     if (!undo_ok)
         return 1;
     gst_old = 0;                                        /* (ENTRY BUILD called off) */

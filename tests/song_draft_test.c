@@ -45,15 +45,25 @@ int main(void)
  assert(st_load(OBJ_SONGIDX,&proj_wire,sizeof saved_index)==sizeof saved_index);
  assert(!memcmp(&((song_index_t*)&proj_wire)->rows[0],&saved_index.rows[0],sizeof(chain_config_t)));
  assert(!memcmp(old_flash,nor+0x97000,sizeof old_flash));
- assert(song_draft&&chain_config.count==4);
- puts("draft: saving a full song elsewhere preserves the original project and current draft");
+ /* (V10.8.52) a saved draft is that project, open: later SAVE + C4 and the autosave go there */
+ assert(!song_draft&&song_cur==1&&chain_config.count==4&&song_idx.cur==1);
+ assert(st_load(OBJ_SONGIDX,&proj_wire,sizeof saved_index)==sizeof saved_index&&((song_index_t*)&proj_wire)->cur==1);
+ for(unsigned n=0;n<4;n++)assert(project_used(n));
+ trk[0].step[0].note[0]=80;section_keep(1);song_poll();assert(saved_note(1,1)==80);
+ assert(proj_import(&proj_scratch,&undo_st[0],sizeof undo_st[0])&&proj_scratch.t[0].step[0].note[0]==73);
+ assert(!undo_do());song_poll();assert(saved_note(1,1)==73);
+ assert(!undo_do());song_poll();assert(saved_note(1,1)==80);
+ puts("draft: saving a full song elsewhere preserves the original project and opens the saved one; SAVE + C4 there, its UNDO");
+ assert(!song_draft_begin());draft_music(72);
  song_save_loop=1;assert(!section_load(2));assert(!song_save_as(2,"JUST LOOP"));
  assert(saved_note(2,0)==74);for(unsigned n=1;n<4;n++)assert(saved_note(2,n)==-1);
- assert(song_idx.rows[2].count==0&&chain_config.count==4&&song_draft);
+ assert(song_idx.rows[2].count==0&&!song_draft&&song_cur==2&&!chain_config.count);
  puts("draft: LOOP writes current music to A, empties B-D and saves no arrangement");
+ assert(!song_draft_begin());draft_music(72);section_load(2);
  song_save_loop=0;assert(!song_save_as(0,"OVERWRITE"));
  for(unsigned n=0;n<4;n++)assert(saved_note(0,n)==(n==2?74:72+(int)n));
- assert(song_draft&&chain_config.count==4);
+ assert(!song_draft&&song_cur==0&&chain_config.count==4);
+ assert(!song_draft_begin());draft_music(72);
  memcpy(draft_before,proj_slot,sizeof draft_before);
  erase_error=1;assert(song_save_as(3,"FAIL")&&song_draft&&!memcmp(draft_before,proj_slot,sizeof draft_before));erase_error=0;
  assert(!song_save_as(3,"RETRY"));
@@ -61,11 +71,13 @@ int main(void)
   for(unsigned n=0;n<4;n++)assert(saved_note(3,n)>=0);assert(song_idx.rows[3].count==4);
   song_save_loop=1;assert(!song_save_as(3,"LOOP OVER"));
   assert(saved_note(3,0)==trk[0].step[0].note[0]);for(unsigned n=1;n<4;n++)assert(saved_note(3,n)==-1);
-  assert(song_idx.rows[3].count==0&&song_draft&&chain_config.count==4);
+  assert(song_idx.rows[3].count==0&&!song_draft&&!chain_config.count);
+  assert(!song_draft_begin());draft_music(72);
   song_save_loop=0;assert(!song_save_as(3,"RETRY"));assert(song_idx.rows[3].count==4);
-  puts("draft: a LOOP saved over a whole song clears its B-D and its arrangement; the draft stays");
+  puts("draft: a LOOP saved over a whole song clears its B-D and its arrangement; the draft ends there");
  }
  puts("draft: same-project overwrite is explicit; failed saves retain the draft for retry");
+ assert(!song_select(0)&&song_cur==0);assert(!song_draft_begin());draft_music(72);memcpy(draft_before,proj_slot,sizeof draft_before);
  assert(!song_erase_parts(1,0));for(unsigned n=0;n<4;n++)assert(saved_note(1,n)==-1);
  assert(song_draft&&!memcmp(draft_before,proj_slot,sizeof draft_before));
  /* (V10.7.22) the open project erased whole: its music goes too, the draft's as well (was: the draft kept) */
@@ -107,5 +119,23 @@ int main(void)
  assert(!project_erase(1));assert(!project_used(1));
  for(unsigned r=0;r<chain_config.count;r++)for(unsigned t=0;t<NTRK;t++)assert(row_src(r,t,chain_config.row[r].slot)!=1);
  puts("erase: failed writes keep RAM; deleting a source part removes dependent rows");
+ {/* (V10.8.52) RESTORE LAST after a GEN draft saved as another project: that music, and the autosave runs again */
+  song_fixture();assert(!song_draft_begin());draft_music(67);assert(!song_save_as(2,"ELSEWHERE"));
+  assert(!song_draft&&song_cur==2);
+  trk[0].step[0].note[0]=69;ui_prefs|=PREF_RESTORE_ON;
+  for(unsigned k=0;k<6;k++){fm1_ms+=70000;autosave_poll();}
+  assert(as.writes);trk[0].step[0].note[0]=12;
+  song_index_load();song_index_boot();
+  assert(song_cur==2&&autosave_boot(1)&&trk[0].step[0].note[0]==69);
+  puts("restore: after a draft saved elsewhere, RESTORE LAST gives the newest music (was: the one before GEN)");
+  /* SAVE + C4 over a part with music asks first (OVERWRITE A?), the part kept until YES */
+  memcpy(draft_before,proj_slot,sizeof draft_before);
+  assert(project_used(0));ui.confirm=0;trk[0].step[0].note[0]=91;section_ask(0);
+  assert(ui.confirm==CF_STORE_SECT&&!memcmp(draft_before,proj_slot,sizeof draft_before));
+  ui.confirm=0;sv_ok|=1u;section_ask(0);assert(ui.confirm==0&&memcmp(draft_before,proj_slot,sizeof proj_slot[0]));
+  assert(!undo_do()&&!memcmp(draft_before,proj_slot,sizeof draft_before));
+  assert(!song_erase_parts(song_cur,8u)&&!project_used(3));section_ask(3);assert(ui.confirm==0&&project_used(3));
+  puts("save: SAVE + C4 over music asks OVERWRITE A? once; GLO + G4 gives the part back");
+ }
  return 0;
 }

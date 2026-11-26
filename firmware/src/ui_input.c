@@ -1796,7 +1796,7 @@ static __attribute__((noinline)) void act_do(void)
         ui.song_row = (uint8_t)(c + 1u);
         chain_config.count++;
         song_idx_touch();
-        ui_message("ROW ADDED");
+        ui_message(n ? "ROW DUPLICATED" : "ROW ADDED");   /* (V10.8.52: a copy of the one picked) */
         return;
     }
     if (0 /* PHRASES gone */) {
@@ -2790,7 +2790,7 @@ static void ui_input_frame(void)
             uint32_t kind = ui.confirm;
             ui.confirm = 0;
             ui.force = 1;
-            if (kind != CF_OVR_PROJ && kind != CF_OVR_USER && kind != CF_ERASE_USER && kind != CF_ERASE_SECT && kind != CF_OVR_SONG && kind != CF_ERASE_SONG && kind != CF_DICE_ALL &&
+            if (kind != CF_OVR_PROJ && kind != CF_OVR_USER && kind != CF_ERASE_USER && kind != CF_ERASE_SECT && kind != CF_STORE_SECT && kind != CF_OVR_SONG && kind != CF_ERASE_SONG && kind != CF_DICE_ALL &&
                 !dice_kind(kind) && kind != CF_DEL_ROW && kind != CF_CLEAR_SONG && !chain_busy())
                 undo_mark();                            /* (0.6.21) the music before a clear, INIT, RECALL, pattern */
             if (kind == CF_OVR_PROJ) {                  /* overwrite: the NAME screen writes it */
@@ -2803,6 +2803,9 @@ static void ui_input_frame(void)
                 up_ui(1u, ui.confirm_trk);
             } else if (kind == CF_ERASE_SONG) {
                 song_erase_parts(ui.confirm_trk, 0);
+            } else if (kind == CF_STORE_SECT) {        /* (V10.8.52) SAVE + C4: YES, and no more asking for it */
+                sv_ok |= (uint8_t)(1u << (ui.confirm_trk & 3u));
+                section_keep(ui.confirm_trk);
             } else if (kind == CF_ERASE_SECT) {
                 if ((ui.confirm_trk >> 2u) == song_cur) project_erase(ui.confirm_trk & 3u);
                 else ui_message("PROJECT CHANGED");

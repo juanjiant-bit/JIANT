@@ -41,6 +41,7 @@
 /* the song layer's actions (project.c: song_main.c) */
 static int section_jump(uint32_t s);
 static void section_store(uint32_t s);
+static void section_ask(uint32_t s);
 static void section_recall(void);
 static void quick_chain(const uint8_t *s, uint32_t n);
 static void song_rec_toggle(void);
@@ -615,7 +616,7 @@ static void song_key(uint32_t p)
             ui_message(b);
         }
     } else if (p < SK_STORE + 4u) {
-        section_store(p - SK_STORE);
+        section_ask(p - SK_STORE);
     } else if (p == SK_MODE) {
         live.mode ^= 1u;
         ui_message(live.mode ? "PLAY: THE SONG" : "PLAY: THE PART");
@@ -877,7 +878,7 @@ static uint32_t layer_oct(uint32_t pressed, uint32_t oct)
         if (live.cur < 0)
             ui_message("PLAY A PART FIRST");
         else
-            section_store((uint32_t)live.cur);
+            section_ask((uint32_t)live.cur);
     }
     if (lys.l == LAYER_SAVE && (mine & 1u))             /* SAVE + OCT-: RECALL it as it was stored */
         section_recall();

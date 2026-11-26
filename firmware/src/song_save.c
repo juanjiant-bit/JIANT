@@ -49,6 +49,26 @@ static void song_index_target(const song_index_t *index, uint32_t target)
     memcpy(song_idx.tvar[target], index->tvar[target], sizeof index->tvar[target]);
 }
 
+/* (V10.8.52: out of the image, its room) the saved index with the destination's row (song_save_as writes it) */
+#if FELUCCA_FLASH
+BTAPP_FN static void song_save_tail(song_index_t *index, uint32_t target)
+{
+    if (song_save_loop) {
+        chain_defaults(&index->rows[target]);
+        memset(index->scene[target], 0, sizeof index->scene[target]);
+        memset(index->tsrc[target], 0, sizeof index->tsrc[target]);
+        memset(index->tvar[target], 0, sizeof index->tvar[target]);
+    } else {
+        index->rows[target] = chain_config;
+        memcpy(index->scene[target], song_idx.scene[song_cur], sizeof index->scene[target]);
+        memcpy(index->tsrc[target], song_idx.tsrc[song_cur], sizeof index->tsrc[target]);
+        memcpy(index->tvar[target], song_idx.tvar[song_cur], sizeof index->tvar[target]);
+    }
+    index->rows[target].rsv[1] = 0;
+    index->rows[target].rsv[2] = SONG_MODE_TAG | (!song_save_loop && live.mode ? 1u : 0u);
+}
+#endif
+
 static __attribute__((noinline)) int song_save_as(uint32_t target, const char *name)
 {
 #if FELUCCA_FLASH
@@ -91,29 +111,25 @@ static __attribute__((noinline)) int song_save_as(uint32_t target, const char *n
         }
     }
     if (song_saved_index(index)) { ui_message("SAVE INDEX ERROR"); return 2; }
-    if (song_save_loop) {
-        chain_defaults(&index->rows[target]);
-        memset(index->scene[target], 0, sizeof index->scene[target]);
-        memset(index->tsrc[target], 0, sizeof index->tsrc[target]);
-        memset(index->tvar[target], 0, sizeof index->tvar[target]);
-    } else {
-        index->rows[target] = chain_config;
-        memcpy(index->scene[target], song_idx.scene[song_cur], sizeof index->scene[target]);
-        memcpy(index->tsrc[target], song_idx.tsrc[song_cur], sizeof index->tsrc[target]);
-        memcpy(index->tvar[target], song_idx.tvar[song_cur], sizeof index->tvar[target]);
-    }
-    index->rows[target].rsv[1] = 0;
-    index->rows[target].rsv[2] = SONG_MODE_TAG | (!song_save_loop && live.mode ? 1u : 0u);
+    song_save_tail(index, target);
+    if (song_draft) index->cur = (uint8_t)target;  /* (V10.8.52) a saved draft is that project, open, from now on */
     if (st_save(OBJ_SONGIDX, index, sizeof *index)) { ui_message("SAVE ERROR: RETRY"); return 2; }
     /* RESTORE LAST must not mask an explicit overwrite of the open project
      * with a stale pre-generation session at the next boot. song_keep is the
      * valid, already-packed live music; writing it does not clobber index. */
-    if (target == song_cur && st_save(OBJ_AUTOSAVE, &song_keep, sizeof song_keep)) {
+    if ((target == song_cur || song_draft) && st_save(OBJ_AUTOSAVE, &song_keep, sizeof song_keep)) {
         ui_message("SAVE ERROR: RETRY"); return 2;
     }
     /* Keep the live draft metadata while updating the destination's library entry. */
-    if (!song_draft || target != song_cur) song_index_target(index, target);
-    if (!song_draft && target == song_cur) {
+    if (song_draft) {                            /* (V10.8.52) the draft ends: later edits, SAVE + C4 and the autosave
+                                                  * go to project n (was: still a draft, nothing written, RESTORE LAST
+                                                  * then gave the music before GEN back) */
+        memcpy(&song_idx, index, sizeof song_idx);
+        song_cur = (uint8_t)target;
+        song_draft = 0;
+        if (proj_cur > 3u) proj_cur = (uint8_t)current;
+    } else song_index_target(index, target);
+    if (target == song_cur) {
         for (section = 0; section < 4u; section++) {
             int rc = song_copy_section(section, current, name);
             if (rc > 0) memcpy(&proj_slot[section], &proj_wire, sizeof proj_wire);

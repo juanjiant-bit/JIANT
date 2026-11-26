@@ -471,6 +471,28 @@ static int jam_switch(uint32_t k, uint32_t s)
 }
 
 /* the music now into section s: RAM at once (playing too), flash once stopped (song_poll) */
+/* (V10.8.52) SAVE + C4..F4 / OCT+: a part with music asks first (OVERWRITE A?), once per part until another project
+ * opens (sv_ok) */
+static void section_keep(uint32_t s);
+static void section_ask(uint32_t s)
+{
+    s &= 3u;
+    if (project_used(s) && !((sv_ok >> s) & 1u)) {     /* (as ui_input.c confirm_open: the OCT- / OCT+ dialog) */
+        ui.confirm = CF_STORE_SECT; ui.confirm_trk = (uint8_t)s; ui.act = 0; ui.force = 1;
+    } else section_keep(s);
+}
+/* the SAVE keys' store: what the part had first, for GLO + G4 UNDO (again: the save again; GEN's own stores keep
+ * their UNDO mark) */
+static void section_keep(uint32_t s)
+{
+    s &= 3u;
+    if (project_used(s)) {
+        undo_st[0] = proj_slot[s];
+        undo_ok = 2;
+        undo_sv = (uint8_t)(song_draft << 7 | song_cur << 2 | s);
+    }
+    section_store(s);
+}
 static void section_store(uint32_t s)
 {
     char b[8] = "A";
@@ -853,6 +875,7 @@ static int song_switch(uint32_t n, int load_a)
     }
     /* The original index is restored before opening another saved project. */
     song_cur = (uint8_t)n;
+    sv_ok = 0;                                          /* (V10.8.52: its parts ask again) */
     chain_config = song_idx.rows[n];
     jam_load();                                         /* (V10.8) its JAM take */
     if (song_index_save()) {                          /* (failed: written again by song_poll) */

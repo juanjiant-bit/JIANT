@@ -39,7 +39,11 @@ static void trackgen_make(void);
 static void system_init(void);                  /* (0.6.40) project.c: INIT SYSTEM */
 static int project_clear(void);                 /* (V10.7.22) project.c: CLEAR PROJECT */
 static int undo_do(void);                       /* .. back (and again: forward) */
-static uint8_t undo_ok;
+static uint8_t undo_ok;                         /* (V10.8.52) 2: undo_st[0] is part undo_sv & 3's stored music before
+                                                 * SAVE + C4 (bit 7 a draft, 2..6 the project) */
+static void section_store(uint32_t s);
+static void section_keep(uint32_t s);           /* (song_main.c) */
+static uint8_t undo_sv __attribute__((section(".pool"))), sv_ok __attribute__((section(".pool")));                  /* sv_ok: the parts said YES to (OVERWRITE A?) in this project */
 static int project_used(uint32_t slot);
 static int project_erase(uint32_t slot);       /* (V10.17) SAVE > PART SLOTS > ERASE */
 static uint32_t lib_scan(uint32_t n, char *b);           /* (0.8.5) project.c: SAVE > LIBRARY's tiles */
@@ -403,7 +407,7 @@ static uint16_t val_col(uint32_t c) { return c == ui.hot_col && ui.hot_t ? T_ACC
 enum { CF_NONE, CF_CLEAR_SEQ, CF_CLEAR_TRK, CF_OVR_PROJ, CF_OVR_USER, CF_LOAD_PAT,
        CF_DEL_ROW, CF_CLEAR_SONG, CF_INIT_SOUND, CF_CLEAR_MOTION, CF_ERASE_USER, CF_CLEAR_PFX,
        CF_RECALL_SOUND, CF_CLEAR_ALL, CF_DICE_ALL, CF_INIT_SYS, CF_DICE_SOUND, CF_DICE_SEQ, CF_DICE_LFO,
-       CF_DICE_FX, CF_CPU_TEST, CF_MUT_BACK, CF_LIVE_COMMIT, CF_ERASE_SECT, CF_OVR_SONG, CF_ERASE_SONG, CF_CLEAR_COMP };   /* ui.confirm: TOOLS' clears; (0.6.21) HOME + SELECT:
+       CF_DICE_FX, CF_CPU_TEST, CF_MUT_BACK, CF_LIVE_COMMIT, CF_ERASE_SECT, CF_OVR_SONG, CF_ERASE_SONG, CF_CLEAR_COMP, CF_STORE_SECT };   /* ui.confirm: TOOLS' clears; (0.6.21) HOME + SELECT:
                                    * everything diced; (0.6.65) EDIT + SELECT: keep the diced sound?; (0.6.67) SEQ / LFO / FX + SELECT:
                                    * keep the diced sequence / LFO / effects?;
                                    * SAVE over a used slot; a pattern over the user's steps;

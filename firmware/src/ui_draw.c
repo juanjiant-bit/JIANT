@@ -2011,6 +2011,11 @@ static void confirm_text(char *a, char *b)
         str_cpy(a, "ERASE PROJECT ", 24); fmt_int(a + str_len(a), (int32_t)k + 1); str_cpy(a + str_len(a), "?", 2);
         str_cpy(b, "ALL A-D + ARRANGEMENT", 24);
         break;
+    case CF_STORE_SECT:                              /* (V10.8.52) SAVE + C4..F4 / OCT+ over music */
+        str_cpy(a, "OVERWRITE A?", 24);
+        a[10] = (char)('A' + (k & 3u));
+        str_cpy(b, "UNDO: GLO + G4", 24);
+        break;
     case CF_ERASE_SECT:                              /* (V10.17) SAVE > PART SLOTS > ERASE */
         str_cpy(a, "ERASE PART A?", 24);
         a[11] = (char)('A' + (k & 3u));
