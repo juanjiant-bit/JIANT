@@ -308,6 +308,7 @@
     body.radiodock #v-emu .framebox iframe { height: 52vh; min-height: 300px; }
     body.radiodock .rdstage { height: 70vh; margin: 0; }
   }
+  .anpre { margin: 0; max-height: 60vh; overflow: auto; font: 12px/1.5 var(--mono); white-space: pre-wrap; color: var(--fg); }
   .wtframes { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin: 8px 0; }
   .wtframes canvas { width: 100%; aspect-ratio: 1; background: var(--field); border-radius: var(--radius-s); cursor: pointer; }
   .wtframes canvas.on { outline: 2px solid var(--accent); }
@@ -512,6 +513,7 @@
       <button data-go="rec" data-t="vRec"></button>
       <button data-go="proj" data-t="vProj"></button>
       <button data-go="wt" data-t="vWt"></button>
+      <button data-go="an" data-t="vAn"></button>
       <button data-go="learn" data-t="vLearn"></button>
       <button data-go="docs" data-t="vDocs"></button>
       <button data-go="rescue" data-t="vRescue"></button>
@@ -659,6 +661,22 @@
         <label><span data-t="wtName"></span> <input id="wtname" maxlength="8" spellcheck="false" autocomplete="off"></label>
         <button class="btn" id="wtsend" type="button" data-t="wtSend"></button><button class="btn ghost" id="wtload" type="button" data-t="wtLoad"></button></div>
       <div class="bkprog" id="wtprog" hidden><i id="wtbar"></i></div>
+    </div>
+  </section>
+
+  <!-- ======================================================================================= analysis -->
+  <section class="view" id="v-an" hidden>
+    <div class="viewhead"><div><p class="eyebrow" data-t="vAn"></p><h1 data-t="anTitle"></h1></div>
+      <div class="emuctl"><button class="btn" id="ango" type="button" data-t="anGo"></button></div></div>
+    <p class="lead" data-t="anLead"></p>
+    <div class="wtsend"><label class="chk"><input type="checkbox" id="ansteps" checked> <span data-t="anSteps"></span></label>
+      <label class="chk"><input type="checkbox" id="anaudio" checked> <span data-t="anAudio"></span></label></div>
+    <p class="dim" id="anwho"></p>
+    <p class="projstat" id="anstat" role="status"></p>
+    <div class="bkprog" id="anprog" hidden><i id="anbar"></i></div>
+    <div class="card" id="anout" hidden>
+      <div class="emuctl" style="margin-bottom:10px"><button class="btn" id="anjson" type="button" data-t="anJson"></button><button class="btn ghost" id="ancopy" type="button" data-t="anCopy"></button></div>
+      <pre class="anpre" id="anpre"></pre>
     </div>
   </section>
 
