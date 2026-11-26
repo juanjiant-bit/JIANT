@@ -50,9 +50,7 @@ static void graph_lib(void)
             int used = cur ? graph_project_used(j) : (int)((lib.mask[i] >> j) & 1u);
             uint16_t c = lz_sec(j, used, 0);
             char l[2] = {(char)('A' + j), 0};
-            cv_rect(sx, sy, 23, 15, c);
-            GFX_HOOK_ALIGN(sx, sy, sx + 23, sy + 15, AL_HV, "library section chip letter centred");
-            cv_text_in(sx, sy + CAP_IN(X, 15), 23, &AF_X, l, used ? T_INK : T_DIM, c);
+            gx_chip(sx, sy, 23, 15, c, l, used ? T_INK : T_DIM);
             if (cur && (int32_t)j + 1 == song.g[G_SLOT])
                 cv_frame(sx - 1, sy - 1, 25, 17, T_TEXT);
         }
@@ -68,18 +66,11 @@ static __attribute__((noinline)) void graph_lz_tools(void)
     int32_t hold = tl_t0 ? (int32_t)(fm1_ms - tl_t0) * 232 / (int32_t)TL_HOLD : 0;
     uint16_t col = !ui.act ? T_DIM : sc == 1u ? T_THEME : sc == 2u ? T_ACCENT : sc == 3u ? T_MID : T_TEXT;
     char b[12];
-    cv_frame(4, 4, 76, 76, col);                         /* the picture */
-    if (sc == 1u)
-        for (i = 0; i < 16u; i++)                         /* the track's steps */
-            cv_rect(10 + (int32_t)(i % 8u) * 8, 14 + (int32_t)(i / 8u) * 30, 6, 24, TSEL->step[i].time == ST_NOTE ? col : T_DIM);
-    else if (sc == 2u)
-        for (i = 0; i < 64u; i++)                         /* a wave */
-            cv_rect(10 + (int32_t)i, 42 + ((24 * og_sin(i * 2048u)) >> 15), 1, 2, col);
-    else if (sc == 3u)
-        for (i = 0; i < 4u; i++)                          /* the song's rows */
-            cv_rect(10, 12 + (int32_t)i * 16, 64, 12, i < chain_config.count ? col : T_DIM);
-    else
-        cv_text_in(4, 38, 76, &AF_M, "ALL", col, T_SURF);
+    {   /* what the action takes, a word in its scope's colour (V10.8.53: its picture, the steps, a wave, the rows, gone) */
+        static const char *const SCW[5] = {"PROJECT", "TRACK", "SOUND", "SONG", "SYSTEM"};
+        cv_frame(4, 4, 76, 76, col);
+        cv_text_in(4, 38, 76, &AF_X, SCW[sc % 5u], col, T_SURF);
+    }
     for (c = 0; c < 6u; c++) {                           /* the scope's actions */
         int32_t y = 4 + (int32_t)n * 26;
         int sel = ui.act == c + 1u;
@@ -365,12 +356,9 @@ static void graph_score(int gen)
         w = 24 + (int32_t)((e - w0) * 212u / W) - x - 1;
         if (w < 1) w = 1;
         cf = i == sel ? c : ux_mix(T_SURF, c, 40);
-        cv_rect(x, 2, w, 14, cf);
-        if (w >= 9) {
-            b[0] = (char)('A' + s); b[1] = 0;
-            if (r->bars != 4u && w >= 18) fmt_int(b + 1, r->bars);
-            cv_text_in(x, 2 + CAP_IN(X, 14), w, &AF_X, b, i == sel ? T_INK : T_TEXT, cf);
-        }
+        b[0] = w >= 9 ? (char)('A' + s) : 0; b[1] = 0;
+        if (w >= 18 && r->bars != 4u) fmt_int(b + 1, r->bars);
+        gx_chip(x, 2, w, 14, cf, b, i == sel ? T_INK : T_TEXT);
         if (song_idx.scene[song_cur][i].on) cv_rect(x + w - 3, 4, 2, 2, T_TEXT);   /* a scene: a dot */
         for (k = 0; k < NTRK; k++) {
             int32_t y = 19 + (int32_t)k * 16;
@@ -383,8 +371,7 @@ static void graph_score(int gen)
             cv_rect(x, y, w, 12, ux_mix(T_SURF, tc, i == sel ? 60 : 24));
             if (src != s && w >= 9) {                     /* another part: its letter in a pill of its colour */
                 b[0] = (char)('A' + src); b[1] = 0;
-                cv_rect(x + w / 2 - 5, y, 11, 12, sec_col(src));
-                cv_text_in(x + w / 2 - 5, y + CAP_IN(X, 12), 11, &AF_X, b, T_INK, sec_col(src));
+                gx_chip(x + w / 2 - 5, y, 11, 12, sec_col(src), b, T_INK);
             }
         }
     }
@@ -450,7 +437,6 @@ static void graph_proj(void)
         b[0] = (char)('A' + (r->slot & 3u));
         fmt_int(b + 1, r->bars);
         cv_rect(x, y, 27, 20, c);
-        GFX_HOOK_ALIGN(x, y, x + 27, y + 20, AL_HV, "arrange chip centred");
         cv_text_in(x, y + CAP_IN(X, 20), 27, &AF_X, b, used ? T_INK : T_DIM, c);
         if (song_idx.scene[song_cur][i].on)              /* a scene: a dot */
             cv_rect(x + 22, y + 3, 2, 2, T_TEXT);
@@ -465,28 +451,11 @@ static void graph_proj(void)
     GFX_HOOK_ALIGN(0, 128, 0, 139, AL_V | AL_PASS, "project song length");
     cv_text_r(236, 128, &AF_X, n ? b : "NO ROWS", T_MID, T_SURF);
 }
-/* a being small at (cx, cy) radius r (px): engine e's species, its outline in heat c; 24 vertices (bg_outline's form,
- * its spikes and lobes, at a slot's size: a quarter of the lines) */
+/* an engine's mark small at (cx, cy), r its half size, in c (V10.8.53: the being's outline gone, its room) */
 static void lz_mini_being(uint32_t e, int32_t cx, int32_t cy, int32_t r, uint16_t c)
 {
-    const genome_t *g = &GENOME[EGEN[e % NENGINES]];
-    int32_t i, px = 0, py = 0, R = r * 16, k = g->k0 + g->kk / 2;
-    for (i = 0; i <= 24; i++) {
-        uint32_t th = (uint32_t)(i % 24) * 65536u / 24u;
-        int32_t rr = R + ((R * 90 >> 8) * (9175 * bg_sin((uint32_t)g->lob * th) >> 15) >> 15), x, y, c2, p, n;
-        c2 = bg_sin(((uint32_t)k * th >> 1) + (uint32_t)g->tw * 3000u + 0x4000u);
-        p = c2 > 0 ? c2 : 0;
-        for (n = 1; n < g->sh; n++)
-            p = (p * c2) >> 15;
-        if (p < 0) p = 0;
-        rr += ((R * 110 >> 8) * p >> 15) * 26 >> 4;
-        x = cx * 16 + ((rr * bg_sin(th + 0x4000u) >> 15) * g->ax >> 4);
-        y = cy * 16 + (rr * bg_sin(th) >> 15);
-        if (i)
-            og_line(px, py, x, y, c);
-        px = x;
-        py = y;
-    }
+    (void)e;
+    cv_rrect(cx - r, cy - r, 2 * r + 1, 2 * r + 1, r, c, cv_bg);
 }
 /* SOUND: the track's being (as an engine page's: its HOME knobs, alive with its sound), the track and its sound */
 static void lz_track_being(void)
@@ -524,8 +493,7 @@ static __attribute__((noinline)) void graph_sound(void)
             cv_clip_text(x + 10, y + CAP_IN(X, 15), &AF_X, b, T_TEXT, bg, 24);
         } else {
             up_slot_label(b, k);
-            GFX_HOOK_ALIGN(x, y, x + 35, y + 15, AL_HV, "sound slot label centred");
-            cv_text_in(x, y + CAP_IN(X, 15), 35, &AF_X, b, T_DIM, bg);
+            gx_chip(x, y, 35, 15, bg, b, T_DIM);
         }
         if (sel)
             cv_frame(x, y, 35, 15, T_THEME);

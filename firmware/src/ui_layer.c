@@ -61,7 +61,7 @@ static const layer_t LAYERS[LAYER_N] = {
     {B_SCL, LK_SET, FAM_SCL, "[SCL] SET", {{KC_KEYS, "ROOT"}, {KC_SCL, "DONE"}, {0, 0}}},
     {B_EDIT, LK_SET, FAM_EDIT, "[EDIT] SET", {{KC_SELECT, "DICE"}, {KC_K14, "TWEAK"}, {KC_KEYS, "INIT / RECALL"}}},   /* (0.9.9-seq2e:
                                                                      * KNOB 1..4 MOMENTARY: mom_knob; seq2f: SELECT the sound dice) */
-    {B_SEQ, LK_SET, FAM_SEQ, "[SEQ] TOOLS", {{KC_REC, "CLEAR ALL"}, {KC_SEQ, "DONE"}, {KC_PLAY, "RESYNC"}}},   /* (0.6.14: REC, all six
+    {B_SEQ, LK_SET, FAM_SEQ, "[SEQ] EDIT", {{KC_OCTUP, "DO IT"}, {KC_OCTDN, "ALL STEPS"}, {KC_KEYS, "F#5 UNDO"}}},   /* (0.6.14: REC, all six
                                                                      * tracks cleared, shown: it was nowhere) */
     {B_REC, LK_SET, FAM_HOME, "[REC] SET", {{KC_KEYS, "RECORDING"}, {KC_REC, "DONE"}, {0, 0}}},
     {B_SAVE, LK_SET, FAM_HOME, "[SAVE] SONG", {{KC_KEYS, "PLAY"}, {KC_OCTUP, "SAVE"}, {KC_OCTDN, "RECALL"}}},
@@ -491,29 +491,52 @@ static void glo_tap(void)
     }
 }
 
-/* SEQ TOOLS: white key place p's action on the selected track (ui_tools.c), "SONG PLAYS: STOP IT TO EDIT" while a song plays */
+/* (V10.8.52) SEQ EDIT's white keys (ui_tools.c): F3 CLEAR, G3 ALL (no selection), A3 KNOB 1 / 2 START END <-> MOVE
+ * WIDTH, B3 .. E4 BAR 1 .. 4 selected, F4 CLR AUTO, G4 .. B4 the lane's (DRUM), C5 DUP, D5 the ACTION, E5 COPY, F5
+ * PASTE, G5 CLR STEP; black: the lanes (DRUM), C#5 / D#5 NUDGE < / > (ui_tools.c se_do: the steps selected or all) */
 static void tools_key(uint32_t p)
 {
-    const char *m;
-    if (!tl_cell(TSEL, p))
-        return;
-    if (chain_busy()) {
-        ui_message("SONG PLAYS: STOP IT TO EDIT");
-        return;
+    uint32_t len = tl_len(TSEL), a = p == 0u ? SE_CLEAR : p == 7u ? SE_CAUTO : p == 11u ? SE_DUP : p == 13u ? SE_COPY :
+                                     p == 14u ? SE_PASTE : p == 15u ? SE_CSTEP : SE_N;
+    if (a < SE_N) se_do(a, 0);
+    else if (p == 1u) { cp_sel = 0; ui_message("ALL STEPS"); }
+    else if (p == 2u) se_st ^= 128;
+    else if (p == 12u) se_do((uint32_t)se_st & 127u, se_md);
+    else if (p >= 3u && p <= 6u) {
+        if ((p - 3u) * 16u >= len) ui_message("NO SUCH BAR");
+        else sel_set((p - 3u) * 16u, (p - 3u) * 16u + 15u < len ? (p - 3u) * 16u + 15u : len - 1u);
+    } else if (drum_track(TSEL) && !chain_busy()) {
+        undo_mark();
+        ui_message(tl_do(TSEL, p, ui.lane));
     }
-    if (!(m = tl_do(TSEL, p, ui.lane)))
-        return;
-    ui_message(m);
     ui.force = 1;
 }
-
-/* (V10.8.49, the owner) SEQ TOOLS' black C#5 / D#5: NUDGE the track's notes a 16th of a step earlier / later */
+/* KNOB 1 START (MOVE), 2 END (WIDTH): the selection, 3 the ACTION, 4 its amount */
+static void se_knob(uint32_t k, int32_t d)
+{
+    uint32_t len = tl_len(TSEL), lo, n, a, b, act = (uint32_t)se_st & 127u;
+    d = d > 0 ? 1 : -1;
+    (void)seq_sel(TSEL, &lo, &n, len);
+    a = lo; b = lo + n - 1u;
+    if (k == 2u) { act = (uint32_t)clamp((int32_t)act + d, 0, SE_N - 1); se_st = (int16_t)((se_st & 128) | act); se_md = SE[act].def; return; }
+    if (k == 3u) { se_md = (int16_t)clamp(se_md + d, SE[act].lo, act == SE_GEN ? (int32_t)NGENRE : SE[act].hi); return; }
+    if (se_st & 128) {                                  /* MOVE, WIDTH */
+        if (!k) a = (uint32_t)clamp((int32_t)a + d, 0, (int32_t)(len - 1u - (b - a))), b = a + n - 1u;
+        else b = (uint32_t)clamp((int32_t)b + d, (int32_t)a, (int32_t)len - 1);
+    } else if (!k) { a = (uint32_t)clamp((int32_t)a + d, 0, (int32_t)len - 1); if (b < a) b = a; }
+    else { b = (uint32_t)clamp((int32_t)b + d, 0, (int32_t)len - 1); if (a > b) a = b; }
+    sel_set(a, b);
+    if (k) ui.bank = (uint8_t)(b / 16u);
+}
+/* (V10.8.49, the owner) SEQ TOOLS' black C#5 / D#5: NUDGE the notes (selected: theirs) a 16th of a step earlier / later */
 static void nudge_key(uint32_t up)
 {
     const char *m;
+    uint32_t lo, n;
     if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
     undo_mark();
-    if ((m = tl_nudge(TSEL, up ? 4 : -4))) { ui_message(m); ui.force = 1; }
+    (void)seq_sel(TSEL, &lo, &n, tl_len(TSEL));
+    if ((m = tl_nudge(TSEL, up ? 4 : -4, lo, n, 0))) { ui_message(m); ui.force = 1; }
 }
 
 /* Shared by GLO + G4 and REC + A3. One global undo/redo snapshot. */
@@ -575,6 +598,7 @@ static void rec_key(uint32_t p)
     if (p == 2u) { undo_ui(); return; }       /* A3: UNDO / REDO */
     if (p == 3u) {                         /* B3: hard quantization off / on */
         TSEL->p[P_HRQ] = TSEL->p[P_HRQ] ? 0 : 127;
+        ui_say("QUANTIZE ", TSEL->p[P_HRQ] ? "ON" : "OFF");   /* (V10.8.53: said) */
         return;
     }
     if (p == 0u) {
@@ -595,10 +619,6 @@ static void rec_key(uint32_t p)
 #define SK_REC 13u
 #define SK_PAGE 15u
 #define SK_NAME 11u                                     /* (0.9.2) C5: NAME, the slot's rename (EDIT's until 0.9.1) */
-#define TL_COPY 13u
-#define TL_PASTE 14u
-#define TL_DUP 11u                                      /* (V10.8.50) C5: DUP (ui_input.c cp_seq) */
-#define TL_STEP 15u                                     /* (0.9.2) SEQ's G5: CLR STEP (ui_input.c seq_clr_step) */
 static void song_key(uint32_t p)
 {
     uint32_t k;
@@ -721,6 +741,7 @@ static void session_dice(uint32_t seed)
 }
 
 /* GLO's white keys after the SOLOs (F3 ..): unmute all, tap tempo; KNOB 1..4: the levels from track trk_base4() */
+static const char *const GLO_GROUP[4];                /* (the DRUM group's names, below) */
 #define GLO_ALL ((uint32_t)NTRK)
 #define GLO_TAP 7u
 #define GLO_UNDO 8u                                     /* (0.6.21) G4: UNDO the last big change (project.c undo_do) */
@@ -729,17 +750,22 @@ static __attribute__((noinline)) void layer_key(uint32_t l, uint32_t k)
 {
     uint32_t p = key_place(k), i;
     if (l == LAYER_GLO) {
-        if (key_black(k)) {
-            if (p < NTRK)
+        if (key_black(k)) {                             /* (V10.8.53, the owner: every combination says what it did) */
+            char n[3] = {'T', (char)('1' + p), 0};
+            if (p < NTRK) {
                 trk[p].p[P_MUTE] = (int16_t)!trk[p].p[P_MUTE];
-            else if (p < NTRK + 4u)
+                ui_say(n, trk[p].p[P_MUTE] ? " MUTED" : " ON");
+            } else if (p < NTRK + 4u) {
                 dx_mute_set(dx_mute ^ (1u << (p - NTRK)));
+                ui_say(GLO_GROUP[p - NTRK], (dx_mute >> (p - NTRK)) & 1u ? " MUTED" : " ON");
+            }
         } else if (p < NTRK) {
             lys.solo |= 1u << k;                        /* (layer_masks: perf_solo while held) */
         } else if (p == GLO_ALL) {
             for (i = 0; i < NTRK; i++)
                 trk[i].p[P_MUTE] = 0;
             dx_mute_set(0);
+            ui_message("ALL UNMUTED");
         } else if (p == GLO_TAP) {
             glo_tap();
         } else if (p == GLO_UNDO) {
@@ -747,6 +773,7 @@ static __attribute__((noinline)) void layer_key(uint32_t l, uint32_t k)
         }
     } else if (l == LAYER_SCL) {
         TSEL->p[P_ROOT] = (int16_t)((k + 5u) % 12u);    /* the key's note name (F3 = F) */
+        ui_say("ROOT ", NN12[TSEL->p[P_ROOT]]);
     } else if (l == LAYER_EDIT && key_black(k) && p < NLANE && drum_track(TSEL)) {
         dx_mute_set(dx_mute ^ DXM_LANE(p));             /* DRUM: black keys 1..8 mute each sound (lit = sounding) */
     } else if (l == LAYER_EDIT && !key_black(k) && p <= LY_RECALL) {
@@ -760,14 +787,12 @@ static __attribute__((noinline)) void layer_key(uint32_t l, uint32_t k)
         if (!key_black(k) && p < 4u)
             rec_key(p);
     } else if (l == LAYER_SEQ) {
-        if (!key_black(k) && (p == TL_COPY || p == TL_PASTE || p == TL_DUP))
-            cp_seq(p == TL_DUP ? 2u : p - TL_COPY);
-        else if (!key_black(k) && p == TL_STEP)
-            seq_clr_step();                             /* (0.9.2) G5: CLR STEP (AUTO LIST: the record) */
-        else if (!key_black(k))
+        if (!key_black(k))
             tools_key(p);
         else if (p == 8u || p == 9u)
             nudge_key(p == 9u);                         /* (V10.8.49) C#5 / D#5: NUDGE < / > */
+        else if (p == 10u)
+            se_undo();                                  /* (V10.8.52) F#5: UNDO / REDO the last edit */
         else if (p < NLANE && drum_track(TSEL))
             ui.lane = (uint8_t)p;                       /* (black keys 1..8: the lane, as on the grid) */
     } else if (l == LAYER_SAVE && !key_black(k)) {
@@ -805,6 +830,9 @@ static void layer_knob(uint32_t k, int32_t s)
         *vp = (int16_t)clamp(*vp + accel(EN_K1 + k, s, TP[P_LEVEL].max - TP[P_LEVEL].min), TP[P_LEVEL].min,
                              TP[P_LEVEL].max);
         motion_capture(t, P_LEVEL, *vp);
+    } else if (l == LAYER_SEQ) {                        /* (V10.8.52) SEQ EDIT */
+        se_knob(k, s);
+        ui.force = 1;
     } else if (l == LAYER_SAVE) {                       /* KNOB 1: the song (in when SAVE lets go); 2..4: none */
         if (k == 0u)
             lys.song = (uint8_t)(clamp((int32_t)(lys.song ? lys.song - 1u : song_cur) + (s > 0 ? 1 : -1), 0,
@@ -868,6 +896,8 @@ static uint32_t layer_oct(uint32_t pressed, uint32_t oct)
     if (ui.ly && (pressed & (1u << dn | 1u << up)))
         lys.used = 1;                                   /* (0.6.44: an OCT with it: no FX lock) */
     mine = oct & lys.oct;
+    if (lys.l == LAYER_SEQ && mine)                     /* (V10.8.52) SEQ EDIT: OCT+ the ACTION, OCT- ALL STEPS */
+        tools_key(mine & 2u ? 12u : 1u);
     if ((mine & 1u) && lys.l == LAYER_FX) {             /* OCT- (FX LATCH): every effect and macro off */
         perf_latched = 0;
         perf_k[0] = perf_k[1] = perf_k[2] = perf_k[3] = 0;
@@ -924,9 +954,9 @@ static uint32_t layer_leds(uint32_t *br)
         } else if (l == LAYER_EDIT && p < NLANE && drum_track(TSEL)) {   /* DRUM: a sound sounding lit, muted dark */
             on = !dx_lane_muted(p);
         } else if (l == LAYER_SEQ) {                    /* the tools breathe (not while a song plays); DRUM: the lane */
-            on = b && p < NLANE && drum_track(TSEL) && p == ui.lane;   /* lit, the other lanes breathe */
-            can = b ? (p < NLANE && drum_track(TSEL)) || ((p == 8u || p == 9u) && !chain_busy()) : p == TL_COPY ? 1u : p == TL_PASTE || p == TL_DUP ? clip.n && !chain_busy() : tl_cell(TSEL, p) && !chain_busy() &&
-                  (p != TL_CAUTO || motion_count(TSEL));   /* (CLR AUTO: automation to clear; REVERT: an anchor) */
+            on = b ? p < NLANE && drum_track(TSEL) && p == ui.lane : p == 2u && (se_st & 128);   /* lit, the other lanes breathe */
+            can = b ? (p < NLANE && drum_track(TSEL)) || ((p == 8u || p == 9u) && !chain_busy()) :
+                  !chain_busy() && (p < 8u || p > 10u || drum_track(TSEL)) && (p != 14u || clip.n);
         } else if (l == LAYER_SAVE && !b) {             /* the section playing lit, the saved ones and the */
             on = (p < SK_STORE && live.cur == (int8_t)p) || (p == SK_REC && live.srec) ||   /* actions breathe */
                  (p == SK_MODE && live.mode);
@@ -959,8 +989,6 @@ static const char B_NOTE[11] = {'F', 'G', 'A', 'C', 'D', 'F', 'G', 'A', 'C', 'D'
 static const uint8_t PK_BLK[11] = {1, 2, 3, 5, 6, 8, 9, 10, 12, 13, 15};   /* a black key: left of white key n */
 enum { LS_OFF, LS_SEL, LS_HELD, LS_WAIT, LS_DIM, LS_MUTE };
 static const char *const GLO_GROUP[4] = {"KICK", "SNARE", "HAT", "PERC"};
-static const char *const TL_NAME[TL_N] = {"CLEAR", "REVERSE", "SHIFT <", "SHIFT >", "STRETCH", "SQUEEZE", "REPEAT", "CLR AUTO",
-    "CLR", "REV", "FILL", "RND"};
 #define LMC_TW 140                                       /* MACRO's routes: their width (x 92 .. 232) */
 static uint32_t macro_routes(uint32_t m, char *b, uint32_t n)
 {
@@ -1068,35 +1096,6 @@ static uint32_t ly_keyname(uint32_t l, int blk, uint32_t p, char *nm)
             return LS_OFF;
         str_cpy(nm, p == LY_INIT ? (drum_track(TSEL) ? "INIT+KIT" : "INIT") : drum_track(TSEL) ? "RCL+KIT" : "RECALL", 12);
         return p == LY_RECALL ? (edit_recallable() ? LS_OFF : LS_DIM) : busy;   /* (V10.6z8: RECALL in a song too) */
-    }
-    if (l == LAYER_SEQ) {
-        if (blk) {
-            if (p < NLANE && drum_track(TSEL)) {
-                str_cpy(nm, drum_lane_abbr(TSEL, p), 12);
-                return p == ui.lane % NLANE ? LS_SEL : LS_OFF;
-            }
-            if (p == 8u || p == 9u) {                   /* (V10.8.49) NUDGE */
-                str_cpy(nm, p == 9u ? "NUDGE >" : "NUDGE <", 12);
-                return busy;
-            }
-            return LS_OFF;
-        }
-        if (p == TL_COPY || p == TL_PASTE || p == TL_DUP) {
-            str_cpy(nm,p == TL_COPY ? "COPY SEQ" : p == TL_DUP ? "DUP" : "PASTE SEQ",12);
-            return p != TL_COPY && (!clip.n || chain_busy()) ? LS_DIM : LS_OFF;
-        }
-        if (p == TL_STEP) {                             /* (0.9.2) G5 */
-            str_cpy(nm, cur_page()->graph == GR_EVENTS ? "DEL REC" : "CLR STEP", 12);
-            return busy;
-        }
-        if (!tl_cell(TSEL, p))
-            return LS_OFF;
-        str_cpy(nm, TL_NAME[p], 12);
-        if (p >= TL_LCLR) {                             /* the lane's: "CLR BD" */
-            str_cpy(nm + str_len(nm), " ", 2);
-            str_cpy(nm + str_len(nm), drum_lane_abbr(TSEL, ui.lane), 12 - str_len(nm));
-        }
-        return busy;
     }
     if (l == LAYER_REC) {
         if (blk || p > 3u)
@@ -1454,6 +1453,16 @@ static __attribute__((noinline)) void layer_cards(uint32_t l)
         rec_columns();
     } else if (l == LAYER_EDIT) {                       /* (0.9.9-seq2f) ENG, No. (PRESETS), FAV (ui_draw.c) */
         engine_columns();
+    } else if (l == LAYER_SEQ) {                        /* (V10.8.52) SEQ EDIT: START END (MOVE WIDTH), ACTION, AMOUNT */
+        uint32_t lo, n, a = (uint32_t)se_st & 127u, on = (uint32_t)seq_sel(TSEL, &lo, &n, tl_len(TSEL)), mv = (uint32_t)se_st >> 7 & 1u;
+        fmt_int(val, (int32_t)lo + 1);
+        text_column(0, mv ? "MOVE" : "START", on ? val : "ALL", on ? VAL(0u) : T_DIM);
+        fmt_int(val, (int32_t)(mv ? n : lo + n));
+        text_column(1, mv ? "WIDTH" : "END", on ? val : "ALL", on ? VAL(1u) : T_DIM);
+        hot_text_column(2, "ACTION", SE[a].nm);
+        se_amt(a, val);
+        text_column(3, SE[a].f == 'p' ? "MODE" : SE[a].f == '%' ? "AMOUNT" : SE[a].f == 'n' ? "64THS" : SE[a].f ? "BY" : "",
+                    val, SE[a].f ? VAL(3u) : T_DIM);
     } else {                                            /* the page's four (SCL: LY_SCL) */
         uint8_t h = ui.home, pg = ui.page, nm[sizeof ui.nmem];
         memcpy(nm, ui.nmem, sizeof nm);
@@ -1625,7 +1634,9 @@ static __attribute__((noinline)) void draw_layer(void)
                live.dirty * 977u + lys.nqc * 4099u + (chain.running ? chain.row * 13u + chain.remaining * 17u : 0u) +
                (lys.song * 8u + song_cur) * 65537u;
     else if (l == LAYER_SEQ)
-        sig += (uint32_t)drum_track(TSEL) * 31u + ui.lane * 5u + (uint32_t)chain_busy() * 3u + (uint32_t)TSEL->p[P_E0] * 131u + song.sel * 977u;
+        sig += (uint32_t)drum_track(TSEL) * 31u + ui.lane * 5u + (uint32_t)chain_busy() * 3u + steps_hash(TSEL) * 131u + song.sel * 977u +
+               (uint16_t)cp_sel * 7u + ui.bank * 13u + ui.cursor * 17u + (song.playing ? pr_head_step(TSEL, 0) * 4099u : 0u) +
+               (uint32_t)TSEL->p[P_SLEN] * 65537u;
     else
         sig += snd_id() * 31u + (uint32_t)preset_favorite() * 13u + (uint32_t)chain_busy() * 3u + (uint32_t)(project_recall_slot() + 1) * 5u + dx_mute * 7919u +
                (uint32_t)drum_track(TSEL) * 11u + up_gen * 101u;
@@ -1635,7 +1646,16 @@ static __attribute__((noinline)) void draw_layer(void)
         cv_rrect(4, 0, 232, (int32_t)graph_h(), 6, T_SURF, T_BG);
         cv_bg = T_SURF;
         if (l == LAYER_FX && !pk.edit) ly_fx_cells();   /* (V10.7.77, the owner) FX: the effects as cells, as before 0.8.9 */
-        else ly_piano(l);                               /* MAP: the keyboard (V10.7.66: KNOBS / STATE gone) */
+        else if (l == LAYER_SEQ) {                      /* (V10.8.52) SEQ EDIT: the roll (the lanes), the steps selected */
+            uint32_t lo, n, i, dr = (uint32_t)drum_track(TSEL), on = (uint32_t)seq_sel(TSEL, &lo, &n, tl_len(TSEL));
+            int32_t x, w;
+            if (dr) graph_grid(TSEL, T_THEME); else graph_roll(TSEL, 0);
+            for (i = 0; on && i < 16u; i++)
+                if (ui.bank * 16u + i >= lo && ui.bank * 16u + i < lo + n) {
+                    seq_col(dr, i, &x, &w);
+                    cv_rect(x, 0, w + 1, 3, T_ACCENT);
+                }
+        } else ly_piano(l);                               /* MAP: the keyboard (V10.7.66: KNOBS / STATE gone) */
         if (l == LAYER_FX && !pk.edit && bn_on(2))      /* (V10.8.9, the owner) the punch-in held, large (V10.8.13: */
             hold_banner(bn_nm, bn_k, pfx_rec_ok());     /* 0.6 s after the key, never a latch's) */
         cv_blit(0, graph_y());

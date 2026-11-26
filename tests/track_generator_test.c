@@ -45,7 +45,7 @@ static int verify(track_t *t,unsigned genre,unsigned role,unsigned len)
     char name[20];memcpy(name,gmut_name,20);
     shift_valid[0][k]=shift_valid[1][k]=1;
     t->jump_to=5;t->rev=1;
-    trackgen_make();project_capture(&after);
+    trackgen_make(0,0);project_capture(&after);
     ok &= !shift_valid[0][k]&&!shift_valid[1][k];
     ok &= !t->jump_to&&!t->rev;
     ok &= !memcmp(&p,&gp,sizeof p)&&!memcmp(&s,&gs,sizeof s)&&!memcmp(&x,&gx,sizeof x)&&
@@ -62,7 +62,7 @@ static int verify(track_t *t,unsigned genre,unsigned role,unsigned len)
         if(i>=len) ok &= !memcmp(st,&before.t[k].step[i],sizeof *st);
         if(!drum_track(t)) for(j=0;j<st->n&&i<len;j++) ok &= st->note[j]==scale_snap(t,st->note[j]);
     }
-    step_t first[NSTEP];memcpy(first,t->step,sizeof first);trackgen_make();
+    step_t first[NSTEP];memcpy(first,t->step,sizeof first);trackgen_make(0,0);
     ok &= !memcmp(first,t->step,sizeof first);
     return ok;
 }
@@ -112,14 +112,14 @@ int main(void)
     ui_power_on();song.sel=1;set_engine_of(&trk[1],ENGI_ANALOG);trk[1].engine=ENGI_ANALOG;
     song.playing=1;
     static project_t before,generated,reloaded;static project_store_t stored;
-    project_capture(&before);trackgen_make();project_capture(&generated);
+    project_capture(&before);trackgen_make(0,0);project_capture(&generated);
     ok=proj_pack(&stored,&generated)&&proj_import(&reloaded,&stored,sizeof stored);
     ok &= !memcmp(reloaded.t[1].step,generated.t[1].step,sizeof generated.t[1].step);
     bad+=check("track GEN result round trips through the existing project format",ok);
     ok=!undo_do();project_capture(&reloaded);
     for(unsigned k=0;k<NTRK;k++) ok &= !memcmp(before.t[k].step,reloaded.t[k].step,sizeof before.t[k].step);
     bad+=check("track GEN existing UNDO restores all previous patterns",ok);
-    chain.armed=1;project_capture(&before);trackgen_make();project_capture(&generated);
+    chain.armed=1;project_capture(&before);trackgen_make(0,0);project_capture(&generated);
     ok=!memcmp(&before,&generated,sizeof before);chain.armed=0;
     bad+=check("track GEN cannot overwrite an armed arrangement",ok);
     song.sel=1;set_engine_of(&trk[1],ENGI_ANALOG);trk[1].engine=ENGI_ANALOG;

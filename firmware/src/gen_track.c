@@ -29,7 +29,8 @@ BTAPP_FN static void trackgen_cards_bt(void)
 }
 static void trackgen_knob(uint32_t k,int32_t s) {if(bt_hw_seg()) trackgen_knob_bt(k,s);}
 static void trackgen_cards(void) {if(bt_hw_seg()) trackgen_cards_bt();}
-static __attribute__((noinline)) void trackgen_make(void)
+/* (V10.8.53) lo, cnt: the steps written (cnt 0: the whole sequence; SEQ EDIT's GENERATE: its selection, the rest kept) */
+static __attribute__((noinline)) void trackgen_make(uint32_t lo,uint32_t cnt)
 {
     track_t *t=TSEL;uint32_t k=trk_index(t),i,j,n,len,f;
     const tg_config_t *c=&tg_config[k];
@@ -82,10 +83,12 @@ static __attribute__((noinline)) void trackgen_make(void)
     gp=save.p;gs=save.s;gmut=save.g;gx=save.x;gq=save.q;
     undo_mark();
     f=motion_guard();
-    memcpy(t->step,temp.step,len*sizeof(step_t));
+    if(!cnt||lo+cnt>len) lo=0,cnt=len;
+    memcpy(t->step+lo,temp.step+lo,cnt*sizeof(step_t));
     shift_valid[0][k]=shift_valid[1][k]=0;
     t->rat_left=t->lr_on=t->ss_n=t->ss_i=0;
     t->arp_from=t->cv_on=t->csp_n=t->jump_to=t->rev=0;t->seq_active=1;
     motion_unguard(f);
-    ui_message("TRACK GENERATED");ui.force=1;
+    if(cnt==len) ui_message("TRACK GENERATED");
+    ui.force=1;
 }

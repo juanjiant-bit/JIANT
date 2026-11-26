@@ -862,10 +862,10 @@ BTAPP_FN static void cp_say(const char *what, uint32_t lo, uint32_t n)   /* (V10
 }
 
 /* (V10.8.51) step keys held on SEQ's roll, two or more: "SEL 5-8", the range kept (cp_sel: its first | its last << 8, bit
- * 15 on) for SEQ TOOLS' STRETCH SQUEEZE REPEAT (ui_tools.c tl_shape: once). Only a key pressed changes it (keys let go
+ * 15 on) for SEQ EDIT (ui_tools.c se_do; V10.8.52: kept until SEQ EDIT's OCT- / G3, each track its own). Only a key pressed changes it (keys let go
  * keep it): two or more held, their range; one alone, none. (In clay.c's clay_sp, unused since V10.8.21: no RAM of its
  * own, nothing of the sound moved; [1] the bar's keys held the pass before) */
-#define cp_sel (clay_sp[0])
+#define cp_sel (clay_sp[2u + song.sel % NTRK])   /* (V10.8.52: the track's own, ui_tools.c sel_of) */
 static void sel_poll(void)
 {
     uint64_t m;
@@ -1737,7 +1737,7 @@ static __attribute__((noinline)) void act_do(void)
     uint32_t c = act_col(), id, k = (uint32_t)song.g[G_SLOT] - 1u;
     if (!c--)
         return;
-    if(cur_page()->graph==GR_TRACKGEN) {trackgen_make();return;}
+    if(cur_page()->graph==GR_TRACKGEN) {trackgen_make(0,0);return;}
     if (cur_page()->graph == GR_MOTION) {
         if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
         confirm_open(CF_CLEAR_MOTION, song.sel);

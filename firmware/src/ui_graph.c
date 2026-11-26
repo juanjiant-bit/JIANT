@@ -26,6 +26,7 @@ static void lz_tile(int32_t x, int32_t y, int32_t w, int32_t h, int sel, uint16_
 /* the height ADSR and LFO are drawn on: 100 px, or (MENU > LARGE's strip: draw_graph) the strip's ~ 56 */
 static int32_t graph_ht = 100;
 #include "ui_organic.c"                              /* JIANT FM's organic line art (drawn by code) */
+#include "ui_gx.c"                                   /* (V10.8.53) the pictures' shared engine */
 static uint16_t heat_col(int32_t v);
 static uint16_t note_col(uint32_t n);                /* (V10.6i) ui_lzpage.c: a note's own colour */
 #include "ui_scene.c"                                /* (V10.25) SCL > SCENE: the multitimbral page */
@@ -156,8 +157,7 @@ static void graph_lfo(const track_t *t, uint16_t c)
     uint16_t tc = TRK_COL[(uint32_t)(t - trk) % 6u];
     char b[16];
     (void)c;
-    for (i = 0; i < 64; i += 2)                         /* its orbit, dotted; the axis */
-        cv_pset(ox + (a * og_cos((uint32_t)i * 1024u) >> 15), cy + (a * og_sin((uint32_t)i * 1024u) >> 15), T_DIM);
+    /* (V10.8.53) the axis (its orbit's dots gone: the room) */
     for (x = PANEL_X0; x < PANEL_X0 + PANEL_W; x += 3) cv_pset(x, cy, T_LINE);
     for (x = 0; x < PANEL_X0 + PANEL_W - x0; x++) {     /* the wave it wrote, the newest nearest */
         uint32_t ph = t->lfo_ph - (uint32_t)x * span;

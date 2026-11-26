@@ -506,12 +506,12 @@ static void draw_column_tall(uint32_t c, const char *label, const char *val, con
                   vc == T_ACCENT || vc == T_DIM ? vc : T_KEY, T_INK, T_BG);
     } else if (val[0]) {
         int why = !large_face_has(val) ? 1 : ink_w(vf, val) > COL_W - 6 ? 2 : 0;
-        if (why)                                        /* (a number L cannot hold: V, the same 14 px capitals, narrower) */
-            vf = face_has(&AF_V, val) && ink_w(&AF_V, val) <= COL_W - 6 ? &AF_V : &AF_M;
+        if (why)                                        /* (a number L cannot hold: M; V10.8.53 the V face gone, its room) */
+            vf = &AF_M;
         if (vf == &AF_M && ink_w(vf, val) > COL_W - 6)
             vf = &AF_S, why = 3;
         LARGE_HOOK(val, why);
-        vy = vf == &AF_L ? LG_VB - AF_L_CAP_Y : vf == &AF_V ? LG_VB + HALF_UP(AF_L_CAP_H - AF_V_CAP_H) - AF_V_CAP_Y :
+        vy = vf == &AF_L ? LG_VB - AF_L_CAP_Y :
              vf == &AF_M ? LG_VB + HALF_UP(AF_L_CAP_H - AF_M_CAP_H) - AF_M_CAP_Y
                                                           : LG_VB + HALF_UP(AF_L_CAP_H - AF_S_CAP_H) - AF_S_CAP_Y;
         if (vf == &AF_S && ink_w(vf, val) > COL_W - 2) {   /* (a value always fits: the lint reports one cut) */
@@ -688,10 +688,8 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
     key[n + 12] = (char)(curve == DJF_NOCURVE ? '#' : 0x80 | ((curve + 64) & 127));   /* (0.9.1) the DJ FILTER's curve */
     key[n + 13] = 0;
     uw = unit[0] ? text_w(&AF_S, unit) + 3 : 0;
-    if (face_has(&AF_V, val) && val[0] && text_w(&AF_V, val) + uw <= room)   /* a number: in V (capitals 14 px) where it and
-                                                         * its unit fit the card; else M (11), else S (9) */
-        vf = &AF_V;
-    else if (text_w(vf, val) + uw > room)
+    if (text_w(vf, val) + uw > room)                  /* M (11) where it and its unit fit the card, else S (9); (V10.8.53)
+                                                         * the V face (14 px numbers) gone, its room */
         vf = &AF_S;
     sig = (uint8_t)str_hash(str_hash(song.sel + TSEL->eng_req * 4u + ux.gen * 64u + lz_on() * 16u, label), unit);
     snap = ui.force || sig != ui.roll[c].sig;           /* what the value is of: label, unit, track, engine, palette */
@@ -750,17 +748,16 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
         cv_scroll = 0;
         if (kid >= 0)                                   /* "[OCT+]": the keycap (accent: it would act; DIM: it would not) */
             x = cv_keycap(5, ry + 2, (uint32_t)kid, vc == T_ACCENT || vc == T_DIM ? vc : T_KEY, T_INK, cb);
-        else if (vf != &AF_S) {                         /* (M: its capitals rows ry + 3 .. 13; V: its figures ry .. ry + 15,
-                                                         * inside the strip that rolls; its unit a row lower, on its line) */
+        else if (vf != &AF_S) {                         /* (M: its capitals rows ry + 3 .. 13, inside the strip that rolls) */
             if (!ui.roll[c].from[0] && val[0] && vf == &AF_M)
                 GFX_HOOK_ALIGN(0, ry, COL_W, ry + ROLL_H, AL_V, "card value in its roll window");
-            x = roll_text(c, 5, vf == &AF_V ? ry - AF_V_CAP_Y + 1 : ry - 1, val, vc, vf);
+            x = roll_text(c, 5, ry - 1, val, vc, vf);
         } else if (free)                                /* (a name: ellipsised where it must be) */
             x = cv_free_text(5, ry + 2, vf, val, vc, cb, room - uw);
         else
             x = cv_text_fit(5, ry + 2, vf, val, vc, cb, room - uw);
         if (unit[0]) {
-            int32_t uy = vf == &AF_V ? ry - AF_V_CAP_Y + 1 + AF_V.asc - AF_S.asc : ry + 2;
+            int32_t uy = ry + 2;
             GFX_HOOK_ALIGN(0, 0, 0, uy + AF_S.asc, AL_B, "card unit on its value's baseline");
             cv_text_on(x + 3, uy, &AF_S, unit, T_MID, cb);   /* on the value's baseline (S) */
         }
@@ -1888,52 +1885,31 @@ static void seg_screen(uint32_t full)
 }
 
 /* the count-in (seq.c, MENU > COUNT-IN; 1.1, Discussion #131): over the page until the sequencer starts. Its bar's four
- * beats counted down, 4 3 2 1, in four cells (the beat now filled THEME, those gone dim), with 2 BARS which bar it is;
- * PLAY stops it. Drawn again on each beat (seq.c's state; the header stays live) */
-#define CI_Y 88                                       /* the cells: 4 x 48 px, 8 px apart, 72 tall */
-#define CI_H 72
+ * beats counted down, "4 3 2 1" on one line (the beat now THEME, those gone dim), with 2 BARS which bar it is; PLAY
+ * stops it. Drawn again on each beat (seq.c's state; the header stays live). (V10.8.53) one line of figures (were four
+ * cells): its room */
 static __attribute__((noinline)) void draw_countin(void)
 {
     static uint32_t shown;
     uint32_t total = cin_total, e = total - cin_left, j, sig = total * 64u + e + 1u;
     char sub[16];
-    int full = ui.force || shown / 64u != total;       /* (0.9.0) a beat: its cells and the bar only (was the whole screen) */
     if (!ui.force && shown == sig)
         return;
     shown = sig;
-    if (full) {                                       /* (round what it draws, not under it too) */
-        const int16_t R[5][4] = {{0, 44, 240, AF_M.h}, {0, 66, 240, AF_S.h}, {12, CI_Y, 216, CI_H},
-                                 {0, CI_Y + CI_H + 14, 240, AF_S.h}, {0, 206, 240, KC_H + 2}};
-        fill_around(R, 5);
-        ui.head_sig = ~0u;
-        draw_text_box(0, 44, 240, &AF_M, "COUNT-IN", T_TEXT, 1);
-    }
-    if (total > 4u) {
-        str_cpy(sub, "BAR 1 OF 2", sizeof sub);
-        sub[4] = (char)('1' + e / 4u % 9u);
-        sub[9] = (char)('0' + total / 4u % 10u);
-    } else
-        str_cpy(sub, "1 BAR", sizeof sub);
-    draw_text_box(0, 66, 240, &AF_S, sub, T_MID, 1);
-    cv_begin(216, CI_H, T_BG);
+    lcd_fill(0, H_HEAD, 240, 240u - H_HEAD, T_BG);
+    ui.head_sig = ~0u;
+    draw_text_box(0, 44, 240, &AF_M, "COUNT-IN", T_TEXT, 1);
+    str_cpy(sub, "BAR 1 OF 2", sizeof sub);
+    sub[4] = (char)('1' + e / 4u % 9u);
+    sub[9] = (char)('0' + total / 4u % 10u);
+    draw_text_box(0, 66, 240, &AF_S, total > 4u ? sub : "1 BAR", T_MID, 1);
     for (j = 0; j < 4u; j++) {
-        int32_t x = (int32_t)j * 56;
         char d[2] = {(char)('4' - j), 0};
-        int now = j == e % 4u, gone = j < e % 4u;
-        uint16_t fill = now ? T_THEME : T_SURF;
-        cv_rrect(x, 0, 48, CI_H, 8, fill, T_BG);
-        GFX_HOOK_ALIGN(x, 0, x + 48, CI_H, AL_HV, "count-in beat centred in its cell");
-        cv_text_in(x, CAP_IN(L, CI_H), 48, &AF_L, d, now ? T_INK : gone ? T_DIM : T_TEXT, fill);
-    }
-    cv_blit(12, CI_Y);
-    if (!full) {
-        ui.force = 0;
-        return;
+        draw_text_box(36 + (int32_t)j * 44, 110, 36, &AF_L, d, j == e % 4u ? T_THEME : j < e % 4u ? T_DIM : T_TEXT, 1);
     }
     {   /* PLAY stops it */
         int32_t x = HALF_UP(240 - kh_ink(KC_PLAY, "STOP"));
         cv_begin(240, KC_H + 2, T_BG);
-        GFX_HOOK_ALIGN(0, 0, 240, 0, AL_H | AL_N(2), "count-in key centred");
         cv_key_hint(x, 1, KC_PLAY, "STOP", 1, T_BG);
         cv_blit(0, 206);
         lcd_sync();

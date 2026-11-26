@@ -7735,6 +7735,8 @@ static void tl_melody(void)
 }
 static int tl_lock_at(uint32_t step) { int16_t v; return motion_lock_get(TSEL, step, P_REV, &v) && v == 50; }
 static void tl_key(uint32_t w) { key_down(white(w)); frame(); key_up(white(w)); frame(); }
+/* (V10.8.53) SEQ EDIT (SEQ held): the ACTION a with its amount m, done with D5 */
+static void se_run(uint32_t a, int32_t m) { se_st = (int16_t)a; se_md = (int16_t)m; tl_key(12); }
 static uint32_t tl_count(const track_t *t, uint32_t l)
 {
     uint32_t i, c = 0;
@@ -8015,7 +8017,7 @@ static int test_copy_paste(void)
     uint32_t i;
     int16_t v;
     track_t *t = &trk[0], *u = &trk[1], *d = &trk[2];
-    step_t keep[NSTEP];
+    step_t keep[NSTEP], mid_steps[NSTEP];
     char tag[8];
     ui_power_on(); stop_transport();
     memset(&clip, 0, sizeof clip);
@@ -8101,26 +8103,25 @@ static int test_copy_paste(void)
     ok &= song.rec == 1u;
     song.rec = 0;
     bad += check("  REC alone still arms; a step key held with the clipboard empty too", ok);
-    {   /* (V10.8.50) the owner: "copy, paste, duplicate; select": SEQ TOOLS C5 DUP, step keys held + EDIT clear them */
+    {   /* (V10.8.50, V10.8.52 SEQ EDIT) DUP (SEQ + C5): the steps selected (none: the whole sequence) again right after
+         * them, LEN grown, their locks too; step keys held + EDIT clear those steps */
         char kn[16];
         t = &trk[0]; track_select(0); frame();
         for (i = 0; i < NSTEP; i++) step_clear(&t->step[i]);
         t->p[P_SLEN] = 8;
         for (i = 4; i < 8u; i++) { t->step[i].time = ST_NOTE; t->step[i].n = 1; t->step[i].note[0] = (uint8_t)(60 + i); t->step[i].vel = 100; }
+        motion_clear(t);
         ok = motion_set_lock(t, 5, P_PAN, 30) == 0;
         memset(&clip, 0, sizeof clip);
-        (void)ly_keyname(LAYER_SEQ, 0, TL_DUP, kn);
-        ok &= str_eq(kn, "DUP");
-        ly_white(B_SEQ, TL_DUP);
-        ok &= msg_is("NOTHING COPIED") && t->p[P_SLEN] == 8;
-        cp_keys_down(4, 7);                              /* steps 5..8 held, SELECT turned */
-        turn(EN_SELECT, 1);
-        cp_keys_up();
-        ok &= clip.n == 4u && clip.lo == 4u && msg_is("COPY 5-8");
+        sel_of(0) = 0;
+        (void)kn;                                       /* (SEQ EDIT draws its own map: no key names) */
+        cp_keys_down(4, 7); frame();                     /* steps 5..8 held: selected */
+        ok &= msg_is("SEL 5-8");
+        cp_keys_up(); frame();
         ly_white(B_SEQ, TL_DUP);
         ok &= t->p[P_SLEN] == 12 && msg_is("DUP 9-12") && !memcmp(&t->step[8], &t->step[4], 4 * sizeof(step_t)) &&
               motion_lock_get(t, 9, P_PAN, &v) && v == 30 && motion_lock_get(t, 5, P_PAN, &v);
-        bad += check("V10.8.50 DUP (SEQ + C5, its name on the map): steps 5-8 again at 9-12, LEN 8 -> 12, the lock too", ok);
+        bad += check("V10.8.52 DUP (SEQ + C5): SEL 5-8 again at 9-12, LEN 8 -> 12, the lock too", ok);
         ok = !undo_do() && t->p[P_SLEN] == 8 && t->step[8].time != ST_NOTE && !motion_lock_get(t, 9, P_PAN, &v);
         bad += check("  UNDO takes the DUP back (LEN too)", ok);
         cp_keys_down(5, 6);                              /* steps 6 and 7 held + EDIT: cleared */
@@ -8131,15 +8132,18 @@ static int test_copy_paste(void)
         bad += check("  step keys 6 + 7 held + EDIT clear those steps (notes, the lock), the others stay", ok);
         ok = !undo_do() && t->step[5].time == ST_NOTE && motion_lock_get(t, 5, P_PAN, &v);
         bad += check("  UNDO takes the CLEAR back", ok);
-        clip.lo = 60; clip.n = 4;
+        t->p[P_SLEN] = 64;
+        sel_of(0) = (int16_t)(0x8000u | 63u << 8 | 60u);
         ly_white(B_SEQ, TL_DUP);
-        ok = msg_is("NO ROOM") && t->p[P_SLEN] == 8;
+        ok = msg_is("NO ROOM") && t->p[P_SLEN] == 64;
         bad += check("  DUP with no room left in 64 steps refused", ok);
+        t->p[P_SLEN] = 8;
+        sel_of(0) = 0;
         memset(&clip, 0, sizeof clip);
     }
-    {   /* (V10.8.51) the owner: "select, stretch and squeeze": step keys held on the roll, SEL 5-8; SEQ TOOLS' C4 D4 E4
-         * (STRETCH SQUEEZE REPEAT) then on that range only, once (no range: the whole track); the steps after it move
-         * along, LEN with it; its locks with their steps; one UNDO */
+    {   /* (V10.8.51, V10.8.52 SEQ EDIT) the owner: "select, stretch and squeeze": step keys held on the roll, SEL 5-8; SEQ
+         * EDIT's STRETCH SQUEEZE REPEAT on that range (none: the whole track); the steps after it move along, LEN with
+         * it; its locks with their steps; one UNDO */
         track_t *t = &trk[0];
         int16_t v;
         track_select(0); frame();
@@ -8147,40 +8151,71 @@ static int test_copy_paste(void)
         t->p[P_SLEN] = 8;
         for (i = 0; i < 8u; i++) { t->step[i].time = ST_NOTE; t->step[i].n = 1; t->step[i].note[0] = (uint8_t)(60 + i); t->step[i].vel = 100; }
         motion_clear(t);
+        sel_of(0) = 0;
         ok = motion_set_lock(t, 5, P_PAN, 30) == 0 && motion_set_lock(t, 7, P_PAN, 40) == 0;
         cp_keys_down(4, 7); frame();
         ok &= msg_is("SEL 5-8");
         cp_keys_up(); frame();
-        ly_white(B_SEQ, TL_RANDOM);
-        ok &= msg_is("STRETCH 5-8") && t->p[P_SLEN] == 12 && t->step[3].note[0] == 63 && t->step[4].note[0] == 64 &&
+        btn_down(B_SEQ); frame();
+        se_run(SE_STRETCH, 2);
+        ok &= msg_is("STRETCH x2 5-8") && t->p[P_SLEN] == 12 && t->step[3].note[0] == 63 && t->step[4].note[0] == 64 &&
               t->step[6].note[0] == 65 && t->step[8].note[0] == 66 && t->step[10].note[0] == 67 && t->step[5].time != ST_NOTE &&
               motion_lock_get(t, 6, P_PAN, &v) && v == 30 && motion_lock_get(t, 10, P_PAN, &v) && v == 40 &&
               !motion_lock_get(t, 5, P_PAN, &v);
-        bad += check("V10.8.51 SEL 5-8 + STRETCH (SEQ + C4): steps 5-8 over 5-12, LEN 8 -> 12, the locks with their steps", ok);
+        bad += check("V10.8.52 SEQ EDIT: SEL 5-8 + STRETCH x2: steps 5-8 over 5-12, LEN 8 -> 12, the locks with their steps", ok);
         ok = !undo_do() && t->p[P_SLEN] == 8 && t->step[5].note[0] == 65 && motion_lock_get(t, 5, P_PAN, &v);
         bad += check("  one UNDO takes it back", ok);
-        ly_white(B_SEQ, TL_RANDOM);
-        ok = msg_is("LEN 8 > 16") && t->p[P_SLEN] == 16 && t->step[14].note[0] == 67;
-        bad += check("  the range used once: STRETCH again is the whole track (LEN 8 > 16)", ok);
+        tl_key(1);                                      /* G3: ALL STEPS */
+        se_run(SE_STRETCH, 2);
+        ok = msg_is("STRETCH x2 1-8") && t->p[P_SLEN] == 16 && t->step[14].note[0] == 67;
+        bad += check("  G3 ALL: STRETCH is the whole track (LEN 8 > 16)", ok);
         (void)undo_do();
-        cp_keys_down(4, 7); frame(); cp_keys_up(); frame();
-        ly_white(B_SEQ, TL_COOK);
-        ok = msg_is("SQUEEZE 5-8") && t->p[P_SLEN] == 6 && t->step[4].note[0] == 64 && t->step[5].note[0] == 66 &&
+        sel_of(0) = (int16_t)(0x8000u | 7u << 8 | 4u);
+        se_run(SE_SQUEEZE, 2);
+        ok = msg_is("SQUEEZE /2 5-8") && t->p[P_SLEN] == 6 && t->step[4].note[0] == 64 && t->step[5].note[0] == 66 &&
              motion_lock_get(t, 5, P_PAN, &v) && v == 40;
-        bad += check("  SEL 5-8 + SQUEEZE (D4): 5-8 into 5-6, LEN 8 -> 6, step 8's lock on step 6", ok);
+        bad += check("  SEL 5-8 + SQUEEZE /2: 5-8 into 5-6, LEN 8 -> 6, step 8's lock on step 6", ok);
         (void)undo_do();
-        cp_keys_down(4, 7); frame(); cp_keys_up(); frame();
-        ly_white(B_SEQ, TL_BEAT);
-        ok = msg_is("REPEAT 5-8") && t->p[P_SLEN] == 12 && t->step[8].note[0] == 64 && t->step[11].note[0] == 67 &&
+        sel_of(0) = (int16_t)(0x8000u | 7u << 8 | 4u);
+        se_run(SE_REPEAT, 2);
+        ok = msg_is("REPEAT x2 5-8") && t->p[P_SLEN] == 12 && t->step[8].note[0] == 64 && t->step[11].note[0] == 67 &&
              motion_lock_get(t, 9, P_PAN, &v) && v == 30 && motion_lock_get(t, 5, P_PAN, &v);
-        bad += check("  SEL 5-8 + REPEAT (E4): 5-8 again at 9-12, LEN 8 -> 12, its locks copied", ok);
+        bad += check("  SEL 5-8 + REPEAT x2: 5-8 again at 9-12, LEN 8 -> 12, its locks copied", ok);
         (void)undo_do();
+        btn_up(B_SEQ); frame();
         cp_keys_down(4, 7); frame(); cp_keys_up(); frame();
-        cp_keys_down(1, 1); frame(); cp_keys_up(); frame();   /* (a step outside it alone: the selection gone) */
-        ly_white(B_SEQ, TL_RANDOM);
-        ok = msg_is("LEN 8 > 16");
-        bad += check("  a step outside the range pressed alone drops it (the whole track again)", ok);
+        cp_keys_down(1, 1); frame(); cp_keys_up(); frame();   /* (a step alone: the selection gone) */
+        btn_down(B_SEQ); frame();
+        se_run(SE_STRETCH, 2);
+        ok = msg_is("STRETCH x2 1-8");
+        bad += check("  a step pressed alone drops the selection (the whole track again)", ok);
         (void)undo_do();
+        /* (V10.8.52) F#5: UNDO, again REDO, named */
+        se_run(SE_TRANSP, 3);
+        ok = msg_is("TRANSP +3 1-8") && t->step[0].note[0] == 63;
+        key_down(black(10)); frame(); key_up(black(10)); frame();
+        ok &= msg_is("UNDO TRANSP +3 1-8") && t->step[0].note[0] == 60;
+        key_down(black(10)); frame(); key_up(black(10)); frame();
+        ok &= msg_is("REDO TRANSP +3 1-8") && t->step[0].note[0] == 63;
+        bad += check("  TRANSP +3; F#5 UNDO, again REDO, each named", ok);
+        (void)undo_do();
+        /* (V10.8.53, the owner) GENERATE in the selection (its genre KNOB 4's, a new seed), the rest kept; RANDOM on a grid */
+        memcpy(mid_steps, t->step, sizeof mid_steps);
+        sel_of(0) = (int16_t)(0x8000u | 7u << 8 | 4u);
+        se_run(SE_GEN, 1);
+        ok = !memcmp(t->step, mid_steps, 4 * sizeof(step_t)) && str_len(ui.msg) > 10 && ui.msg[0] == 'G' && ui.msg[1] == 'E' &&
+             ui.msg[2] == 'N' && t->p[P_SLEN] == 8;
+        for (i = 0; i < str_len(ui.msg) && ui.msg[i] != '#'; i++) ;
+        ok &= i < str_len(ui.msg);                      /* "GEN <genre> 5-8 #seed" */
+        bad += check("  V10.8.53 GENERATE in SEL 5-8: steps 1-4 kept, \"GEN <genre> 5-8 #seed\"", ok);
+        (void)undo_do();
+        tl_key(1);
+        se_run(SE_RAND, 0);
+        ok = msg_is("RANDOM 1/4 1-8");
+        for (i = 0; i < 8u; i++) ok &= (i % 4u == 0u) || t->step[i].time != ST_NOTE;
+        bad += check("  RANDOM 1/4: notes only on every fourth step", ok);
+        (void)undo_do();
+        btn_up(B_SEQ); frame();
         motion_clear(t);
     }
     return bad;
@@ -8311,44 +8346,38 @@ static int test_seq_tools(void)
         bad += check("TRACK > CHANCE: the track's chance (100 % as before, 0 % silent), K2", ok);
     }
 
-    /* the whole sequence: REVERSE (a note's ties stay after it), SHIFT, CLEAR, locks, LEN, silent keys, undo */
+    /* the whole sequence (V10.8.52 SEQ EDIT, no selection): REVERSE (a note's ties stay after it), ROTATE, CLEAR, CLR
+     * AUTO, locks, silent keys; OCT- none selected, no octave */
     ui_power_on();
     tl_melody();
+    sel_of(song.sel) = 0;
     memcpy(ref, TSEL->step, sizeof ref);
     go_page(GR_ROLL); frame();
     usb.config = 1;
     {
         uint32_t mo = mo_w;
         btn_down(B_SEQ); frame();
-        tl_key(1);                                      /* G3: REVERSE */
-        ok = ui.layer == LAYER_SEQ && !gates() && mo_w == mo && msg_is("REVERSED");
+        se_run(SE_REVERSE, 0);
+        ok = ui.layer == LAYER_SEQ && !gates() && mo_w == mo && msg_is("REVERSE 1-8");
     }
     usb.config = 0;
     ok &= TSEL->step[6].time == ST_NOTE && TSEL->step[6].note[0] == 60 && TSEL->step[7].time == ST_TIE &&
           TSEL->step[4].note[0] == 64 && TSEL->step[2].note[0] == 67 && TSEL->step[0].time == ST_REST &&
           TSEL->step[20].note[0] == 72 && tl_lock_at(4) && !tl_lock_at(3);
-    bad += check("  G3 REVERSE: steps 1..LEN mirrored, C4 + its tie as C4 then the tie, the lock moves with E4", ok);
+    bad += check("  SEQ EDIT REVERSE: steps 1..LEN mirrored, C4 + its tie as C4 then the tie, the lock moves with E4", ok);
     btn_up(B_SEQ); frame();
-    motion_reset(TSEL);                                 /* (no undo since TONIC: the melody again) */
+    motion_reset(TSEL);
     tl_melody();
-    memcpy(ref, TSEL->step, sizeof ref);                /* (its rests keep stale note bytes: the new reference) */
+    memcpy(ref, TSEL->step, sizeof ref);
     btn_down(B_SEQ); frame();
-    tl_key(3);                                          /* B3: SHIFT > */
+    se_run(SE_ROTATE, 1);
     ok = TSEL->step[1].note[0] == 60 && TSEL->step[2].time == ST_TIE && TSEL->step[4].note[0] == 64 && tl_lock_at(4) &&
-         msg_is("SHIFTED RIGHT");
-    tl_key(3);
-    tl_key(2); tl_key(2);                               /* A3: SHIFT < twice */
+         msg_is("ROTATE +1 1-8");
+    se_run(SE_ROTATE, -1);
     ok &= !memcmp(TSEL->step, ref, sizeof ref) && tl_lock_at(3);
-    TSEL->p[P_SLEN] = 6;
-    tl_key(2);
-    ok &= TSEL->step[5].note[0] == 60 && TSEL->step[2].note[0] == 64 && TSEL->step[6].time == ST_REST &&
-          TSEL->step[20].note[0] == 72;                 /* (inside LEN 6: step 7 and 21 stay) */
-    tl_key(3);
-    TSEL->p[P_SLEN] = 8;
-    ok &= !memcmp(TSEL->step, ref, sizeof ref);
-    bad += check("  B3 / A3 SHIFT > <: one step round inside LEN (the lock with it); back again: as it was", ok);
+    bad += check("  ROTATE +1 / -1: one step round inside LEN (the lock with it); back again: as it was", ok);
     tl_key(0);                                          /* F3: CLEAR */
-    for (ok = msg_is("T1 CLEARED") || msg_is("T2 CLEARED") || msg_is("T3 CLEARED") || msg_is("T4 CLEARED"), i = 0; i < 8u; i++)
+    for (ok = msg_is("CLEAR 1-8"), i = 0; i < 8u; i++)
         ok &= TSEL->step[i].time == ST_REST && !TSEL->step[i].n;
     ok &= TSEL->step[20].note[0] == 72 && !motion_lock_count(TSEL);
     bad += check("  F3 CLEAR: steps 1..LEN empty (no dialog), past LEN kept, the locks of the steps cleared go", ok);
@@ -8356,30 +8385,24 @@ static int test_seq_tools(void)
     memcpy(ref, TSEL->step, sizeof ref);
     (void)motion_set_event(TSEL, 1, P_DIST, 40); (void)motion_set_event(TSEL, 9, P_REV, 20);
     (void)motion_set_event(&trk[1], 2, P_DIST, 30);
-    a = leds_at(0); b2 = leds_at(250);
-    ok = ((a ^ b2) >> white(7)) & 1u;                   /* (F4 breathes: automation there) */
     tl_key(7);
-    ok &= msg_is("AUTOMATION CLEARED") && !motion_count(TSEL) && motion_count(&trk[1]) == 1u &&
+    ok = msg_is("CLR AUTO 1-8") && !motion_count(TSEL) && motion_count(&trk[1]) == 1u &&
          !memcmp(TSEL->step, ref, sizeof ref) && ui.layer == LAYER_SEQ;
     tl_key(7);
-    a = leds_at(0); b2 = leds_at(250);
-    ok &= msg_is("NOTHING TO CLEAR") && !(((a | b2) >> white(7)) & 1u);
+    ok &= msg_is("NOTHING TO CLEAR");
     motion_reset(&trk[1]);
-    bad += check("  F4 CLR AUTO (breathes with automation): the track's automation and locks gone, its steps and the other tracks' stay", ok);
-    tl_key(0);
+    bad += check("  F4 CLR AUTO: the track's automation and locks gone, its steps and the other tracks' stay", ok);
+    sel_of(song.sel) = (int16_t)(0x8000u | 3u << 8 | 1u);
     oct_back();
-    ok = TSEL->step[0].time == ST_REST && !msg_is("SEQUENCE PUT BACK") && ui.layer == LAYER_SEQ && song.octave == 0;
-    turn(EN_K1, -2);
-    ok &= TSEL->p[P_SLEN] == 6;                         /* KNOB 1: LEN (the PATTERN page's four) */
-    oct_back();
-    ok &= TSEL->p[P_SLEN] == 6;
+    ok = !(sel_of(song.sel) & 0x8000) && ui.layer == LAYER_SEQ && song.octave == 0 && !memcmp(TSEL->step, ref, sizeof ref);
     btn_up(B_SEQ); frame();
-    bad += check("  OCT-: nothing put back (TONIC: no undo), no octave; KNOB 1..4 LEN DIV SWING GATE", ok);
+    bad += check("  OCT-: the selection gone (ALL STEPS), no octave, nothing changed", ok);
 
     /* (V10.8.49, the owner: "nudge") black C#5 / D#5: NUDGE < / >, every note's MICRO 4 64ths earlier / later together,
      * held at MICRO's range: no step moves to another place */
     ui_power_on();
     tl_melody();
+    sel_of(song.sel) = 0;
     go_page(GR_ROLL); frame();
     btn_down(B_SEQ); frame();
     {
@@ -8398,41 +8421,35 @@ static int test_seq_tools(void)
     }
     btn_up(B_SEQ); frame();
     bad += check("  V10.8.49 C#5 / D#5 NUDGE < / >: the notes' MICRO together, held at its range, no step moved", ok);
-    /* (V10.8.49, the owner: "nudge, mover, estirar, comprimir y repetir") C4 STRETCH x2, D4 SQUEEZE /2, E4 REPEAT x2 (the
-     * old SEQ > STRETCH's, on SEQ TOOLS); C5 (the lane's RANDOM) still nothing */
+    /* STRETCH x2, SQUEEZE /2, REPEAT x2 on the whole track (melodic and DRUM) */
     ui_power_on();
     tl_melody();
+    sel_of(song.sel) = 0;
     go_page(GR_ROLL); frame();
     btn_down(B_SEQ); frame();
     {
         uint32_t l0 = (uint32_t)TSEL->p[P_SLEN], j;
         memcpy(ref, TSEL->step, sizeof ref);
-        tl_key(4);
+        se_run(SE_STRETCH, 2);
         ok = (uint32_t)TSEL->p[P_SLEN] == 2u * l0 && TSEL->step[2].time == ref[1].time && TSEL->step[2].n == ref[1].n;
-        tl_key(5);
+        se_run(SE_SQUEEZE, 2);
         ok &= (uint32_t)TSEL->p[P_SLEN] == l0;
-        tl_key(6);
+        se_run(SE_REPEAT, 2);
         ok &= (uint32_t)TSEL->p[P_SLEN] == 2u * l0;
         for (j = 0; j < l0; j++) ok &= !memcmp(&TSEL->step[l0 + j], &TSEL->step[j], sizeof TSEL->step[0]);
-        TSEL->p[P_SLEN] = (int16_t)l0;
-        memcpy(ref, TSEL->step, sizeof ref);
-        tl_key(11);
-        ok &= !memcmp(TSEL->step, ref, sizeof ref);
     }
     btn_up(B_SEQ); frame();
     ui_power_on();
     tl_drum();
+    sel_of(song.sel) = 0;
     go_page(GR_ROLL); frame();
     btn_down(B_SEQ); frame();
     {
         uint32_t l0 = (uint32_t)TSEL->p[P_SLEN];
-        tl_key(4); ok &= (uint32_t)TSEL->p[P_SLEN] == 2u * l0;
-        tl_key(5); ok &= (uint32_t)TSEL->p[P_SLEN] == l0;
-        memcpy(ref, TSEL->step, sizeof ref);
-        tl_key(11);
-        ok &= !memcmp(TSEL->step, ref, sizeof ref);
+        se_run(SE_STRETCH, 2); ok &= (uint32_t)TSEL->p[P_SLEN] == 2u * l0;
+        se_run(SE_SQUEEZE, 2); ok &= (uint32_t)TSEL->p[P_SLEN] == l0;
     }
-    bad += check("  V10.8.49 C4 STRETCH x2, D4 SQUEEZE /2, E4 REPEAT x2 (melodic and DRUM); C5 nothing", ok);
+    bad += check("  SEQ EDIT STRETCH x2, SQUEEZE /2, REPEAT x2 on the whole track (melodic and DRUM)", ok);
     for (i = 0; i < 16u; i++) {                         /* (the basic beat, by hand) */
         step_clear(&TSEL->step[i]);
         if (i % 4u == 0u) grid_hit(TSEL, i, DV_KICK, 1);
@@ -8461,8 +8478,8 @@ static int test_seq_tools(void)
     ui.lane = DV_TOM;
     bad += check("  A4 / G4: the lane reversed (its accents with it), cleared; the others stay", ok);
     a = leds_at(0); b2 = leds_at(250);
-    ok = ((a ^ b2) >> white(0)) & 1u && !(((a | b2) >> white(11)) & 1u) && !(((a | b2) >> white(7)) & 1u) &&
-         ((a & b2) >> black(DV_TOM)) & 1u && ((a ^ b2) >> black(0)) & 1u && ((a ^ b2) >> black(8)) & 1u;   /* (V10.8.49: C#5 NUDGE breathes) */
+    ok = ((a ^ b2) >> white(0)) & 1u && ((a ^ b2) >> white(12)) & 1u && ((a & b2) >> black(DV_TOM)) & 1u &&
+         ((a ^ b2) >> black(0)) & 1u && ((a ^ b2) >> black(8)) & 1u;   /* (CLEAR and DO breathe, the lane lit, NUDGE) */
     btn_up(B_SEQ); frame();
     ui_power_on();
     tl_melody();
@@ -8470,13 +8487,12 @@ static int test_seq_tools(void)
     btn_down(B_SEQ); frames(500);                       /* (the map: a peek) */
     memcpy(ref, TSEL->step, sizeof ref);
     a = leds_at(0); b2 = leds_at(250);
-    ok &= ((a ^ b2) >> white(3)) & 1u && ((a ^ b2) >> white(5)) & 1u && ((a ^ b2) >> white(6)) & 1u &&
-          !(((a | b2) >> black(0)) & 1u);                 /* (V10.8.49: SHIFT, SQUEEZE and REPEAT breathe) */
-    tl_key(11); tl_key(10);
+    ok &= ((a ^ b2) >> white(11)) & 1u && !(((a | b2) >> black(0)) & 1u) && !(((a | b2) >> white(8)) & 1u);   /* (no lane keys) */
+    tl_key(10);
     key_down(black(2)); frame(); key_up(black(2)); frame();
     ok &= !memcmp(TSEL->step, ref, sizeof ref) && ui.lane == 0u && !gates();
     btn_up(B_SEQ); frame();
-    bad += check("  LEDs: the tools breathe, the lane lit (DRUM); a melodic track: no lane keys; V10.8.49: STRETCH SQUEEZE REPEAT lit", ok);
+    bad += check("  LEDs: SEQ EDIT's keys breathe, the lane lit (DRUM); a melodic track: no lane keys", ok);
 
     /* a song playing */
     ui_power_on();
@@ -9973,6 +9989,26 @@ static int test_usb_level(void)
  * beat's cell moves), PLAY's green LED on each beat (its own dark), the STEP keys' entry paused, PLAY stops it (the page
  * back); at its end the sequencer plays and the page is back */
 static uint16_t px_at(uint32_t x, uint32_t y) { return host_screen[y * 240u + x]; }
+/* (V10.8.53) the count-in's beats a line of figures: ci_col the colour of box j's figure (its first ink, the page's
+ * background not), ci_lit(j) box j holds the colour beat 1 was lit in at the start (ci_now) */
+static uint16_t ci_now;
+static uint16_t ci_col(uint32_t j)
+{
+    uint32_t x, y;
+    uint16_t bg = px_at(2, 120);
+    for (y = 104; y < 150u; y++)
+        for (x = 36u + j * 44u; x < 72u + j * 44u; x++)
+            if (px_at(x, y) != bg) return px_at(x, y);
+    return bg;
+}
+static int ci_lit(uint32_t j)
+{
+    uint32_t x, y;
+    for (y = 104; y < 150u; y++)
+        for (x = 36u + j * 44u; x < 72u + j * 44u; x++)
+            if (px_at(x, y) == ci_now) return 1;
+    return 0;
+}
 static void cin_beat(void)                       /* the audio until the count-in's next beat (or its end) */
 {
     uint32_t left = cin_left, k;
@@ -10716,8 +10752,11 @@ static int test_click_menu(void)
     ok &= seq_counting() && !song.playing && cin_left == 4u && live_rec_sel();
     frame();
     {
-        uint16_t now0 = px_at(16, CI_Y + 40), next0 = px_at(16 + 56, CI_Y + 40);
-        ok &= now0 != next0;                            /* the first beat's cell lit, the next not */
+        /* (V10.8.53) the beats a line of figures "4 3 2 1" (x 36 + 44 j, y 110 ..): the one now THEME */
+#define CI_LIT(j) ci_lit(j)
+        ci_now = ci_col(0);
+        ok &= ci_now != ci_col(1);
+        ok &= CI_LIT(0) && !CI_LIT(1);                  /* the first beat lit, the next not */
         ui_leds();
         ok &= (fm1_led[8] & 2u) != 0u;                  /* PLAY's green: on the beat */
         for (i = 0; i < 400u * 32u / CTL; i++) events_block(CTL);    /* (~0.3 s: past the first quarter of the beat) */
@@ -10725,7 +10764,7 @@ static int test_click_menu(void)
         ok &= !(fm1_led[8] & 2u);
         cin_beat();
         frame();
-        ok &= cin_left == 3u && px_at(16 + 56, CI_Y + 40) == now0 && px_at(16, CI_Y + 40) == next0;   /* the cell moved */
+        ok &= cin_left == 3u && CI_LIT(1) && !CI_LIT(0);   /* the beat moved */
         ui_leds();
         ok &= (fm1_led[8] & 2u) != 0u;
     }
@@ -10734,14 +10773,14 @@ static int test_click_menu(void)
     ok = transport_req == 2u;
     events_block(CTL);
     frame();
-    ok &= !seq_counting() && !song.playing && (song.rec & 1u) && px_at(28, CI_Y + 40) == px_at(28 + 56, CI_Y + 40);
+    ok &= !seq_counting() && !song.playing && (song.rec & 1u) && !CI_LIT(0) && !CI_LIT(1);
     bad += check("PLAY while counting in stops it: nothing plays, still armed, the page back", ok);
     press(B_PLAY);
     events_block(CTL);
     ok = seq_counting() && cin_left == 4u;
     for (i = 0; i < 4u; i++) cin_beat();
     frame();
-    ok &= !seq_counting() && song.playing && trk[0].seq_idx == 0u && px_at(28, CI_Y + 40) == px_at(28 + 56, CI_Y + 40);
+    ok &= !seq_counting() && song.playing && trk[0].seq_idx == 0u && !CI_LIT(0) && !CI_LIT(1);
     bad += check("PLAY armed and stopped: the count-in again; at its end the sequencer plays from step 1, the page back", ok);
     press(B_PLAY);
     events_block(CTL);
@@ -13394,16 +13433,13 @@ static int test_nav_rules(void)
     ui.ev_row = 0; frame();
     ok = motion_lock_count(TSEL) == 1u;
     btn_down(B_SEQ); frames(500);
-    (void)ly_keyname(LAYER_SEQ, 0, 15u, kn);
-    ok &= ui.layer == LAYER_SEQ && str_eq(kn, "DEL REC");
+    ok &= ui.layer == LAYER_SEQ;                         /* (V10.8.52: SEQ EDIT's own map) */
     btn_up(B_SEQ); frame(); frame();
     ly_white(B_SEQ, 15u);
     ok &= motion_lock_count(TSEL) == 0u && str_eq(cur_page()->title, "AUTO LIST");
     go_title("STEP"); frame();
     cursor_set(0);
     btn_down(B_SEQ); frames(500);
-    (void)ly_keyname(LAYER_SEQ, 0, 15u, kn);
-    ok &= str_eq(kn, "CLR STEP");
     btn_up(B_SEQ); frame(); frame();
     ly_white(B_SEQ, 15u);
     ok &= TSEL->step[0].time == ST_REST && !TSEL->step[0].n && ui.cursor == 1u && msg_is("STEP CLEARED");

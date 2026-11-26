@@ -35,7 +35,7 @@ static void undo_mark(void);                    /* (0.6.21) project.c: the music
 static int trackgen_ok(const track_t *t);
 static void trackgen_knob(uint32_t k,int32_t s);
 static void trackgen_cards(void);
-static void trackgen_make(void);
+static void trackgen_make(uint32_t lo, uint32_t cnt);
 static void system_init(void);                  /* (0.6.40) project.c: INIT SYSTEM */
 static int project_clear(void);                 /* (V10.7.22) project.c: CLEAR PROJECT */
 static int undo_do(void);                       /* .. back (and again: forward) */

@@ -80,32 +80,7 @@ static void tech_dest(const track_t *t)
 /* the page's technical graph, if it has one (1) */
 /* (V10.44) pictures in the Bluetooth segment (BTAPP_FN: the app slot full), drawn only once bt_hw_seg() said it is this
  * build's (else the page keeps its old picture) */
-/* FX > MASTER > EQ: the four bands' curve (LOW and HIGH shelves, the mids bells), each band's dot, the frequencies */
-static BTAPP_FN void tech_eq(int32_t x, int32_t y, int32_t w, int32_t h)
-{
-    static const uint16_t F[4] = {120, 380, 650, 900};   /* (x / 1024: ~60 250 2k 8k on a log axis) */
-    int32_t i, k, py = 0, mid = y + 20 + (h - 30) / 2, sc = (h - 34) / 2;
-    cv_rect(x, mid, w, 1, T_LINE);
-    if (ui_scope)                                        /* (V10.58) MENU > DISPLAY > SCOPE ON: the master's scope behind the
-                                                         * curve, live (the users missed the page's picture of the sound) */
-        scope_at(x, w, mid, sc, T_RAISE);
-    for (i = 0; i <= w; i++) {
-        int32_t f = i * 1024 / w, db = 0, yy;
-        for (k = 0; k < 4; k++) {
-            int32_t d = f - F[k], wt = (k == 0 && d < 0) || (k == 3 && d > 0) ? 256 : 256 - d * d / 160;
-            if (wt > 0) db += eq_v[k] * wt;
-        }
-        yy = mid - db * sc / (12 * 256);
-        yy = clamp(yy, y + 18, y + h - 10);
-        if (i) cv_line(x + i - 1, py, x + i, yy, heat_col(128 + db / 24));
-        py = yy;
-    }
-    for (k = 0; k < 4; k++) {
-        int32_t cx = x + F[k] * w / 1024;
-        cv_rect(cx - 2, mid - eq_v[k] * sc / 12 - 2, 5, 5, heat_col(128 + eq_v[k] * 10));
-        cv_text_in(cx - 12, y + h - 7, 24, &AF_X, k == 0 ? "60" : k == 1 ? "250" : k == 2 ? "2K" : "8K", T_DIM, T_SURF);
-    }
-}
+/* (V10.8.53) FX > MASTER > EQ's curve (tech_eq) gone: its room; the page draws MASTER's picture */
 static int graph_tech(const track_t *t, const page_t *pg)
 {
     if (pg->scope != SC_GLOBAL)

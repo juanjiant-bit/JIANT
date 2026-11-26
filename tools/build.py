@@ -411,7 +411,7 @@ def late_tables():
     """the generator's own constant tables (gen.c, gen_tables.c): out of .rodata like the UI's recorded ones ('n'), so a
     new one never moves the sound's merged constants after .rodata"""
     names = set()
-    for f in ("gen.c", "gen_tables.c", "eng_string.c", "eng_add.c", "ui_engvis.c"):   # (0.9.9-snd5: the two engines' own
+    for f in ("gen.c", "gen_tables.c", "eng_string.c", "eng_add.c", "ui_engvis.c", "ui_tools.c"):   # (V10.8.52: SEQ EDIT's)   # (0.9.9-snd5: the two engines' own
         # tables and descriptors, the creatures' new ones: out of .rodata too, the sound's tables where they were)
         txt = (FW / "src" / f).read_text()
         names |= set(re.findall(r"^static const [^=;(]*?\b(\w+)\s*\[", txt, flags=re.M))

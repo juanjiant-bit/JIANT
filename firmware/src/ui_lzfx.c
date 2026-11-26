@@ -33,73 +33,40 @@ static void fxg_label(int32_t x, int32_t y, const char *s, uint16_t c, int right
     else
         cv_text(x, y + 3, &AF_X, s, c);
 }
-/* (V10.8.15, JIANT BYTE's "tunnel" (GPL, as BYTE has it), the owner's pick) DELAY: each echo heard a frame going into the
- * centre, the first the track's colour, the one sounding yellow; WIDE / PITCH / PING / DRIVE move and tint them */
-static void fxg_frame(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t c, int32_t t)
-{
-    cv_rect(x, y, w, t, c); cv_rect(x, y + h - t, w, t, c);
-    cv_rect(x, y, t, h, c); cv_rect(x + w - t, y, t, h, c);
-}
+/* (V10.8.53) DELAY, REVERB and CHORUS drawn with the shared engine (ui_gx.c: gx_col, gx_sine; were three pictures of
+ * their own: the tunnel, the cells' tail, three sines and an orbit) */
+/* DELAY: each echo a column, MIX's height the first and each FDBK lower, TIME apart (the slower the wider), the one
+ * sounding yellow (a pulse running along them while it sounds); "1/8 . 5 ECHOES" */
 static void fxg_delay(int32_t x, int32_t y, int32_t w, int32_t h)
 {
     char b[24];
     const char *u;
-    int32_t i, n, a = 1000, fb = song.g[G_DFDBK], tone = song.g[G_DCOLOR], en = fxg_en(), top = w > 120 ? y + 12 : y;
-    int32_t hh = y + h - top, cx = x + w / 2, cy = top + hh / 2, fw = w * 85 / 100, fh = hh * 95 / 100, run;
-    int32_t wide = song.g[G_WIDTH], pit = song.g[G_DPIT], ping = song.g[G_DPING], drv = song.g[G_DDRV];
-    int32_t lv[14];
-    uint16_t tc = FXG_TC;
-    for (n = 0; n < 14 && a > 40; n++) { lv[n] = a; a = a * (fb > 127 ? 127 : fb) / 127; }
-    run = en && n ? (int32_t)(anim_fr / 3u % (uint32_t)n) : -1;
-    if (drv)
-        cv_rect(cx - fw / 2 + 2, cy - fh / 2 + 2, fw - 4, fh - 4, ux_mix(T_BG, tc, drv / 2));
-    for (i = 0; i < 4; i++) {
-        int32_t ex = cx + (i & 1 ? fw / 2 : -fw / 2), ey = cy + (i & 2 ? fh / 2 : -fh / 2), k;
-        for (k = 0; k < 32; k += 2)
-            cv_pset(ex + (cx - ex) * k / 32, ey + (cy - ey) * k / 32, T_LINE);
-    }
-    for (i = n - 1; i >= 0; i--) {
-        int32_t d = 1000000 / (1000 + i * 450), side = i & 1 ? -1 : 1;
-        int32_t ox = side * (wide * 30 / 127 + (ping ? w / 6 : 0)) * (1000 - d) / 1000, oy = -pit * 12 / 10 * (1000 - d) / 1000;
-        int32_t ww = fw * d / 1000, wh = fh * d / 1000, fx = cx + ox - ww / 2, fy = cy + oy - wh / 2;
-        uint16_t c = i == run ? HUD_YE : i == 0 ? tc : FXG_H((40 + lv[i] * 200 / 1000) * (1000 - tone * 700 / 127) / 1000 * (1000 - i * 50) / 1000);
-        if (ww < 3 || wh < 3) continue;
-        fxg_frame(fx, fy, ww, wh, c, i == 0 || i == run ? 2 : 1);
-    }
-    if (w > 120) {
-        int32_t tw;
+    int32_t n, a = 1000, fb = clamp(song.g[G_DFDBK], 0, 127), top = w > 120 ? 12 : 0, run, sp;
+    for (n = 0; n < 14 && a > 40; n++) a = a * fb / 127;
+    run = fxg_en() && n ? (int32_t)(anim_fr / 3u % (uint32_t)n) : -1;
+    sp = clamp(w / (n + 1), 6, 8 + song.g[G_DTIME] * 2);
+    for (a = 1000, fb = 0; fb < n && fb * sp < w; fb++, a = a * clamp(song.g[G_DFDBK], 0, 127) / 127)
+        gx_col(x + fb * sp, y + h, sp - 2 > 12 ? 12 : sp - 2, h - top, a, fb == run ? HUD_YE : fb ? 0 : FXG_TC);
+    if (top) {
         param_format(&GP[G_DTIME], song.g[G_DTIME], b, &u);
         str_cpy(b + str_len(b), " \xB7 ", 4);
         fmt_int(b + str_len(b), n);
         str_cpy(b + str_len(b), n == 1 ? " ECHO" : " ECHOES", 8);
-        tw = text_w(&AF_X, b) + 4;
-        cv_rect(x, y, tw, 11, HUD_BL);
-        cv_text_on(x + 2, y + 1 - AF_X_CAP_Y, &AF_X, b, T_TEXT, HUD_BL);
+        hud_tag(x, y, b, T_TEXT, HUD_BL);
     }
 }
-
+/* REVERB: its tail as columns of cells, SIZE long (SPRING rippled, CLOUD wavy), a line sweeping it while it sounds */
 static void fxg_reverb(int32_t x, int32_t y, int32_t w, int32_t h)
 {
-    int32_t i, sz = song.g[G_RSIZE], ty = song.g[G_RTYPE], e = 1000, k = 1000 - (5000 - sz * 4300 / 127) / (w ? w : 1);
-    int32_t top = y + 12, hh = h - 12, en = fxg_en(), sweep = en && w > 0 ? (int32_t)(anim_fr * 3u % (uint32_t)w) : -1;
+    int32_t i, sz = song.g[G_RSIZE], ty = clamp(song.g[G_RTYPE], 0, 4), e = 1000, en = fxg_en();
+    int32_t k = 1000 - (5000 - sz * 4300 / 127) * 5 / (w ? w : 1), sweep = en && w > 0 ? (int32_t)(anim_fr * 3u % (uint32_t)w) / 5 : -1;
     char b[16];
-    for (i = 0; i < w; i++) {                        /* the decay, a column each: its height the envelope */
-        int32_t env = i < w / 25 + 1 ? e * i / (w / 25 + 1) : e, n = 1000, ch;
-        if (ty == 4) n = 500 + (bg_sin((uint32_t)(i * 65536 / (w ? w : 1) * 6)) >> 6) * 500 / 512;
-        else if (ty == 1) n = 700 + (bg_sin((uint32_t)(i * 65536 / (w ? w : 1) * 14)) >> 6) * 300 / 512;
-        ch = hh * 9 / 10 * env / 1000 * n / 1000;
-        if (en)                                         /* (the tail swells with the output) */
-            ch = ch * (168 + clamp(en, 0, 288) * 88 / 288) / 256;
-        if (!(i % 5)) {                                 /* (a matrix of cells, 5 px a column) */
-            int32_t r, nr = ch / 6;
-            for (r = 0; r < nr; r++)
-                cv_rect(x + i, top + hh - (r + 1) * 6, 4, 5, i / 5 == sweep / 5 ? HUD_YE : FXG_H(60 + (218 - i * 180 / (w ? w : 1)) * (nr - r / 2) / (nr ? nr : 1) * 3 / 4));
-            for (; r < hh / 6; r++)
-                cv_rect(x + i, top + hh - (r + 1) * 6, 4, 5, T_SURF);
-        }
-        e = e * k / 1000;
+    for (i = 0; i < w / 5; i++, e = e * k / 1000) {
+        int32_t n = ty == 4 ? 750 + (bg_sin((uint32_t)i * 2048u) >> 7) : ty == 1 ? 850 + (bg_sin((uint32_t)i * 5000u) >> 8) : 1000;
+        gx_col(x + i * 5, y + h, 4, h - 12, (i < 2 ? e / 2 : e) * n / 1000 * (en ? 168 + clamp(en, 0, 288) * 88 / 288 : 256) / 256,
+               i == sweep ? HUD_YE : 0);
     }
-    fxg_label(x, y, N_RTYPE[clamp(ty, 0, 4)], T_MID, 0);
+    fxg_label(x, y, N_RTYPE[ty], T_MID, 0);
     if (w > 120) {
         str_cpy(b, "PRE ", sizeof b);
         fmt_int(b + 4, song.g[G_RPRE]);
@@ -107,35 +74,14 @@ static void fxg_reverb(int32_t x, int32_t y, int32_t w, int32_t h)
         fxg_label(x + w, y, b, T_DIM, 1);
     }
 }
+/* CHORUS: its voices as two sines DEPTH deep, STEREO apart, running at RATE while it sounds */
 static void fxg_chorus(int32_t x, int32_t y, int32_t w, int32_t h)
 {
-    int32_t k, i, dep = song.g[G_CDEPTH], st = song.g[G_CSTER], mid = y + 8 + (h - 8) / 2;
-    uint32_t ph = fxg_en() ? anim_fr * (uint32_t)(song.g[G_CRATE] + 8) * 48u : 0u;   /* (running at RATE while it sounds) */
+    int32_t dep = song.g[G_CDEPTH], st = song.g[G_CSTER], mid = y + 8 + (h - 8) / 2, amp = (h - 8) * 35 / 100 * dep / 127;
+    uint32_t ph = fxg_en() ? anim_fr * (uint32_t)(song.g[G_CRATE] + 8) * 48u : 0u;
     char b[16];
-    for (k = 0; k < 3; k++) {
-        int32_t py = 0;
-        for (i = 0; i <= w; i++) {
-            int32_t amp = (h - 8) * 35 / 100 * dep / 127 * (10 + 2 * k) / 10 * (128 + st) / 128;
-            int32_t yy = mid + (bg_sin((uint32_t)(i * 65536 / (w ? w : 1) * 2) + (uint32_t)k * 21000u + ph) * amp >> 15);
-            yy = clamp(yy, y + 9, y + h - 1);
-            if (i)
-                cv_line(x + i - 1, py, x + i, yy, k == 0 ? FXG_TC : k == 1 ? T_TEXT : HUD_BL);
-            py = yy;
-        }
-    }
-    if (w > 120) {                                      /* the stereo an orbit at the left: L against R */
-        int32_t R = (h - 16) / 2, ox = x + R + 2, oy = y + 10 + R, px = 0, py2 = 0, amp = R * (40 + dep * 60 / 127) / 100;
-        cv_rect(x, y + 9, 2 * R + 6, h - 9, T_BG);
-        for (i = 0; i < 48; i += 2) cv_pset(ox + (R * og_cos((uint32_t)i * 1365u) >> 15), oy + (R * og_sin((uint32_t)i * 1365u) >> 15), T_DIM);
-        for (i = 0; i <= 96; i++) {
-            uint32_t a2 = (uint32_t)i * 683u;
-            int32_t xx = ox + (bg_sin(a2 * 2u + ph) * amp >> 15), yy = oy + (bg_sin(a2 * 3u + ph + (uint32_t)st * 200u) * amp >> 15);
-            if (i) cv_line_t(px, py2, xx, yy, FXG_TC, 2);
-            px = xx; py2 = yy;
-        }
-        cv_text(ox - R - 1, oy - 3, &AF_X, "L", T_DIM);
-        cv_text(ox + R - 4, oy - 3, &AF_X, "R", T_DIM);
-    }
+    gx_sine(x, mid, w, amp * (128 + st) / 128, 2u, ph + 21000u, T_TEXT, y + 9, y + h - 1);
+    gx_sine(x, mid, w, amp, 2u, ph, FXG_TC, y + 9, y + h - 1);
     str_cpy(b, "STEREO ", sizeof b);
     b[7] = st > 0 ? '+' : 0;
     fmt_int(b + 7 + (st > 0), st);
@@ -177,6 +123,20 @@ static void fxg_slicer(int32_t x, int32_t y, int32_t w, int32_t h)
         }
     }
 }
+/* (V10.8.53) a transfer curve in an s x s box at (x, y): DIST's (bip: in -1 .. 1, out across the middle) and CLIP's (0 .. 1,
+ * from the bottom left), its guides dotted, the level now (0..256, < 0 none) a yellow dot on it */
+static void fxg_curve(uint32_t type, int32_t x, int32_t y, int32_t s, int32_t d, int32_t lvl, int bip)
+{
+    int32_t i, py = 0, g = d ? 4096 + d * d * 2 : 4096, cy = bip ? y + s / 2 : y + s - 1, hx = bip ? s / 2 : 0;
+    int32_t sc = bip ? (s / 2 - 1) * 9 / 10 : s - 2, lx = lvl < 0 ? -1 : hx + clamp(lvl, 0, 256) * (s - hx) / 256;
+    for (i = 0; i < s; i += 3) { cv_pset(x + i, cy, T_LINE); cv_pset(x + hx, y + i, T_LINE); }
+    for (i = 0; i < s; i++) {
+        int32_t yy = clamp(cy - tk_dist_y(type, (i - hx) * (bip ? 131072 : 32768) / (bip ? s / 2 : s), g, d) * sc / 32767, y + 1, y + s - 2);
+        if (i) cv_line_t(x + i - 1, py, x + i, yy, FXG_TC, 2);
+        if (i == lx) { cv_rect(x + i, y, 1, s, HUD_YE); cv_rect(x + i - 2, yy - 2, 5, 5, HUD_YE); }
+        py = yy;
+    }
+}
 static void fxg_master(int32_t x, int32_t y, int32_t w, int32_t h)
 {
     int32_t en = bg_energy(), lvl = song.playing || en > 2 ? 128 + en / 2 : 26, i, py = 0, duck = song.g[G_DUCK];
@@ -194,16 +154,8 @@ static void fxg_master(int32_t x, int32_t y, int32_t w, int32_t h)
     fxg_label(x, y + 14, b, T_MID, 0);
     if (w > 120) {                                      /* (V10.43) the page: CLIP's curve (in -> out, the level now a dot),
                                                          * PUNCH's bar (its push on the peaks now), then the duck */
-        int32_t s = ch, d = song.g[G_CLIP] * 127 / 100, g = 4096 + d * d * 2, dy = 0;
-        for (i = 0; i < s; i += 3) { cv_pset(x + i, cy + s - 1, T_LINE); cv_pset(x, cy + i, T_LINE); }
-        for (i = 0; i < s; i++) {
-            int32_t yy = cy + s - 1 - tk_dist_y(DT_SOFT, i * 32768 / s, d ? g : 4096, d) * (s - 2) / 32767;
-            if (i) cv_line_t(x + i - 1, py, x + i, yy, FXG_TC, 2);
-            if (i == lvl * s / 320) dy = yy;
-            py = yy;
-        }
-        cv_rect(x + lvl * s / 320, cy, 1, s, HUD_YE);
-        cv_rect(x + lvl * s / 320 - 2, dy - 2, 5, 5, HUD_YE);
+        int32_t s = ch;
+        fxg_curve(DT_SOFT, x, cy, s, song.g[G_CLIP] * 127 / 100, lvl * 256 / 320, 0);
         cv_rect(x + s + 6, cy, 6, s, T_RAISE);
         i = song.g[G_PUNCH] * s / 100 * (lvl - 26) / 230;
         if (i > 0) cv_rect(x + s + 6, cy + s - i, 6, i, FXG_H(230));
@@ -241,14 +193,13 @@ static void fxg_sends(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t
                                                          * cards' order) */
     static const char *const N[4] = {"CHOR", "DLY", "REV", "DIST"};   /* (V10.7.58, the owner: DIST back on SENDS) */
     static const uint8_t ID[4] = {P_CHOR, P_DLY, P_REV, P_DIST};
-    int32_t i, r, cw = w / 4 - 8, nr = (h - 16) / 5;
+    int32_t i, cw = w / 4 - 8, nr = (h - 12) / 6;
     char b[8];
     for (i = 0; i < 4; i++) {
-        int32_t v = t->p[ID[i]], bx = x + i * (w / 4), on = v * nr / 127, ly = y + h - 2 - v * nr * 5 / 127;
+        int32_t v = t->p[ID[i]], bx = x + i * (w / 4), ly = y + h - 1 - v * nr * 6 / 127;
         cv_rect(bx, y, text_w(&AF_X, N[i]) + 4, 11, HUD_BL);
         cv_text_on(bx + 2, y + 1 - AF_X_CAP_Y, &AF_X, N[i], T_TEXT, HUD_BL);
-        for (r = 0; r < nr; r++)
-            cv_rect(bx, y + h - 6 - r * 5, cw, 4, r < on ? FXG_H(51 + r * 205 / (nr ? nr : 1)) : T_LINE);
+        gx_col(bx, y + h, cw, h - 12, v * 1000 / 127, 0);
         cv_rect(bx - 2, ly, cw + 4, 1, HUD_YE);
         fmt_int(b, v * 100 / 127);
         str_cpy(b + str_len(b), "%", 2);
@@ -257,27 +208,14 @@ static void fxg_sends(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t
 }
 static void fxg_dist(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h)
 {
-    int32_t d = t->p[P_DIST], g = 4096 + d * d * 2, i, py = 0, s = h, cy = y + s / 2;
     uint32_t type = (uint32_t)t->p[P_DTYPE] > DT_AMP ? DT_SOFT : (uint32_t)t->p[P_DTYPE];
     char b[16];
     (void)w;
-    for (i = 0; i < s; i += 3) { cv_pset(x + i, cy, T_LINE); cv_pset(x + s / 2, y + i, T_LINE); }
-    for (i = 0; i < s; i++) {
-        int32_t xx = (i - s / 2) * 131072 / (s / 2), yy = cy - tk_dist_y(type, xx, d ? g : 4096, d) * (s / 2 - 1) * 9 / 10 / 32767;
-        yy = clamp(yy, y + 1, y + s - 2);
-        if (i)
-            cv_line_t(x + i - 1, py, x + i, yy, FXG_TC, 2);
-        py = yy;
-    }
-    if (fxg_en() && s > 20) {                           /* the level now, a dot on the curve */
-        int32_t xx = clamp(bg_energy(), 0, 256) * 131072 / 256, px = x + s / 2 + xx * (s / 2) / 131072;
-        int32_t yy = clamp(cy - tk_dist_y(type, xx, d ? g : 4096, d) * (s / 2 - 1) * 9 / 10 / 32767, y + 3, y + s - 4);
-        cv_rect(clamp(px, x + 3, x + s - 4) - 2, yy - 2, 5, 5, HUD_YE);
-    }
-    hud_tag(x + s + 8, y + 1, N_DTYPE[type], song.sel % 6u >= 4u ? 0xFFFFu : 0x0000u, FXG_TC);
+    fxg_curve(type, x, y, h, t->p[P_DIST], fxg_en() && h > 20 ? clamp(bg_energy(), 0, 256) : -1, 1);
+    hud_tag(x + h + 8, y + 1, N_DTYPE[type], song.sel % 6u >= 4u ? 0xFFFFu : 0x0000u, FXG_TC);
     str_cpy(b, "TONE ", sizeof b);
     fmt_int(b + 5, t->p[P_DTONE]);
-    fxg_label(x + s + 8, y + 15, b, T_DIM, 0);
+    fxg_label(x + h + 8, y + 15, b, T_DIM, 0);
 }
 static void fxg_pan(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h)
 {
@@ -316,8 +254,7 @@ static void fxg_mod(uint32_t m, int32_t x, int32_t y, int32_t w, int32_t h)
     case 3: if (cur_page()->graph == GR_SLPIT && w > 120) fxg_slpitch(x, y, w, h); else fxg_slicer(x, y, w, h); break;
     case 4: break;                                     /* (V10.8.33: PUNCH IN's lane picture gone, the owner: its room) */
     default:
-        if (w > 120 && cur_page()->id[0] == ID_EQ0 && bt_hw_seg()) tech_eq(x, y, w, h);   /* (V10.44) EQ: its curve */
-        else fxg_master(x, y, w, h);
+        fxg_master(x, y, w, h);
         break;                                         /* (snd2: MASTER last) */
     }
 }
