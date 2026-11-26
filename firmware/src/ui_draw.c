@@ -1111,8 +1111,10 @@ static const char *const LZ_HINT[] = {"EDIT 1", "HOLD: K4 GAIN", "FILTER", "HOLD
 static const char *lz_hint(void)
 {
     uint32_t i;
-    if (ui.home || (fm1_ms - lz_hint_ms > 1500u && !((fm1_in.buttons >> panel.btn[B_OCTUP]) & 1u)))
+    if (fm1_ms - lz_hint_ms > 1500u && !((fm1_in.buttons >> panel.btn[B_OCTUP]) & 1u))
         return 0;
+    if (ui.home)                                       /* (V10.8.56) HOME > VISUAL: OCT+ a new figure */
+        return home_vis() ? "NEW FIGURE" : 0;
     for (i = 0; i < NELEM(LZ_HINT); i += 2u)
         if (str_eq(cur_page()->title, LZ_HINT[i])) return LZ_HINT[i + 1u];
     return 0;
@@ -2181,6 +2183,15 @@ static void ui_draw(void)
     }
     if (!scr_frame())                                   /* MENU > SCREEN OFF: dark (or waking), nothing drawn */
         return;
+    if (scrn.st == SCR_VIS) {                           /* (V10.8.56) MENU > SAVER: HOME > VISUAL's figure, the whole screen */
+        uint32_t s;
+        for (s = 0; s < 2u; s++) {
+            cv_begin(240, 120, T_BG);
+            vis_fig(120 * 16, (120 - (int32_t)s * 120) * 16, 104 * 16);
+            cv_blit(0, s * 120u);
+        }
+        return;
+    }
     anim_st.non = 1;                                     /* (codex/anim: the lens's entries worked out once, ui_lens.c) */
     anim_st.nkey = 0;
     ui_draw_page(counting);

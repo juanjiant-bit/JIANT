@@ -3018,6 +3018,10 @@ static void ui_input_frame(void)
                                                          * knob: KEY TRK, no octave) */
                 break;
             }
+            if (b == B_OCTUP && !fm1_in.notes && home_vis()) {   /* (V10.8.56) HOME > VISUAL: OCT+ a new figure */
+                vis_new(1);
+                break;
+            }
             eu_hold = 0;                                /* (OCT- under an armed OCT+: both, the octave 0, as ever) */
             oct_key(b, both);                           /* (V10.6z4: a note held, the expression keys) */
             break;
@@ -3178,7 +3182,7 @@ static void ui_input_frame(void)
             const param_desc_t *d = home_param(k, &vp);
             int32_t was = *vp;
             *vp = (int16_t)param_turn(d, *vp, accel(EN_K1 + k, s, d->fmt == F_ENUM ? 0 : d->max - d->min));
-            if (!home_life()) {                         /* (V10.7.62) LIFE: the project's, no track's (V10.8.27: its hints gone) */
+            if (!home_life() && !home_vis()) {          /* (V10.7.62) LIFE: the project's, no track's (V10.8.27: its hints gone) */
                 knob_cap(TSEL, (uint32_t)(vp - TSEL->p));
                 excite_turn(TSEL, vp, was);
             }

@@ -2781,14 +2781,14 @@ static int test_menu_tabs(void)
     for (i = 0; i < MI_COUNT; i++) ok &= MI_TAB[i] < MTAB_COUNT;
     ui_prefs = 0;
     bad += check("MENU tabs: DISPLAY CONTROL AUDIO SYSTEM (7 12 8 7 rows: V10.7.60 HELP; STYLE retired; codex/coherence INIT SYSTEM gone; 0.8.9 SKIN, retired V10.7.23; 0.9.7 SCOPE, 0.9.9-stab CPU CLOCK, p1 CPU CORES, MIDI MAP, LEARN, LOAD in AUDIO; V10.12 BLUETOOTH; V10.6z4 OCT BEND in AUDIO; V10.6z6 VELOCITY VEL MIN AFTERTOUCH VEL LEARN in CONTROL), each in a run, their rows and values fit the lens's panel",
-                 ok && MTAB_COUNT == 4u && str_eq(MTAB_NAME[0], "DISPLAY") && mtab_rows(MTAB_DISPLAY) == 8u &&   /* (V10.7.81: PRESETS) */
+                 ok && MTAB_COUNT == 4u && str_eq(MTAB_NAME[0], "DISPLAY") && mtab_rows(MTAB_DISPLAY) == 9u &&   /* (V10.7.81: PRESETS; V10.8.56: SAVER) */
                  mtab_rows(MTAB_CONTROL) == 12u && mtab_rows(MTAB_AUDIO) == 8u && mtab_rows(MTAB_SYSTEM) == 7u);   /* (0.6.58: INIT SYSTEM;
                                                                          * 0.6.72: MIDI OUT in CONTROL; 0.9.9-stab: CPU CLOCK in SYSTEM) */
 
     ui_power_on();
     hold(B_HOME);
     ok = ui.menu == 1 && ui.menu_sel == MI_COLOR && menu_tab() == MTAB_DISPLAY;
-    for (i = 0; i < 6u; i++) turn(EN_SELECT, 1);     /* (0.9.2: SELECT every row, tab after tab; was PRESETS in a tab, round;
+    for (i = 0; i < 7u; i++) turn(EN_SELECT, 1);     /* (V10.8.56: SAVER a row more; 0.9.2: SELECT every row, tab after tab; was PRESETS in a tab, round;
                                                      * 0.9.7: SCOPE a row more; STYLE, SKIN retired: a row less each;
                                                      * V10.7.60: HELP a row more) */
     ok &= ui.menu_sel == MI_HELP;
@@ -2950,9 +2950,9 @@ static int test_menu_tabs(void)
     hold(B_HOME);
     frame();
     ok = ui.menu == 1 && ui.mlv == 1u && lz_on() && lz_fam() == LZ_MENU && lz_tabs() == 4u && lz_tab_lit(0) &&
-         lz_crumb_is("MENU \xB7 DISPLAY \xB7 COLOR") && lz_count_is("1/35");
+         lz_crumb_is("MENU \xB7 DISPLAY \xB7 COLOR") && lz_count_is("1/36");
     turn(EN_SELECT, 1); frame();
-    ok &= ui.mlv == 1u && lz_tab_lit(0) && lz_crumb_is("MENU \xB7 DISPLAY \xB7 SCOPE") && lz_count_is("2/35");
+    ok &= ui.mlv == 1u && lz_tab_lit(0) && lz_crumb_is("MENU \xB7 DISPLAY \xB7 SCOPE") && lz_count_is("2/36");
     turn(EN_ALGO, 1); frame();
     ok &= menu_tab() == MTAB_CONTROL && lz_tab_lit(1) && lz_crumb_is("MENU \xB7 CONTROL \xB7 HOLD");
     turn(EN_SELECT, 2); frame();
@@ -2961,7 +2961,7 @@ static int test_menu_tabs(void)
     ok &= (fx_latch & 1u) != 0u;
     turn(EN_K3, -1); frame();
     menu_close();
-    bad += check("0.9.2 MENU: four tabs (the row's lit), MENU . TAB . ROW and n/33 (STYLE retired; codex/coherence: INIT SYSTEM gone; 0.9.7: SCOPE; 0.9.9-stab: CPU CLOCK; p1: CPU CORES, MIDI MAP, LEARN; V10.12: BLUETOOTH; V10.6z4: OCT BEND; V10.6z6: the keys' four; V10.7.23: SKIN retired); ALGORITHM the tab, any knob the value", ok && MI_COUNT == 35u);   /* (V10.7.81: PRESETS) */
+    bad += check("0.9.2 MENU: four tabs (the row's lit), MENU . TAB . ROW and n/33 (STYLE retired; codex/coherence: INIT SYSTEM gone; 0.9.7: SCOPE; 0.9.9-stab: CPU CLOCK; p1: CPU CORES, MIDI MAP, LEARN; V10.12: BLUETOOTH; V10.6z4: OCT BEND; V10.6z6: the keys' four; V10.7.23: SKIN retired); ALGORITHM the tab, any knob the value", ok && MI_COUNT == 36u);   /* (V10.7.81: PRESETS; V10.8.56: SAVER) */
     {   /* (V10.7.81, the owner) MENU > DISPLAY > PRESETS: SCROLL (the default) loads the next sound; MENU opens the
          * PRESETS list first (the sound kept), then scrolls it */
         uint32_t p0;
@@ -7060,6 +7060,34 @@ static int test_screen_off(void)
          str_eq(menu_vname(MI_SCROFF, 3), "30 MIN") && str_eq(menu_vname(MI_SCROFF, 4), "60 MIN") &&
          menu_get(MI_SCROFF) == 0u;
     bad += check("SCREEN OFF: MENU > DISPLAY row, NEVER 5 15 30 60 MIN, NEVER by default (stored 0, 1.1.5.1)", ok);
+    {   /* (V10.8.56, the owner) MENU > DISPLAY > SAVER: 3 MIN by default; untouched that long, HOME > VISUAL's figure the
+         * whole screen, moving; a button brings the page back and is swallowed (its page not opened), as SCREEN OFF's wake */
+        static uint16_t a[240 * 120];
+        ok = str_eq(MI_NAME[MI_SAVER], "SAVER") && MI_TAB[MI_SAVER] == MTAB_DISPLAY && menu_n(MI_SAVER) == 5u &&
+             menu_get(MI_SAVER) == 2u && str_eq(menu_vname(MI_SAVER, 2), "3 MIN") && str_eq(menu_vname(MI_SAVER, 0), "OFF");
+        menu_put(MI_SAVER, 1u);                      /* 1 MIN */
+        ok &= menu_get(MI_SAVER) == 1u && str_eq(menu_vname(MI_SAVER, 1), "1 MIN");
+        scr_idle(58000u);
+        ok &= scrn.st == SCR_ON && !kb_asleep;
+        rows = host_blit_rows;
+        scr_idle(3000u);
+        ok &= scrn.st == SCR_VIS && kb_asleep && host_bl && host_blit_rows - rows >= 240u;
+        memcpy(a, host_screen, sizeof a);
+        for (i = 0; i < NTRK; i++) trk[i].peak = 9000;
+        frames(400u);
+        ok &= memcmp(a, host_screen, sizeof a) != 0 && scrn.st == SCR_VIS;   /* (it moves) */
+        btn_down(B_ENV); frame();
+        ok &= scrn.st == SCR_ON && ui.home;
+        btn_up(B_ENV); frame(); frames(100u);
+        ok &= ui.home && !ui.menu && !scrn.eat && !kb_asleep;
+        press(B_ENV);
+        ok &= !ui.home && cur_page()->fam == FAM_ENV;
+        go_home();
+        menu_put(MI_SAVER, 0u);                      /* OFF for what follows */
+        scr_idle(10u * 60000u);
+        ok &= scrn.st == SCR_ON && menu_get(MI_SAVER) == 0u;
+        bad += check("V10.8.56 SAVER: MENU > DISPLAY row, 3 MIN by default; untouched -> VISUAL's figure the whole screen, moving; a button brings the page back, swallowed", ok);
+    }
     menu_put(MI_SCROFF, 3u);                         /* 30 MIN for what follows */
 
     host_pw_n = 0;
@@ -11855,8 +11883,8 @@ static int test_style(void)
     frame();
     for (ok = 1, i = 0; i < MI_COUNT; i++)
         ok &= !str_eq(MI_NAME[i], "STYLE");
-    ok &= MI_COLOR == 0u && MI_SCOPE == 1u && MI_LARGE == 2u && MI_ANIM == 3u && MI_LEDS == 4u && MI_SCROFF == 5u &&
-          MI_HELP == 6u && MI_PRSCR == 7u && MI_HOLD == 8u && mtab_rows(MTAB_DISPLAY) == 8u &&   /* (V10.7.81: PRESETS) */ mtab_first(MTAB_CONTROL) == MI_HOLD;
+    ok &= MI_COLOR == 0u && MI_SCOPE == 1u && MI_LARGE == 2u && MI_ANIM == 3u && MI_LEDS == 4u && MI_SCROFF == 5u && MI_SAVER == 6u &&
+          MI_HELP == 7u && MI_PRSCR == 8u && MI_HOLD == 9u && mtab_rows(MTAB_DISPLAY) == 9u &&   /* (V10.7.81: PRESETS) */ mtab_first(MTAB_CONTROL) == MI_HOLD;
     bad += check("MENU: no STYLE row, no SKIN row (FLAT and COLORS the ones); DISPLAY's six rows, the rest renumbered in order", ok);
     {
         persist_t p, q;
@@ -12204,16 +12232,16 @@ static int test_lz_home(void)
     uint32_t c, k;
     ui_power_on(); frame();
     ok = ui.home && lz_on() && lz_fam() == LZ_HOME && home_level() == 0u && !home_set() && lz_tab_lit(0) && lz_tabs() == 4u &&
-         lz_crumb_is("HOME \xB7 ECOSYSTEM \xB7 ECOSYSTEM") && lz_count_is("1/10");   /* (V10.7.62: LIFE in MACROS' place, seven) */   /* (seven pages, as the n/7 below; the "1/8" came
+         lz_crumb_is("HOME \xB7 ECOSYSTEM \xB7 ECOSYSTEM") && lz_count_is("1/11");   /* (V10.7.62: LIFE in MACROS' place, seven) */   /* (seven pages, as the n/7 below; the "1/8" came
                                                          * with e147a98's import, 2026-11-04, the rest of the test says 7) */
     press(B_HOME); frame();                                         /* a HOME tap: BEING (the next group) */
     ok &= ui.home && home_level() == 1u && !home_set() && lz_tab_lit(1) && lz_crumb_is("HOME \xB7 BEING \xB7 BEING") &&
-          lz_count_is("3/10");
+          lz_count_is("3/11");
     k = macro_v[0];
     c = (uint32_t)TSEL->p[ENGINES[TSEL->eng_req]->knob[0]];
     turn(EN_SELECT, -1); frame();                                   /* SELECT left: LIFE (V10.7.62), its KNOB 1 FILTER */
     ok &= home_level() == 0u && home_set() && home_life() && !home_macros() && lz_crumb_is("HOME \xB7 ECOSYSTEM \xB7 LIFE") &&
-          lz_count_is("2/10");
+          lz_count_is("2/11");
     turn(EN_K1, 3); frame();
     ok &= life_v[0] > 0 && (uint32_t)TSEL->p[ENGINES[TSEL->eng_req]->knob[0]] == c && !strncmp(ui.col[0], "FILTER|", 7);
     life_v[0] = 0;
@@ -12226,11 +12254,33 @@ static int test_lz_home(void)
     bad += check("0.9.2 HOME: ECO LIFE BEING .. one chain by SELECT (no wrap), a HOME tap the next group; tabs, crumb, n/7 (V10.7.62: LIFE)", ok);
     turn(EN_SELECT, 2); frame();                                    /* BEING (V10.7.66: ROUTES gone, the macros FX >
                                                                      * PUNCH IN's) */
-    ok = home_level() == 1u && !home_set() && !home_macros() && lz_count_is("3/10");
+    ok = home_level() == 1u && !home_set() && !home_macros() && lz_count_is("3/11");
+    {   /* (V10.8.56) VISUAL, BEING's second page: a figure from a seed; KNOB 1 COMPLEX, OCT+ a new one ("VISUAL #n") */
+        static uint16_t a[240 * 140];
+        uint16_t sd;
+        turn(EN_SELECT, 1); frames(4);
+        ok &= home_vis() && home_level() == 1u && home_set() && lz_crumb_is("HOME \xB7 BEING \xB7 VISUAL") && lz_count_is("4/11") &&
+              vis_seed != 0u && vis_v[0] == 50;
+        turn(EN_K1, 4); frame();
+        ok &= vis_v[0] > 50 && !strncmp(ui.col[0], "COMPLEX|", 8);
+        sd = vis_seed;
+        fm1_ms += 777u;
+        press(B_OCTUP); frame();
+        ok &= vis_seed != sd && !strncmp(ui.msg, "VISUAL #", 8);
+        for (c = 0; c < NTRK; c++) trk[c].peak = 9000;
+        frames(8);
+        memcpy(a, host_screen + LZ_GRAPH_Y * 240, sizeof a);
+        frames(16);
+        ok &= memcmp(a, host_screen + LZ_GRAPH_Y * 240, sizeof a) != 0;   /* (it moves) */
+        turn(EN_SELECT, -1); frame();
+        ok &= home_level() == 1u && !home_set() && !home_vis();
+        bad += check("V10.8.56 HOME > VISUAL: BEING's second page, KNOB 1 COMPLEX, OCT+ a new figure (VISUAL #n), it moves", ok);
+        ok = 1;
+    }
     fm1_ms += 1000u;
-    turn(EN_SELECT, 4); frame();                                    /* GEN 1 (V10.8.2: past the song's three) */
+    turn(EN_SELECT, 5); frame();                                    /* GEN 1 (V10.8.2: past the song's three; V10.8.56: VISUAL) */
     ok &= gen_on() && gen_page() == 0u && home_level() == 2u && lz_on() && lz_tab_lit(3) && lz_crumb_is("HOME \xB7 GENERATOR \xB7 GENERATOR 1") &&
-          lz_count_is("7/10");
+          lz_count_is("8/11");
     k = gp.genre;
     {   /* (V10.7.22, the owner) PRESETS on GEN: the sound, as on every page but SEQ's; the GENRE only by KNOB 1 */
         uint32_t pr = TSEL->preset, en = TSEL->eng_req;
@@ -12241,15 +12291,15 @@ static int test_lz_home(void)
     ok &= gp.genre == (k == GEN_EXPLORE ? 0u : k == NGENRE ? GEN_EXPLORE : k + 1u);   /* KNOB 1: the GENRE, its order
                                                          * (0.8.6: EXPLORE, RANDOM, the genres) */
     turn(EN_SELECT, 1); frame();
-    ok &= gen_on() && gen_page() == 1u && lz_crumb_is("HOME \xB7 GENERATOR \xB7 GENERATOR 2") && lz_count_is("8/10");
-    turn(EN_SELECT, -5); frame();                                   /* back: BEING, GEN shut */
+    ok &= gen_on() && gen_page() == 1u && lz_crumb_is("HOME \xB7 GENERATOR \xB7 GENERATOR 2") && lz_count_is("9/11");
+    turn(EN_SELECT, -6); frame();                                   /* back: BEING, GEN shut */
     ok &= !ui.confirm && ui.home && home_level() == 1u && !home_set();
-    turn(EN_SELECT, 4); frame();
+    turn(EN_SELECT, 5); frame();
     ok &= gen_on() && gen_page() == 0u;
     press(B_HOME); frame();                                         /* a HOME tap on GEN: round to ECO */
     ok &= !ui.confirm && ui.home && home_level() == 0u && !home_set();
     bad += check("0.9.2 HOME: ROUTES, then GEN 1..3 (KNOB 1 its GENRE, PRESETS the sound); SELECT back out of GEN; a HOME tap on GEN: ECO", ok);
-    turn(EN_SELECT, 7); frame();                                    /* GEN 2 */
+    turn(EN_SELECT, 8); frame();                                    /* GEN 2 */
     ok = gen_on() && gen_page() == 1u;
     press(B_ENV); frame();                                          /* not modal: a section's button leaves it */
     ok &= !ui.confirm && !ui.home && str_eq(cur_page()->title, "ENV");
@@ -12263,14 +12313,14 @@ static int test_lz_home(void)
     bad += check("0.9.2 HOME: GEN is HOME's pages, not modal (ENV leaves it, HOME comes back to GEN 2, ALGORITHM works); OCT- ECO", ok);
     {   /* (V10.8, testers) GEN's GENRE kept when GEN is left and opened again */
         uint32_t g0;
-        turn(EN_SELECT, 6); frame();                    /* GEN 1 */
+        turn(EN_SELECT, 7); frame();                    /* GEN 1 */
         ok = gen_on() && gen_page() == 0u;
         turn(EN_K1, 3); frame();                        /* (V10.7.22: KNOB 1 the GENRE; PRESETS the sound) */
         g0 = gp.genre;
         press(B_OCTDN); frame();                        /* out (ECO) */
         open_family(FAM_ENV); frame();
         go_home(); frames(64);
-        turn(EN_SELECT, 6); frame();
+        turn(EN_SELECT, 7); frame();
         ok &= gen_on() && gp.genre == g0 && g0 != GEN_EXPLORE;
         press(B_OCTDN); frame();
         bad += check("V10.8 GEN: the GENRE picked stays after leaving GEN (was EXPLORE again each visit)", ok);
@@ -13263,13 +13313,12 @@ static int test_lz_reach(void)
                 go_home(); frames(32); press(B_HOME); frames(32);
                 turn(EN_SELECT, -12); frames(2);
                 for (e = 0; e < 12u; e++) {
-                    if (e == 3u) continue;                  /* (V10.7.66: ROUTES gone) */
                     n += nav_cur() == e && (e >= HE_GEN ? gen_on() && gen_page() == e - HE_GEN :
                                             e >= HE_SONG ? !ui.home && song_pg(ui.page) :
                                             ui.home && home_level() == HL[e] && home_set() == (e & 1u));
                     turn(EN_SELECT, 1); frames(2);
                 }
-                okh &= n == 10u;   /* (V10.8: TIMELINE, PARTS gone; V10.8.2: TAKE) */
+                okh &= n == 11u;   /* (V10.8: TIMELINE, PARTS gone; V10.8.2: TAKE; V10.8.56: VISUAL in ROUTES' place) */
                 press(B_OCTDN); frames(2);
             }
         }
@@ -13282,7 +13331,7 @@ static int test_lz_reach(void)
     bad += check("0.9.2 reach: every page each engine shows (LOFI BYTE, LOAD ECO too) by its button and SELECT alone", ok);
     bad += check("0.9.2 reach: every parameter of those pages (the ids on them)", okp);
     bad += check("0.9.2 reach: every 0.9.1 lens page at its 0.9.1 level (drawn as it was; NOTE's STEP view merged)", okold);
-    bad += check("0.9.2 reach: HOME's ten pages by SELECT (ECO LIFE BEING JAM TAKE ARRANGE GEN 1..4; V10.8.2)", okh);
+    bad += check("0.9.2 reach: HOME's eleven pages by SELECT (ECO LIFE BEING VISUAL JAM TAKE ARRANGE GEN 1..4; V10.8.56)", okh);
     ui_power_on();
     return bad;
 }

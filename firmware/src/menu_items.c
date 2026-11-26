@@ -7,7 +7,7 @@
  * controls (HOLD: the layer threshold, KNOB ACCEL, FX LATCH, BPM LOCK; 1.2: SCALE LEDS, the keys), the sound (SPEAKER EQ: FLAT LOWCUT BASS+,
  * USB LEVEL; 1.1: CLICK, CLICK LEVEL, COUNT-IN), USB SERIAL, RESTORE LAST (1.2), then CALIBRATION (the setup screen: HARDWARE CALIBRATION) and ABOUT, the two rows with no
  * value (MI_VALUES: the rows before them hold one). 1.0.5: in four tabs (MI_TAB). */
-enum { MI_COLOR, MI_SCOPE, MI_LARGE, MI_ANIM, MI_LEDS, MI_SCROFF, MI_HELP, MI_PRSCR, MI_HOLD, MI_ACCEL, MI_LATCH, MI_BPMLOCK, MI_SCLLED, MI_MIDIOUT,
+enum { MI_COLOR, MI_SCOPE, MI_LARGE, MI_ANIM, MI_LEDS, MI_SCROFF, MI_SAVER, MI_HELP, MI_PRSCR, MI_HOLD, MI_ACCEL, MI_LATCH, MI_BPMLOCK, MI_SCLLED, MI_MIDIOUT,
        MI_MIDIMAP, MI_LEARN, MI_VEL, MI_VELMIN, MI_AT, MI_VLEARN, MI_LOWCUT, MI_USB,
        MI_CLICK, MI_CLKLVL, MI_COUNTIN, MI_TRACKS, MI_LOAD, MI_OCTBEND, MI_SERIAL, MI_RESTORE, MI_CPU, MI_CLOCK, MI_BT, MI_PANEL, MI_ABOUT, MI_COUNT };   /* (1.1: the
                                                                                              * metronome's rows in AUDIO; 1.2: RESTORE LAST in
@@ -15,7 +15,7 @@ enum { MI_COLOR, MI_SCOPE, MI_LARGE, MI_ANIM, MI_LEDS, MI_SCROFF, MI_HELP, MI_PR
                                                                                              * CLOCK in SYSTEM; codex/coherence: INIT SYSTEM gone,
                                                                                              * SAVE > TOOLS > CLEAR PROJECT the one place) */
 #define MI_VALUES MI_PANEL
-static const char *const MI_NAME[MI_COUNT] = {"COLOR", "SCOPE", "LARGE", "ANIM", "LEDS", "SCREEN OFF", "HELP", "PRESETS", "HOLD", "KNOB ACCEL", "FX LATCH", "BPM LOCK",
+static const char *const MI_NAME[MI_COUNT] = {"COLOR", "SCOPE", "LARGE", "ANIM", "LEDS", "SCREEN OFF", "SAVER", "HELP", "PRESETS", "HOLD", "KNOB ACCEL", "FX LATCH", "BPM LOCK",
                                               "SCALE LEDS", "MIDI OUT", "MIDI MAP", "LEARN",
                                               "VELOCITY", "VEL MIN", "AFTERTOUCH", "VEL LEARN",
                                               "SPEAKER EQ", "USB LEVEL", "CLICK", "CLICK LEVEL", "COUNT-IN", "TRACKS", "LOAD",
@@ -35,6 +35,7 @@ static const uint8_t MI_TAB[MI_COUNT] = {
     MTAB_DISPLAY,                                                           /* ANIM */
     MTAB_DISPLAY,                                                           /* LEDS */
     MTAB_DISPLAY,                                                           /* SCREEN OFF (1.1.5) */
+    MTAB_DISPLAY,                                                           /* SAVER (V10.8.56: ui.c vis_scr) */
     MTAB_DISPLAY,                                                           /* HELP (V10.7.60: a knob's meaning in the header) */
     MTAB_DISPLAY,                                                           /* PRESETS (V10.7.81: SCROLL, or the PRESETS menu) */
     MTAB_CONTROL, MTAB_CONTROL, MTAB_CONTROL, MTAB_CONTROL,                 /* HOLD KNOB ACCEL FX LATCH BPM LOCK */
@@ -122,14 +123,19 @@ static const char *const OCTBEND_N[8] = {"OFF", "1 ST", "2 ST", "3 ST", "4 ST", 
  * floor, AFTERTOUCH's sensitivity (OFF: none), VEL LEARN (RESET: the calibration's seeds back, then ON) */
 /* each: its settings byte, the field's shift, mask and ^ (its stored form), its count, its names (w bytes apart) */
 typedef struct { uint8_t *b; uint8_t sh, m, x, n, w; const char *nm; } vel_row_t;
-static const vel_row_t VEL_ROW[4] = {{&VEL_SET, 0, 3, 2, 4, 7, "OFF\0\0\0\0SOFT\0\0\0NORMAL\0HARD"},
+static const vel_row_t VEL_ROW[5] = {{&VEL_SET, 0, 3, 2, 4, 7, "OFF\0\0\0\0SOFT\0\0\0NORMAL\0HARD"},
                                      {&VEL_SET, 2, 7, 2, 8, 3, "1\0\00010\00020\00030\00040\00050\00064\00080"},
                                      {&VEL_SET2, 4, 15, 5, 11, 4, "OFF\0" "1\0\0\0" "2\0\0\0" "3\0\0\0" "4\0\0\0" "5\0\0\0" "6\0\0\0"
                                                                   "7\0\0\0" "8\0\0\0" "9\0\0\0" "10\0"},   /* (V10.7.23: AFTERTOUCH
                                                          * OFF 1..10, bits 4-7, place ^ 5: 0 = 5, MID's; the old LOW MID HIGH
                                                          * in bits 0-1 read once: settings_persist.c settings_fix15) */
-                                     {&VEL_SET2, 2, 3, 0, 3, 6, "ON\0\0\0\0OFF\0\0\0RESET"}};
-static const vel_row_t *vel_row(uint32_t row) { return row >= MI_VEL && row <= MI_VLEARN ? &VEL_ROW[row - MI_VEL] : 0; }
+                                     {&VEL_SET2, 2, 3, 0, 3, 6, "ON\0\0\0\0OFF\0\0\0RESET"},
+                                     {&vis_scr, 4, 7, 2, 5, 7, "OFF\0\0\0\0" "1 MIN\0\0" "3 MIN\0\0" "5 MIN\0\0" "10 MIN"}};   /* (V10.8.56)
+                                                         * SAVER, the same kind of row (ui.c VIS_MIN: 5..7 read as 3 MIN) */
+static const vel_row_t *vel_row(uint32_t row)
+{
+    return row >= MI_VEL && row <= MI_VLEARN ? &VEL_ROW[row - MI_VEL] : row == MI_SAVER ? &VEL_ROW[4] : 0;
+}
 /* (JIANT 0.9.9-stab, as 0.9.12) MENU > SYSTEM > CPU CLOCK: 360 MHZ (the default: the boot stage's clock, M-VAVE's V15
  * runs it so with the core rails at 1.60 / 1.38 V, hal/fm1_sys.h fm1_rails_boot) or 320 MHZ (JieLi's rated clock, as
  * M-VAVE's open firmware and Skiff run it: ~11 % fewer cycles a block), switched at boot before the audio and the second

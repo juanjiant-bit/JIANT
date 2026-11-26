@@ -436,7 +436,14 @@ static const uint8_t SCR_CODE[5] = {0, 2, 1, 4, 7};    /* the stored byte of NEV
 static const uint8_t SCR_DEC[8] = {0, 2, 1, 0, 3, 0, 0, 4};   /* .. and back (3: 1.1.5's NEVER; 5, 6 unknown) */
 #define SCR_EAT_MS 300u
 static const uint8_t SCR_MIN[5] = {0, 5, 15, 30, 60};  /* NEVER, minutes */
-enum { SCR_ON, SCR_OFF, SCR_WAKE, SCR_SLPOUT, SCR_SHOW };
+enum { SCR_ON, SCR_OFF, SCR_WAKE, SCR_SLPOUT, SCR_SHOW, SCR_VIS };   /* (V10.8.56) SCR_VIS: the screensaver drawn */
+/* (V10.8.56, the owner) MENU > DISPLAY > SAVER: after this long with no panel input HOME > VISUAL's figure, a new one,
+ * the whole screen, moving with the music (ui_draw.c vis_full), before SCREEN OFF's dark if that comes later; the first
+ * press, key or turn only brings the page back (swallowed as SCREEN OFF's wake). OFF 1 3 5 10 MIN, 3 the default: bits 4-6
+ * of a byte the teaching hints' counts once used (their small counts left 0 there: 3 MIN), stored ^ 2 (menu_items.c) */
+#define vis_scr (favorites.factory[15][12])
+static const uint8_t VIS_MIN[8] = {0, 1, 3, 5, 10, 3, 3, 3};
+static void vis_new(int say);
 static struct {
     uint8_t st;                  /* SCR_*: SCR_WAKE asked, SCR_SLPOUT sent, SCR_SHOW the frame that redraws */
     uint8_t eat;                 /* the wake gesture: panel input swallowed (ui_input) */
@@ -457,6 +464,10 @@ static void scr_wake(void)
 {
     if (scrn.st == SCR_OFF)
         scrn.st = SCR_WAKE;
+    if (scrn.st == SCR_VIS) {                          /* (V10.8.56) the saver: the page back at once */
+        scrn.st = SCR_ON;
+        ui.force = 1;
+    }
     scrn.eat = 1;
 }
 static void scr_wake_now(void)                         /* main.c: the crash screen, UPDATE, UBOOT */
@@ -498,15 +509,24 @@ static int scr_input(uint32_t pressed, uint32_t notes)
 /* ui_draw, every frame: 1 = draw it */
 static int scr_frame(void)
 {
-    uint32_t lim = SCR_MIN[scr_get()] * 60000u;
+    uint32_t lim = SCR_MIN[scr_get()] * 60000u, vl = VIS_MIN[((vis_scr >> 4) ^ 2u) & 7u] * 60000u;
+    int32_t el = (int32_t)(fm1_ms - scrn.idle);       /* (signed: robust to a wrap) */
     if (ui.confirm || ui.uboot || seq_counting()) {    /* (never dark under these) */
         scrn.idle = fm1_ms;
-        if (scrn.st == SCR_OFF)
+        if (scrn.st == SCR_OFF || scrn.st == SCR_VIS)
             scr_wake();
+        el = 0;
     }
     switch (scrn.st) {
     case SCR_ON:
-        if (!lim || (int32_t)(fm1_ms - scrn.idle) < (int32_t)lim)   /* (signed: robust to a wrap) */
+    case SCR_VIS:
+        if (scrn.st == SCR_ON && vl && el >= (int32_t)vl && (!lim || vl < lim) && !ui.menu && bt_hw_seg()) {   /* (V10.8.56) the saver */
+            scrn.st = SCR_VIS;
+            scrn.eat = 1;
+            kb_asleep = 1;
+            vis_new(0);
+        }
+        if (!lim || el < (int32_t)lim)
             return 1;
         lcd_power(0);
         scrn.st = SCR_OFF;
@@ -783,6 +803,16 @@ static void ui_say(const char *a, const char *b)
 }
 
 static void ui_message(const char *s) { ui_say(s, ""); }
+/* (V10.8.56) HOME > VISUAL / the saver: a new figure (its seed), said on OCT+ */
+static void vis_new(int say)
+{
+    char b[8];
+    vis_seed = (uint16_t)((fm1_ms * 2654435761u >> 16) % 9999u + 1u);
+    fmt_int(b, vis_seed);
+    if (say)
+        ui_say("VISUAL #", b);
+    ui.force = 1;
+}
 /* (V10.7.10, users read "NO SEG" as nothing) the Bluetooth segment (flash 0xEA000: Bluetooth, GEN, the songs' saving,
  * USB HOST, ..., bt_hw.c) missing or another build's: what to do, in two messages (the header's width) */
 #define SEG_MISS "BLUETOOTH PART MISSING"
@@ -1982,9 +2012,9 @@ static uint32_t preset_visible(uint32_t cur, uint32_t total, uint32_t row)
 static const param_desc_t *home_param(uint32_t k, int16_t **vp)
 {
     uint32_t id = trk_engp(TSEL)->knob[k & 3u];
-    if (home_life()) {                               /* (V10.7.62) HOME > LIFE: params.c life_v */
-        *vp = &life_v[k & 3u];
-        return &LIFE_DESC[k & 3u];
+    if (home_life() || home_vis()) {                 /* (V10.7.62) HOME > LIFE: params.c life_v; (V10.8.56) VISUAL: vis_v */
+        *vp = (home_vis() ? vis_v : life_v) + (k & 3u);
+        return (home_vis() ? VIS_DESC : LIFE_DESC) + (k & 3u);
     }
     *vp = &TSEL->p[id];
     return track_desc(TSEL, id);

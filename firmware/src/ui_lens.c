@@ -47,7 +47,7 @@ typedef struct { const nv_t *e; const ng_t *g; uint8_t n, ng; } ch_t;
 enum { SV_LIB, SV_PROJ, SV_SOUND };
 #define HE_SONG 4u                                      /* CE_HOME: the song's first entry, */
 #define HE_GEN 7u                                       /* .. GENE 1's */
-static const nv_t CE_HOME[] = {NV(0, "ECOSYSTEM", 0, 0), NV(0, "LIFE", 0, 0), NV(0, "BEING", 1, 1), NV(0, "ROUTES", 1, 1),
+static const nv_t CE_HOME[] = {NV(0, "ECOSYSTEM", 0, 0), NV(0, "LIFE", 0, 0), NV(0, "BEING", 1, 1), NV(0, "VISUAL", 1, 1),
                                NV("JAM", 0, 2, SV_PROJ), NV("TAKE", 0, 2, SV_PROJ), NV("ARRANGE", 0, 2, SV_PROJ),   /* (V10.8: JAM's CLIPS first;
                                                          * TIMELINE, PARTS gone, the song mode's redesign) */
                                NV(0, "GENERATOR 1", 3, 2), NV(0, "GENERATOR 2", 3, 2), NV(0, "GENERATOR 3", 3, 2),
@@ -178,7 +178,8 @@ static uint32_t nv_page(uint32_t sec, uint32_t e)
 }
 static int nv_ok(uint32_t sec, uint32_t e)   /* (V10.7.59, the owner: HOME > MACROS gone, the FX layer's knobs are the macros) */
 {
-    return sec == SEC_HOME && !CE_HOME[e < NELEM(CE_HOME) ? e : 0].t ? e < NELEM(CE_HOME) && e != 3u : nv_page(sec, e) < NPAGES;   /* (V10.7.66:
+    return sec == SEC_HOME && !CE_HOME[e < NELEM(CE_HOME) ? e : 0].t ? e < NELEM(CE_HOME) : nv_page(sec, e) < NPAGES;   /* (V10.8.56:
+                                                         * VISUAL in ROUTES' place) */   /* (V10.7.66:
                                                          * ROUTES, the macros, gone: FX > PUNCH IN's only) */   /* (V10.7.62:
                                                          * ECO's second, LIFE; V10.7.63 the song's pages) */
 }
@@ -224,6 +225,7 @@ static uint32_t home_level(void) { return gen_on() ? 2u : ui.hlv ? 1u : 0u; }
 static uint32_t home_set(void) { return ui.hset[home_level() & 1u] & 1u; }
 static int home_macros(void) { return 0; }             /* (V10.7.66: HOME > ROUTES gone, the macros FX > PUNCH IN's) */
 static int home_life(void) { return ui.home && !ui.menu && home_level() == 0u && home_set(); }   /* (V10.7.62) LIFE */
+static int home_vis(void) { return ui.home && !ui.menu && home_level() == 1u && home_set(); }   /* (V10.8.56) VISUAL */
 /* the entries shown now (on this track, at this LOAD), in order: their indices in v (NAV_MAX at most: the longest chain,
  * FX's 17 since snd8's TAPE, fits: ui_test checks every chain against it; snd8b's 17th page overran a 16 and crashed
  * FX); how many */
@@ -289,6 +291,7 @@ static void nav_go(uint32_t sec, uint32_t e, int outside)
                 ui.confirm = 0;
             ui.hlv = (uint8_t)(e >> 1);
             ui.hset[e >> 1] = (uint8_t)(e & 1u);
+            lz_hint_ms = fm1_ms;                        /* (V10.8.56: VISUAL's OCT+ said in the footer) */
         }
         if (!ui.home)
             go_home();

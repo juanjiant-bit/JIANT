@@ -15,8 +15,8 @@
  *          the ring of twelve dots, gone). LIFE (V10.7.62): the same, a line from each track to the one it moves
  *          (the ring's), as bright as it sounds (a kit's in the accent)
  *   BEING  the track's being large in the middle, its four HOME knobs as organs at the corners (a gauge each, its name
- *          and value, a vein to the body), the sound's name under it; ROUTES: the being small, M1..M4 down the left
- *          with their routes drawn to their destinations ("T1 CUT+40")
+ *          and value, a vein to the body), the sound's name under it; (V10.8.56) VISUAL: a figure
+ *          from a seed (vis_fig), HOME's visuals and the saver's
  * Nothing in the audio path: the parts' peaks and the scope the UI already reads. */
 #define ECO_N NTRK
 static const int16_t ECO_PX[ECO_N] = {44, 120, 196, 64, 146, 206}, ECO_PY[ECO_N] = {34, 28, 40, 84, 78, 86};   /* (where they
@@ -278,6 +278,70 @@ static void graph_eco(void)
     if (home_set())                                     /* (V10.7.62) LIFE (was MACROS: the FX layer's knobs since V10.7.59) */
         cv_text(6, 2, &AF_X, life_on ? "LIFE ON" : "LIFE OFF", life_on ? T_MID : T_DIM);
 }
+/* (V10.8.56, the owner: "un motor de visuales adentro: visuales random en HOME") HOME > VISUAL and the saver: a figure
+ * from vis_seed, of the creatures' pieces (vx_wf's wobbling circles, roses, tentacles, orbits), at (cx, cy), radius R
+ * (Q4 px): KNOB 1 COMPLEX its pieces (3 .. 12), 2 WOBBLE their circles' deformation, 3 PALETTE, 4 REACT how much the
+ * output's level swells, warms and speeds it. It turns with the time (anim_fr), faster with the sound */
+static uint16_t vis_col(int32_t h)
+{
+    h = clamp(h, 0, 255);
+    switch (vis_v[2] & 3) {
+    case 1: return ux_mix(T_THEME, T_ACCENT, h * 100 / 256);
+    case 2: return ux_mix(T_DIM, T_TEXT, h * 100 / 256);
+    case 3: return vk_heat(255 - h);
+    default: return vk_heat(h);
+    }
+}
+static VX_SEG void vis_fig(int32_t cx, int32_t cy, int32_t R)
+{
+    uint32_t r, i, j, n, t;
+    int32_t lv;
+    if (!vis_seed) {                                    /* (the first time: the knobs' defaults, a seed) */
+        vis_v[0] = 50; vis_v[1] = 40; vis_v[3] = 60;
+        vis_seed = 1791;
+    }
+    lv = bg_energy() * vis_v[3] / 100;                  /* (0..256) the sound, as much as REACT asks */
+    t = anim_fr * (uint32_t)(60 + lv);
+    n = 3u + (uint32_t)vis_v[0] * 9u / 100u;
+    r = vis_seed * 2654435761u | 1u;
+    vxs.wb = (int16_t)(vis_v[1] * 14 + lv * 3);
+    vxs.wph = (uint16_t)(t >> 3);
+    for (i = 0; i < n; i++) {
+        uint32_t h = vx_rnd(&r), kind = h & 3u, k = 2u + (h >> 2) % 6u;
+        uint32_t ph = (h >> 8) + (t >> ((h >> 16) & 3u)) * ((h & 64u) ? 1u : 0xFFFFFFFFu);
+        int32_t rad = R * (18 + (int32_t)((h >> 5) % 78u)) / 100 * (256 + lv / 2) / 256, px = 0, py = 0;
+        uint16_t c = vis_col((int32_t)((h >> 12) & 255u) * 3 / 4 + lv / 4);
+        uint32_t m = kind < 2u ? 48u : kind == 2u ? k * 9u : k * 13u;
+        for (j = 0; j <= m; j++) {
+            int32_t x, y, rr;
+            uint32_t a;
+            if (kind == 3u) {                           /* k small rings orbiting */
+                uint32_t s = j / 13u, q = j % 13u;
+                int32_t sr = R / 10 * (256 + lv) / 256, w = vx_wf(q * 5462u);
+                a = s * 65536u / k + ph;
+                x = cx + (rad * og_cos(a) >> 15) + ((sr * og_cos(q * 5462u) >> 15) * w >> 12);
+                y = cy + (rad * og_sin(a) >> 15) + ((sr * og_sin(q * 5462u) >> 15) * w >> 12);
+                if (q) og_line_a(px, py, x, y, c, 256);
+                px = x; py = y;
+                continue;
+            }
+            if (kind < 2u) {                            /* a ring, or a rose of k petals: wobbling */
+                a = j * 65536u / 48u + ph;
+                rr = kind ? rad * (160 + (og_sin(k * a + ph * 3u) >> 9)) / 256 : rad;
+                rr = rr * vx_wf(a) >> 12;
+            } else {                                    /* k tentacles from the middle, waving */
+                uint32_t s = j / 9u, q = j % 9u;
+                a = s * 65536u / k + ph + (uint32_t)(og_sin(q * 5000u + t * 9u + s * 9000u) * (2000 + vis_v[1] * 40) >> 15);
+                rr = rad * (int32_t)q / 8;
+            }
+            x = cx + (rr * og_cos(a) >> 15);
+            y = cy + (rr * og_sin(a) >> 15);
+            if (j && !(kind == 2u && j % 9u == 0u)) og_line_a(px, py, x, y, c, 256);
+            px = x; py = y;
+        }
+    }
+    vxs.wb = 0;
+}
 /* BEING: the track's being large, its HOME knobs as organs at the corners */
 static const int16_t ORG_X[4] = {30, 210, 30, 210}, ORG_Y[4] = {28, 28, 116, 116};
 static void organ(uint32_t k, int32_t cx, int32_t cy)
@@ -301,43 +365,9 @@ static __attribute__((noinline)) void graph_home_being(void)
     (void)eco_step();
     (void)bg_energy();
     char b[16];
-    if (home_set()) {                                   /* ROUTES: the being small, the macros and their routes */
-        uint32_t m, i, j, row = 0;
-        int32_t ry[12];
-        cx = 128;
-        cy = 66;
-        bx = cx * 16;
-        by = cy * 16;
-        eco_being(c, bx, by, (13 * 16) * (256 + eco.en[c] * 5 / 4 + (bg_sin(eco.tm[c] / 3u) >> 11)) / 256);
-        for (m = 0; m < 4u; m++) {
-            int32_t y = 16 + (int32_t)m * 34, n = 0;
-            char mn[3] = {'M', (char)('1' + m), 0};
-            uint16_t col = ui.hot_t && ui.hot_col == m ? T_ACCENT : T_THEME;
-            for (i = 0; i < NTRK; i++)
-                for (j = 0; j < 4u && row < 12u; j++) {
-                    const int16_t *p = &trk[i].p[P_M1SRC + 3u * j];
-                    char e[20] = {'T', (char)('1' + i), ' ', 0};
-                    int32_t ty;
-                    if (p[0] != (int16_t)(MS_M1 + m) || !p[1] || !p[2] || n >= 3)
-                        continue;
-                    ty = 6 + (int32_t)row * 11;
-                    ry[row++] = ty;
-                    n++;
-                    str_cpy(e + 3, mod_dst_name(&trk[i], p[1]), sizeof e - 3);
-                    str_cpy(e + str_len(e), p[2] > 0 ? "+" : "", sizeof e - str_len(e));
-                    fmt_int(e + str_len(e), p[2] * 100 / 64);
-                    og_quad_a(34 * 16, y * 16, 120 * 16, y * 16, 168 * 16, (ty + 4) * 16, heat_col(70 + macro_v[m] * 150 / 127),
-                              14u, 200);
-                    cv_clip_text(171, ty, &AF_X, e, T_MID, T_SURF, 66);
-                }
-            og_node(22 * 16, y * 16, 12, T_RAISE);
-            lz_arc(22, y, 10, 2, macro_v[m] * 1000 / 127, T_LINE, col);
-            GFX_HOOK_ALIGN(12, y - 5, 32, y + 5, AL_HV, "ROUTES macro name in its knob");
-            cv_text_in(12, y - 5 + CAP_IN(X, 10), 20, &AF_X, mn, T_TEXT, T_RAISE);
-            if (!n)
-                cv_text(40, y - 4 - AF_X_CAP_Y + 1, &AF_X, "NO ROUTE", T_DIM);
-        }
-        (void)ry;
+    if (home_set()) {                                   /* (V10.8.56) VISUAL, in ROUTES' place (the macros: FX > PUNCH IN's) */
+        if (bt_hw_seg())
+            vis_fig(120 * 16, 68 * 16, 62 * 16);
         return;
     }
     for (k = 0; k < 4u; k++)
