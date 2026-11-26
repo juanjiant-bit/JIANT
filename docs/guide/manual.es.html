@@ -95,7 +95,7 @@ footer a{color:var(--dim)}
 <ul><li><a href="#essential">Comandos esenciales</a></li>
 <li><a href="#contenido">Contenido</a></li>
 <li><a href="#que-hay-de-nuevo-en-esta-version">Qué hay de nuevo en esta versión</a><ul>
-<li><a href="#lo-nuevo-en-v10842-desde-v10821">Lo nuevo en V10.8.42 (desde V10.8.21)</a></li>
+<li><a href="#lo-nuevo-en-v10848-desde-v10821">Lo nuevo en V10.8.48 (desde V10.8.21)</a></li>
 <li><a href="#lo-nuevo-en-v10821-desde-v10781">Lo nuevo en V10.8.21 (desde V10.7.81)</a></li>
 <li><a href="#lo-nuevo-en-v10781-desde-v10716">Lo nuevo en V10.7.81 (desde V10.7.16)</a></li>
 <li><a href="#desde-v106c">Desde V10.6c</a></li>
@@ -150,7 +150,7 @@ footer a{color:var(--dim)}
 <li><a href="#mutate-v1016-sin-pagina-desde-v10837">MUTATE (V10.16; sin página desde V10.8.37)</a></li>
 <li><a href="#drone-clay-seq-clay-v10821">DRONE CLAY (SEQ › CLAY, V10.8.21)</a></li>
 <li><a href="#parameter-locks">Parameter locks</a></li>
-<li><a href="#copiar-y-pegar-099-seq2h">Copiar y pegar (0.9.9-seq2h)</a></li>
+<li><a href="#copiar-pegar-y-duplicar">Copiar, pegar y duplicar</a></li>
 <li><a href="#escala">Escala</a></li>
 <li><a href="#chord-0681">CHORD (0.6.81)</a></li>
 <li><a href="#arp">ARP</a></li>
@@ -255,8 +255,8 @@ footer a{color:var(--dim)}
 <p class="lead">Todo JIANT FM en una página: cada botón, perilla y mensaje con el nombre que muestra el aparato. Si leés un solo capítulo, que sea <a href="#12-guardar-y-cargar">Guardar y cargar</a>.</p>
 <div class="bar"><a class="btn go" href="https://juanjiant-bit.github.io/JIANT/studio/">Abrir JIANT Studio</a><a class="btn" href="manual.html">English</a><a class="btn" href="whats-new-v10.8.21.es.html">Lo nuevo en V10.8.21</a><a class="btn" href="https://juanjiant-bit.github.io/JIANT/manual/">Manual interactivo</a><a class="btn" href="manual.es.html" download>Descargar</a></div></section>
 <h1 id="jiant-fm-manual-de-usuario">JIANT FM — Manual de usuario</h1>
-<p><strong>JIANT FM V10.8.42 para el M-VAVE FM-1</strong> (versión pública; lo que cambió desde la V10.8.21
-está en <a href="#lo-nuevo-en-v10842-desde-v10821">Lo nuevo en V10.8.42</a>)</p>
+<p><strong>JIANT FM V10.8.48 para el M-VAVE FM-1</strong> (versión pública; lo que cambió desde la V10.8.21
+está en <a href="#lo-nuevo-en-v10848-desde-v10821">Lo nuevo en V10.8.48</a>)</p>
 <blockquote>
 <p><em>English version: <a href="manual.html">English manual</a>.</em></p>
 </blockquote>
@@ -325,11 +325,37 @@ versión pública) o de antes: <a href="#qué-hay-de-nuevo-en-esta-versión">Qu�
 </ul>
 <hr />
 <h2 id="que-hay-de-nuevo-en-esta-version">Qué hay de nuevo en esta versión</h2>
-<h3 id="lo-nuevo-en-v10842-desde-v10821">Lo nuevo en V10.8.42 (desde V10.8.21)</h3>
-<p>Las versiones V10.8.22 a V10.8.42 en una lista. Donde un capítulo de abajo todavía describe la pantalla anterior, vale esta lista.</p>
+<h3 id="lo-nuevo-en-v10848-desde-v10821">Lo nuevo en V10.8.48 (desde V10.8.21)</h3>
+<p>Las versiones V10.8.22 a V10.8.48 en una lista. Donde un capítulo de abajo todavía describe la pantalla anterior, vale esta lista.</p>
 <ul>
+<li><strong>GATE en la reverb y en el delay</strong> (V10.8.44): en <strong>FX › REVERB</strong> y <strong>FX › DLY</strong>, mantené <strong>OCT+</strong> y girá
+  <strong>KNOB 4</strong>: su tarjeta dice <strong>GATE</strong> (0–127; 0 apagado). El retorno queda abierto mientras le llega algo y se cierra
+  un rato después de que eso se calla (16: una 1/16, 64: una negra, 127: dos negras), y corta la cola: una sala con
+  gate, ecos que paran con la frase. Se guarda con el proyecto. Ver <a href="#delay">Delay</a> y <a href="#reverb-cinco-modelos">Reverb</a>.</li>
+<li><strong>Una página LEVEL en todos los motores</strong> (V10.8.44): el primer grupo de EDIT termina en <strong>LEVEL</strong>: <strong>GAIN</strong> (0–12
+  dB), <strong>LEVEL</strong>, <strong>PAN</strong> (en un kit, después de KIT 2). GAIN se fue de la página MORE de ANALOG y de PHASE; OCT+
+  mantenido + KNOB 4 en EDIT 1 lo sigue alcanzando.</li>
+<li><strong>El ARP a tiempo</strong> (V10.8.45): mientras suena el transporte un arpegio arranca en la grilla de su RATE y se queda
+  ahí; grabado, cada una de sus notas cae en su propio paso. Ver <a href="#arp">ARP</a>.</li>
+<li><strong>La carga del encabezado es un número</strong> (V10.8.45), 0–99, donde estaban las cinco barritas. <strong>MENU › ABOUT</strong> perdió
+  las líneas del reloj y los rieles de la CPU (V10.8.45); <strong>LAST CRASH</strong> sigue (V10.8.46). El diagnóstico de velocidad
+  salió del firmware: <a href="https://github.com/juanjiant-bit/JIANT/blob/main/docs/VELOCITY_DIAG.es.md">VELOCITY_DIAG.es.md</a> es para versiones anteriores.</li>
+<li><strong>Las palabras del tema</strong> (V10.8.47): el KNOB 2 de SAVE › PART SLOTS es <strong>PLAY/EDIT</strong> (era LOAD; mientras suena el
+  loop la parte entra en el compás siguiente); STORE A–D de la capa SAVE son <strong>SAVE A–D</strong> (la pantalla dice <strong>SAVED
+  A</strong>); el modo LOOP de PLAY es <strong>PART</strong> (PART / SONG); el END LOOP de un tema es <strong>REPEAT</strong> (el pie: <strong>40 BARS · END
+  REPEAT</strong>); el cuadro de una parte sin nombre muestra sus compases en el tema (<strong>12 BARS</strong>) en vez de USED, y
+  <strong>PLAYING</strong> en vez de NOW; la leyenda de las fichas dice <strong>ARRANGE  PART+BARS</strong>; en JAM y TAKE, SEQ es <strong>PART</strong> y
+  CAMBIO es <strong>SWITCH</strong>.</li>
+<li><strong>GENERATOR</strong> (V10.8.43–V10.8.48): deja <strong>SCL › HARMONY</strong> como lo pusiste (en ON, la pieza se apoya en la tónica de
+  la tonalidad y HARMONY la mueve); secciones de la mitad de largo, y una sección que vuelve viene variada; el loop de
+  RADIO cambia cada 16, 8 o 4 compases según el tempo, y un STOP en el último compás de la pieza para; cada parte se
+  mueve (LFOs lentos y libres en el filtro y en la forma, el paneo), envolventes reales por rol (ninguna parte en
+  sustain pleno salvo órganos y drones; los leads con poco sustain y un release largo), acordes, leads y arpegios con
+  su propio tipo de filtro (BP, o HP con KEY TRK 100), el GAIN de la pista compensando el nivel; una parte de acordes
+  sobre un sonido de lead sin su vibrato; PHONK siempre el drift; los hi-hats de JAZZ a la mitad. Ver
+  <a href="#8-dados-y-undo">8</a>.</li>
 <li><strong>RADIO y MOOD</strong> (V10.8.39–V10.8.41; HOME › GENERATOR 4): <strong>KNOB 3 RADIO</strong> ON / OFF: cuando termina la última fila
-  del tema (un loop: a los 16 compases, 32 por encima de 110 BPM) el generador arma solo la pieza siguiente y entra en
+  del tema (un loop: a los 16 compases, 32 por encima de 110 BPM; desde V10.8.45 16, 8 o 4 compases) el generador arma solo la pieza siguiente y entra en
   la barra de compás, a la manera de ENTRY. Solo avanza mientras suena un borrador generado, no con FORM MY LOOP;
   apretá OCT+ una vez para arrancar. <strong>KNOB 4 MOOD</strong>, CALM … MID … DANCE: mueve la energía y la batería (CALM: el kit
   más liviano, hasta desaparecer cerca del final; DANCE: batería en todas las piezas, el bombo en los tiempos), con
@@ -347,7 +373,7 @@ versión pública) o de antes: <a href="#qué-hay-de-nuevo-en-esta-versión">Qu�
 <li><strong>Volvió SEQ › NOTE</strong> (V10.8.38), después de STEP: FOCUS, PITCH, MOVE, MICRO. <strong>SEQ › BAR</strong>, el cargador de
   patrones <strong>PHRASES</strong> y <strong>GLO › SYSTEM 2</strong> (MIDI) ya no están.</li>
 <li><strong>TRANS</strong> (V10.8.38): el KNOB 4 de SCL › CHORD, la transposición de la pista (±24 semitonos).</li>
-<li><strong>GAIN en todos los motores</strong> (V10.8.38): en la primera página EDIT del motor, <strong>OCT+ mantenido + KNOB 4</strong>: 0–12 dB.</li>
+<li><strong>GAIN en todos los motores</strong> (V10.8.38): en la primera página EDIT del motor, <strong>OCT+ mantenido + KNOB 4</strong>: 0–12 dB (desde V10.8.44 también en la página LEVEL).</li>
 <li><strong>KEY TRK NOTE afinado</strong> (V10.8.38): en LP y HP el pico de la resonancia cae en la nota.</li>
 <li><strong>SWARM</strong> (V10.8.38): <strong>WAVE</strong> en el KNOB 4 de SWARM 2 (el seno, o una de ocho fórmulas FLOAT), una etiqueta en el
   dibujo que dice qué escucha (<strong>ALONE</strong>, <strong>AIR n</strong>, <strong>PROX n</strong>, <strong>AIR OFF</strong>), y <strong>MODE &gt;T1 … &gt;T6</strong>: las notas de SWARM
@@ -716,7 +742,7 @@ atajos de esa capa; en la grilla DRUM son pasos y carriles; en la pantalla NAME 
 </tr>
 <tr>
 <td><strong>OCT+</strong> mantenido + <strong>KNOB 4</strong> en la primera página EDIT de un motor</td>
-<td>(V10.8.38) <strong>GAIN</strong>, 0–12 dB en la pista. (En EUCLID: el EVERY de MUTATE; en FILTER, OCT+ mantenido + KNOB 2: KEY TRK.)</td>
+<td>(V10.8.38) <strong>GAIN</strong>, 0–12 dB en la pista (también en EDIT › LEVEL, V10.8.44). En <strong>FX › REVERB</strong> y <strong>FX › DLY</strong> (V10.8.44): <strong>GATE</strong>. (En EUCLID: el EVERY de MUTATE; en FILTER, OCT+ mantenido + KNOB 2: KEY TRK.)</td>
 </tr>
 <tr>
 <td><strong>PLAY</strong> mantenido (~0,7 s)</td>
@@ -744,7 +770,7 @@ atajos de esa capa; en la grilla DRUM son pasos y carriles; en la pantalla NAME 
 </tr>
 <tr>
 <td><strong>SAVE</strong> mantenido + <strong>OCT+</strong> / <strong>OCT−</strong></td>
-<td>Guarda la música en la sección que está sonando / recupera esa sección tal como quedó guardada.</td>
+<td><strong>SAVE</strong>: guarda la música en la sección que está sonando / recupera esa sección tal como quedó guardada.</td>
 </tr>
 <tr>
 <td><strong>HOME</strong> mantenido + <strong>SELECT</strong></td>
@@ -776,7 +802,7 @@ atajos de esa capa; en la grilla DRUM son pasos y carriles; en la pantalla NAME 
 </tr>
 <tr>
 <td>Teclas de paso mantenidas (SEQ, el roll / la grilla) + <strong>SELECT</strong> / una tecla de paso + <strong>REC</strong></td>
-<td><strong>COPIAR</strong> esos pasos / <strong>PEGARLOS</strong> desde ese paso (ver Copiar y pegar).</td>
+<td><strong>COPIAR</strong> esos pasos / <strong>PEGARLOS</strong> desde ese paso (ver <a href="#copiar-pegar-y-duplicar">Copiar, pegar y duplicar</a>).</td>
 </tr>
 <tr>
 <td><strong>OCT− + OCT+</strong> mantenidos al encender</td>
@@ -867,8 +893,9 @@ las pestañas), así LARGE se lee igual en cualquiera.</p>
   mientras cambian), después el candado de BPM LOCK y el punto de REC (lleno: la pista seleccionada armada; un aro:
   otra pista). Al medio de qué es la página: <strong>T1 · ANALOG ACID</strong> (la pista, su motor y su sonido); en las páginas del
   tema (SAVE, ARRANGE, TOOLS, GLOBAL) <strong>P1 NOMBRE</strong> (el proyecto); en FX <strong>T1</strong> en naranja. A la derecha la octava
-  (<strong>OCT +2</strong>, o la fila del tema mientras suena un tema), el <strong>medidor de carga</strong> (cinco barritas, violetas a medida
-  que el sonido ocupa más del tiempo de audio) y la batería (violeta cuando la alimenta el USB). Los mensajes aparecen
+  (<strong>OCT +2</strong>, o la fila del tema mientras suena un tema), la <strong>carga</strong> (V10.8.45: un número violeta, 0–99, la
+  parte del tiempo de audio que ocupa el sonido; se mueve cuando la carga cambia 3 o más; antes cinco barritas) y la
+  batería (violeta cuando la alimenta el USB). Los mensajes aparecen
   al medio ("SAVED", "T1 CLEARED"...), a veces con una segunda línea.</li>
 <li><strong>Tarjetas</strong>: las cuatro cajas debajo del encabezado son KNOB 1–4: el nombre chico y gris arriba, el valor debajo en
   blanco y una barra violeta fina debajo del valor. La que estás girando se enciende en naranja, así es el único color
@@ -991,18 +1018,18 @@ la misma de la 0.9.1, con sus perillas y su dibujo (los que dibujaban las lentes
 </tr>
 <tr>
 <td><strong>EDIT</strong> (un sinte)</td>
-<td><strong>SOUND</strong>: las dos páginas del motor, con su propio nombre (WAVES · SHAPE, FORMULA · MOTION …, ver <a href="#4-motores">4</a>; ANALOG tiene una, OSC) — <strong>TONE</strong>: FILTER · WORDS (VOICE) · SWARM · SWARM 2 (EXT con SOURCE SWARM) — <strong>FOCUS</strong>: FOCUS (no en EXT) — <strong>PLAY</strong>: MORE (ANALOG, PHASE, MATH, WHEEL) · PLAY</td>
-<td>4 a 6</td>
+<td><strong>SOUND</strong>: las dos páginas del motor, con su propio nombre (WAVES · SHAPE, FORMULA · MOTION …, ver <a href="#4-motores">4</a>; ANALOG tiene una, OSC) · <strong>LEVEL</strong> (V10.8.44) — <strong>TONE</strong>: FILTER · WORDS (VOICE) · SWARM · SWARM 2 (EXT con SOURCE SWARM) — <strong>FOCUS</strong>: FOCUS (no en EXT) — <strong>PLAY</strong>: MORE (ANALOG, PHASE, MATH, WHEEL) · PLAY</td>
+<td>5 a 7</td>
 </tr>
 <tr>
 <td><strong>EDIT</strong> (FM6)</td>
-<td><strong>SOUND</strong>: ALGO · PATCH — <strong>TONE</strong>: FILTER — <strong>OPERATOR</strong>: OPERATOR · OP ENV · OPERATOR 2 — <strong>PLAY</strong>: PLAY</td>
-<td>7</td>
+<td><strong>SOUND</strong>: ALGO · PATCH · LEVEL — <strong>TONE</strong>: FILTER — <strong>OPERATOR</strong>: OPERATOR · OP ENV · OPERATOR 2 — <strong>PLAY</strong>: PLAY</td>
+<td>8</td>
 </tr>
 <tr>
 <td><strong>EDIT</strong> (DRUM)</td>
-<td><strong>KIT</strong>: KIT · KIT 2 — <strong>SOUND</strong>: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — <strong>TONE</strong>: CROSS MOD · FILTER</td>
-<td>8</td>
+<td><strong>KIT</strong>: KIT · KIT 2 · LEVEL — <strong>SOUND</strong>: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — <strong>TONE</strong>: CROSS MOD · FILTER</td>
+<td>9</td>
 </tr>
 <tr>
 <td><strong>SEQ</strong></td>
@@ -1128,21 +1155,21 @@ violeta, con el nombre violeta, y dice <strong>OCT+</strong>; apretá OCT+ para 
 <tr>
 <td>JAM</td>
 <td>TRACK</td>
-<td>SEQ (A–D)</td>
-<td>CAMBIO (AT ONCE, 1/16, 1/8, 1/4, 1/2, BAR)</td>
+<td>PART (A–D; SEQ hasta V10.8.47)</td>
+<td>SWITCH (AT ONCE, 1/16, 1/8, 1/4, 1/2, BAR; CAMBIO hasta V10.8.47)</td>
 <td>TAKE (FREE / LOCK; ARM, REC)</td>
 </tr>
 <tr>
 <td>TAKE (V10.8.2)</td>
 <td>CHANGE</td>
 <td>WHEN</td>
-<td>SEQ</td>
+<td>PART</td>
 <td>BARS</td>
 </tr>
 <tr>
 <td>ARRANGE</td>
 <td>ROW</td>
-<td>PART (en END: STOP / x2–x8 / LOOP)</td>
+<td>PART (en END: STOP / x2–x8 / REPEAT)</td>
 <td>BARS</td>
 <td>SCENE</td>
 </tr>
@@ -1315,7 +1342,7 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.</p>
 <td>TIME</td>
 <td>FEEDBK</td>
 <td>TONE</td>
-<td>MIX</td>
+<td>MIX (con OCT+ mantenido: <strong>GATE</strong>, V10.8.44)</td>
 </tr>
 <tr>
 <td>DLY 2</td>
@@ -1336,7 +1363,7 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.</p>
 <td>TYPE</td>
 <td>SIZE</td>
 <td>DAMP (RESO: FOLLOW)</td>
-<td>PRE (SHIMMER/CLOUD: AIR; RESO: PITCH)</td>
+<td>PRE (SHIMMER/CLOUD: AIR; RESO: PITCH); con OCT+ mantenido: <strong>GATE</strong> (V10.8.44)</td>
 </tr>
 <tr>
 <td>REVERB 2</td>
@@ -1489,6 +1516,14 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.</p>
 <td>ANALOG (su única página acá: CUT y RES son de FILTER)</td>
 </tr>
 <tr>
+<td>LEVEL (V10.8.44)</td>
+<td>GAIN (0–12 dB, el de la pista)</td>
+<td>LEVEL</td>
+<td>PAN</td>
+<td>—</td>
+<td>todos los motores, después de las páginas del motor (DRUM: después de KIT 2)</td>
+</tr>
+<tr>
 <td>ALGO</td>
 <td>ALG</td>
 <td>FEEDBK</td>
@@ -1548,7 +1583,7 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.</p>
 <td>MORE</td>
 <td>MORPH</td>
 <td>DRIFT</td>
-<td>GAIN</td>
+<td>— (GAIN hasta V10.8.44: ahora en LEVEL)</td>
 <td>—</td>
 <td>ANALOG, PHASE</td>
 </tr>
@@ -1613,7 +1648,7 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.</p>
 <td>NOISE</td>
 <td>BODY</td>
 <td>GLUE</td>
-<td>GAIN</td>
+<td>GAIN (el del kit; el de la pista está en LEVEL)</td>
 <td>DRUM (todo el kit)</td>
 </tr>
 <tr>
@@ -1724,7 +1759,7 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.</p>
 <tr>
 <td>PART SLOTS</td>
 <td>PART (A–D)</td>
-<td>LOAD (acción)</td>
+<td>PLAY/EDIT (acción, V10.8.47; era LOAD)</td>
 <td>ERASE (acción, V10.17)</td>
 <td>SAVE (acción)</td>
 </tr>
@@ -2110,7 +2145,8 @@ en PRESETS (KNOB 2) y FAV se marca ahí (KNOB 3). Las perillas son <strong>MOMEN
 AUTO (la automatización y los locks de la pista; los pasos quedan). En una pista DRUM, las herramientas del carril: G4
 CLR, A4 REV, B4 FILL sobre el carril elegido con las negras 1–8. (V10.6: C4 RANDOM, D4 COOK, E4 BEAT y C5, el RANDOM del
 carril, ya no están; SEQ › EUCLID escribe patrones.) <strong>E5 COPY SEQ</strong> copia toda la secuencia de la pista (los pasos
-1–LEN), <strong>F5 PASTE SEQ</strong> pega lo copiado desde su primer paso. <strong>G5 CLR STEP</strong> (0.9.2; antes el toque de EDIT): borra el paso del cursor y sus locks (en NOTE con una nota en foco: solo esa nota; en AUTO LIST, <strong>DEL REC</strong>: borra el registro de la fila). <strong>REC</strong> (con SEQ mantenido): CLEAR ALL. <strong>PLAY</strong> (con SEQ mantenido, sonando; V10.8.40): <strong>RESYNC</strong>, todas las pistas desde su primer paso en el compás siguiente. Perillas: LEN, DIV, SWING, GATE.</p>
+1–LEN), <strong>F5 PASTE SEQ</strong> reemplaza la secuencia por lo copiado, desde su primer paso (ver
+<a href="#copiar-pegar-y-duplicar">Copiar, pegar y duplicar</a>). <strong>G5 CLR STEP</strong> (0.9.2; antes el toque de EDIT): borra el paso del cursor y sus locks (en NOTE con una nota en foco: solo esa nota; en AUTO LIST, <strong>DEL REC</strong>: borra el registro de la fila). <strong>REC</strong> (con SEQ mantenido): CLEAR ALL. <strong>PLAY</strong> (con SEQ mantenido, sonando; V10.8.40): <strong>RESYNC</strong>, todas las pistas desde su primer paso en el compás siguiente. Perillas: LEN, DIV, SWING, GATE.</p>
 <p><strong>REC</strong> — F3 <strong>CLEAR</strong> borra los pasos y la automatización de la pista seleccionada (sin diálogo; UNDO lo puede
 traer de vuelta), G3 <strong>CLICK</strong> (OFF / REC / ON), A3 <strong>UNDO</strong> (otra vez: rehacer), B3 <strong>Q ON / Q OFF</strong> (REC GRID en 100 %
 o en 0 %). KNOB 1: CLICK; KNOB 2: <strong>REC GRID</strong>, cuánto se lleva a la grilla lo que grabás. (V10.7) REC mantenido más
@@ -2131,11 +2167,11 @@ u OCT mientras lo mantenés, es la capa REC de siempre.</p>
 </tr>
 <tr>
 <td>C4 D4 E4 F4</td>
-<td>STORE: guarda la música en A / B / C / D</td>
+<td>SAVE A–D: guarda la música en A / B / C / D (STORE hasta V10.8.47; la pantalla dice SAVED A)</td>
 </tr>
 <tr>
 <td>D5</td>
-<td>LOOP / SONG: qué reproduce PLAY</td>
+<td>PART / SONG: qué reproduce PLAY (LOOP / SONG hasta V10.8.47)</td>
 </tr>
 <tr>
 <td>E5</td>
@@ -2151,7 +2187,7 @@ u OCT mientras lo mantenés, es la capa REC de siempre.</p>
 </tr>
 <tr>
 <td>OCT+ / OCT−</td>
-<td>guardar en / recuperar la sección que está sonando</td>
+<td>SAVE: guardar en / RECALL: recuperar la sección que está sonando</td>
 </tr>
 <tr>
 <td><strong>KNOB 1</strong></td>
@@ -2264,9 +2300,11 @@ click; las notas siguen.</p>
 <ul>
 <li><strong>GAIN en todos los motores</strong> (V10.8.38): en la primera página EDIT del motor mantené <strong>OCT+</strong> y girá <strong>KNOB 4</strong>: su
   tarjeta dice <strong>GAIN</strong>, 0–12 dB limpios sobre el nivel de la pista. OCT+ soltado sin girar nada sigue siendo la octava de las
-  teclas. (ANALOG lo tiene también en MORE, WHEEL en COLOR.)</li>
+  teclas. (V10.8.44) El mismo GAIN es el KNOB 1 de la página <strong>LEVEL</strong>, la última del primer grupo de EDIT en todos los
+  motores, con el <strong>LEVEL</strong> y el <strong>PAN</strong> de la pista (los del mixer) al lado. WHEEL lo tiene también en COLOR; el MORE
+  de ANALOG y de PHASE ya no.</li>
 <li><strong>ANALOG</strong>: dos osciladores. WAVE: SAW, SQR, TRI, SIN, PWM, SYNC, RING, SAW3, <strong>PLS3</strong> (V10.22: tres pulsos, el oscilador 3 desafinado al revés;
-  MORPH fija el ancho de pulso). Desde V10.7.21 tiene una sola página, <strong>OSC</strong>: WAVE, DETUNE, MIX e <strong>INT</strong>, el intervalo del oscilador 2 (±24 semitonos); en <strong>SAW3</strong> y <strong>PLS3</strong> (V10.7.22) la página es WAVE, INT, <strong>INT 3</strong> (el intervalo propio del oscilador 3, V10.39; sin ruido en esas dos formas de onda) y DETUNE. CUT y RES están en FILTER, NOISE, DRIVE (y MIX en SAW3 / PLS3) en FOCUS, MORPH, DRIFT y GAIN en MORE. Una elección al azar (GEN, los dados) deja INT e INT 3 en
+  MORPH fija el ancho de pulso). Desde V10.7.21 tiene una sola página, <strong>OSC</strong>: WAVE, DETUNE, MIX e <strong>INT</strong>, el intervalo del oscilador 2 (±24 semitonos); en <strong>SAW3</strong> y <strong>PLS3</strong> (V10.7.22) la página es WAVE, INT, <strong>INT 3</strong> (el intervalo propio del oscilador 3, V10.39; sin ruido en esas dos formas de onda) y DETUNE. CUT y RES están en FILTER, NOISE, DRIVE (y MIX en SAW3 / PLS3) en FOCUS, MORPH y DRIFT en MORE, GAIN en LEVEL (V10.8.44). Una elección al azar (GEN, los dados) deja INT e INT 3 en
   0, cuarta, quinta u octava (V10.38). Su filtro es por voz.</li>
 <li><strong>FM6</strong>: un motor FM de seis operadores (msfa, de Dexed), 32 algoritmos dibujados en pantalla, cuatro voces por
   pista. Las perillas de sus dos páginas, <strong>ALGO</strong> (ALG, FEEDBK, MOD, RATIO) y <strong>PATCH</strong> (SLOT, MOD ENV, VEL MOD, SPREAD), son macros sobre el patch. <strong>SLOT</strong>: los patches de fábrica F1–F8, OWN (un patch
@@ -3418,8 +3456,8 @@ comparten <strong>64 registros por sección</strong> (todas las pistas juntas); 
 los 56) la curva de cada perilla se queda solo con los registros que necesita, dentro de 1/32 de su rango. Un tramo
 donde el valor no cambia queda en un registro que lo <strong>sostiene</strong>; uno que se mueve parejo, en un registro <strong>RAMP</strong> que
 se desliza paso a paso desde el anterior (SEQ › AUTO LIST lo muestra como RAMP; el componente RAMP es otra cosa, ver COMP).</p>
-<h3 id="copiar-y-pegar-099-seq2h">Copiar y pegar (0.9.9-seq2h)</h3>
-<p>En las páginas de SEQ con el roll (STEP, NOTE, ..; también la grilla de una pista DRUM), parado o andando, <strong>las 16 teclas
+<h3 id="copiar-pegar-y-duplicar">Copiar, pegar y duplicar</h3>
+<p><strong>Pasos</strong> (0.9.9-seq2h). En las páginas de SEQ con el roll (STEP, NOTE, ..; también la grilla de una pista DRUM), parado o andando, <strong>las 16 teclas
 blancas son los pasos del compás que se ve</strong> (el compás del cursor, como en la grilla y en COMP):</p>
 <ul>
 <li><strong>COPIAR un paso</strong>: mantené su tecla y girá <strong>SELECT</strong> (alcanza con un paso del encoder).</li>
@@ -3437,6 +3475,42 @@ portapapeles queda al cambiar de pista, compás o sección: elegí otra pista y 
 para grabar</strong> las teclas escriben (o graban) notas, así que copiar y pegar esperan a que REC esté apagado; en la grilla
 DRUM las teclas blancas siguen siendo los pasos (una tecla apretada en un paso vacío para copiar o pegar no deja su golpe
 ahí). En el roll las teclas mantenidas siguen sonando sus notas.</p>
+<p><strong>Una secuencia entera</strong>: mantené <strong>SEQ</strong> (SEQ TOOLS, en cualquier página de SEQ) y apretá <strong>E5 COPY SEQ</strong>: los pasos
+1 a LEN de la pista van al mismo portapapeles. <strong>F5 PASTE SEQ</strong> (apagada mientras el portapapeles está vacío)
+reemplaza toda la secuencia de la pista elegida por lo copiado, desde el paso 1, con el LEN de la copia (<strong>NOTHING
+COPIED</strong> si no hay nada). Sirve en otra pista o después de cambiar de parte; DRUM ↔ melódico se rechaza como arriba;
+UNDO lo deshace.</p>
+<p><strong>Una parte en otra</strong> (A → B): mantené <strong>SAVE</strong>, apretá <strong>F3</strong> (PLAY A; sonando entra en el compás siguiente) y,
+cuando ya suena A, <strong>D4</strong> (<strong>SAVE B</strong>): B queda con lo que tenía A. Parado, SAVE › PART SLOTS lo hace con nombres:
+PLAY/EDIT A y después SAVE en B (<a href="#copiar">12</a>).</p>
+<p><strong>Una fila de ARRANGE</strong>: en HOME › ARRANGE, <strong>KNOB 1</strong> a la fila y <strong>OCT+</strong>: una copia justo después, elegida (16
+filas como mucho).</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Para copiar</th>
+<th>Gesto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pasos (dos teclas: un rango; las teclas 1 y 16: el compás)</td>
+<td>teclas de paso mantenidas + girar <strong>SELECT</strong>; pegar: un paso mantenido + <strong>REC</strong></td>
+</tr>
+<tr>
+<td>La secuencia entera de una pista</td>
+<td>SEQ mantenido + <strong>E5 COPY SEQ</strong>; pegar: SEQ mantenido + <strong>F5 PASTE SEQ</strong></td>
+</tr>
+<tr>
+<td>La parte A en la parte B</td>
+<td>SAVE mantenido + <strong>F3</strong> (PLAY A), después SAVE mantenido + <strong>D4</strong> (SAVE B)</td>
+</tr>
+<tr>
+<td>Una fila de ARRANGE</td>
+<td><strong>OCT+</strong> en ARRANGE</td>
+</tr>
+</tbody>
+</table></div>
 <h3 id="escala">Escala</h3>
 <p><strong>ROOT, SCALE y QUANT son globales</strong>: una sola escala para todo el tema. En la pista que sea que los fijes (perilla,
 capa SCL, MIDI, la carga de un proyecto), todas las pistas melódicas la siguen al instante; las pistas de batería no
@@ -3488,6 +3562,11 @@ suenan tal cual llegan.</p>
 REPEAT, DNUP, UP+8, CONV, DIVG, PINKY, THUMB, WALK, CHORD, <strong>TRNS</strong> (las teclas y el MIDI entrante transponen la
 secuencia de la pista según su distancia a C4, sin tocar notas). <strong>Latch de teclas</strong>: con MODE OFF, <strong>HOLD ON</strong> deja
 las notas sonando después de soltarlas; el acorde siguiente las reemplaza.</p>
+<p><strong>A tiempo</strong> (V10.8.45). Mientras suena el transporte (o la cuenta previa), el primer paso de un arpegio cae en la
+grilla de su RATE en el transporte: una tecla que llega hasta 20 ms después de un paso arranca en ese paso de una, una
+más tarde espera al paso siguiente, y desde ahí corre con el tiempo del secuenciador, así que se queda en la grilla.
+Grabando nunca arranca tarde (sin los 20 ms de gracia: espera al paso siguiente), y cada nota arpegiada se escribe en
+su propio paso (MICRO 0), sea cual sea REC GRID. Parado, el arpegio arranca desde la tecla, como antes.</p>
 <h3 id="borrar">Borrar</h3>
 <div class="tw"><table>
 <thead>
@@ -3547,9 +3626,9 @@ para todas las pistas.</p>
 <ol>
 <li><strong>Armá un loop</strong>: grabalo (REC), escribí pasos, usá <a href="#euclid-y-modes-v106">EUCLID</a> o el generador
    (<a href="#tu-primer-tema-5-minutos">Tu primer tema (5 minutos)</a>).</li>
-<li><strong>Guardalo como sección A</strong>: mantené <strong>SAVE</strong> y apretá <strong>C4</strong>. La pantalla dice <strong>STORED A</strong>. Funciona mientras
+<li><strong>Guardalo como sección A</strong>: mantené <strong>SAVE</strong> y apretá <strong>C4</strong> (SAVE A). La pantalla dice <strong>SAVED A</strong> (STORED A antes de V10.8.47). Funciona mientras
    suena. Para ponerle nombre, guardalo en SAVE › PART SLOTS (<a href="#para-guardar-una-sección-de-un-proyecto">12</a>).</li>
-<li><strong>Armá B, C, D</strong>: cambiá la música (pasos, sonidos, una pista muteada…) y mantené SAVE + <strong>D4</strong> (STORED B), después
+<li><strong>Armá B, C, D</strong>: cambiá la música (pasos, sonidos, una pista muteada…) y mantené SAVE + <strong>D4</strong> (SAVED B), después
    <strong>E4</strong> (C) y <strong>F4</strong> (D). SAVE + F3–B3 toca una sección para chequearla (sonando: en el compás siguiente).</li>
 <li><strong>Abrí el tema</strong>: pará (PLAY), tocá <strong>HOME</strong> hasta la pestaña <strong>SONG</strong> y girá <strong>SELECT</strong> hasta <strong>ARRANGE</strong> (o mantené
    SAVE y apretá <strong>G5</strong>). Sin filas dice <strong>NO ROWS</strong>.</li>
@@ -3557,11 +3636,11 @@ para todas las pistas.</p>
    es una copia de la fila elegida, después de ella (V10.6o). <strong>KNOB 1</strong> la fila, <strong>KNOB 2</strong> su PART A–D, <strong>KNOB 3</strong> sus
    BARS (1–64). Por ejemplo A 8 · B 8 · A 8 · C 4 · D 8.</li>
 <li><strong>END y escenas</strong>: <strong>KNOB 1</strong> más allá de la última fila es <strong>+ ADD</strong>, y después <strong>END</strong>: ahí <strong>KNOB 2</strong> elige
-   <strong>STOP</strong> (una vez), <strong>x2–x8</strong> o <strong>LOOP</strong>. Una escena: dejá los mutes (GLO mantenido + negras 1–6) y las macros como
+   <strong>STOP</strong> (una vez), <strong>x2–x8</strong> o <strong>REPEAT</strong> (LOOP hasta V10.8.47). Una escena: dejá los mutes (GLO mantenido + negras 1–6) y las macros como
    los querés, <strong>KNOB 1</strong> a la fila, <strong>KNOB 4</strong> a la derecha: <strong>SCENE STORED</strong> (a la izquierda: SCENE CLEARED).</li>
 <li><strong>Tocalo</strong>: parado, apretá <strong>PLAY</strong> en ARRANGE. El tema suena desde el principio; PLAY otra vez lo para y vuelve la
    música que tenías antes (<strong>SONG END</strong>). Desde cualquier otra página: mantené SAVE + <strong>D5</strong> (<strong>PLAY: THE SONG</strong>) y PLAY
-   toca el tema; SAVE + D5 otra vez vuelve a <strong>PLAY: THE LOOP</strong>. Sin filas dice <strong>ADD A SONG ROW</strong>; con una fila sobre
+   toca el tema; SAVE + D5 otra vez vuelve a <strong>PLAY: THE LOOP</strong> (el modo <strong>PART</strong> de PLAY). Sin filas dice <strong>ADD A SONG ROW</strong>; con una fila sobre
    una sección vacía el tema no arranca (<strong>PART EMPTY</strong>).</li>
 <li><strong>Borrar una fila</strong>: parado, en ARRANGE, <strong>KNOB 1</strong> a la fila, <strong>OCT−</strong>: <strong>DELETE SONG ROW?</strong>. <strong>OCT+</strong> la borra,
    OCT− la deja. No se puede deshacer.</li>
@@ -3591,7 +3670,7 @@ sus compases, un carril por pista; sin filas dice <strong>NO ROWS</strong>.</p>
 <td>KNOB 2 (PART)</td>
 <td>su sección A–D; a la izquierda más allá de A: <strong>DELETE SONG ROW?</strong></td>
 <td>agrega una fila (la misma sección que la fila de arriba, 1 compás)</td>
-<td><strong>STOP</strong>, <strong>x2 … x8</strong>, <strong>LOOP</strong></td>
+<td><strong>STOP</strong>, <strong>x2 … x8</strong>, <strong>REPEAT</strong> (LOOP hasta V10.8.47)</td>
 </tr>
 <tr>
 <td>OCT+</td>
@@ -3632,7 +3711,8 @@ sus compases, un carril por pista; sin filas dice <strong>NO ROWS</strong>.</p>
   una tirada nueva del generador, de cargar un proyecto o una sección, de un salto de sección en vivo o, para una sola
   pista, del <strong>RECALL</strong> de la capa EDIT (G3; ahora funciona mientras suena un tema): vuelve el sonido guardado de la
   sección, y los de las siguientes después.</li>
-<li>END: <strong>STOP</strong> toca el tema una vez, <strong>x2–x8</strong> esa cantidad de veces, <strong>LOOP</strong> para siempre.</li>
+<li>END: <strong>STOP</strong> toca el tema una vez, <strong>x2–x8</strong> esa cantidad de veces, <strong>REPEAT</strong> para siempre. El pie dice el largo
+  del tema y su final: <strong>40 BARS · STOP</strong>, <strong>40 BARS · x2</strong>, <strong>40 BARS · END REPEAT</strong>.</li>
 <li>Si una fila apunta a una sección vacía el tema no arranca: la pantalla dice <strong>PART EMPTY</strong>.</li>
 <li>Mientras suena un tema, editar pasos, el generador y EUCLID están bloqueados (<strong>SONG PLAYS: STOP IT TO EDIT</strong>).</li>
 <li>Para borrar una fila también podés usar SAVE › TOOLS (TARGET SONG, ACTION DEL ROW: la fila que ARRANGE tiene
@@ -3662,13 +3742,13 @@ enmarcada, una pedida que todavía no entró punteada, la celda a la que apuntan
 </tr>
 <tr>
 <td>KNOB 2</td>
-<td>SEQ: la parte A–D (la celda)</td>
+<td>PART: la parte A–D (la celda; SEQ hasta V10.8.47)</td>
 <td>WHEN: lo corre (compás.tiempo.semicorchea)</td>
 </tr>
 <tr>
 <td>KNOB 3</td>
-<td>CAMBIO: cuándo entra un cambio (AT ONCE, 1/16, 1/8, 1/4, 1/2, BAR)</td>
-<td>SEQ: su secuencia A–D</td>
+<td>SWITCH: cuándo entra un cambio (AT ONCE, 1/16, 1/8, 1/4, 1/2, BAR; CAMBIO hasta V10.8.47)</td>
+<td>PART: su secuencia A–D</td>
 </tr>
 <tr>
 <td>KNOB 4</td>
@@ -3677,7 +3757,7 @@ enmarcada, una pedida que todavía no entró punteada, la celda a la que apuntan
 </tr>
 <tr>
 <td>OCT+</td>
-<td>GO: la pista elegida a la secuencia elegida, en el paso de CAMBIO (parado: de una)</td>
+<td>GO: la pista elegida a la secuencia elegida, en el paso de SWITCH (parado: de una)</td>
 <td>un cambio nuevo (TAKE FULL si no hay lugar)</td>
 </tr>
 <tr>
@@ -3711,7 +3791,7 @@ enmarcada, una pedida que todavía no entró punteada, la celda a la que apuntan
 <li><strong>TAKE</strong> muestra la toma entera, el cambio elegido con un marco y su pista encendida; sin toma las tarjetas dicen
   <strong>--</strong> y las perillas dicen NO TAKE.</li>
 <li>Elegir una secuencia en JAM (o con el KNOB 1 de SEQ › STEP, que es el mismo cambio para la pista seleccionada) termina
-  el tema o la cadena rápida que estuviera sonando y deja PLAY en THE LOOP.</li>
+  el tema o la cadena rápida que estuviera sonando y deja PLAY en PART (el loop).</li>
 </ul>
 <h3 id="timeline-parts-y-clips-save-song">TIMELINE, PARTS y CLIPS (SAVE › SONG)</h3>
 <p><em>Se fueron en V10.8: el modo canción de arriba, <strong>HOME › JAM · TAKE · ARRANGE</strong>, ocupó su lugar.</em></p>
@@ -3719,7 +3799,7 @@ enmarcada, una pedida que todavía no entró punteada, la celda a la que apuntan
 <p><em>La página se fue en V10.7.20; lo hace <strong>SAVE › PROJECTS</strong>.</em> <strong>KNOB 1</strong> elige el proyecto de destino (1–6; no se abre),
 <strong>KNOB 4</strong> a la derecha arma SAVE, <strong>OCT+</strong>. Un destino usado pregunta <strong>OVERWRITE PROJECT n?</strong>; después la pantalla
 NAME, donde <strong>KNOB 3</strong> dice si se escribe el <strong>SONG</strong> entero o solo el <strong>LOOP</strong>. Copia el tema entero: las secciones A–D
-(con lo que no guardaste de la que suena), el tempo y los globales, las filas, los compases, END y las escenas, y LOOP
+(con lo que no guardaste de la que suena), el tempo y los globales, las filas, los compases, END y las escenas, y PART
 / SONG. Pará antes (<strong>STOP TO SAVE</strong>). El proyecto del que copiaste queda abierto y sin cambios; abrí la copia con el
 LOAD de PROJECTS.</p>
 <h3 id="escenas">Escenas</h3>
@@ -3732,10 +3812,11 @@ que no tengan una. Las escenas se aplican cuando suena un tema, no en una cadena
 <li><strong>F3–B3</strong>: tocar la sección A–D. Sonando, entra en el <strong>compás siguiente</strong>; parado, carga de una.</li>
 <li>Tocá <strong>dos o más</strong> de F3–B3 en una misma mantenida: una <strong>cadena rápida</strong> — suenan por turno, cada una el largo de su
   patrón más largo, en ronda, desde el compás siguiente (parado: de una).</li>
-<li><strong>C4–F4</strong>: <strong>guardar</strong> la música de ahora en A–D (funciona sonando; ver en <a href="#12-guardar-y-cargar">12</a> cuándo llega
-  a la flash).</li>
-<li><strong>OCT+</strong>: guardar en la sección que suena (PLAY A PART FIRST si no hay). <strong>OCT−</strong>: recuperarla como estaba guardada.</li>
-<li><strong>D5</strong>: <strong>LOOP / SONG</strong> — en modo SONG, PLAY desde cualquier página toca el arreglo.</li>
+<li><strong>C4–F4</strong>: <strong>SAVE A–D</strong> (STORE A–D hasta V10.8.47), guardar la música de ahora en A–D; la pantalla dice <strong>SAVED A</strong>
+  (funciona sonando; ver en <a href="#12-guardar-y-cargar">12</a> cuándo llega a la flash). F3 y después D4 copia la parte A en B.</li>
+<li><strong>OCT+</strong>: <strong>SAVE</strong> en la sección que suena (PLAY A PART FIRST si no hay). <strong>OCT−</strong>: <strong>RECALL</strong>, recuperarla como
+  estaba guardada.</li>
+<li><strong>D5</strong>: <strong>PART / SONG</strong> (LOOP / SONG hasta V10.8.47) — en modo SONG, PLAY desde cualquier página toca el arreglo.</li>
 <li><strong>E5</strong>: graba la <strong>toma de JAM</strong> (V10.8; la tecla sigue diciendo SONG REC), como REC en JAM: ver
   <a href="#jam-y-take-home--song">JAM y TAKE</a>. Antes de V10.8 escribía en las filas del arreglo las secciones que tocabas.</li>
 <li><strong>G5</strong>: saltar a ARRANGE.</li>
@@ -3801,8 +3882,10 @@ se completan las partes que quedaron en <strong>AUTO</strong> (primero BASS, des
 </tbody>
 </table></div>
 <p><strong>RADIO</strong> (V10.8.39; GENERATOR 4, KNOB 3). En ON el generador sigue solo: en el último compás de la pieza (un tema: el
-último compás de su última fila; un loop: su compás 16, el 32 por encima de 110 BPM) tira una semilla nueva y arma la
-pieza siguiente, que entra en la barra de compás como con un OCT+, a la manera de ENTRY. Solo avanza mientras suena como
+último compás de su última fila; un loop: cada 16 compases por encima de 110 BPM, 8 por encima de 74 BPM, 4 más lento;
+V10.8.45, eran 32 / 16) tira una semilla nueva y arma la pieza siguiente, que entra en la barra de compás como con un
+OCT+, a la manera de ENTRY. (V10.8.43) Un <strong>STOP</strong> en ese último compás para: la pieza siguiente se arma recién cuando
+el compás terminó de sonar, o cuando el tema llegó a su propio END. Solo avanza mientras suena como
 <strong>borrador</strong> (todavía sin guardar) una pieza que armó el generador, nunca sobre un tema guardado, y no con FORM MY LOOP.
 Apretá <strong>OCT+</strong> una vez para armar la primera pieza y PLAY. El panel de GENERATOR 4 es una radio: su parlante late con
 el tiempo mientras RADIO está en ON y suena, la aguja del dial es MOOD, y <strong>RADIO n</strong> cuenta las piezas que lleva
@@ -3820,6 +3903,33 @@ armadas. No se guarda con el proyecto.</p>
 - <strong>el tempo</strong>, en <strong>EXPLORE</strong>: tira hacia unos 72 BPM (CALM) o 138 (DANCE). Con RADIO en ON y MOOD del lado DANCE, la
   pieza siguiente toma el tempo de su rango más cercano al de la pieza anterior.
 No se guarda con el proyecto.</p>
+<p><strong>Lo que V10.8.43–V10.8.48 cambiaron en cada pieza:</strong>
+- <strong>SCL › HARMONY es tuyo</strong> (V10.8.43): una tirada ya no toca sus cuatro valores. Con HARMONY en ON, la pieza y cada
+  una de sus secciones se apoyan en el acorde de tónica de la tonalidad (sin progresión de contraste, sin break en la
+  subdominante) y la progresión de HARMONY las mueve; apagado, como antes.
+- <strong>Secciones más cortas</strong> (V10.8.45): las filas de PARTS y de SONG duran la mitad que antes, ninguna mucho más de 24
+  segundos (más cortas a tempos lentos); las de MY LOOP como estaban. Cada fila tiene sus propios valores de macros, un
+  paso chico desde la fila anterior (un arco, V10.8.46), y una sección que vuelve toca su lead, su arpegio y las líneas
+  libres de la batería como el VAR 1 / 2 de ARRANGE: nunca vuelve idéntica.
+- <strong>Partes que se mueven</strong> (V10.8.46): una parte melódica sin vibrato recibe un LFO lento, libre de las notas (de 5 a
+  20 s, cada parte su propio período), en el filtro y en la forma (el bajo: solo su filtro), y pasea por el estéreo en
+  dos o cuatro compases (el bajo queda al medio); las notas de un lead y de un arpegio también mueven la forma con su
+  envolvente.
+- <strong>Envolventes por rol</strong> (V10.8.45–V10.8.48): decaimientos y colas de verdad; ninguna parte queda en sustain pleno
+  salvo los órganos y drones sostenidos. Un lead tiene un decay largo, poco sustain (37 % como mucho, más o menos) y un
+  release largo; un lead punteado y el arpegio son cortos; los acordes picados entran rápido y caen; los acordes
+  sostenidos entran de a poco, sostienen (75 % como mucho, más o menos) y se van largo; el bajo entra firme. Hacia
+  MOOD CALM los ataques son más suaves y los releases más largos.
+- <strong>Un tipo de filtro cada uno</strong> (V10.8.48): en ANALOG y PHASE los acordes, el lead, el arpegio y la textura toman su
+  propio TYPE de filtro (LP, BP o HP), nunca la misma banda que la parte anterior; BP y HP con <strong>KEY TRK 100</strong> (la
+  etiqueta de FILTER dice 100), así la banda sigue a las notas. El bajo conserva su filtro; las partes de FM6, STRING y
+  MATH, el acid y el dub conservan el de su sonido; nunca un COMB.
+- <strong>GAIN compensa el nivel</strong> (V10.8.48): el GAIN de la pista (EDIT › LEVEL) es el de la pieza, así que lo que se lleva
+  un sustain bajo o una banda se compensa (un lead o un arpegio hasta +8 dB, los acordes y el bajo la mitad).
+- <strong>Detalles</strong>: una parte de acordes, pad o textura sobre un sonido de lead pierde el vibrato rápido de ese sonido
+  (V10.8.43); en MOOD DANCE los decays de la batería un poco más cortos y el pump más hondo; el high-pass del build sube
+  parejo en su último compás (V10.8.46); PHONK siempre toma el mapa drift (V10.8.46); los hi-hats y el ride de JAZZ a
+  más o menos la mitad del nivel (V10.8.47).</p>
 <p>La pieza es <strong>determinista</strong>: los mismos ajustes dan siempre la misma pieza, así que una semilla que te gustó se
 puede volver a marcar. <strong>OCT+ con los ajustes sin tocar tira una semilla nueva</strong> (otra pieza); girá una perilla y
 apretá OCT+ y tenés la <strong>misma pieza con esa sola cosa cambiada</strong> — cada parte saca sus números al azar de su propia
@@ -4073,7 +4183,7 @@ distinta (<strong>LAST: EXPLORE 0421</strong>):
   <strong>SONG</strong> escribe una forma de club: <strong>A</strong> el drop, <strong>B</strong> la intro (batería y
   bajo), <strong>C</strong> el build (entran los acordes, su filtro se abre a lo largo del loop, un redoble al final, el delay
   lanzado en el último paso) y <strong>D</strong> el break (sin batería ni bajo, los acordes más húmedos; 0.8.3: en su predominante,
-  salvo en los loops modales), en ARRANGE como B C A D C A con filas de 16 compases (el drop 32). Los géneros ambient y
+  salvo en los loops modales), en ARRANGE como B C A D C A con filas de 16 compases (el drop 32; desde V10.8.45 la mitad, más cortas a tempos lentos). Los géneros ambient y
   post-rock reciben un arco (fino, entra, ápice: en su predominante). Las secciones tuyas (guardadas por vos, no por GEN) nunca se pisan: entonces la pieza queda en un loop.</li>
 </ul>
 <p>Cada pieza reemplaza los pasos, sonidos, kit, mezcla y automatización de todas las pistas. Los mutes quedan como
@@ -4126,7 +4236,7 @@ son la sección <strong>A</strong>, el pico del tema (su drop). Las demás secci
 <p>Es un SONG como los de GEN: <strong>PLAY</strong> lo toca (ARRANGE muestra sus filas), <strong>SAVE</strong> lo guarda (todas sus
 partes y sus filas, como cualquier tema de GEN: es un borrador hasta que lo guardás). <strong>OCT+</strong> otra vez tira otra
 semilla: otro tema con el mismo loop (las partes que agregó se hacen de nuevo). <strong>UNDO</strong> (GLO + G4) te devuelve tu loop
-como estaba, en modo LOOP, sin el tema (si venías de un tema guardado, abrilo de nuevo desde SAVE &gt; PROJECT: sigue
+como estaba, en modo PART (LOOP antes de V10.8.47), sin el tema (si venías de un tema guardado, abrilo de nuevo desde SAVE &gt; PROJECT: sigue
 ahí). Con un loop vacío: <strong>THE LOOP IS EMPTY</strong>, no se hace nada.</p>
 <h3 id="dados-de-sonido-edit-select">Dados de sonido (EDIT + SELECT)</h3>
 <p>(0.9.9-seq2f: <strong>EDIT + SELECT</strong> vuelve a ser los dados de sonido; seq2e se lo había dado a los presets, que quedan en
@@ -4285,7 +4395,13 @@ sonidos de la pista, como en todos lados.</p>
 - <strong>DLY 3</strong> (0.6.90): <strong>TYPE</strong>: <strong>ANALOG</strong> (por defecto: la saturación suave, el TONE resonante, FEEDBK pasado 100 %
   autooscila) o <strong>DIGITAL</strong> (repeticiones limpias, TONE un filtro común, FEEDBK 100 % como máximo: pasado eso las
   repeticiones se mantienen, nunca crecen). <strong>PING</strong>: <strong>ON</strong> manda las repeticiones izquierda, derecha, izquierda … por
-  el estéreo, cada una FEEDBK más suave (TIME hasta 1,49 s desde 0.8.4, el lado derecho al doble de TIME; sin WIDE ni el delay GRAIN). Se guarda con el proyecto.</p>
+  el estéreo, cada una FEEDBK más suave (TIME hasta 1,49 s desde 0.8.4, el lado derecho al doble de TIME; sin WIDE ni el delay GRAIN). Se guarda con el proyecto.
+- <strong>GATE</strong> (V10.8.44): en <strong>DLY</strong>, mantené <strong>OCT+</strong> y girá <strong>KNOB 4</strong> (su tarjeta dice GATE mientras OCT+ está
+  mantenido; MIX conserva su valor; OCT+ solo sigue siendo la octava). 0 (por defecto): apagado, el delay exactamente
+  como sin él. Arriba de 0 el delay escucha lo que le mandan: abierto mientras eso suena más fuerte que unos −36 dB,
+  sostenido <strong>GATE / 64 de negra</strong> después de que cae (16: una 1/16, 64: una negra, 127: dos negras), y después MIX y
+  FEEDBK se deslizan a 0 (unos 12 ms): las repeticiones paran con la frase, y la línea arranca vacía cuando el gate se
+  vuelve a abrir. Se guarda con el proyecto.</p>
 <h3 id="reverb-cinco-modelos">Reverb (cinco modelos)</h3>
 <p><strong>REVERB &gt; TYPE</strong> elige el modelo; <strong>SIZE</strong> es el decaimiento en todos los modelos. KNOB 3 y 4 cambian de significado
 según el tipo:</p>
@@ -4333,6 +4449,11 @@ según el tipo:</p>
 </table></div>
 <p><strong>REVERB 2</strong>: <strong>MOD</strong> (profundidad de modulación), <strong>RATE</strong>, <strong>FILT</strong> (tono de entrada: más oscuro / más brillante;
 0.6.86 resonante, una banda en el corte para tallar el lugar del espacio), <strong>WIDE</strong>.</p>
+<p><strong>GATE</strong> (V10.8.44): en <strong>REVERB</strong>, mantené <strong>OCT+</strong> y girá <strong>KNOB 4</strong> (su tarjeta dice GATE mientras OCT+ está
+mantenido; PRE conserva su valor). 0 (por defecto): apagado. Arriba de 0 el retorno de la reverb queda abierto mientras
+lo que le mandan suena más fuerte que unos −36 dB, sostenido <strong>GATE / 64 de negra</strong> después de que cae (16: una 1/16,
+64: una negra, 127: dos negras), y después se corta en unos 6 ms: el redoblante con gate de los 80, o una cola que nunca
+tapa el golpe siguiente. Funciona en todos los TYPE. Se guarda con el proyecto.</p>
 <p>Con <strong>LOAD LITE</strong>, SHIMMER y CLOUD suenan como ROOM y RESO como SPRING; con <strong>LOAD ECO</strong> todas las reverbs suenan como
 SPRING. La configuración se conserva; la tarjeta TYPE muestra LITE o ECO debajo de su valor.</p>
 <p>Cambiar el modelo (la perilla, la automatización o el motion, un proyecto o una sección de canción, MIDI, el editor, o
@@ -4647,8 +4768,8 @@ LIBRARY ↔ PROJECT ↔ SOUND.)</p>
 <tr>
 <td><strong>PROJECT</strong></td>
 <td>PART SLOTS · PROJECTS</td>
-<td>PART SLOTS: las cuatro partes del proyecto abierto en grande, cada una con su nombre (o USED / EMPTY). / PROJECTS: los seis proyectos como mosaicos: el número, el nombre (el de su parte A), las cuatro partes A–D como fichas (guardada: en el color de la parte; vacía: oscura); el proyecto abierto teñido y enmarcado en violeta.</td>
-<td>PART, LOAD, ERASE (V10.17), SAVE / PROJECT, LOAD, ERASE, SAVE</td>
+<td>PART SLOTS: las cuatro partes del proyecto abierto en grande, cada una con su nombre (sin nombre: sus compases en el tema, <strong>12 BARS</strong>, <strong>0 BARS</strong> si no está en ninguna fila; USED hasta V10.8.47; o EMPTY), la que suena marcada <strong>PLAYING</strong> (NOW hasta V10.8.47); debajo las filas del tema como fichas, <strong>ARRANGE  PART+BARS</strong> (A8 = la parte A, 8 compases). / PROJECTS: los seis proyectos como mosaicos: el número, el nombre (el de su parte A), las cuatro partes A–D como fichas (guardada: en el color de la parte; vacía: oscura); el proyecto abierto teñido y enmarcado en violeta.</td>
+<td>PART, PLAY/EDIT (V10.8.47; era LOAD), ERASE (V10.17), SAVE / PROJECT, LOAD, ERASE, SAVE</td>
 </tr>
 <tr>
 <td><strong>SOUND</strong></td>
@@ -4671,7 +4792,7 @@ LIBRARY ↔ PROJECT ↔ SOUND.)</p>
 <ol>
 <li><strong>Pará</strong> el transporte (para guardar tiene que estar parado: si no, <strong>STOP TO SAVE</strong>).</li>
 <li>Apretá <strong>SAVE</strong> y girá <strong>SELECT</strong> hasta <strong>PART SLOTS</strong> (la primera página del grupo PROJECT).</li>
-<li><strong>KNOB 1</strong>: la parte A–D, dibujada en grande con su nombre (o USED / EMPTY).</li>
+<li><strong>KNOB 1</strong>: la parte A–D, dibujada en grande con su nombre (o sus compases en el tema, o EMPTY).</li>
 <li><strong>KNOB 4</strong> a la derecha: queda elegido SAVE ([OCT+]). Apretá <strong>OCT+</strong>.</li>
 <li>Si la parte ya tiene algo: <strong>OVERWRITE PROJECT A?</strong> (con su nombre). OCT+ YES.</li>
 <li>Se abre la pantalla <strong>NAME</strong> con un nombre listo. Editalo o no, y <strong>OCT+</strong> escribe. <strong>OCT−</strong> cancela y no escribe
@@ -4691,18 +4812,21 @@ PART SLOTS trabaja siempre sobre el proyecto abierto. Para escribir en otro proy
 <h3 id="para-cargar-una-seccion">Para cargar una sección</h3>
 <ol>
 <li><strong>SAVE › PART SLOTS</strong>, <strong>KNOB 1</strong> la parte.</li>
-<li><strong>KNOB 2</strong> a la derecha (LOAD), apretá <strong>OCT+</strong>.</li>
+<li><strong>KNOB 2</strong> a la derecha (<strong>PLAY/EDIT</strong>; LOAD hasta V10.8.47; el pie dice OCT+ PLAY), apretá <strong>OCT+</strong>.</li>
 </ol>
-<p>LOAD <strong>para la reproducción</strong> y reemplaza la música: los sonidos, los pasos, la automatización, el kit, el carril de
+<p>Mientras suena el loop (o una cadena rápida), la parte entra <strong>en el compás siguiente</strong>, como con SAVE + F3–B3
+(V10.8.47; antes entraba de golpe). Parado, o mientras suena un tema, carga como antes: <strong>para la reproducción</strong> y
+reemplaza la música: los sonidos, los pasos, la automatización, el kit, el carril de
 punch-in, las macros, y el <strong>tempo, los efectos, el ruteo MIDI y los ajustes de clock</strong> guardados con ella. El arreglo
 queda. Si no era lo que querías, <strong>GLO + G4</strong> (UNDO) te devuelve lo que tenías.</p>
 <h3 id="guardado-rapido-mientras-suena-capa-save">Guardado rápido mientras suena (capa SAVE)</h3>
-<p>Mantené SAVE y apretá <strong>C4–F4</strong> para guardar la música en la sección A–D del proyecto actual, u <strong>OCT+</strong> para guardar
-en la sección que está sonando. Esto funciona <strong>mientras suena</strong>, sin poner nombre. El guardado queda en <strong>RAM al
+<p>Mantené SAVE y apretá <strong>C4–F4</strong> (<strong>SAVE A–D</strong>; la pantalla dice <strong>SAVED A</strong>) para guardar la música en la sección A–D
+del proyecto actual, u <strong>OCT+</strong> (SAVE) para guardar en la sección que está sonando. Esto funciona <strong>mientras suena</strong>, sin poner nombre. El guardado queda en <strong>RAM al
 instante y pasa a la flash cuando parás</strong>. Si apagás antes de parar, se pierde — así que pará antes de apagar.</p>
 <h3 id="copiar">Copiar</h3>
 <ul>
-<li><strong>Una sección a otra letra</strong>: cargala (LOAD) y guardala (SAVE) en la otra letra (SAVE › PART SLOTS).</li>
+<li><strong>Una sección a otra letra</strong>: abrila con PLAY/EDIT y guardala (SAVE) en la otra letra (SAVE › PART SLOTS); o,
+  sonando, mantené SAVE y apretá F3 (PLAY A) y después D4 (SAVE B). Ver <a href="#copiar-pegar-y-duplicar">Copiar, pegar y duplicar</a>.</li>
 <li><strong>El tema entero a otro proyecto</strong> ("guardar como"): parado, SAVE › PROJECTS, <strong>KNOB 1</strong> al otro proyecto (no se
   abre), <strong>KNOB 4</strong> SAVE, <strong>OCT+</strong> (ver <a href="#save-song-as-save--project">SAVE SONG AS</a>). En la pantalla NAME, <strong>KNOB 3</strong>
   elige SONG (todo) o LOOP (solo la música de ahora).</li>
@@ -4795,7 +4919,7 @@ arreglos y escenas, los presets de usuario y la configuración. Ver
   consumen nada. Si se le manda una nota a una pista dormida (una tecla, MIDI, sus pasos) o PLAY arranca con pasos en
   ellas, la pantalla dice <strong>T5-T6 ASLEEP</strong> y <strong>GLO&gt;SYSTEM&gt;TRACKS 6</strong>. Las pistas dormidas aparecen tenues en el mapa
   de GLO y en gris en HOME y en el MIXER.</li>
-<li><strong>6</strong>: suenan las seis pistas. Vigilá el medidor de carga.</li>
+<li><strong>6</strong>: suenan las seis pistas. Vigilá la carga del encabezado.</li>
 </ul>
 <h3 id="load-glo-system-knob-2-tambien-menu-audio-load-system-hasta-la-0911">LOAD (GLO &gt; SYSTEM, KNOB 2 — también MENU &gt; AUDIO &gt; LOAD (SYSTEM hasta la 0.9.11))</h3>
 <p>Cuán pesado puede ponerse el sonido.</p>
@@ -4823,8 +4947,8 @@ arreglos y escenas, los presets de usuario y la configuración. Ver
 </table></div>
 <p>LOAD solo cambia cómo se renderizan las cosas: <strong>los proyectos conservan su configuración</strong> y suenan como se guardaron
 en FULL (o en otro FM-1). Las tarjetas de los efectos sustituidos dicen LITE o ECO. LOAD libera <strong>CPU</strong>, no RAM: el
-firmware reserva toda su memoria al arrancar. La tarjeta <strong>CPU</strong> (KNOB 4 en SYSTEM) y el medidor de carga del
-encabezado muestran la carga de audio. TRACKS y LOAD son configuraciones del equipo, no forman parte de un proyecto.</p>
+firmware reserva toda su memoria al arrancar. La tarjeta <strong>CPU</strong> (KNOB 4 en SYSTEM) y la carga del
+encabezado (un número 0–99 desde V10.8.45) muestran la carga de audio. TRACKS y LOAD son configuraciones del equipo, no forman parte de un proyecto.</p>
 <h3 id="system-2-glo-system-2">SYSTEM 2 (GLO &gt; SYSTEM 2)</h3>
 <p><em>Se fue en V10.8.38.</em> Era una página de estado (USB, TRS IN, BT) sin nada para editar. El Bluetooth se configura en el MENU
 (mantené HOME, pestaña SYSTEM, fila BLUETOOTH; OCT+ ahí abre la página PROX). El grupo SETUP de GLO ahora es GLOBAL · SYSTEM ·
@@ -5029,7 +5153,7 @@ SKIN  2/26</strong>. El encabezado dice MENU · DISPLAY.</p>
 <tr>
 <td>SYSTEM</td>
 <td>ABOUT</td>
-<td>OCT+ abre: versión, código QR, AUDIO LOAD (NOW, PEAK, LATE, SHED desde el encendido) y créditos (se desplaza con SELECT, OCT− vuelve)</td>
+<td>OCT+ abre: versión, código QR, AUDIO LOAD (NOW, PEAK, LATE, SHED desde el encendido, los núcleos, las voces y el tiempo de cada pista), <strong>LAST CRASH</strong> (se conserva al apagar) y créditos (se desplaza con SELECT, OCT− vuelve). V10.8.45 sacó las líneas del reloj y los rieles de la CPU y las líneas hexadecimales de un cuelgue desde el encendido</td>
 </tr>
 </tbody>
 </table></div>
@@ -5369,8 +5493,9 @@ filas <strong>Z–'</strong> y <strong>Q–O</strong> son las teclas, <strong>1<
 </ul>
 <h3 id="vista-de-velocidad-httpsjuanjiant-bitgithubiojiantwebappvel">Vista de velocidad — <a href="https://juanjiant-bit.github.io/JIANT/webapp/vel/">https://juanjiant-bit.github.io/JIANT/webapp/vel/</a></h3>
 <p>(V10.6z5, V10.6z7) La velocidad de cada nota y la calibración de cada tecla, en vivo, por USB (Chrome o Edge;
-protocolo 1.1 o posterior). Ver <a href="#velocidad-y-aftertouch-de-las-teclas-v106z7">Velocidad y aftertouch</a> y la prueba
-paso a paso en <a href="https://github.com/juanjiant-bit/JIANT/blob/main/docs/VELOCITY_DIAG.es.md">VELOCITY_DIAG.es.md</a>.</p>
+protocolo 1.1 o posterior). Ver <a href="#velocidad-y-aftertouch-de-las-teclas-v106z7">Velocidad y aftertouch</a>. El
+diagnóstico de velocidad (los toques que capturaba) salió del firmware en V10.8.45: la prueba paso a paso de
+<a href="https://github.com/juanjiant-bit/JIANT/blob/main/docs/VELOCITY_DIAG.es.md">VELOCITY_DIAG.es.md</a> es para versiones anteriores.</p>
 <h3 id="editor-httpsjuanjiant-bitgithubiojiantwebappeditor">Editor — <a href="https://juanjiant-bit.github.io/JIANT/webapp/editor/">https://juanjiant-bit.github.io/JIANT/webapp/editor/</a></h3>
 <p>Todos los parámetros desde la computadora, por USB. Pestañas: Sound, 6-OP FM, Sequencer, Tracks, Library, Projects,
 Settings.</p>
@@ -5491,11 +5616,11 @@ decinos la versión (MENU › SYSTEM › ABOUT). Cómo leerla:</p>
 1. <strong>MENU › SYSTEM › CPU CORES 1 CORE</strong> (la 0.9.12 lo hace sola después del primer crash con dos núcleos; antes de la
    0.9.12, mantené REC en cada encendido).
 2. <strong>MENU › SYSTEM › CPU CLOCK 320 MHZ</strong>: el chip al reloj que JieLi garantiza en vez de los 360 MHz que pone el
-   arranque del FM-1 (se aplica en el próximo encendido; ABOUT dice <strong>CPU 320 MHZ</strong>). Es ~11 % menos de CPU: una
-   canción pesada puede soltar voces antes (LOAD LITE ayuda). Si el FM-1 no puede (su reloj está configurado de otra
-   forma), ABOUT sigue diciendo <strong>CPU 360 MHZ</strong>.
+   arranque del FM-1 (se aplica en el próximo encendido; hasta V10.8.44 ABOUT decía <strong>CPU 320 MHZ</strong>, desde V10.8.45
+   no tiene la línea del reloj). Es ~11 % menos de CPU: una canción pesada puede soltar voces antes (LOAD LITE ayuda).
+   Si el FM-1 no puede (su reloj está configurado de otra forma), sigue a 360 MHz.
 3. Si sigue colgándose: la foto, la versión y LAST CRASH, por favor.</p>
-<p><strong>Clicks, cortes, el medidor de carga lleno.</strong> Dejá TRACKS en 4, probá <strong>LOAD LITE</strong> o <strong>ECO</strong>, usá menos voces (MONO,
+<p><strong>Clicks, cortes, la carga del encabezado cerca de 99.</strong> Dejá TRACKS en 4, probá <strong>LOAD LITE</strong> o <strong>ECO</strong>, usá menos voces (MONO,
 menos pistas FM6), reverbs más livianas (CLOUD y SHIMMER son las más pesadas). Revisá MENU &gt; SYSTEM &gt; ABOUT &gt;
 AUDIO LOAD.</p>
 <p><strong>SELECT no cambia el tempo.</strong> Desde 0.6.67 SELECT solo recorre las páginas; el tempo es <strong>GLO mantenido + SELECT</strong>

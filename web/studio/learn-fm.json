@@ -182,14 +182,16 @@
      "how": {
       "es": [
        "SAVE › PROJECTS: seis proyectos (temas), cada uno con sus cuatro partes A–D.",
-       "Mantené SAVE y tocá C4–F4 para guardar la música en A–D, aun mientras suena; llega a la memoria cuando parás.",
+       "Mantené SAVE y tocá C4–F4 (SAVE A–D) para guardar la música en A–D, aun mientras suena; llega a la memoria cuando parás.",
+       "SAVE › PART SLOTS: KNOB 2 PLAY/EDIT abre una parte (sonando, en el compás siguiente), KNOB 4 SAVE la guarda con nombre.",
        "SAVE › USER guarda tus sonidos (U01–U32); SAVE › PRESETS los recorre por motor, favoritos o tipo.",
        "SAVE + C5 (NAME) le pone nombre al slot, la parte o el proyecto.",
        "SAVE › TOOLS: CLEAR PROJECT, INIT SOUND, CPU TEST; el editor web hace el backup completo."
       ],
       "en": [
        "SAVE › PROJECTS: six projects (songs), each with its four parts A–D.",
-       "Hold SAVE and press C4–F4 to store the music in A–D, even while it plays; it reaches the memory when you stop.",
+       "Hold SAVE and press C4–F4 (SAVE A–D) to store the music in A–D, even while it plays; it reaches the memory when you stop.",
+       "SAVE › PART SLOTS: KNOB 2 PLAY/EDIT opens a part (while playing, on the next bar), KNOB 4 SAVE stores it with a name.",
        "SAVE › USER keeps your sounds (U01–U32); SAVE › PRESETS browses them by engine, favourites or type.",
        "SAVE + C5 (NAME) names the slot, the part or the project.",
        "SAVE › TOOLS: CLEAR PROJECT, INIT SOUND, CPU TEST; the web editor makes the full backup."
@@ -231,22 +233,22 @@
      "how": {
       "es": [
        "Ocho sonidos: BD SD CP CH OH TM RS CB, cada uno un oscilador afinado con su envolvente de pitch, FM y ruido.",
-       "KIT: MORPH mueve todo el kit entre A y B, SNAP el chasquido del ataque; TONE y DECAY lo cambian entero. KIT 2: NOISE, BODY (la resonancia del parche), GLUE, GAIN.",
+       "KIT: MORPH mueve todo el kit entre A y B, SNAP el chasquido del ataque; TONE y DECAY lo cambian entero. KIT 2: NOISE, BODY (la resonancia del parche), GLUE, GAIN (el del kit). LEVEL (V10.8.44): el GAIN, el LEVEL y el PAN de la pista.",
        "SOUND 1–4 editan un sonido: PITCH, DECAY, NOISE, COLOR, PMOD, WAVE, el filtro del ruido, SIDE y SEND.",
        "WAVE puede ser una fórmula de MATH (F01–F48) usada como FM, con RATIO y MOD AMT; los kits GLITCH FM y MATH LAB están hechos así.",
        "Kits de fábrica como 909 CLUB, 808 BOOM, LATIN PERC (con güiro) o HIP HOP; la batería se dibuja como bichitos que gritan con cada golpe."
       ],
       "en": [
        "Eight sounds: BD SD CP CH OH TM RS CB, each a tuned oscillator with its pitch envelope, FM and noise.",
-       "KIT: MORPH moves the whole kit between A and B, SNAP the attack's click; TONE and DECAY change it all. KIT 2: NOISE, BODY (the drumhead's resonance), GLUE, GAIN.",
+       "KIT: MORPH moves the whole kit between A and B, SNAP the attack's click; TONE and DECAY change it all. KIT 2: NOISE, BODY (the drumhead's resonance), GLUE, GAIN (the kit's). LEVEL (V10.8.44): the track's GAIN, LEVEL and PAN.",
        "SOUND 1–4 edit one sound: PITCH, DECAY, NOISE, COLOR, PMOD, WAVE, the noise filter, SIDE and SEND.",
        "WAVE can be a MATH formula (F01–F48) used as FM, with RATIO and MOD AMT; the GLITCH FM and MATH LAB kits are made that way.",
        "Factory kits such as 909 CLUB, 808 BOOM, LATIN PERC (with a guiro) or HIP HOP; the kit is drawn as little bugs that scream with each hit."
       ]
      },
      "where": {
-      "es": "Una pista DRUM-X: EDIT › KIT, SOUND, CROSS MOD, FILTER; PRESETS recorre los kits",
-      "en": "A DRUM-X track: EDIT › KIT, SOUND, CROSS MOD, FILTER; PRESETS browses the kits"
+      "es": "Una pista DRUM-X: EDIT › KIT, LEVEL, SOUND, CROSS MOD, FILTER; PRESETS recorre los kits",
+      "en": "A DRUM-X track: EDIT › KIT, LEVEL, SOUND, CROSS MOD, FILTER; PRESETS browses the kits"
      },
      "anim": {
       "kind": "drum",
@@ -271,13 +273,13 @@
        "WAVE: SAW, SQR, TRI, SIN, PWM, SYNC, RING, SAW3 y PLS3 (tres sierras o tres pulsos).",
        "DETUNE y MIX mezclan los dos osciladores; INT fija el intervalo del segundo (±24 semitonos), INT 3 el del tercero.",
        "En MORE, MORPH desliza la onda hacia las siguientes (SAW › SQR › TRI › SIN); DRIFT hace derivar afinación y filtro de cada voz.",
-       "Su filtro es por voz: CUT y RES barren cada nota por separado; NOISE y DRIVE están en FOCUS, GAIN en MORE (V10.8.38: en cualquier motor, OCT+ mantenido + KNOB 4 en su primera página EDIT es GAIN, 0–12 dB)."
+       "Su filtro es por voz: CUT y RES barren cada nota por separado; NOISE y DRIVE están en FOCUS; GAIN (0–12 dB) está en la página LEVEL, con LEVEL y PAN (V10.8.44, como en todos los motores; antes en MORE), y OCT+ mantenido + KNOB 4 en EDIT 1 también lo alcanza."
       ],
       "en": [
        "WAVE: SAW, SQR, TRI, SIN, PWM, SYNC, RING, SAW3 and PLS3 (three saws or three pulses).",
        "DETUNE and MIX blend the two oscillators; INT sets the second one's interval (±24 semitones), INT 3 the third's.",
        "On MORE, MORPH slides the wave toward the next ones (SAW › SQR › TRI › SIN); DRIFT lets each voice's tuning and filter wander.",
-       "Its filter is per voice: CUT and RES sweep each note on its own; NOISE and DRIVE live on FOCUS, GAIN on MORE (V10.8.38: on any engine, OCT+ held + KNOB 4 on its first EDIT page is GAIN, 0–12 dB)."
+       "Its filter is per voice: CUT and RES sweep each note on its own; NOISE and DRIVE live on FOCUS; GAIN (0–12 dB) is on the LEVEL page, with LEVEL and PAN (V10.8.44, as on every engine; MORE before), and OCT+ held + KNOB 4 on EDIT 1 reaches it too."
       ]
      },
      "where": {
@@ -1144,13 +1146,13 @@
        "KNOB 1 SEQ elige la secuencia A–D de la pista, KNOB 2 la nota, KNOB 3 TIME (de REST a TIE, NOTE y hasta 16 pasos de largo), KNOB 4 VEL (1–127, después ACC, SLD, A+S); la perilla PRESETS recorre los 64 pasos.",
        "Un paso guarda hasta cuatro notas: un acorde. SEQ › NOTE (volvió en V10.8.38) edita el paso del cursor: FOCUS (el acorde o una sola de sus notas), PITCH, MOVE (un paso a los costados) y MICRO.",
        "Grabación por pasos: parado, apretá REC y tocá; el cursor avanza al soltar. KNOB 1 con las teclas apretadas fija la duración.",
-       "SEQ + G5 borra el paso del cursor; mantené teclas de paso y girá SELECT para copiar; mantené un paso y apretá REC para pegar."
+       "SEQ + G5 borra el paso del cursor; mantené teclas de paso y girá SELECT para copiar; mantené un paso y apretá REC para pegar (todo en la página «Copiar, pegar y duplicar»)."
       ],
       "en": [
        "KNOB 1 SEQ picks the track's sequence A–D, KNOB 2 the note, KNOB 3 TIME (from REST to TIE, NOTE and up to 16 steps long), KNOB 4 VEL (1–127, then ACC, SLD, A+S); the PRESETS knob walks the 64 steps.",
        "A step holds up to four notes: a chord. SEQ › NOTE (back in V10.8.38) edits the cursor step: FOCUS (the chord or one of its notes alone), PITCH, MOVE (a step sideways) and MICRO.",
        "Step recording: stopped, press REC and play; the cursor moves on as you let go. KNOB 1 with keys held sets the length.",
-       "SEQ + G5 clears the cursor's step; hold step keys and turn SELECT to copy; hold a step and press REC to paste."
+       "SEQ + G5 clears the cursor's step; hold step keys and turn SELECT to copy; hold a step and press REC to paste (all of it on the “Copy, paste and duplicate” page)."
       ]
      },
      "where": {
@@ -1487,6 +1489,43 @@
      }
     },
     {
+     "id": "copy-paste",
+     "name": "COPY · PASTE",
+     "tag": {
+      "es": "Copiar, pegar y duplicar",
+      "en": "Copy, paste and duplicate"
+     },
+     "statement": {
+      "es": "Nada se escribe dos veces: pasos, secuencias enteras, partes y filas del tema se copian con un gesto, en otra pista, en otra parte o más adelante en la canción.",
+      "en": "Nothing gets written twice: steps, whole sequences, parts and song rows are copied with one gesture, onto another track, another part or later in the song."
+     },
+     "how": {
+      "es": [
+       "Pasos: mantené teclas de paso y girá SELECT para copiar (dos teclas: un rango; la 1 y la 16: el compás); mantené un paso y apretá REC para pegar desde ahí, también en otra pista o en otra parte.",
+       "Una secuencia: SEQ mantenido + E5 COPY SEQ; SEQ mantenido + F5 PASTE SEQ la pega entera, desde el paso 1.",
+       "Una parte en otra: mantené SAVE, F3 (PLAY A) y después D4 (SAVE B).",
+       "Una fila de ARRANGE: OCT+ agrega una copia justo después. DRUM ↔ melódico no se pega; UNDO deshace un pegado."
+      ],
+      "en": [
+       "Steps: hold step keys and turn SELECT to copy (two keys: a range; 1 and 16: the bar); hold a step and press REC to paste from there, also on another track or in another part.",
+       "A sequence: SEQ held + E5 COPY SEQ; SEQ held + F5 PASTE SEQ pastes it whole, from step 1.",
+       "One part into another: hold SAVE, F3 (PLAY A), then D4 (SAVE B).",
+       "An ARRANGE row: OCT+ adds a copy right after it. DRUM ↔ melodic does not paste; UNDO takes a paste back."
+      ]
+     },
+     "where": {
+      "es": "SEQ (las teclas de paso, SEQ TOOLS), la capa SAVE, HOME › ARRANGE",
+      "en": "SEQ (the step keys, SEQ TOOLS), the SAVE layer, HOME › ARRANGE"
+     },
+     "anim": {
+      "kind": "seq",
+      "params": {
+       "steps": 16
+      }
+     },
+     "since": "V10.8.48"
+    },
+    {
      "id": "drum-grid",
      "name": "DRUM GRID",
      "tag": {
@@ -1645,12 +1684,14 @@
       "es": [
        "PROG elige la progresión, LENGTH cuánto dura cada acorde.",
        "EVOLVE la hace cambiar con las vueltas; SKIP deja una pista afuera (NONE, T1–T6).",
-       "Los acordes se muestran en números romanos en la tonalidad, el que suena encendido."
+       "Los acordes se muestran en números romanos en la tonalidad, el que suena encendido.",
+       "El generador lo deja como lo pusiste (V10.8.43): con HARMONY en ON la pieza se apoya en la tónica y la progresión la mueve."
       ],
       "en": [
        "PROG picks the progression, LENGTH how long each chord lasts.",
        "EVOLVE makes it change over the rounds; SKIP leaves one track out of it (NONE, T1–T6).",
-       "The chords are shown as roman numerals in the key, the one playing lit."
+       "The chords are shown as roman numerals in the key, the one playing lit.",
+       "The generator leaves it as you set it (V10.8.43): with HARMONY on, the piece sits on the tonic and the progression moves it."
       ]
      },
      "where": {
@@ -1681,13 +1722,15 @@
        "ARP: MODE, RATE, OCT (1–4), GATE; ARP 2: SWING, PROB, HOLD, ORDER.",
        "Modos: UP, DN, UPDN, RND, ORD, REPEAT, DNUP, UP+8, CONV, DIVG, PINKY, THUMB, WALK, CHORD.",
        "TRNS: las teclas transponen la secuencia de la pista según su distancia a C4, sin tocar notas.",
-       "Grabando por pasos, ARP con las teclas apretadas escribe el acorde arpegiado en el roll."
+       "Grabando por pasos, ARP con las teclas apretadas escribe el acorde arpegiado en el roll.",
+       "A tiempo (V10.8.45): mientras suena el transporte el arpegio arranca en la grilla de su RATE y se queda ahí; grabando, cada nota cae en su paso (MICRO 0)."
       ],
       "en": [
        "ARP: MODE, RATE, OCT (1–4), GATE; ARP 2: SWING, PROB, HOLD, ORDER.",
        "Modes: UP, DN, UPDN, RND, ORD, REPEAT, DNUP, UP+8, CONV, DIVG, PINKY, THUMB, WALK, CHORD.",
        "TRNS: the keys transpose the track's sequence by their distance from C4, without playing notes.",
-       "While step recording, ARP with keys held writes the chord arpeggiated on the roll."
+       "While step recording, ARP with keys held writes the chord arpeggiated on the roll.",
+       "In time (V10.8.45): while the transport plays the arpeggio starts on its RATE's grid and stays there; recording, each note lands on its step (MICRO 0)."
       ]
      },
      "where": {
@@ -1761,12 +1804,14 @@
       "es": [
        "DLY: TIME (a tempo, con puntillos, o libre hasta casi 3 s), FEEDBK, TONE (resonante, estilo dub), MIX.",
        "DLY 2: WIDE, el delay GRAIN (PITCH por repetición, SCATTER) y MOD, la deriva de la cinta.",
-       "DLY 3: TYPE ANALOG, DIGITAL o REVERS; PING (izquierda, derecha…); DRIVE dentro del lazo; RIGHT, el tiempo propio del eco derecho."
+       "DLY 3: TYPE ANALOG, DIGITAL o REVERS; PING (izquierda, derecha…); DRIVE dentro del lazo; RIGHT, el tiempo propio del eco derecho.",
+       "GATE (V10.8.44): con OCT+ mantenido el KNOB 4 de DLY es GATE: las repeticiones siguen mientras entra algo y paran un rato después (16: una 1/16, 64: una negra, 127: dos negras); en 0, apagado. Se guarda con el proyecto."
       ],
       "en": [
        "DLY: TIME (in time, dotted, or free up to almost 3 s), FEEDBK, TONE (resonant, dub style), MIX.",
        "DLY 2: WIDE, the GRAIN delay (PITCH per repeat, SCATTER) and MOD, the tape's drift.",
-       "DLY 3: TYPE ANALOG, DIGITAL or REVERS; PING (left, right…); DRIVE inside the loop; RIGHT, the right echo's own time."
+       "DLY 3: TYPE ANALOG, DIGITAL or REVERS; PING (left, right…); DRIVE inside the loop; RIGHT, the right echo's own time.",
+       "GATE (V10.8.44): with OCT+ held, DLY's KNOB 4 is GATE: the repeats go on while something comes in and stop a while after (16: a 1/16, 64: a quarter, 127: two quarters); at 0, off. Saved with the project."
       ]
      },
      "where": {
@@ -1793,12 +1838,14 @@
       "es": [
        "TYPE: ROOM, SPRING, SHIMR (shimmer), RESO (cuerdas afinadas a la escala) y CLOUD (SIZE al máximo la congela).",
        "SIZE es el decaimiento en todos; DAMP y PRE (o AIR, FOLLOW, PITCH según el modelo).",
-       "REVERB 2: MOD, RATE, FILT (el tono de entrada) y WIDE."
+       "REVERB 2: MOD, RATE, FILT (el tono de entrada) y WIDE.",
+       "GATE (V10.8.44): con OCT+ mantenido el KNOB 4 de REVERB es GATE (0 apagado … 127): el retorno se abre con lo que le llega y se corta un rato después de que se calla (16: una 1/16, 64: una negra, 127: dos negras). La cola con gate de los 80; se guarda con el proyecto."
       ],
       "en": [
        "TYPE: ROOM, SPRING, SHIMR (shimmer), RESO (strings tuned to the scale) and CLOUD (SIZE at full freezes it).",
        "SIZE is the decay on all of them; DAMP and PRE (or AIR, FOLLOW, PITCH depending on the model).",
-       "REVERB 2: MOD, RATE, FILT (the input tone) and WIDE."
+       "REVERB 2: MOD, RATE, FILT (the input tone) and WIDE.",
+       "GATE (V10.8.44): with OCT+ held, REVERB's KNOB 4 is GATE (0 off … 127): the return opens with what is sent and is cut a while after it falls silent (16: a 1/16, 64: a quarter, 127: two quarters). The gated tail of the 80s; saved with the project."
       ]
      },
      "where": {
@@ -2428,7 +2475,8 @@
        "SEED, ENERGY y FORM (LOOP, PARTS, SONG, MY LOOP).",
        "DRUMS, BASS, CHORDS, ARP, LEAD: OFF, 10–100 % o AUTO; COMPLEX, SWING, HUMAN; KEY (NEW / KEEP) y ENTRY (ALL / BUILD).",
        "OCT+ arma la pieza; con los ajustes sin tocar tira otra semilla, y girando una perilla cambia solo esa parte.",
-       "RADIO (GENERATOR 4, V10.8.39): en ON, cuando termina la pieza generada arma sola la siguiente y entra en la barra de compás; MOOD, de CALM a DANCE, mueve la energía, la batería y, con RANDOM, qué géneros salen. Ninguno se guarda con el proyecto.",
+       "RADIO (GENERATOR 4, V10.8.39): en ON, cuando termina la pieza generada (un loop: cada 16, 8 o 4 compases según el tempo, V10.8.45) arma sola la siguiente y entra en la barra de compás; un STOP en el último compás para; MOOD, de CALM a DANCE, mueve la energía, la batería y, con RANDOM, qué géneros salen. Ninguno se guarda con el proyecto.",
+       "Desde V10.8.43–V10.8.48 las partes viven: secciones de la mitad de largo que no vuelven idénticas, LFOs lentos y libres en el filtro y la forma, envolventes reales por rol (los leads con poco sustain y release largo), cada parte su tipo de filtro (BP o HP con KEY TRK 100) y el GAIN de la pista compensando el nivel.",
        "SEQ › TRACK GEN escribe solo la pista elegida: GENRE, SEED, ROLE (BUSY en un kit) y ENERGY; OCT+ la arma (MAKE)."
       ],
       "en": [
@@ -2436,7 +2484,8 @@
        "SEED, ENERGY and FORM (LOOP, PARTS, SONG, MY LOOP).",
        "DRUMS, BASS, CHORDS, ARP, LEAD: OFF, 10–100 % or AUTO; COMPLEX, SWING, HUMAN; KEY (NEW / KEEP) and ENTRY (ALL / BUILD).",
        "OCT+ builds the piece; with settings untouched it throws a new seed, and turning one knob changes only that part.",
-       "RADIO (GENERATOR 4, V10.8.39): ON, when the generated piece ends it makes the next one by itself, in on the bar line; MOOD, from CALM to DANCE, moves the energy, the drums and, with RANDOM, which genres come up. Neither is saved with the project.",
+       "RADIO (GENERATOR 4, V10.8.39): ON, when the generated piece ends (a loop: every 16, 8 or 4 bars by tempo, V10.8.45) it makes the next one by itself, in on the bar line; a STOP in the last bar stops; MOOD, from CALM to DANCE, moves the energy, the drums and, with RANDOM, which genres come up. Neither is saved with the project.",
+       "Since V10.8.43–V10.8.48 the parts live: sections half as long that never come back identical, slow free LFOs on the filter and the shape, real envelopes by role (leads with little sustain and a long release), each part its own filter type (BP or HP with KEY TRK 100) and the track's GAIN making up the level.",
        "SEQ › TRACK GEN writes the chosen track alone: GENRE, SEED, ROLE (BUSY on a kit) and ENERGY; OCT+ makes it (MAKE)."
       ]
      },
@@ -2646,12 +2695,14 @@
      "how": {
       "es": [
        "Seis proyectos; cada parte guarda sonidos, pasos, automatización, el kit, el SLICER, las macros, el tempo y los efectos.",
+       "En PART SLOTS una parte sin nombre muestra sus compases en el tema (12 BARS) y la que suena dice PLAYING; abajo, las filas como fichas (ARRANGE  PART+BARS).",
        "Cada pista tiene sus cuatro secuencias A–D para tocar en vivo.",
        "Un sonido que cambiás mientras suena el tema se queda en las partes que siguen; RECALL (EDIT + G3) trae el de la parte.",
        "SAVE + KNOB 1 elige otro proyecto (al soltar SAVE, parado)."
       ],
       "en": [
        "Six projects; each part keeps sounds, steps, automation, the kit, the SLICER, the macros, the tempo and the effects.",
+       "On PART SLOTS a part with no name shows its bars in the song (12 BARS) and the one playing says PLAYING; below, the rows as chips (ARRANGE  PART+BARS).",
        "Every track has its four sequences A–D to play live.",
        "A sound you change while the song plays stays through the parts that follow; RECALL (EDIT + G3) brings back the part's.",
        "SAVE + KNOB 1 picks another project (on releasing SAVE, stopped)."
@@ -2681,14 +2732,14 @@
       "es": [
        "Mantené SAVE: F3–B3 tocan la parte A–D en el compás siguiente (parado, al instante).",
        "Varias en una misma mantenida: una cadena rápida que gira en loop.",
-       "C4–F4 guardan la música en A–D; OCT+ guarda en la que suena, OCT− la recupera.",
-       "D5 elige qué toca PLAY: LOOP o SONG."
+       "C4–F4 (SAVE A–D) guardan la música en A–D (SAVED A); OCT+ guarda en la que suena, OCT− la recupera. F3 y después D4 copia la parte A en B.",
+       "D5 elige qué toca PLAY: PART (el loop) o SONG."
       ],
       "en": [
        "Hold SAVE: F3–B3 play part A–D on the next bar (stopped, at once).",
        "Several in one hold: a quick chain that loops.",
-       "C4–F4 store the music in A–D; OCT+ stores into the playing one, OCT− brings it back.",
-       "D5 sets what PLAY plays: LOOP or SONG."
+       "C4–F4 (SAVE A–D) store the music in A–D (SAVED A); OCT+ stores into the playing one, OCT− brings it back. F3 then D4 copies part A into B.",
+       "D5 sets what PLAY plays: PART (the loop) or SONG."
       ]
      },
      "where": {
@@ -2714,12 +2765,12 @@
      "how": {
       "es": [
        "Dale PLAY; F3–B3 eligen A–D en todas las pistas; OCT+ lanza, OCT− para.",
-       "CAMBIO dice cuándo entra el cambio (al instante, a la 1/16 … o al compás).",
+       "KNOB 2 PART elige la parte de la pista; SWITCH dice cuándo entra el cambio (al instante, a la 1/16 … o al compás).",
        "Una línea de ayuda abajo dice qué podés hacer en cada momento."
       ],
       "en": [
        "Press PLAY; F3–B3 pick A–D on every track; OCT+ launches, OCT− stops.",
-       "CAMBIO sets when the change lands (at once, on the 1/16 … or on the bar).",
+       "KNOB 2 PART picks the track's part; SWITCH sets when the change lands (at once, on the 1/16 … or on the bar).",
        "A help line at the bottom says what you can do at each moment."
       ]
      },
@@ -2749,13 +2800,13 @@
        "En JAM, REC graba una toma desde el próximo compás; REC otra vez la termina.",
        "K4 LOCK la reproduce: lo que tocás encima queda marcado YOU.",
        "Con una pista elegida, REC rehace esa pista una vuelta y OCT− la deshace.",
-       "TAKE edita los cambios: K1 elegir, K2 mover, K3 secuencia, K4 compases, OCT+ nuevo, OCT− borrar."
+       "TAKE edita los cambios: K1 elegir, K2 mover, K3 PART (la secuencia), K4 compases, OCT+ nuevo, OCT− borrar."
       ],
       "en": [
        "On JAM, REC records a take from the next bar; REC again ends it.",
        "K4 LOCK plays it back: what you play over it is marked YOU.",
        "With a track chosen, REC redoes that track for one round and OCT− undoes it.",
-       "TAKE edits the changes: K1 pick, K2 move, K3 sequence, K4 bars, OCT+ new, OCT− delete."
+       "TAKE edits the changes: K1 pick, K2 move, K3 PART (the sequence), K4 bars, OCT+ new, OCT− delete."
       ]
      },
      "where": {
@@ -2782,14 +2833,14 @@
      "how": {
       "es": [
        "Hasta 16 filas, cada una una parte que suena 1–64 compases.",
-       "KNOB 1 la fila, KNOB 2 su parte, KNOB 3 sus compases, KNOB 4 guarda o borra su escena; OCT+ agrega, OCT− borra.",
-       "END: STOP, x2–x8 o LOOP.",
+       "KNOB 1 la fila, KNOB 2 su parte, KNOB 3 sus compases, KNOB 4 guarda o borra su escena; OCT+ agrega una copia de la fila, OCT− borra.",
+       "END: STOP, x2–x8 o REPEAT (el pie: 40 BARS · END REPEAT).",
        "PLAY toca el tema desde el principio; al terminar vuelve la música que tenías."
       ],
       "en": [
        "Up to 16 rows, each a part playing for 1–64 bars.",
-       "KNOB 1 the row, KNOB 2 its part, KNOB 3 its bars, KNOB 4 stores or clears its scene; OCT+ adds, OCT− deletes.",
-       "END: STOP, x2–x8 or LOOP.",
+       "KNOB 1 the row, KNOB 2 its part, KNOB 3 its bars, KNOB 4 stores or clears its scene; OCT+ adds a copy of the row, OCT− deletes.",
+       "END: STOP, x2–x8 or REPEAT (the footer: 40 BARS · END REPEAT).",
        "PLAY plays the song from the start; when it ends the music you had comes back."
       ]
      },
