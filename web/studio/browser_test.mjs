@@ -163,6 +163,25 @@ try {
     ok(/T1 DRUM preset 1/.test(txt) && /CUT=90 \(def 64\)/.test(txt) && /steps with notes: 16/.test(txt) && /SONG 2 rows: Ax1 Bx2/.test(txt) && (await q.textContent("#anstat")) === "Done.",
       `analysis: 6 tracks, parameters by name, steps and the song in the summary (${txt.split("\n").length} lines)`);
   }
+  /* the project library (V10.8.54): six projects read with names and parts; one renamed live; copied over a used one
+     (a copy downloaded first, then forced); one deleted */
+  {
+    const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true }), q = await ctx.newPage();
+    q.on("pageerror", (e) => errs.push(e.message));
+    const answers = ["3"]; q.on("dialog", (d) => d.type() === "prompt" ? d.accept(answers.shift() || "") : d.accept());
+    const downloads = []; q.on("download", (d) => downloads.push(d.suggestedFilename()));
+    await q.goto(URL0 + "?mock=1&notour#proj"); await q.waitForTimeout(1500);
+    await q.click("#pjread"); await q.waitForTimeout(600);
+    const names = await q.$$eval("#pjgrid .pj input", (x) => x.map((e) => e.value));
+    await q.fill("#pjgrid .pj:nth-child(2) input", "intro"); await q.press("#pjgrid .pj:nth-child(2) input", "Enter"); await q.waitForTimeout(800);
+    const renamed = await q.$eval("#pjgrid .pj:nth-child(2) input", (e) => e.value);
+    await q.click("#pjgrid .pj:nth-child(1) .acts .btn:nth-child(1)"); await q.waitForTimeout(2500);   // copy 1 -> 3 (empty)
+    answers.push("2"); await q.click("#pjgrid .pj:nth-child(4) .acts .btn:nth-child(1)"); await q.waitForTimeout(3000);   // copy 4 -> 2 (used: a copy first)
+    const after = await q.$$eval("#pjgrid .pj input", (x) => x.map((e) => e.value));
+    ok(names.length === 6 && names[0] === "NIGHT" && renamed === "INTRO" && after[2] === "NIGHT" && after[1] === "DUB" && downloads.some((f) => /^before-jiant-project-2/.test(f)),
+      `project library: ${names.length} projects (${names[0]}), renamed (${renamed}), copied 1→3 and 4→2 over a used one (a copy first: ${downloads.join(", ")})`);
+    await ctx.close();
+  }
   /* rescue: the published JIANT FM and JieLi's loader fetched and checked, a board's fm1-rescue.uf2 made */
   {
     const ctx = await b.newContext({ viewport: { width: 1280, height: 900 }, acceptDownloads: true });

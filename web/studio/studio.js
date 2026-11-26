@@ -15,7 +15,7 @@ import { Ecosystem, Levels } from "./radio-vis.js";
 import { capture as anCapture, text as anText } from "./analysis.js";
 import { checker as cvChecker, classify as cvClassify, convert as cvConvert, putObject as cvPut, replaceInFile as cvReplace, projectName as cvName } from "./convert.js";
 import { makeTable, toI16, pack as wtPack, unpack as wtUnpack, parseInfo as parseWtInfo, render as wtRender, wav as wtWav, WT, FRAMES, LEN, CHUNKS } from "./wavetable.js";
-import { captureBackup, restoreBackup, readBackup, songsNotRestored, BACKUP_IDS, bkU32, bkR32, bkCrc, bkPack, bkUnpack } from "./fm1backup.js";
+import { captureBackup, restoreBackup, readBackup, songsNotRestored, BACKUP_IDS, bkU32, bkR32, bkCrc, bkPack, bkUnpack, bkManifestAll } from "./fm1backup.js";
 
 const $ = (id) => document.getElementById(id);
 const QS = new URLSearchParams(location.search);
@@ -80,6 +80,14 @@ const TEXT = {
     pathLearnE: "Quiero aprender", pathLearn: "Cómo funciona", pathLearnT: "Cada motor, secuenciador y efecto, animado, y los manuales.",
     cNone: "Sin equipo conectado.", cFm1: "FM-1 conectado: %s", cBusy: "El FM-1 está ocupado (instalando o en otra pestaña).", cLooking: "Buscando el FM-1…",
     cEmuOn: "Usando el emulador (encendido).", cEmuOff: "Usando el emulador (apagado).", cFind: "Buscar mi FM-1", cUseEmu: "Usar el emulador", cUseFm1: "Usar mi FM-1", cOpenEmu: "Abrir el emulador",
+    pjTitle: "Biblioteca de proyectos", pjRead: "Leer los proyectos", pjAsk: "Leé los proyectos del FM-1: sus nombres y qué partes A–D tienen.", pjHelp: "Escribí un nombre y tocá Enter: cambia en el FM-1 al instante. Antes de pisar o borrar, se baja una copia de lo que había.",
+    pjOld: "El FM-1 no respondió: la biblioteca necesita JIANT FM V10.8.54 o posterior.", pjUnnamed: "sin nombre", pjName: "Nombre del proyecto", pjOpen: "ABIERTO",
+    pjCopy: "Copiar a…", pjMove: "Mover a…", pjExport: "Exportar", pjImport: "Importar acá", pjDelete: "Borrar", pjParts: "Nombrar partes",
+    pjCopyTo: "¿A qué proyecto copiar el %s? (1–6)", pjMoveTo: "¿A qué proyecto mover el %s? (1–6)", pjBadTarget: "Ese destino no sirve: elegí otro proyecto, del 1 al 6.",
+    pjOverwrite: "El proyecto %s («%n») tiene contenido y se va a pisar. Antes se baja una copia. ¿Seguir?", pjDelConfirm: "¿Borrar el proyecto %s («%n»)? Antes se baja una copia.",
+    pjSaving: "Guardando una copia…", pjWriting: "Escribiendo la parte %s…", pjDone: "Listo.", pjRenamed: "Nombre cambiado: %s", pjBadFile: "Ese archivo no es un proyecto exportado de Studio.",
+    pjPartWhich: "¿Qué parte querés nombrar? (B, C o D; la A es el nombre del proyecto)", pjPartName: "Nombre de la parte %s (hasta 12)",
+    pjRc1: "El FM-1 no lo permitió (el proyecto abierto no se puede pisar ni mover, o la parte está vacía).", pjRc2: "Falló la memoria del FM-1: el destino quedó como estaba.", pjRc3: "Está sonando: pará la música (STOP) y probá de nuevo.", pjRc4: "El destino tiene un proyecto.",
     cvTitle: "Proyectos viejos (antes de V10.7)", cvHelp: "Si el FM-1 dice «OLD PROJECT: OPEN IN STUDIO», acá se actualizan: Studio guarda primero todo en este navegador, encuentra los proyectos viejos y convierte solo esos.",
     cvDevice: "Revisar y convertir el FM-1", cvFile: "Convertir un archivo de backup…", cvChecking: "Buscando proyectos viejos…", cvNoChecker: "No se pudo cargar el firmware para revisarlos; probá de nuevo.",
     cvNone: "No hay proyectos viejos: todo abre con este firmware.", cvFound: "Proyectos viejos: %s (sin convertir).", cvConfirm: "Hay %n proyecto(s) viejo(s): %s.\nYa quedó un backup completo en este navegador. ¿Convertirlos y escribirlos en el FM-1?",
@@ -265,6 +273,14 @@ const TEXT = {
     pathLearnE: "I want to learn", pathLearn: "How it works", pathLearnT: "Every engine, sequencer and effect, animated, and the manuals.",
     cNone: "No device connected.", cFm1: "FM-1 connected: %s", cBusy: "The FM-1 is busy (installing or in another tab).", cLooking: "Looking for the FM-1…",
     cEmuOn: "Using the emulator (on).", cEmuOff: "Using the emulator (off).", cFind: "Find my FM-1", cUseEmu: "Use the emulator", cUseFm1: "Use my FM-1", cOpenEmu: "Open the emulator",
+    pjTitle: "Project library", pjRead: "Read the projects", pjAsk: "Read the FM-1's projects: their names and which parts A–D they hold.", pjHelp: "Type a name and press Enter: it changes on the FM-1 at once. Before anything is overwritten or deleted, a copy of it is downloaded.",
+    pjOld: "The FM-1 did not answer: the library needs JIANT FM V10.8.54 or later.", pjUnnamed: "untitled", pjName: "Project name", pjOpen: "OPEN",
+    pjCopy: "Copy to…", pjMove: "Move to…", pjExport: "Export", pjImport: "Import here", pjDelete: "Delete", pjParts: "Name parts",
+    pjCopyTo: "Copy project %s to which project? (1–6)", pjMoveTo: "Move project %s to which project? (1–6)", pjBadTarget: "That target does not work: pick another project, 1 to 6.",
+    pjOverwrite: "Project %s (“%n”) holds music and will be overwritten. A copy is downloaded first. Go on?", pjDelConfirm: "Delete project %s (“%n”)? A copy is downloaded first.",
+    pjSaving: "Saving a copy…", pjWriting: "Writing part %s…", pjDone: "Done.", pjRenamed: "Renamed: %s", pjBadFile: "That file is not a project exported from Studio.",
+    pjPartWhich: "Which part to name? (B, C or D; A is the project's name)", pjPartName: "Name of part %s (up to 12)",
+    pjRc1: "The FM-1 did not allow it (the open project cannot be overwritten or moved, or the part is empty).", pjRc2: "The FM-1's memory failed: the target is as it was.", pjRc3: "It is playing: stop the music (STOP) and try again.", pjRc4: "The target holds a project.",
     cvTitle: "Old projects (before V10.7)", cvHelp: "If the FM-1 says “OLD PROJECT: OPEN IN STUDIO”, they are brought up to date here: Studio first keeps everything in this browser, finds the old projects and converts only those.",
     cvDevice: "Check and convert the FM-1", cvFile: "Convert a backup file…", cvChecking: "Looking for old projects…", cvNoChecker: "The firmware to check them could not be loaded; try again.",
     cvNone: "No old projects: everything opens with this firmware.", cvFound: "Old projects: %s (not converted).", cvConfirm: "There are %n old project(s): %s.\nA full backup is already kept in this browser. Convert them and write them to the FM-1?",
@@ -1333,6 +1349,122 @@ $("cvfile").onchange = async () => {
     cvSay(t("cvFileDone").replace("%s", old.map((r) => cvName(r.id)).join(", ")));
   } catch (e) { cvSay(t("cvFail").replace("%s", e.message)); }
 };
+/* ---- the project library (JIANT FM V10.8.54: PROJ_LIST 95, PROJ_NAME 96, PROJ_OP 97): the FM-1's projects by name, their
+   parts A..D, renamed live, copied, moved, deleted, exported and imported one by one (their parts as backup objects
+   40 + 4n + k); before anything is overwritten or deleted, a copy of it is downloaded */
+const pj = { list: null, busy: false };
+const pjSay = (x) => { $("pjstat").textContent = x; };
+const PJ_RC = ["", "pjRc1", "pjRc2", "pjRc3", "pjRc4"];
+async function pjRead() {
+  const L = projLink(); if (!L) { pjSay(t("bkNoDev")); return; }
+  try {
+    const a = await L.link.request(95, [], 1500);
+    if (a[0]) throw new Error(t(PJ_RC[a[0]] || "pjRc1"));
+    const n = a[1], list = [];
+    for (let i = 0; i < n; i++) { const b = 2 + i * 15; list.push({ n: a[b], parts: a[b + 1], open: !!(a[b + 2] & 1), gen: !!(a[b + 2] & 2), name: String.fromCharCode(...a.slice(b + 3, b + 15).filter((c) => c)) }); }
+    pj.list = list; pjSay("");
+  } catch (e) { pj.list = null; pjSay(e.message === "timeout" ? t("pjOld") : e.message); }
+  renderPj();
+}
+/* a project's four parts as backup objects (their sizes from the backup list) */
+async function pjExport(p, quiet) {
+  const L = projLink(), req = bkRequest(L.link);
+  const man = bkManifestAll(await req([65, []], { timeout: 8000, retries: 1 })), objs = [];
+  for (let k = 0; k < 4; k++) {
+    const o = man.find((m) => m.id === 40 + 4 * p.n + k);
+    if (!o || !o.size) { objs.push({ k, size: 0, data: "" }); continue; }
+    const bytes = new Uint8Array(o.size);
+    for (let off = 0; off < o.size; off += 256) {
+      const size = Math.min(256, o.size - off), match = (r) => r[0] === o.id && (() => { try { return bkR32(r, 2) === off; } catch (_) { return false; } })();
+      const a = await req([66, [o.id, ...bkU32(off), size & 127, size >>> 7]], { timeout: 2500, retries: 2, match });
+      if (a[1]) throw new Error(t("pjRc2"));
+      bytes.set(bkUnpack(a.slice(9), size), off);
+    }
+    let s = ""; for (const b of bytes) s += String.fromCharCode(b);
+    objs.push({ k, size: o.size, crc: bkCrc(bytes), data: btoa(s) });
+  }
+  const file = { format: "jiant-project", version: 1, firmware: L.name, created: new Date().toISOString(), name: p.name, parts: objs };
+  download(new Blob([JSON.stringify(file)], { type: "application/json" }), `${quiet ? "before-" : ""}jiant-project-${p.n + 1}-${(p.name || "untitled").replace(/[^\w-]+/g, "_")}.json`);
+  return file;
+}
+async function pjDo(f) {
+  if (pj.busy) return; pj.busy = true; renderPj();
+  try { await exclusive(f); } catch (e) { pjSay(e.message); }
+  pj.busy = false; await pjRead();
+}
+function pjTarget(p, k) {
+  const v = prompt(t(k).replace("%s", p.n + 1)); if (!v) return null;
+  const to = (parseInt(v, 10) || 0) - 1, q = pj.list && pj.list.find((x) => x.n === to);
+  if (!q || to === p.n) { pjSay(t("pjBadTarget")); return null; }
+  return q;
+}
+async function pjOp(op, p, q) {
+  const L = projLink();
+  if (q && q.parts && !confirm(t("pjOverwrite").replace("%s", q.n + 1).replace("%n", q.name || "—"))) return;
+  if (op === 2 && !confirm(t("pjDelConfirm").replace("%s", p.n + 1).replace("%n", p.name || "—"))) return;
+  await pjDo(async () => {
+    const victim = op === 2 ? p : q && q.parts ? q : null;
+    if (victim) { pjSay(t("pjSaving")); await pjExport(victim, true); }   // a copy of what goes, first
+    const a = await L.link.request(97, [op, p.n, q ? q.n : 0, q && q.parts ? 1 : 0], 6000);
+    pjSay(a[3] ? t(PJ_RC[a[3]] || "pjRc1") : t("pjDone"));
+  });
+}
+async function pjImport(p) {
+  $("pjfile").onchange = async () => {
+    const f = $("pjfile").files[0]; $("pjfile").value = ""; if (!f) return;
+    let file; try { file = JSON.parse(await f.text()); if (file.format !== "jiant-project") throw 0; } catch (_) { pjSay(t("pjBadFile")); return; }
+    if (p.open) { pjSay(t("pjRc1")); return; }
+    if (p.parts && !confirm(t("pjOverwrite").replace("%s", p.n + 1).replace("%n", p.name || "—"))) return;
+    await pjDo(async () => {
+      if (p.parts) { pjSay(t("pjSaving")); await pjExport(p, true); }
+      const req = bkRequest(projLink().link);
+      for (const o of file.parts) {
+        if (!o.size) continue;
+        const bytes = Uint8Array.from(atob(o.data), (c) => c.charCodeAt(0));
+        pjSay(t("pjWriting").replace("%s", "ABCD"[o.k]));
+        await cvPut(req, 40 + 4 * p.n + o.k, bytes);
+      }
+      pjSay(t("pjDone"));
+    });
+  };
+  $("pjfile").click();
+}
+function renderPj() {
+  if (!$("pjgrid")) return;
+  const can = !!projLink() && !state.busy && !proj.working && !pj.busy;
+  $("pjcard").hidden = state.fw !== "fm"; $("pjread").disabled = !can;
+  $("pjhelp").textContent = t(pj.list ? "pjHelp" : projLink() ? "pjAsk" : "bkNoDev");
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const btn = (k, cls, f, dis) => { const b = el("button", "btn" + (cls ? " " + cls : ""), t(k)); b.type = "button"; b.disabled = !can || !!dis; b.onclick = f; return b; };
+  $("pjgrid").replaceChildren(...(pj.list || []).map((p) => {
+    const c = el("div", "pj" + (p.open ? " open" : "")), top = el("div", "top"), name = el("input");
+    name.maxLength = 12; name.value = p.name; name.placeholder = t("pjUnnamed"); name.disabled = !can; name.setAttribute("aria-label", t("pjName"));
+    name.onchange = async () => {
+      const v = name.value.toUpperCase().replace(/[^ -~]/g, "").slice(0, 12);
+      const a = await projLink().link.request(96, [p.n, 0, ...[...v].map((ch) => ch.charCodeAt(0)), 0], 2000).catch(() => null);
+      pjSay(a && !a[2] ? t("pjRenamed").replace("%s", v || "—") : t(PJ_RC[a ? a[2] : 1] || "pjRc1")); pjRead();
+    };
+    top.append(el("span", "num", String(p.n + 1)), name);
+    if (p.open) top.append(el("span", "tag", t("pjOpen"))); if (p.gen) top.append(el("span", "tag", "GEN"));
+    const parts = el("div", "parts"); for (let k = 0; k < 4; k++) parts.append(el("span", p.parts & (1 << k) ? "on" : "", "ABCD"[k]));
+    const acts = el("div", "acts"), empty = !p.parts;
+    acts.append(
+      btn("pjCopy", "ghost", () => { const q = pjTarget(p, "pjCopyTo"); if (q) pjOp(0, p, q); }, empty),
+      btn("pjMove", "ghost", () => { const q = pjTarget(p, "pjMoveTo"); if (q) pjOp(1, p, q); }, empty || p.open),
+      btn("pjExport", "ghost", () => pjDo(async () => { pjSay(t("pjSaving")); await pjExport(p); pjSay(t("pjDone")); }), empty),
+      btn("pjImport", "ghost", () => pjImport(p), p.open),
+      btn("pjDelete", "ghost", () => pjOp(2, p), empty || p.open),
+      btn("pjParts", "ghost", async () => {
+        const k = "ABCD".indexOf((prompt(t("pjPartWhich")) || "").trim().toUpperCase()); if (k < 1) return;
+        const v = (prompt(t("pjPartName").replace("%s", "ABCD"[k])) || "").toUpperCase().replace(/[^ -~]/g, "").slice(0, 12);
+        const a = await projLink().link.request(96, [p.n, k, ...[...v].map((ch) => ch.charCodeAt(0)), 0], 2000).catch(() => null);
+        pjSay(a && !a[2] ? t("pjRenamed").replace("%s", `${p.n + 1}${"ABCD"[k]} ${v}`) : t(PJ_RC[a ? a[2] : 1] || "pjRc1"));
+      }, empty));
+    c.append(top, parts, acts);
+    return c;
+  }));
+}
+$("pjread").onclick = () => pjRead();
 async function restore(b) {
   const L = projLink();
   if (!L) { projSay(t("bkNoDev")); return; }
@@ -2319,7 +2451,7 @@ function render() {
   if (state.view === "rec" && !rec.on) { renderAudioInputs(); renderMidiInputs(); }
   renderTakes();
   if (state.view === "ports") renderPorts();
-  if (state.view === "proj") { renderProj(); $("cvcard").hidden = state.fw !== "fm"; }
+  if (state.view === "proj") { renderProj(); renderPj(); $("cvcard").hidden = state.fw !== "fm"; }
   if (state.view === "wt") renderWtDev();
   if (state.view === "an") renderAn();
   if (state.view === "radio" || rd.vis) renderRadio();
@@ -2461,6 +2593,13 @@ function mockAccess() {
     if (f.cmd === 4) { deliver(frame(4, [0, 0, ...Array.from({ length: 140 }, (_, i) => e14(i % 7 ? 64 : 0)).flat()])); return; }   // DUMP: the engine, the preset, 100 + 40 values
     if (f.cmd === 29) { deliver(frame(29, [f.a[0], 0, f.a[0], ...Array.from({ length: 100 }, (_, i) => e14(i === 3 ? 90 : 64)).flat()])); return; }   // TRACK_DUMP
     if (f.cmd === 30) { const [t, i] = f.a, on = i % 4 === 0; deliver(frame(30, [t, i, on ? 1 : 0, on ? 36 + t : 0, 0, 0, 0, 2, 0, 100])); return; }   // TRACK_STEP
+    if (f.cmd === 95) { const P = window.__pj = window.__pj || [["NIGHT", 15, 1], ["", 3, 0], ["", 0, 0], ["DUB", 1, 2], ["", 0, 0], ["", 0, 0]];
+      deliver(frame(95, [0, 6, ...P.flatMap(([nm, parts, fl], n) => [n, parts, fl, ...Array.from({ length: 12 }, (_, i) => nm.charCodeAt(i) || 0)])])); return; }
+    if (f.cmd === 96) { const P = window.__pj; if (f.a[1] === 0) P[f.a[0]][0] = String.fromCharCode(...f.a.slice(2, f.a.indexOf(0, 2) < 0 ? undefined : f.a.indexOf(0, 2))); deliver(frame(96, [f.a[0], f.a[1], 0])); return; }
+    if (f.cmd === 97) { const P = window.__pj, [op, a, b, force] = f.a; let rc = 0;
+      if (op !== 2 && (P[b][2] & 1 || (op === 1 && P[a][2] & 1))) rc = 1; else if (op !== 2 && P[b][1] && !force) rc = 4;
+      else if (op === 2) P[a] = ["", 0, 0]; else { P[b] = [P[a][0], P[a][1], 0]; if (op === 1) P[a] = ["", 0, 0]; }
+      deliver(frame(97, [op, a, b, rc])); return; }
     if (f.cmd === 33) { deliver(frame(33, [0, 0, 2, 0, 0, 0, 0, 1, 1, 2])); return; }   // SONG: A x1, B x2
     if (f.cmd === 5) {                                          // DESC: CUT on any id
       const s = (x) => [...x].map((c) => c.charCodeAt(0)).concat(0), e = (v) => [(v + 8192) & 127, (v + 8192) >> 7];

@@ -322,6 +322,15 @@
   .pathcard:hover { border-color: var(--hud); box-shadow: 0 0 18px color-mix(in srgb, var(--hud) 25%, transparent); }
   body.radiodock .connbar { max-width: 1640px; }
   @media (max-width: 640px) { #devchip { display: none; } }
+  .pjgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+  .pj { border: var(--border) solid var(--line); background: var(--field); padding: 12px; display: grid; gap: 8px; }
+  .pj.open { border-color: var(--hud); } .pj .top { display: flex; align-items: center; gap: 8px; }
+  .pj .num { font: 700 22px/1 var(--display); color: var(--hud); width: 28px; }
+  .pj input { flex: 1; min-width: 0; background: var(--panel); border: var(--border) solid var(--line); color: var(--fg); padding: 7px 8px; font: 14px/1 var(--mono); text-transform: uppercase; }
+  .pj .parts { display: flex; gap: 4px; } .pj .parts span { width: 28px; height: 24px; display: grid; place-items: center; font: 12px/1 var(--mono); border: var(--border) solid var(--line); color: var(--dim); }
+  .pj .parts span.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .pj .tag { font: 10px/1 var(--mono); letter-spacing: .12em; padding: 3px 6px; border: 1px solid var(--hud); color: var(--hud); }
+  .pj .acts { display: flex; flex-wrap: wrap; gap: 6px; } .pj .acts .btn { min-height: 34px; padding: 5px 10px; font-size: 13px; }
   .wtframes { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin: 8px 0; }
   .wtframes canvas { width: 100%; aspect-ratio: 1; background: var(--field); border-radius: var(--radius-s); cursor: pointer; }
   .wtframes canvas.on { outline: 2px solid var(--accent); }
@@ -659,6 +668,11 @@
     </div>
     <p class="projstat" id="projstat" role="status"></p>
     <div class="bkprog" id="bkprog" hidden><i id="bkbar"></i></div>
+    <div class="card" id="pjcard">
+      <div class="viewhead" style="margin-bottom:6px"><div><h2 data-t="pjTitle"></h2><p class="dim" id="pjhelp"></p></div><button class="btn ghost" id="pjread" type="button" data-t="pjRead"></button></div>
+      <p class="projstat" id="pjstat" role="status"></p>
+      <div class="pjgrid" id="pjgrid"></div><input id="pjfile" type="file" accept=".json,application/json" hidden>
+    </div>
     <div class="card">
       <div class="viewhead" style="margin-bottom:6px"><div><h2 data-t="slotsTitle"></h2><p class="dim" id="slotshelp"></p></div><button class="btn ghost" id="slotsread" type="button" data-t="slotsRead"></button></div>
       <div class="slots" id="slots"></div>
