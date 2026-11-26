@@ -2374,7 +2374,6 @@ function mockAccess() {
     }
     const e14 = (v) => [(v + 8192) & 127, (v + 8192) >> 7];
     if (f.cmd === 4) { deliver(frame(4, [0, 0, ...Array.from({ length: 140 }, (_, i) => e14(i % 7 ? 64 : 0)).flat()])); return; }   // DUMP: the engine, the preset, 100 + 40 values
-    if (f.cmd === 27) { if (f.a.length) mockSel = f.a[0]; deliver(frame(27, [mockSel, 6, ...[0, 2, 3, 4, 0, 5].flatMap((en, t) => [en, t, ...e14(100), t === 5 ? 1 : 0, 0])])); return; }   // TRACK
     if (f.cmd === 29) { deliver(frame(29, [f.a[0], 0, f.a[0], ...Array.from({ length: 100 }, (_, i) => e14(i === 3 ? 90 : 64)).flat()])); return; }   // TRACK_DUMP
     if (f.cmd === 30) { const [t, i] = f.a, on = i % 4 === 0; deliver(frame(30, [t, i, on ? 1 : 0, on ? 36 + t : 0, 0, 0, 0, 2, 0, 100])); return; }   // TRACK_STEP
     if (f.cmd === 33) { deliver(frame(33, [0, 0, 2, 0, 0, 0, 0, 1, 1, 2])); return; }   // SONG: A x1, B x2
@@ -2419,7 +2418,8 @@ function mockAccess() {
       const eng = kind === "byte" ? ["ANALOG", "-", "PHASE", "MATH", "WAVE", "DRUM"] : ["ANALOG", "-", "PHASE", "MATH", "DRUM", "FM6"];   // (FM has MATH too)
       deliver(frame(CMD.INFO, [...s(kind === "byte" ? (QS.has("nomirror") ? "JIANT BYTE v0.16" : "JIANT BYTE v0.17") : "JIANT V10.8.24"), eng.length, 100, 40, 64, 10, ...eng.flatMap(s)]));
     } else if (f.cmd === 27) {                                 // TRACK: six tracks, their engines (indexes into INFO's list)
-      deliver(frame(27, [0, 6, ...[4, 0, 2, 3, 5, 1].flatMap((e) => [e, 0, 0, 64, 0, 0])]));
+      if (f.a.length) mockSel = f.a[0];
+      deliver(frame(27, [mockSel, 6, ...[4, 0, 2, 3, 5, 1].flatMap((e) => [e, 0, 0, 64, 0, 0])]));
     } else if (f.cmd === CMD.SCREEN && !QS.has("nomirror")) {      // (?nomirror: firmware from before the mirror: no reply)
       const op = f.a[0] | 0;
       if (op === 1 || (op === 3 && on)) { on = true; draw(); for (const a of scrEncode(fb, 0, 0, 240, 240)) deliver(frame(CMD.SCREEN_DATA, a)); }

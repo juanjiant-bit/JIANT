@@ -158,7 +158,7 @@ try {
     const q = await page("?mock=1#an", { width: 1280, height: 900 });
     await q.click("#ango"); await q.waitForTimeout(12000);
     const txt = await q.textContent("#anpre");
-    ok(/T1 ANALOG preset 1/.test(txt) && /CUT=90 \(def 64\)/.test(txt) && /steps with notes: 16/.test(txt) && /SONG 2 rows: Ax1 Bx2/.test(txt) && (await q.textContent("#anstat")) === "Done.",
+    ok(/T1 DRUM preset 1/.test(txt) && /CUT=90 \(def 64\)/.test(txt) && /steps with notes: 16/.test(txt) && /SONG 2 rows: Ax1 Bx2/.test(txt) && (await q.textContent("#anstat")) === "Done.",
       `analysis: 6 tracks, parameters by name, steps and the song in the summary (${txt.split("\n").length} lines)`);
   }
   /* rescue: the published JIANT FM and JieLi's loader fetched and checked, a board's fm1-rescue.uf2 made */
