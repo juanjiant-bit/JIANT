@@ -249,6 +249,8 @@ arranca y **Stop** cuando para. El clock corre también parado, así el que sigu
 
 ## 7. Receta: Circuit Tracks, h2midi y cables TRS-A
 
+> **Todavía sin probar en equipos reales.** El FM-1 es un dispositivo USB estándar (clase MIDI + audio) y su USB HOST acepta teclados MIDI estándar; si una caja USB-host como la h2midi alimenta y acepta al FM-1, y si un Circuit Tracks enumera en el USB HOST del FM-1, no se probó. Si lo probás, contanos qué pasó (Discord o un issue de GitHub).
+
 Lo que garantiza el código del lado del FM-1 está marcado como tal. **Los detalles del Circuit Tracks y del h2midi no
 salen del código de JIANT**: salen de la documentación habitual de esos productos y hay que comprobarlos en sus
 propios manuales (acá, **sin verificar**).
