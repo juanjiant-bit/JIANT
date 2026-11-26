@@ -13,6 +13,7 @@ import { Daw } from "./daw.js";
 import { Player, anim } from "./learn.js";
 import { Ecosystem, Levels } from "./radio-vis.js";
 import { capture as anCapture, text as anText } from "./analysis.js";
+import { checker as cvChecker, classify as cvClassify, convert as cvConvert, putObject as cvPut, replaceInFile as cvReplace, projectName as cvName } from "./convert.js";
 import { makeTable, toI16, pack as wtPack, unpack as wtUnpack, parseInfo as parseWtInfo, render as wtRender, wav as wtWav, WT, FRAMES, LEN, CHUNKS } from "./wavetable.js";
 import { captureBackup, restoreBackup, readBackup, songsNotRestored, BACKUP_IDS, bkU32, bkR32, bkCrc, bkPack, bkUnpack } from "./fm1backup.js";
 
@@ -79,6 +80,10 @@ const TEXT = {
     pathLearnE: "Quiero aprender", pathLearn: "Cómo funciona", pathLearnT: "Cada motor, secuenciador y efecto, animado, y los manuales.",
     cNone: "Sin equipo conectado.", cFm1: "FM-1 conectado: %s", cBusy: "El FM-1 está ocupado (instalando o en otra pestaña).", cLooking: "Buscando el FM-1…",
     cEmuOn: "Usando el emulador (encendido).", cEmuOff: "Usando el emulador (apagado).", cFind: "Buscar mi FM-1", cUseEmu: "Usar el emulador", cUseFm1: "Usar mi FM-1", cOpenEmu: "Abrir el emulador",
+    cvTitle: "Proyectos viejos (antes de V10.7)", cvHelp: "Si el FM-1 dice «OLD PROJECT: OPEN IN STUDIO», acá se actualizan: Studio guarda primero todo en este navegador, encuentra los proyectos viejos y convierte solo esos.",
+    cvDevice: "Revisar y convertir el FM-1", cvFile: "Convertir un archivo de backup…", cvChecking: "Buscando proyectos viejos…", cvNoChecker: "No se pudo cargar el firmware para revisarlos; probá de nuevo.",
+    cvNone: "No hay proyectos viejos: todo abre con este firmware.", cvFound: "Proyectos viejos: %s (sin convertir).", cvConfirm: "Hay %n proyecto(s) viejo(s): %s.\nYa quedó un backup completo en este navegador. ¿Convertirlos y escribirlos en el FM-1?",
+    cvConverting: "Convirtiendo %s…", cvDone: "Listo: %s convertidos. Abrilos en el FM-1 (SAVE › PROJECTS).", cvFileDone: "Listo: %s convertidos; se bajó el archivo nuevo.", cvFail: "No se pudo convertir: %s", cvBefore: "Antes de convertir",
     vAn: "Análisis", anTitle: "Análisis: los datos exactos", anLead: "Lee del FM-1 o del emulador todo lo que tiene: cada pista con su motor, preset, nivel y cada parámetro con su nombre y valor (y cuáles cambiaron), los globales y los efectos, los pasos, la canción y el generador. Con el emulador escucha además unos segundos: nivel, picos, cuánto sostiene cada pista y su espectro. Bajá el archivo o copiá el resumen y pasalo tal cual.",
     anGo: "Analizar", anSteps: "Incluir los pasos", anAudio: "Escuchar 8 s del emulador", anFrom: "De: %s (elige la pista de a una un instante y vuelve a la tuya)", anNoDev: "Conectá el FM-1 o prendé el emulador.",
     anDone: "Listo.", anFail: "No se pudo leer todo", anJson: "Bajar el archivo (JSON)", anCopy: "Copiar el resumen", anCopied: "Resumen copiado.", anNoCopy: "No se pudo copiar: seleccioná el texto.",
@@ -260,6 +265,10 @@ const TEXT = {
     pathLearnE: "I want to learn", pathLearn: "How it works", pathLearnT: "Every engine, sequencer and effect, animated, and the manuals.",
     cNone: "No device connected.", cFm1: "FM-1 connected: %s", cBusy: "The FM-1 is busy (installing or in another tab).", cLooking: "Looking for the FM-1…",
     cEmuOn: "Using the emulator (on).", cEmuOff: "Using the emulator (off).", cFind: "Find my FM-1", cUseEmu: "Use the emulator", cUseFm1: "Use my FM-1", cOpenEmu: "Open the emulator",
+    cvTitle: "Old projects (before V10.7)", cvHelp: "If the FM-1 says “OLD PROJECT: OPEN IN STUDIO”, they are brought up to date here: Studio first keeps everything in this browser, finds the old projects and converts only those.",
+    cvDevice: "Check and convert the FM-1", cvFile: "Convert a backup file…", cvChecking: "Looking for old projects…", cvNoChecker: "The firmware to check them could not be loaded; try again.",
+    cvNone: "No old projects: everything opens with this firmware.", cvFound: "Old projects: %s (not converted).", cvConfirm: "There are %n old project(s): %s.\nA full backup is already kept in this browser. Convert them and write them to the FM-1?",
+    cvConverting: "Converting %s…", cvDone: "Done: %s converted. Open them on the FM-1 (SAVE › PROJECTS).", cvFileDone: "Done: %s converted; the new file was downloaded.", cvFail: "Could not convert: %s", cvBefore: "Before converting",
     vAn: "Analysis", anTitle: "Analysis: the exact data", anLead: "Reads everything the FM-1 or the emulator holds: each track with its engine, preset, level and every parameter by name and value (and which ones changed), the globals and effects, the steps, the song and the generator. From the emulator it also listens for a few seconds: level, peaks, how long each track sustains and its spectrum. Download the file or copy the summary and pass it on as it is.",
     anGo: "Analyze", anSteps: "Include the steps", anAudio: "Listen to 8 s of the emulator", anFrom: "From: %s (selects each track for an instant and goes back to yours)", anNoDev: "Connect the FM-1 or switch the emulator on.",
     anDone: "Done.", anFail: "Not everything could be read", anJson: "Download the file (JSON)", anCopy: "Copy the summary", anCopied: "Summary copied.", anNoCopy: "Could not copy: select the text.",
@@ -1282,6 +1291,48 @@ async function backupNow() {
     await loadList();
   });
 }
+/* ---- old projects (before V10.7): found with today's firmware, converted with emu-convert (convert.js) */
+const cvSay = (x) => { $("cvstat").textContent = x; };
+const cvUrls = () => [`${TOOLS.fm.base}emu/felucca.wasm`, `${TOOLS.fm.base}preview/emu/felucca.wasm`];
+async function cvFind(objects) {
+  cvSay(t("cvChecking"));
+  const ex = await cvChecker(cvUrls());
+  if (!ex) throw new Error(t("cvNoChecker"));
+  return cvClassify(ex, objects).filter((r) => r.state === "old");
+}
+$("cvgo").onclick = async () => {
+  const L = projLink(); if (!L) { cvSay(t("bkNoDev")); return; }
+  await exclusive(async () => {
+    try {
+      cvSay(t("bkWorking"));
+      const fw = L.name, file = await captureBackup(bkRequest(L.link), fw, (d, n) => { progress(d, n); cvSay(t("bkWorking") + `${Math.round(d / n * 100)} %`); });
+      const now = new Date(), b = { name: `${t("cvBefore")} · ${fw} · ${stamp(now)}`, created: now.toISOString(), fw: state.fw, firmware: fw, summary: bkSummary(file), file };
+      b.id = await bkDb.put(b);                                  // everything as it was, kept in this browser first
+      const objects = readBackup(file).objects, old = await cvFind(objects);
+      if (!old.length) { cvSay(t("cvNone")); return; }
+      const names = old.map((r) => cvName(r.id)).join(", ");
+      if (!confirm(t("cvConfirm").replace("%n", old.length).replace("%s", names))) { cvSay(t("cvFound").replace("%s", names)); return; }
+      const req = bkRequest(L.link);
+      for (const [i, r] of old.entries()) {
+        cvSay(t("cvConverting").replace("%s", cvName(r.id)) + ` ${i + 1}/${old.length}`);
+        await cvPut(req, r.id, await cvConvert(`${TOOLS.fm.base}emu-convert/felucca.wasm`, objects.find((o) => o.id === r.id).bytes));
+      }
+      cvSay(t("cvDone").replace("%s", names));
+    } catch (e) { cvSay(t("cvFail").replace("%s", e.message)); }
+    await loadList();
+  });
+};
+$("cvfilebtn").onclick = () => $("cvfile").click();
+$("cvfile").onchange = async () => {
+  const f = $("cvfile").files[0]; $("cvfile").value = ""; if (!f) return;
+  try {
+    const file = JSON.parse(await f.text()), objects = readBackup(file).objects, old = await cvFind(objects);
+    if (!old.length) { cvSay(t("cvNone")); return; }
+    for (const r of old) cvReplace(file, r.id, await cvConvert(`${TOOLS.fm.base}emu-convert/felucca.wasm`, objects.find((o) => o.id === r.id).bytes));
+    download(new Blob([JSON.stringify(file)], { type: "application/json" }), f.name.replace(/\.json$/i, "") + "-converted.json");
+    cvSay(t("cvFileDone").replace("%s", old.map((r) => cvName(r.id)).join(", ")));
+  } catch (e) { cvSay(t("cvFail").replace("%s", e.message)); }
+};
 async function restore(b) {
   const L = projLink();
   if (!L) { projSay(t("bkNoDev")); return; }
@@ -2268,7 +2319,7 @@ function render() {
   if (state.view === "rec" && !rec.on) { renderAudioInputs(); renderMidiInputs(); }
   renderTakes();
   if (state.view === "ports") renderPorts();
-  if (state.view === "proj") renderProj();
+  if (state.view === "proj") { renderProj(); $("cvcard").hidden = state.fw !== "fm"; }
   if (state.view === "wt") renderWtDev();
   if (state.view === "an") renderAn();
   if (state.view === "radio" || rd.vis) renderRadio();
