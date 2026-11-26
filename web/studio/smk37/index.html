@@ -1,0 +1,93 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JIANT · Instalador SMK-37</title>
+<style>
+:root{color-scheme:dark;font:17px/1.55 system-ui;background:#131215;color:#f6f2ec}
+body{max-width:700px;margin:5vh auto;padding:24px}h1{line-height:1.1;font-size:clamp(2rem,7vw,3.5rem);margin:.15em 0 .4em}
+a{color:#ffc084}small{color:#ffc084}section{border-top:1px solid #686168;margin-top:24px;padding-top:18px}
+button{font:inherit;font-weight:650;padding:10px 18px;margin:8px 8px 8px 0;border:0;border-radius:5px;background:#ffc084;color:#171012}
+button:disabled{background:#38343a;color:#aaa}label{display:block;margin:15px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.5 monospace}
+</style><body><small>JIANT FM · Prueba de hardware</small><h1>Instalador SMK-37</h1>
+<p>Para M-VAVE SMK-37 Pro y Elite con firmware de fábrica v016. Conectá únicamente el teclado a probar por USB de datos y cerrá el editor, el DAW y el actualizador de M-VAVE.</p>
+<p>Esta primera prueba reemplaza el firmware. Tené a mano el firmware oficial de tu modelo y una copia de tus datos. El arranque y la recuperación en un teclado real siguen pendientes de validación. Los proyectos y ajustes de esta versión de JIANT se pierden al apagar.</p>
+<section><button id="detect">Detectar teclado</button><output id="device" aria-live="polite"></output>
+<label><input type="checkbox" id="accept" disabled> Quiero escribir JIANT experimental en el teclado detectado.</label>
+<button id="install" disabled>Instalar JIANT</button><p id="status" role="status">La detección solo consulta la identidad MIDI.</p>
+<p id="stock" hidden><a href="https://www.m-vave.com/download" target="_blank" rel="noopener">Descargas oficiales de M-VAVE</a> · Elegí M-UPGRADE y el firmware SMK-37 PRO V016.</p>
+<details><summary>Registro de la sesión</summary><pre id="log"></pre></details></section><small><a href="https://github.com/juanjiant-bit/JIANT/tree/6df3c9a6701fc9327472d5fb22bfc3d1a4359656">Código y licencias del firmware</a></small>
+<script type="module">
+import {Updater} from './fm1ota.js';
+import {productOf, logicalImage, sha256hex} from './fm1pkg.js';
+const images = {
+  "SMK-37 Pro": {file:"felucca-smk37-pro.fwsc", sha:"c940476c2b33a5ffb35a6edab2813f8c0c2a6be9b4bbeb5f5a346e91299514b0"},
+  "SMK-37 Elite": {file:"felucca-smk37-elite.fwsc", sha:"579c5664c6273f15d69aa64243817f0261ecaf5078923fefdb54db8a554076f3"}
+};
+const get = id => document.getElementById(id);
+const detect = get('detect'), accept = get('accept'), install = get('install');
+let selection, busy = false;
+const log = s => { get('log').textContent += s + '\n'; };
+const status = s => { get('status').textContent = s; log(s); };
+const midi = () => navigator.requestMIDIAccess({sysex:true});
+function classify(text) {
+  const match = /^(ota-)?(SMK-37 (?:Elite|Pro))_(\d+)$/.exec(text);
+  if (!match) return null;
+  const [, loader, model, version] = match;
+  if (loader ? version !== '900' : version !== '016') return null;
+  return {model, loader: Boolean(loader), id:text};
+}
+async function imageFor(model) {
+  const p = images[model];
+  const response = await fetch(p.file);
+  if (!response.ok) throw Error('No se pudo descargar el firmware de ' + model);
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  if (await sha256hex(bytes) !== p.sha || productOf(bytes) !== model + '_900')
+    throw Error('El paquete integrado no pasó la verificación.');
+  return logicalImage(bytes);
+}
+async function run(task) {
+  if (busy) return;
+  busy = true; detect.disabled = accept.disabled = install.disabled = true;
+  try { await task(); } catch (e) { selection = null; status('Se detuvo el proceso. ' + e.message); }
+  finally { busy = false; detect.disabled = false; accept.disabled = !selection; install.disabled = !selection || !accept.checked; }
+}
+function updater(access) { return new Updater(access, log, {refresh:midi}); }
+detect.onclick = () => run(async () => {
+  selection = null; accept.checked = false; get('device').textContent = ''; get('stock').hidden = true;
+  if (!navigator.requestMIDIAccess) throw Error('Abrí el HTML en Chrome o Edge de escritorio con Web MIDI.');
+  status('Consultando el teclado…');
+  const up = updater(await midi());
+  const dev = await up.find(null, {tries:2});
+  if (!dev) throw Error('Sin respuesta de identidad. Revisá el cable USB, el permiso MIDI y las otras aplicaciones.');
+  dev.link.close();
+  get('device').textContent = dev.id.text;
+  if (dev.id.text === 'SMK-37 Pro_015') {
+    get('stock').hidden = false;
+    status('Tu Pro tiene V015. Actualizá primero a V016 con M-UPGRADE y volvé a detectar el teclado.');
+    return;
+  }
+  const target = classify(dev.id.text);
+  if (!target) throw Error('Identidad fuera de esta prueba: ' + dev.id.text);
+  await imageFor(target.model);
+  selection = target;
+  install.textContent = target.loader ? 'Reanudar escritura' : 'Instalar JIANT';
+  status('Paquete verificado para ' + target.model + '.');
+});
+accept.onchange = () => { install.disabled = busy || !selection || !accept.checked; };
+install.onclick = () => run(async () => {
+  const target = selection;
+  if (!target || !accept.checked) return;
+  const image = await imageFor(target.model), product = target.model + '_900';
+  const up = updater(await midi());
+  const step = (s, value) => {
+    if (s === 'write' || s === 'verify') {
+      get('status').textContent = (s === 'write' ? 'Escribiendo' : 'Comprobando') + ' · petición ' + value;
+    } else status(({start:'Iniciando actualización',loader:'Esperando el cargador de ' + target.model,
+      reboot:'Esperando el reinicio',done:'Identidad confirmada tras el reinicio'})[s] + (value ? ' · ' + value : ''));
+  };
+  selection = null; accept.checked = false;
+  if (target.loader) {
+    if (!await up.resume(image, step, product, target.id)) throw Error('El cargador no completó la transferencia.');
+  } else await up.install(image, product, step, target.id);
+  status('Instalación verificada por USB. Probá pantalla, audio, teclas y pads.');
+});
+window.addEventListener('beforeunload', e => { if (busy) { e.preventDefault(); e.returnValue = ''; } });
+</script></body></html>

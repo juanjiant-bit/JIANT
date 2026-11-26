@@ -255,6 +255,9 @@ jobs:
           # page (web/studio; it shows JIANT BYTE's tools from /JIANT-BYTE/, the same origin)
           mkdir -p build/pages/studio
           cp web/studio/index.html web/studio/studio.js web/studio/studio-lib.js web/studio/daw.js web/studio/recorder-worklet.js web/studio/learn.js web/studio/wavetable.js web/studio/radio-vis.js web/studio/analysis.js web/studio/convert.js web/studio/learn-fm.json web/studio/learn-byte.json web/studio/live-fm.json web/studio/live-byte.json web/fm1backup.js build/pages/studio/
+          cp -r web/studio/smk37 build/pages/studio/smk37
+          cp web/fm1pkg.js web/fm1ota.js build/pages/studio/smk37/
+          cp -r LICENSE LICENSES LICENSING.md build/pages/studio/smk37/
           cp -r web/studio/img build/pages/studio/img
           # (studio) FM-1 Rescue's builder and base firmware for Studio's Rescue tab; its own page at rescue/
           mkdir -p build/pages/studio/rescue/base build/pages/rescue

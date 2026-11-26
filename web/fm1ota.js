@@ -26,7 +26,7 @@ export const UPDATE_TIMES = {
 };
 /* the ports worth asking for an identity: the FM-1 (official: its own name or the USB composite's), JIANT, Felucca and
  * its forks, the update loaders. Other gear is not probed, except a port that appears while we wait for the loader */
-export const PORT_RE = /fm-?1|felucca|jiant|skiff|ota|composite|sinco|usb-midi|m-?vave|cuvave/i;
+export const PORT_RE = /smk[ -]?37|fm-?1|felucca|jiant|skiff|ota|composite|sinco|usb-midi|m-?vave|cuvave/i;
 /* Windows names one device's ports "FM-1", "2- FM-1", "MIDIIN2 (FM-1)" / "MIDIOUT2 (FM-1)", "FM-1 1": the device's name */
 export const portBase = (name) => String(name || "").trim().replace(/^\d+\s*-\s*/, "")
   .replace(/^MIDI(?:IN|OUT)\d*\s*\((.*)\)$/i, "$1").replace(/\s+\d+$/, "").trim().toLowerCase();
@@ -235,7 +235,7 @@ export class Updater {
       last = Date.now();
       if (r.addr === 0xE0000000 || r.addr === 0xF0000000) {
         link.send(response(r.addr, [...new TextEncoder().encode("success"), 0]));
-        if (r.addr === finishAddr) return { served, finished: true };
+        if (r.addr === finishAddr) return { served, finished: served > 0 };
         continue;
       }
       if (r.len > MAXDATA || r.addr + r.len > image.length) throw fail("badreq", `bad request ${r.addr.toString(16)}+${r.len}`);
@@ -249,9 +249,9 @@ export class Updater {
   }
 
   // full install: running firmware -> loader -> new firmware
-  async install(image, product, onStep) {
+  async install(image, product, onStep, requiredIdentity = null) {
     const step = onStep || (() => {});
-    const dev = await this.find((id) => !IS_OTA(id), { tries: this.t.findTries });
+    const dev = await this.find((id) => requiredIdentity ? id.text === requiredIdentity : !IS_OTA(id), { tries: this.t.findTries });
     if (!dev) throw this.notFound();
     const [model] = product.split("_");
     if (dev.id.model !== model) { dev.link.close(); throw fail("model", `the device is ${dev.id.text}, the package is for ${product}`, dev.id.text); }
@@ -272,13 +272,13 @@ export class Updater {
     if (!s1.finished) throw fail(s1.lost ? "lost" : "stopped", `the device ${s1.lost ? "was disconnected" : "stopped"} after ${s1.served} requests: nothing was written`);
     step("loader");
     await sleep(this.t.loaderSettle);
-    const ota = await this.waitFor((id) => id.model === "ota-" + model, this.t.loader);
+    const ota = await this.waitFor((id) => requiredIdentity ? id.text === "ota-" + product : id.model === "ota-" + model, this.t.loader);
     if (!ota) throw fail("noloader", "the update loader did not appear. Replug the USB cable and press Install again: the device stays in update mode until it is finished.");
     const s2 = await this.write(ota, image, step);
     if (!s2.finished) throw fail(s2.lost ? "lost" : "stopped", `the loader ${s2.lost ? "was disconnected" : "stopped"} after ${s2.served} requests. Replug and press Install again to resume.`);
     step("reboot");
     await sleep(this.t.loaderSettle);
-    const back = await this.waitFor((id) => !IS_OTA(id), this.t.back);
+    const back = await this.waitFor((id) => requiredIdentity ? id.model === model : !IS_OTA(id), this.t.back);
     if (!back) throw fail("noreturn", "the device did not come back: power-cycle it");
     back.link.close();
     if (back.id.text !== product) throw fail("mismatch", `installed, but the device reports ${back.id.text}`, back.id.text);
@@ -298,9 +298,9 @@ export class Updater {
   }
 
   // resume: the device is already in update mode (loader) -> true when the write finished
-  async resume(image, onStep, product = null) {
+  async resume(image, onStep, product = null, loaderIdentity = null) {
     const model = product && product.split("_")[0];
-    const ota = await this.find((id) => model ? id.model === "ota-" + model : IS_OTA(id), { tries: 2 });
+    const ota = await this.find((id) => loaderIdentity ? id.text === loaderIdentity : model ? id.model === "ota-" + model : IS_OTA(id), { tries: 2 });
     if (!ota) return false;
     const step = onStep || (() => {});
     const result = await this.write(ota, image, step);
