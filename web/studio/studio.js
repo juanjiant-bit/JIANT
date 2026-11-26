@@ -77,6 +77,7 @@ const TEXT = {
     anGo: "Analizar", anSteps: "Incluir los pasos", anAudio: "Escuchar 8 s del emulador", anFrom: "De: %s (elige la pista de a una un instante y vuelve a la tuya)", anNoDev: "Conectá el FM-1 o prendé el emulador.",
     anDone: "Listo.", anFail: "No se pudo leer todo", anJson: "Bajar el archivo (JSON)", anCopy: "Copiar el resumen", anCopied: "Resumen copiado.", anNoCopy: "No se pudo copiar: seleccioná el texto.",
     tourV_anT: "Análisis", tourV_an: "Los datos exactos del equipo o del emulador en un archivo, para mandar cuando algo suena raro.", tourV_anH: "Con el emulador también mide cómo suena cada pista.",
+    rdUndo: "Volver al sonido anterior",
     vRadio: "Radio", rdTitle: "Votá las piezas del generador", rdLead: "Piezas nuevas del generador, una tras otra, y un ecosistema que vive de la música: cada pista mueve a sus seres. Decí si te gusta cada pieza; con tus votos el generador mejora. Subí el volumen.",
     rdStart: "Empezar", rdStop: "Parar", rdGenre: "Género", rdMood: "MOOD", rdSeed: "semilla", rdThanks: "Votos: %n · ¡gracias!",
     rdNoEmu: "No se pudo prender el emulador: probá de nuevo, o prendelo en la pestaña Emulador.", rdOld: "El emulador publicado todavía no tiene RADIO para esta página: llega con su próxima versión.",
@@ -251,6 +252,7 @@ const TEXT = {
     anGo: "Analyze", anSteps: "Include the steps", anAudio: "Listen to 8 s of the emulator", anFrom: "From: %s (selects each track for an instant and goes back to yours)", anNoDev: "Connect the FM-1 or switch the emulator on.",
     anDone: "Done.", anFail: "Not everything could be read", anJson: "Download the file (JSON)", anCopy: "Copy the summary", anCopied: "Summary copied.", anNoCopy: "Could not copy: select the text.",
     tourV_anT: "Analysis", tourV_an: "The device's or the emulator's exact data in a file, to send when something sounds wrong.", tourV_anH: "From the emulator it also measures how each track sounds.",
+    rdUndo: "Back to the previous sound",
     vRadio: "Radio", rdTitle: "Vote on the generator's pieces", rdLead: "New pieces from the generator, one after another, and an ecosystem that lives on the music: each track moves its beings. Say whether you like each piece; your votes make the generator better. Turn the volume up.",
     rdStart: "Start", rdStop: "Stop", rdGenre: "Genre", rdMood: "MOOD", rdSeed: "seed", rdThanks: "Votes: %n · thank you!",
     rdNoEmu: "The emulator could not be switched on: try again, or switch it on in the Emulator tab.", rdOld: "The published emulator does not have RADIO for this page yet: it comes with its next version.",
@@ -1471,8 +1473,8 @@ function rdClient() {
 }
 /* the generator: the emulator's (or, with ?mock=1, a pretend one for the tests) */
 const rdMock = MOCK && { s: [1, 0, 1234, 0, 64, 2, 1, 1], gen(cmd, arg, g) {
-  const s = this.s; if (cmd === 0) s[0] = arg ? 1 : 0; if (cmd === 1) { s[6]++; s[2] = (s[2] * 7 + 13) % 99991; } if (cmd === 2) s[1] = Math.max(0, arg); if (cmd === 3) s[3] = arg; if (cmd === 4) s[7] = arg;
-  return Promise.resolve({ ok: true, info: [...s], genres: g ? ["HOUSE", "TECHNO", "IDM GLITCH", "DREAM POP"] : null });
+  const s = this.s; if (cmd === 10) this.rs = arg; if (cmd === 11) this.rs = null; if (cmd === 0) s[0] = arg ? 1 : 0; if (cmd === 1) { s[6]++; s[2] = (s[2] * 7 + 13) % 99991; this.rs = null; } if (cmd === 2) s[1] = Math.max(0, arg); if (cmd === 3) s[3] = arg; if (cmd === 4) s[7] = arg;
+  return Promise.resolve({ ok: true, info: [...s], genres: g ? ["HOUSE", "TECHNO", "IDM GLITCH", "DREAM POP"] : null, resound: true, rs: this.rs ?? null, rc: 0 });
 } };
 function rdGen() {
   if (rdMock) return rdMock;
@@ -1502,6 +1504,7 @@ function renderRadio() {
   $("rdmeta").textContent = `${t("rdMood")} ${mood > 0 ? "+" : ""}${mood} · ${RD_FORMS[form] || "?"} · ${t("rdSeed")} ${seed} · ${rd.version || ""}`;
   $("rdcount").textContent = rd.votes ? t("rdThanks").replace("%n", rd.votes) : "";
   for (const id of ["rdup", "rddown", "rdskip"]) $(id).disabled = !rd.on;
+  $("rdsound").hidden = !rd.canResound; $("rdundo").hidden = rd.rs == null;
 }
 /* the ecosystem: alive while the Radio tab shows; the emulator's stems feed it (each track its species) */
 function rdVis() {
@@ -1534,7 +1537,7 @@ async function rdPoll() {
   const r = await G.gen(null, 0, !rd.genres.length);
   if (!r.ok) { rdSay(t("rdOld")); return; }
   if (r.genres && r.genres.length) { rd.genres = r.genres; $("rdgenre").replaceChildren(...[["-2", "RANDOM"], ["-1", "EXPLORE"], ...r.genres.map((n, i) => [String(i), n])].map(([v, n]) => { const o = document.createElement("option"); o.value = v; o.textContent = n; return o; })); }
-  rd.info = rdInfo(r.info);
+  rd.info = rdInfo(r.info); rd.rs = r.rs ?? null; rd.canResound = !!r.resound;
   if (document.activeElement !== $("rdgenre") && rd.info) $("rdgenre").value = String(rd.info[1]);
   if (rd.info[6] !== rd.piece) { rd.piece = rd.info[6]; rd.since = Date.now(); }
   if (!rd.info[0] && rd.on) G.gen(0, 1);                      // RADIO back on (the device's own keys can turn it off)
@@ -1563,7 +1566,7 @@ async function rdSend(row) {
   const post = (b) => fetch(RD_URL, { method: "POST", headers: { apikey: RD_KEY, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(b) });
   try {
     let r = await post(row);
-    if (r.status === 400 && "parts" in row) { const { parts, ...rest } = row; r = await post(rest); }   // no `parts` column yet: the vote without it
+    if (r.status === 400 && ("parts" in row || "resound" in row)) { const { parts, resound, ...rest } = row; r = await post(rest); }   // no `parts` / `resound` column yet: the vote without them
     return r.ok || r.status === 409;                            // 409: this piece voted already from this browser
   } catch (_) { return false; }
 }
@@ -1579,7 +1582,7 @@ function rdAsk(vote) {
   if (rd.vis) rd.vis.event(["down", "up"][+(vote > 0)]);
   const [, g, seed, mood, energy, form] = rd.info;
   rd.pending = { device: state.fw === "byte" ? "BYTE" : "FM", version: rd.version, genre: rdGenre(g), seed, mood, energy,
-    form: RD_FORMS[form] || "SONG", listened_s: Math.round((Date.now() - rd.since) / 1000), vote, client: rdClient(), parts: 0 };
+    form: RD_FORMS[form] || "SONG", listened_s: Math.round((Date.now() - rd.since) / 1000), vote, client: rdClient(), parts: 0, ...(rd.rs != null ? { resound: rd.rs } : {}) };
   $("rdpartsq").textContent = t(vote > 0 ? "rdLiked" : "rdDisliked");
   $("rdparts").replaceChildren(...RD_PARTS.map((k, i) => { const b = document.createElement("button"); b.type = "button"; b.className = "btn ghost rdchip"; b.textContent = t(k); b.setAttribute("aria-pressed", "false");
     b.onclick = () => { rd.pending.parts ^= 1 << i; b.setAttribute("aria-pressed", String(!!(rd.pending.parts & (1 << i)))); rdArm(); }; return b; }));
@@ -1596,6 +1599,12 @@ async function rdNext() {
   if (rd.vis) rd.vis.event("next");
   if (G && rd.on) { await G.gen(1, 0); await rdPoll(); }
 }
+$("rdsound").onclick = async () => {                            // another sound: the same notes, every track revoiced by its role
+  const G = rdGen(); if (!G || !rd.on) return;
+  if (rd.vis) rd.vis.event("next");
+  await G.gen(10, Math.floor(Math.random() * 10000)); await rdPoll();
+};
+$("rdundo").onclick = async () => { const G = rdGen(); if (!G) return; await G.gen(11, 0); await rdPoll(); };
 $("rdgo").onclick = () => rdStart(); $("rdstop").onclick = () => rdStop();
 $("rdfull").onclick = () => { const st = $("rdstage"); document.fullscreenElement ? document.exitFullscreen() : st.requestFullscreen && st.requestFullscreen().catch(() => {}); };
 $("rdup").onclick = () => rdAsk(1); $("rddown").onclick = () => rdAsk(-1); $("rdskip").onclick = () => { rd.pending = null; rdNext(); }; $("rdnext").onclick = () => rdNext();
