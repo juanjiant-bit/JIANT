@@ -99,6 +99,22 @@ jobs:
       - name: every installer version's emulator
         timeout-minutes: 40
         run: bash web/emu/build_versions.sh build/pages/emu-v build/emu-v-cache
+      # (Studio's converter) web/EMU_CONVERT: V10.8.50 + web_proj_load / web_proj_save (codex/emu-convert), under
+      # emu-convert/: it still reads the projects of before V10.7 that V10.8.51+ refuses (OLD PROJECT: OPEN IN STUDIO)
+      - name: the old-project converter's emulator
+        if: hashFiles('web/EMU_CONVERT') != ''
+        timeout-minutes: 15
+        run: |
+          C=$(tr -d ' \n' < web/EMU_CONVERT)
+          [[ "$C" =~ ^[0-9a-f]{40}$ ]]
+          git cat-file -e "$C^{commit}" || git fetch -q origin "$C"
+          rm -rf /tmp/convsrc; git worktree add -f --detach /tmp/convsrc "$C"
+          (cd /tmp/convsrc && python3 -c "import sys; sys.path.insert(0, 'tools'); import build; build.generate()" && sh web/emu/build.sh)
+          mkdir -p build/pages/emu-convert
+          cp -r /tmp/convsrc/build/emu/. build/pages/emu-convert/
+          cp /tmp/convsrc/web/emu/worklet.js build/pages/emu-convert/worklet.js
+          printf '%s\n' "$C" > build/pages/emu-convert/SOURCE_COMMIT
+          git worktree remove -f /tmp/convsrc || true
       # (JIANT) the installer and the web editor next to the emulator: the package needs JieLi's toolchain (downloaded)
       # and three files of their AC79 SDK (a partial clone: only those blobs). A firmware build failure stops deployment.
       - name: JieLi toolchain and SDK files (cached)
