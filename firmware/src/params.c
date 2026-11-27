@@ -733,8 +733,8 @@ static int16_t life_v[4] __attribute__((section(".bss.tape")));
 /* (V10.8.56, the owner: "visuales random en HOME") HOME > VISUAL, BEING's second page, and the screensaver (ui.c scr_*): a
  * figure from a seed (OCT+ a new one), drawn with the creatures' pieces (ui_lzhome.c vis_fig): KNOB 1 COMPLEX (how many
  * pieces), 2 WOBBLE (the circles' deformation), 3 PALETTE, 4 REACT (how much it follows the sound). Not saved */
-static const char *const N_VPAL[] = {"HEAT", "THEME", "MONO", "COLD"};   /* (COLD: the heat turned over) */
-static const param_desc_t VIS_DESC[4] = {PD("COMPLEX", F_PCT, 0, 100, 0), PD("WOBBLE", F_PCT, 0, 100, 0),
+static const char *const N_VPAL[] = {"MIXED", "THERMAL", "ORG/BLUE", "GRN/RED", "AMBER", "MONO"};   /* (V10.8.57) */
+static const param_desc_t VIS_DESC[4] = {PD("DENSITY", F_PCT, 0, 100, 0), PD("WOBBLE", F_PCT, 0, 100, 0),
                                          PE("PALETTE", N_VPAL, 0), PD("REACT", F_PCT, 0, 100, 0)};
 static int16_t vis_v[4] __attribute__((section(".bss.tape")));
 static uint16_t vis_seed __attribute__((section(".bss.tape")));   /* (0: not set yet: vis_fig sets the knobs' defaults) */

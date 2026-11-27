@@ -3613,8 +3613,8 @@ static int test_soak_cards(void)
                                                          * to another bar in this frame: BAR's card says it on the next) */
             quiet = 0;
         quiet++;
-        if (ui.menu || ui.layer || ui.confirm || name_on() || ui.uboot)
-            continue;                                   /* (the cards are not drawn) */
+        if (ui.menu || ui.layer || ui.confirm || name_on() || ui.uboot || home_vis())
+            continue;                                   /* (the cards are not drawn; V10.8.57: VISUAL is the whole screen) */
         for (c = 0; c < 5u; c++)
             old += ui.roll[c].from[0] && (uint8_t)(ui.frame - ui.roll[c].t0) >= ROLL_FRAMES;
         if (quiet > 45u && !was_hot && !ui.bpm_t && !ui.msg_t && SOAK_RND(8u) == 0u) {
@@ -12259,10 +12259,10 @@ static int test_lz_home(void)
         static uint16_t a[240 * 140];
         uint16_t sd;
         turn(EN_SELECT, 1); frames(4);
-        ok &= home_vis() && home_level() == 1u && home_set() && lz_crumb_is("HOME \xB7 BEING \xB7 VISUAL") && lz_count_is("4/11") &&
-              vis_seed != 0u && vis_v[0] == 50;
+        ok &= home_vis() && home_level() == 1u && home_set() && vis_seed != 0u && vis_v[0] == 50;   /* (V10.8.57: the whole screen,
+                                                                     * no crumb) */
         turn(EN_K1, 4); frame();
-        ok &= vis_v[0] > 50 && !strncmp(ui.col[0], "COMPLEX|", 8);
+        ok &= vis_v[0] > 50 && !strcmp(VIS_DESC[0].label, "DENSITY");
         sd = vis_seed;
         fm1_ms += 777u;
         press(B_OCTUP); frame();
@@ -12272,9 +12272,11 @@ static int test_lz_home(void)
         memcpy(a, host_screen + LZ_GRAPH_Y * 240, sizeof a);
         frames(16);
         ok &= memcmp(a, host_screen + LZ_GRAPH_Y * 240, sizeof a) != 0;   /* (it moves) */
+        turn(EN_K2, 2); frame();
+        ok &= ui.hot_t && vis_v[1] != 40;                  /* (V10.8.57: a knob's value a line at the foot, the screen the figure's) */
         turn(EN_SELECT, -1); frame();
         ok &= home_level() == 1u && !home_set() && !home_vis();
-        bad += check("V10.8.56 HOME > VISUAL: BEING's second page, KNOB 1 COMPLEX, OCT+ a new figure (VISUAL #n), it moves", ok);
+        bad += check("V10.8.56 HOME > VISUAL: BEING's second page, KNOB 1 DENSITY, OCT+ a new figure (VISUAL #n), it moves; V10.8.57 the whole screen", ok);
         ok = 1;
     }
     fm1_ms += 1000u;

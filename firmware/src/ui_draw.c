@@ -2183,11 +2183,25 @@ static void ui_draw(void)
     }
     if (!scr_frame())                                   /* MENU > SCREEN OFF: dark (or waking), nothing drawn */
         return;
-    if (scrn.st == SCR_VIS) {                           /* (V10.8.56) MENU > SAVER: HOME > VISUAL's figure, the whole screen */
-        uint32_t s;
+    if (scrn.st == SCR_VIS || home_vis()) {             /* (V10.8.56) MENU > SAVER: HOME > VISUAL's figure, the whole screen;
+                                                         * (V10.8.57) HOME > VISUAL too: a knob turned or OCT+'s banner a
+                                                         * line at the foot a moment */
+        uint32_t s, v = scrn.st == SCR_VIS;
         for (s = 0; s < 2u; s++) {
             cv_begin(240, 120, T_BG);
-            vis_fig(120 * 16, (120 - (int32_t)s * 120) * 16, 104 * 16);
+            if (bt_hw_seg())
+                vis_fig(120 * 16, (120 - (int32_t)s * 120) * 16, 104 * 16, vis_seed + (v ? fm1_ms / 30000u : 0u));   /* (the saver: another every 30 s) */
+            if (s && !v && (ui.hot_t || ui.msg_t)) {   /* (the knob: its name and value) */
+                char b[24];
+                const char *u;
+                int16_t *vp;
+                const param_desc_t *d = home_param(ui.hot_col & 3u, &vp);
+                str_cpy(b, d->label, 12);
+                b[str_len(b) + 1u] = 0;
+                b[str_len(b)] = ' ';
+                param_format(d, *vp, b + str_len(b), &u);
+                cv_text(6, 104, &AF_X, ui.msg_t ? ui.msg : b, 0xFFFF);
+            }
             cv_blit(0, s * 120u);
         }
         return;
