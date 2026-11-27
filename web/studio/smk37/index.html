@@ -7,7 +7,7 @@ a{color:#ffc084}small{color:#ffc084}section{border-top:1px solid #686168;margin-
 button{font:inherit;font-weight:650;padding:10px 18px;margin:8px 8px 8px 0;border:0;border-radius:5px;background:#ffc084;color:#171012}
 button:disabled{background:#38343a;color:#aaa}label{display:block;margin:15px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.5 monospace}
 </style><body><small>JIANT FM · Prueba de hardware</small><h1>Instalador SMK-37</h1>
-<p>JIANT FM V10.8.48 para M-VAVE SMK-37 Pro y Elite: desde el firmware de fábrica v016 o actualizando un JIANT ya instalado. Las 37 teclas, pads, perillas, faders, ruedas y pedal con la distribución nueva (<a href="https://github.com/juanjiant-bit/JIANT/blob/ccr-5aea3961-u3bo7p-smk37/docs/SMK37.md" target="_blank" rel="noopener">controles</a>). Sin Bluetooth en el SMK. Conectá únicamente el teclado a probar por USB de datos y cerrá el editor, el DAW y el actualizador de M-VAVE.</p>
+<p>JIANT FM V10.8.48 para M-VAVE SMK-37 Pro y Elite: desde el firmware de fábrica v016 o actualizando un JIANT ya instalado. Distribución estilo Rhythmer: las 37 teclas con escalas y acordes, pads PLAY/STEPS, faders con bancos LEVEL/PAN/REVERB/DELAY, ruedas, pedal y MIDI OUT por el jack (<a href="https://github.com/juanjiant-bit/JIANT/blob/0d353032fea9cf8f4fa805221d2401915e71e5d7/docs/SMK37.md" target="_blank" rel="noopener">controles</a>). Sin Bluetooth en el SMK. Conectá únicamente el teclado a probar por USB de datos y cerrá el editor, el DAW y el actualizador de M-VAVE.</p>
 <p>Esta primera prueba reemplaza el firmware. Tené a mano el firmware oficial de tu modelo y una copia de tus datos. El arranque y la recuperación en un teclado real siguen pendientes de validación. Los proyectos y ajustes de esta versión de JIANT se pierden al apagar.</p>
 <section><button id="detect">Detectar teclado</button><output id="device" aria-live="polite"></output>
 <label><input type="checkbox" id="accept" disabled> Quiero escribir JIANT experimental en el teclado detectado.</label>
@@ -20,13 +20,13 @@ button:disabled{background:#38343a;color:#aaa}label{display:block;margin:15px 0}
 <p id="sinfo" role="status"></p>
 <label><input type="checkbox" id="saccept" disabled> Quiero instalar este firmware oficial en el teclado conectado.</label>
 <button id="sinstall" disabled>Instalar firmware oficial</button></section>
-<section><details><summary>Registro de la sesión</summary><pre id="log"></pre></details></section><small><a href="https://github.com/juanjiant-bit/JIANT/tree/906e3f0ba3030e3adc34c31e159a5d5e9b69a2fe">Código y licencias del firmware</a></small>
+<section><details><summary>Registro de la sesión</summary><pre id="log"></pre></details></section><small><a href="https://github.com/juanjiant-bit/JIANT/tree/0d353032fea9cf8f4fa805221d2401915e71e5d7">Código y licencias del firmware</a></small>
 <script type="module">
 import {Updater} from './fm1ota.js';
 import {productOf, logicalImage, sha256hex} from './fm1pkg.js';
 const images = {
-  "SMK-37 Pro": {file:"felucca-smk37-pro.fwsc", sha:"a6a221d6480b3bc223c3278fd40584ef658a1d314b5b7390c8dace025f3fba7b"},
-  "SMK-37 Elite": {file:"felucca-smk37-elite.fwsc", sha:"1c6ecf3cb130dba7937462b78355189d02d1fa0c6b081d1529f7b2634d0df6b9"}
+  "SMK-37 Pro": {file:"felucca-smk37-pro.fwsc", sha:"0a161a65cfc3dbb30d576c7f804eccf53bc470a995a09692d74ceddd03ab73d5"},
+  "SMK-37 Elite": {file:"felucca-smk37-elite.fwsc", sha:"d0f7d50e5cbe1c2325270f6fc570026704122612f19cdc8716f1839ea6d12ef5"}
 };
 const get = id => document.getElementById(id);
 const detect = get('detect'), accept = get('accept'), install = get('install');
