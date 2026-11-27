@@ -269,8 +269,12 @@ static __attribute__((noinline)) void kx_block(void)
         if (kb_on[k] && vk[k].at > vs.atl[kb_trk[k] % NTRK])
             vs.atl[kb_trk[k] % NTRK] = vk[k].at;
     g = kx_g[0] | kx_g[1];                          /* (V10.7.6) nothing held or recorded, every ramp and pressure at 0 */
-    for (i = 0; i < NTRK; i++)                      /* (as the pass below leaves them then): not run, ~10 % of the tick */
-        g |= vs.atl[i] | ((uint32_t)trk[i].p[P_XPR] ^ 127u) | kx_amt[i][0] | kx_amt[i][1] | vs.at8[i];
+    for (i = 0; i < NTRK; i++) {                    /* (as the pass below leaves them then): not run, ~10 % of the tick */
+        uint32_t xr = 127u - (uint32_t)trk[i].p[P_XPR];   /* (V10.8.60, JIANT BYTE's devcpu2) a recording the pass below
+                                                         * reads: under 32, not a kit's (a GEN song's DRUM part at 110:
+                                                         * the pass, for nothing) */
+        g |= vs.atl[i] | kx_amt[i][0] | kx_amt[i][1] | vs.at8[i] | (xr && xr < 32u && !drum_track(&trk[i]) ? xr : 0u);
+    }
     if (!g)
         return;
     for (i = 0; i < NTRK; i++) {

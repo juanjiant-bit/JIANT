@@ -20,8 +20,10 @@ MEMORY
     XIP    (rx)  : ORIGIN = 0x02000120, LENGTH = 0x8EA90   /* = tools/fm1pkg_make.py APP_SLOT (0.9.13: the region ends at 0x92FFE) */
     LOWBUF (rw)  : ORIGIN = 0x01C00000, LENGTH = 0x8000
     RAM    (rwx) : ORIGIN = 0x01C08000, LENGTH = 96K
-    POOL   (rw)  : ORIGIN = 0x01C20000, LENGTH = 0x4D800
-    RAMTEXT (rwx): ORIGIN = 0x01C6D800, LENGTH = 0x8800   /* (0.6.97, 0.7.0: up 4 KiB each, the image grew: a call from here must
+    POOL   (rw)  : ORIGIN = 0x01C20000, LENGTH = 0x4BA00
+    RAMTEXT (rwx): ORIGIN = 0x01C6BA00, LENGTH = 0xA600   /* (V10.8.60: 7.5 KiB lower, the USB resampler's table halved,
+                                                           * usb.c rs_tab, JIANT BYTE's devcpu2: more of the sound's
+                                                           * per-block code in RAM, tools/build.py HOT_LO) (0.6.97, 0.7.0: up 4 KiB each, the image grew: a call from here must
                                                            * reach its end; the user stack 4 KiB shorter each time, 15.75 KiB;
                                                            * 0.9.9-stab, as 0.9.12: 1 KiB lower, from the pool: the 320 MHz switch;
                                                            * 0.9.9-beta4: 9 KiB lower, from the pool (8 KiB of its main-loop
@@ -63,6 +65,8 @@ SECTIONS
      * same RAM code window (_rt_start .. _hot_end) */
     .hot_text : {
         _hot_start = .;
+        KEEP(*(.hot_text.lo.*))   /* (V10.8.60, tools/build.py HOT_LO, JIANT BYTE's devcpu3: the lowest, what was before
+                                   * stays where it was) */
         KEEP(*(.hot_text*))   /* (tools/build.py HOT_FNS: their sections renamed in the optimised IR) */
         . = ALIGN(4);
         _hot_end = .;

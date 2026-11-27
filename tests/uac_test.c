@@ -775,6 +775,8 @@ static double rnd_x(int64_t i, void *ctx)                 /* input frame i: nois
 
 /* (0.8.9) the 0.7 .. 0.8.8 resampler (uac_tap48's loop: 80 phases, 80..159 read backwards; the table's 80 phases
  * checked exactly above), the one the 160-phase RAM table and the four-tap loop must equal bit for bit */
+/* (V10.8.60) the table holds phases 0 .. 79; 159 - p is p backwards */
+#define RS_TAB(ph, j) ((ph) < UAC_FIR_L / 2u ? rs_tab[ph][j] : rs_tab[UAC_FIR_L - 1u - (ph)][UAC_FIR_N - 1u - (j)])
 static int16_t old_l[64], old_r[64];
 static uint32_t old_w, old_ph;
 static uint32_t old_block(const int32_t *in, uint32_t n, int32_t *l, int32_t *r)
@@ -789,7 +791,7 @@ static uint32_t old_block(const int32_t *in, uint32_t n, int32_t *l, int32_t *r)
         do {
             int64_t al = 0, ar = 0;
             for (j = 0; j < UAC_FIR_N; j++) {
-                int32_t c = ph < UAC_FIR_L / 2u ? rs_tab[ph][j] : rs_tab[UAC_FIR_L - 1u - ph][UAC_FIR_N - 1u - j];
+                int32_t c = RS_TAB(ph, j);
                 al += (int64_t)c * old_l[s + j];
                 ar += (int64_t)c * old_r[s + j];
             }
@@ -823,11 +825,11 @@ static void test_resampler(void)
             int64_t t = 0;
             for (k = 0; k < UAC_FIR_N; k++) {
                 double want = H[i + RL * (RN - 1u - k)] * (1 << 30);
-                t += rs_tab[i][k];
-                if (fabs(rs_tab[i][k] - want) > 2e-5 * (1 << 30))
+                t += RS_TAB(i, k);
+                if (fabs(RS_TAB(i, k) - want) > 2e-5 * (1 << 30))
                     tab_ok = 0;
                 if (i < UAC_FIR_L / 2u)
-                    chk += (uint64_t)(i * UAC_FIR_N + k + 1u) * (uint64_t)(int64_t)rs_tab[i][k];
+                    chk += (uint64_t)(i * UAC_FIR_N + k + 1u) * (uint64_t)(int64_t)RS_TAB(i, k);
             }
             sum_ok &= t == (int64_t)1 << 30;
         }

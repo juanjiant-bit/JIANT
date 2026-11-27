@@ -177,6 +177,8 @@ static struct {
 _Static_assert(RS_H >= UAC_FIR_N && (RS_H & (RS_H - 1u)) == 0 && UAC_FIR_N % 4u == 0u, "the history holds a window");
 static struct {
     int16_t l[2u * RS_H], r[2u * RS_H];   /* r right after l (the FIR loop reads both from one pointer) */
+    int16_t bl[2u * RS_H], br[2u * RS_H];   /* (V10.8.60) the same history newest first (br right after bl): phases
+                                             * 80 .. 159 read it forward with phase 159 - p's taps (rs_tab holds 80) */
     uint32_t w;                  /* input frames written */
     uint32_t ph;                 /* the next output's phase, 0..159 (its newest input frame: the next written) */
 #if FELUCCA_UAC_TONE
@@ -186,7 +188,10 @@ static struct {
 /* (0.8.9) all 160 phases in RAM (the pool, built from the 80 in the flash the first time the ring primes at 48 kHz):
  * one forward loop, no flash reads (the table no longer pushes the render's code out of the cache), and core 1 can
  * run it outside the audio ISR, with the flash off */
-static int32_t rs_tab[UAC_FIR_L][UAC_FIR_N] __attribute__((section(".pool")));   /* (15 KiB) */
+static int32_t rs_tab[UAC_FIR_L / 2u][UAC_FIR_N] __attribute__((section(".pool")));   /* (V10.8.60, JIANT BYTE's
+                                                         * devcpu2: 7.5 KiB, the 80 phases: phase 159 - p is phase p
+                                                         * backwards, uac_rs_run reads it so; the other 7.5 KiB the RAM
+                                                         * code's) */
 static uint32_t rs_in[HALF_FRAMES] __attribute__((section(".pool")));            /* a half (CORES 2) or a block, 16-bit L | R */
 static struct {
     uint8_t c1;                  /* this stream resamples on core 1, a half at a time (chosen when it primes) */
@@ -1245,15 +1250,14 @@ static void uac_rs_init(void)                           /* the resampler from si
 {
     uint32_t i, p;
     for (i = 0; i < 2u * RS_H; i++)
-        rs.l[i] = rs.r[i] = 0;
+        rs.l[i] = rs.r[i] = rs.bl[i] = rs.br[i] = 0;
     rs.w = rs.ph = 0;
     if (rs_tab[0][UAC_FIR_N / 2u - 1u])                 /* (the pool is zeroed at boot) */
         return;
     for (i = 0; i < UAC_FIR_N; i++) {                   /* each tap along the phases: its differences summed back */
         int32_t x = UAC_FIR0[0][i], a = UAC_FIR0[1][i], b = UAC_FIR0[2][i], c = UAC_FIR3S[i];
         for (p = 0; p < UAC_FIR_L / 2u; p++) {
-            rs_tab[p][i] = x;
-            rs_tab[UAC_FIR_L - 1u - p][UAC_FIR_N - 1u - i] = x;   /* (phase 159 - p: phase p backwards) */
+            rs_tab[p][i] = x;                           /* (phase 159 - p: phase p backwards, read so) */
             x += a;
             a += b;
             if (p < UAC_FIR_L / 2u - 3u) {
@@ -1339,14 +1343,18 @@ static UAC_C1_TEXT uint32_t uac_rs_run(const uint32_t *in, uint32_t n, uint32_t 
     if (ph >= UAC_FIR_L)                                /* (core 1 may misread a word: never past the table) */
         ph = 0;
     for (i = 0; i < n; i++) {
-        uint32_t f = in[i], s = h & (RS_H - 1u);
+        uint32_t f = in[i], s = h & (RS_H - 1u), qn = RS_H - 1u - s;
         rs.l[s] = rs.l[s + RS_H] = (int16_t)f;
         rs.r[s] = rs.r[s + RS_H] = (int16_t)(f >> 16);
+        rs.bl[qn] = rs.bl[qn + RS_H] = (int16_t)f;      /* (V10.8.60: newest first from qn) */
+        rs.br[qn] = rs.br[qn + RS_H] = (int16_t)(f >> 16);
         h++;
         s = (h - UAC_FIR_N) & (RS_H - 1u);              /* the window: oldest .. this frame */
         do {
-            const int16_t *x = &rs.l[s];                /* R: x[2 * RS_H] */
-            const int32_t *c = rs_tab[ph];
+            int b = ph >= UAC_FIR_L / 2u;               /* (V10.8.60) 80 .. 159: 159 - ph's taps on the history newest
+                                                         * first (the same products, the same sums) */
+            const int16_t *x = b ? &rs.bl[qn] : &rs.l[s];   /* R: x[2 * RS_H] */
+            const int32_t *c = rs_tab[b ? UAC_FIR_L - 1u - ph : ph];
             int64_t al = 0, ar = 0;
             int32_t yl, yr;
             for (j = UAC_FIR_N / 4u; j; j--, x += 4, c += 4) {

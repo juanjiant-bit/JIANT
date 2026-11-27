@@ -39,7 +39,7 @@ import size_fns  # noqa: E402
 APP_XIP = 0x02000120                # app.bin offset 0 in the XIP map; the SPL jumps here
 APP_SLOT = fm1pkg_make.APP_SLOT
 LOADER_LOAD = 0x01C0A800
-POOL_END = 0x01C6D800            # (JIANT 0.6.78) app.ld: POOL's end, RAMTEXT's start (0.6.97, 0.7.0: up 4 KiB each; 0.9.9-beta4: 9 KiB lower;
+POOL_END = 0x01C6BA00            # (V10.8.60: 7.5 KiB lower, usb.c rs_tab halved) (JIANT 0.6.78) app.ld: POOL's end, RAMTEXT's start (0.6.97, 0.7.0: up 4 KiB each; 0.9.9-beta4: 9 KiB lower;
                                  # 0.9.9-stab: 1 KiB lower, the 320 MHz switch's RAM code)
 RAMTEXT_END = 0x01C76000         # .. RAMTEXT's end (the user stack's guard band)
 LOADER_NAME = b"usb_hid_ota.bin"    # the file name the SPL looks for
@@ -198,6 +198,21 @@ HOT_FNS = ("mix_block", "mix_part_m0", "fx_run0", "perf_begin", "perf_pre", "per
                            # in the flash for its room: both are called through a pointer, a key or a beat at a time)   # (V10.7.65: the punch-in keys, packed)
 
 
+# (V10.8.60, technique from JIANT BYTE byte-cpu-light) more of the sound's per-block code in RAM, in the room the USB
+# resampler's halved table gave (usb.c rs_tab, app.ld RAMTEXT 7.5 KiB lower): the FM-1's time a block goes by the 32-byte
+# lines of the flash the sound reads (~1.25 us each, the I-cache shared by both cores and the UI), not its instructions
+# (tests/cpu_lines_test.py, the lines model, tools/audio_map.txt). Placed first in .hot_text (app.ld .hot_text.lo.*),
+# the lowest of the RAM code, so what was there stays where it was
+HOT_LO = (
+    # a voice's block, every engine's (its envelopes, glide, pitch, the matrix's call, the render's), both cores
+    "voice_block",
+    # the matrix's block and a voice's routes, every part's; a part's FILTER (tf_run); the parts' split (mc_split) and
+    # core 1's join; the DRUM parts' sides (DRUM-X's every block); the macros' master; the buses' tone; the leveler
+    "mod_begin", "mod_voice", "tf_run", "mc_split", "mc_join", "drum_side_begin", "macro_master", "tone_set",
+    "lev_block")
+HOT_FNS = HOT_FNS + HOT_LO
+
+
 def share_strings(ir, keep=()):
     """(V10.7.21) a string literal or a compound literal (a preset's MODS list ..) whose bytes sit whole inside another
     constant byte array (most often its tail: "BASS" in "PEDAL BASS", "OFF" in a packed name table) or equal one becomes
@@ -301,7 +316,7 @@ def hot_sections(ir):
     def put(m):
         nonlocal found
         found += 1
-        return f'{m.group(1)} section ".hot_text.{m.group(2)}" {{'
+        return f'{m.group(1)} section ".hot_text.{"lo." if m.group(2) in HOT_LO else ""}{m.group(2)}" {{'
     ir = re.sub(r"^(define [^\n]*?@(" + "|".join(HOT_FNS) + r")\([^\n]*?)\s*\{$", put, ir, flags=re.M)
     return ir, found
 

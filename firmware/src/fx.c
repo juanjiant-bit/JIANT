@@ -2846,7 +2846,12 @@ static void fx_run(uint32_t n);                          /* (below) */
 #else
 #define CPU_LINES_HOST 1
 #endif
-
+#if FELUCCA_HOTRAM || CPU_LINES_HOST
+static void mix_part_m0(track_t *t, uint32_t n);         /* (below; V10.8.60, JIANT BYTE's devcpu: core 1's parts too) */
+#define mix_part_c1 mix_part_m0
+#else
+#define mix_part_c1 mix_part_m
+#endif
 static __attribute__((noinline)) void mc_job(uint32_t a)  /* core 1: the buses (MC_FX), the parts of mask a & 0x3F, a >> 8
                                                          * samples */
 {
@@ -2860,7 +2865,9 @@ static __attribute__((noinline)) void mc_job(uint32_t a)  /* core 1: the buses (
     for (i = 0; i < NPART; i++)
         if ((a >> i) & 1u) {
             mc_cur = (int8_t)i;
-            mix_part_m(&trk[i], n);
+            mix_part_c1(&trk[i], n);                    /* (V10.8.60, JIANT BYTE's devcpu) the RAM copy, as the buses':
+                                                         * one copy for both cores, out of the I-cache (was a second,
+                                                         * inlined in mc_job, in the flash) */
         }
     mc_cur = -1;
 }
