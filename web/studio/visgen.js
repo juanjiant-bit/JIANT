@@ -7,6 +7,7 @@
  * the state any source fills. */
 // @ts-nocheck
 const TAU=Math.PI*2;
+const CLOSED=new Set(['ORBIT','RADAR','LIFE','KEY']);
 const NN=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 function rng(seed){let a=seed>>>0||1;return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 function hash(...v){let h=2166136261;for(const x of v){h^=x>>>0;h=Math.imul(h,16777619);h^=h>>>13}return h>>>0}
