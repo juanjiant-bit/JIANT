@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // The beta emulator's version picker (the owner: "the beta emulator should play every version the public installer
-// offers, to compare parameters and adjust or go back"). Loaded by preview/emu/index.html (injected by emulator.yml
+// offers, to compare parameters and adjust or go back"). Loaded by preview/emu/index.html and emu/index.html (injected by emulator.yml
 // and split-beta.yml) and by every emu-v/<sha7>/index.html (emulator.yml). emu-v/index.json lists each version the
 // public installer offers (web/STABLE, then web/CLASSIC), each built from its own commit with its own page, worklet
 // and flash key (felucca-emu-flash-<sha7>). On the beta page another version opens in a frame over it and the beta's
@@ -42,7 +42,9 @@
     try { list = await (await fetch(new URL("index.json", base), { cache: "no-cache" })).json(); } catch (_) {}
     const here = inVersion ? location.pathname.match(/\/emu-v\/([0-9a-f]{7})/)[1] : "beta";
     const add = (value, text, ok = true) => { const o = document.createElement("option"); o.value = value; o.textContent = text; o.disabled = !ok; sel.appendChild(o); };
-    add("beta", "Beta " + pageVer.replace(/\s*\(preview\)\s*/, "").trim() + (inVersion ? "" : " (this page)"));
+    // (the owner: the public emulator too) on /emu/ the page's own entry is the public pin, on preview/emu/ the beta
+    const isBeta = inVersion || /\/preview\//.test(location.pathname);
+    add("beta", (isBeta ? "Beta " : "Public ") + pageVer.replace(/\s*\(preview\)\s*/, "").trim() + (inVersion ? "" : " (this page)"));
     for (const v of list) add(v.sha7, v.version + (v.public ? " (public)" : "") + (v.ok ? "" : " (no emulator)"), v.ok);
     sel.value = here;
     let frame = null;

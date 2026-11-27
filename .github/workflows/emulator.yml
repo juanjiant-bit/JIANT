@@ -239,6 +239,10 @@ jobs:
           for f in index.html worklet.js fm1backup.js transfer.js transfer-ui.js felucca.wasm devices.html felucca_hp.wasm fonts; do
             if [ -e "build/emu/$f" ]; then mv "build/emu/$f" build/pages/emu/; fi
           done
+          # (the owner: "the public emulator with the version picker too") the public pin's page over emu-v's versions
+          if [ -s build/pages/emu-v/index.json ] && [ -f build/pages/emu/index.html ]; then
+            python3 -c "from pathlib import Path; p=Path('build/pages/emu/index.html'); h=p.read_text(); p.write_text(h if 'emu-v/picker.js' in h else h.replace('</body>','<script src=\"../emu-v/picker.js\"></script>\n</body>',1))"
+          fi
           cp -r build/emu/. build/pages/
           cp web/landing/index.html build/pages/index.html
           cp web/landing/frecuencia.html build/pages/frecuencia.html
