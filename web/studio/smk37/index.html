@@ -13,7 +13,14 @@ button:disabled{background:#38343a;color:#aaa}label{display:block;margin:15px 0}
 <label><input type="checkbox" id="accept" disabled> Quiero escribir JIANT experimental en el teclado detectado.</label>
 <button id="install" disabled>Instalar JIANT</button><p id="status" role="status">La detección solo consulta la identidad MIDI.</p>
 <p id="stock" hidden><a href="https://www.m-vave.com/download" target="_blank" rel="noopener">Descargas oficiales de M-VAVE</a> · Elegí M-UPGRADE y el firmware SMK-37 PRO V016.</p>
-<details><summary>Registro de la sesión</summary><pre id="log"></pre></details></section><small><a href="https://github.com/juanjiant-bit/JIANT/tree/906e3f0ba3030e3adc34c31e159a5d5e9b69a2fe">Código y licencias del firmware</a></small>
+</section><section id="stocksec"><h2 style="margin:.2em 0">Volver al firmware oficial de M-VAVE</h2>
+<p>Para volver al firmware de fábrica, o pasar de V015 a V016: bajá el archivo oficial de <b>tu</b> modelo desde M-VAVE, soltalo acá e instalalo. JIANT no guarda nada en la flash del SMK (solo en RAM), así que la calibración y el mapa de teclas de fábrica siguen intactos.</p>
+<p>Descargas oficiales (servidor de M-VAVE): <a id="dlpro" download>SMK-37 Pro V016</a> · <a id="dlelite" download>SMK-37 Elite V016</a> · <a href="https://www.m-vave.com/download" target="_blank" rel="noopener">página de descargas de M-VAVE</a></p>
+<label id="sdrop" style="display:block;border:1px dashed #686168;border-radius:6px;padding:16px;cursor:pointer"><input type="file" id="sfile" accept=".fwsc" hidden><span id="sdroptext">Soltá acá el .fwsc oficial, o tocá para elegirlo</span></label>
+<p id="sinfo" role="status"></p>
+<label><input type="checkbox" id="saccept" disabled> Quiero instalar este firmware oficial en el teclado conectado.</label>
+<button id="sinstall" disabled>Instalar firmware oficial</button></section>
+<section><details><summary>Registro de la sesión</summary><pre id="log"></pre></details></section><small><a href="https://github.com/juanjiant-bit/JIANT/tree/906e3f0ba3030e3adc34c31e159a5d5e9b69a2fe">Código y licencias del firmware</a></small>
 <script type="module">
 import {Updater} from './fm1ota.js';
 import {productOf, logicalImage, sha256hex} from './fm1pkg.js';
@@ -48,7 +55,7 @@ async function run(task) {
   if (busy) return;
   busy = true; detect.disabled = accept.disabled = install.disabled = true;
   try { await task(); } catch (e) { selection = null; status('Se detuvo el proceso. ' + e.message); }
-  finally { busy = false; detect.disabled = false; accept.disabled = !selection; install.disabled = !selection || !accept.checked; }
+  finally { busy = false; detect.disabled = false; accept.disabled = !selection; install.disabled = !selection || !accept.checked; if (typeof slock === 'function') slock(); }
 }
 function updater(access) { return new Updater(access, log, {refresh:midi}); }
 detect.onclick = () => run(async () => {
@@ -90,5 +97,50 @@ install.onclick = () => run(async () => {
   } else await up.install(image, product, step);   // (the loader says _900 whatever the package's _9xx: found by model)
   status('Instalación verificada por USB. Probá pantalla, audio, teclas y pads.');
 });
+/* back to M-VAVE's firmware: a package the user downloaded from M-VAVE (never shipped here), read by smkstock.js
+   (the 36-block layout, its CRCs, an SMK-37 Pro / Elite identity with a stock version), written as any install */
+import {identifyStockPackage, STOCK_URLS} from './smkstock.js';
+get('dlpro').href = STOCK_URLS['SMK-37 Pro']; get('dlelite').href = STOCK_URLS['SMK-37 Elite'];
+let stockPkg = null;
+const sinfo = s => { get('sinfo').textContent = s; log(s); };
+const slock = () => { get('saccept').disabled = busy || !stockPkg; get('sinstall').disabled = busy || !stockPkg || !get('saccept').checked; };
+async function stockFile(file) {
+  if (!file || busy) return;
+  stockPkg = null; get('saccept').checked = false; get('sdroptext').textContent = file.name;
+  try {
+    stockPkg = await identifyStockPackage(new Uint8Array(await file.arrayBuffer()));
+    sinfo('Firmware oficial de M-VAVE: ' + stockPkg.name + ' V' + stockPkg.version + (stockPkg.known ? ' (versión conocida).' : ' (estructura verificada).') +
+          ' Conectá el teclado de ese modelo e instalalo.');
+  } catch (e) {
+    sinfo({ours:'Es un firmware de la comunidad, no el oficial: para JIANT usá el instalador de arriba.',
+           damaged:'El archivo está dañado: bajalo de nuevo de M-VAVE y soltalo sin cambios.'}[e.code] ||
+          'No es un firmware oficial de M-VAVE para el SMK-37 Pro o Elite.');
+  }
+  slock();
+}
+get('sfile').onchange = e => stockFile(e.target.files[0]);
+const sdrop = get('sdrop');
+sdrop.addEventListener('dragover', e => e.preventDefault());
+sdrop.addEventListener('drop', e => { e.preventDefault(); stockFile(e.dataTransfer.files[0]); });
+get('saccept').onchange = slock;
+get('sinstall').onclick = () => run(async () => {
+  const k = stockPkg;
+  if (!k || !get('saccept').checked) return;
+  get('saccept').checked = false;
+  if (!navigator.requestMIDIAccess) throw Error('Abrí la página en Chrome o Edge de escritorio con Web MIDI.');
+  const up = updater(await midi());
+  const step = (s, value) => {
+    if (s === 'write' || s === 'verify') get('status').textContent = (s === 'write' ? 'Escribiendo' : 'Comprobando') + ' · petición ' + value;
+    else status(({start:'Iniciando actualización', loader:'Esperando el cargador de ' + k.name, reboot:'Esperando el reinicio',
+                  done:'Identidad confirmada tras el reinicio'})[s] + (value ? ' · ' + value : ''));
+  };
+  const ota = await up.find(id => /^ota-/i.test(id.model), {tries:1});
+  if (ota) {                                        // already in update mode: the official package finishes it
+    ota.link.close();
+    if (!await up.resume(k.image, step, k.product)) throw Error('El cargador no completó la transferencia. Reconectá el USB y volvé a instalar.');
+  } else await up.install(k.image, k.product, step);   // (the device's model must be the package's: checked there)
+  status('Listo: el teclado tiene el firmware oficial ' + k.product + '. M-UPGRADE vuelve a funcionar si lo necesitás.');
+});
+slock();
 window.addEventListener('beforeunload', e => { if (busy) { e.preventDefault(); e.returnValue = ''; } });
 </script></body></html>
