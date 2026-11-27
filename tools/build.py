@@ -820,6 +820,54 @@ SOFT_DOUBLE = ("__adddf3", "__subdf3", "__muldf3", "__divdf3", "__floatsidf", "_
                "__fixunsdfsi", "__extendsfdf2", "__truncdfsf2", "__eqdf2", "__nedf2", "__gtdf2", "__gedf2", "__ltdf2", "__ledf2")
 
 
+# (V10.8.60, technique from JIANT BYTE byte-cpu-light) the device's functions as the lines model needs them (tests/cpu_lines_test.py, a host check): each one's
+# size, section (RAM code or the flash), whether its address is taken (*) or it calls through a register (!), and what it
+# calls directly (call / goto, annotated or not). Written by every build, the same from the same source
+AUDIO_MAP = SRC / "tools" / "audio_map.txt"
+
+
+def audio_map(syms, dis):
+    fa, size, sec = {}, {}, {}
+    for ln in syms.splitlines():
+        p = ln.split()
+        if len(p) >= 5 and " F " in ln and int(p[-2], 16):
+            fa[int(p[0], 16)] = p[-1]
+            size[p[-1]] = int(p[-2], 16)
+            sec[p[-1]] = p[-3].lstrip(".")
+    calls, taken, ind, cur = {}, set(), set(), None
+    for ln in dis.splitlines():
+        m = re.match(r"^([A-Za-z_][\w.]*):$", ln.rstrip())
+        if m:
+            cur = m.group(1)
+            continue
+        if cur is None:
+            continue
+        if re.search(r"\bcall\s+r\d", ln):
+            ind.add(cur)
+        for c in re.finditer(r"\bcall\b\s+-?\d+\s*<([\w.]+)\s*:", ln):
+            calls.setdefault(cur, set()).add(c.group(1).split("+")[0])
+        for c in re.finditer(r"=\s*-?\d+\s*<([\w.]+)\s*:\s*[0-9a-f]+\s*>", ln):
+            if "+" not in c.group(1):
+                taken.add(c.group(1))
+        m = re.match(r"^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2} )+)\s+(?:call|goto)\s+(-?\d+)\s*$", ln)
+        if m:                                       # (not annotated: the target, from the instruction's end)
+            to = int(m.group(1), 16) + len(m.group(2).split()) + int(m.group(3))
+            if fa.get(to, cur) != cur:
+                calls.setdefault(cur, set()).add(fa[to])
+    img = (OUT / "felucca.bin").read_bytes() if (OUT / "felucca.bin").exists() else b""
+    for o in range(0, len(img) - 3, 4):             # (a function's address among the image's words: the engines' tables ..)
+        w = int.from_bytes(img[o:o + 4], "little")
+        if w in fa:
+            taken.add(fa[w])
+    out = ["# tools/build.py: the device's functions for tests/cpu_lines_test.py: name size section [*: address taken]"
+           " [!: calls through a register] callees"]
+    for n in sorted(size):
+        fl = ("*" if n in taken else "") + ("!" if n in ind else "")
+        cs = sorted(c for c in calls.get(n, ()) if c in size)
+        out.append(" ".join([n, str(size[n]), sec[n]] + ([fl] if fl else []) + cs))
+    AUDIO_MAP.write_text("\n".join(out) + "\n")
+
+
 def check(img, syms, dis, rt):
     errors, notes = [], []
     mul64 = mul64_near_loads(dis)       # (0.9.9-stab) the CPU fault of felucca-bsp docs/CPU.md: a note, the code may be fine
@@ -888,10 +936,12 @@ def check(img, syms, dis, rt):
             continue
         if sect in (".ram_text", ".c1_text", ".hot_text"):
             mm = re.search(r"\bcall\b[^<]*<([\w.]+)\s*:\s*([0-9a-f]+)\s*>", ln)
-            if mm and int(mm.group(2), 16) >= APP_XIP:
-                targets.append((int(mm.group(2), 16), mm.group(1)))
-    far = max(targets) if targets else (APP_XIP, "-")
-    reach = sym("_rt_start") + 0x400000 - far[0]
+            at = LINE.match(ln)
+            if mm and at and int(mm.group(2), 16) >= APP_XIP:   # (V10.8.60, JIANT BYTE's devcpu3: each call's reach from its
+                # own address, the RAM code no longer all within reach of the farthest callee from its bottom)
+                targets.append((int(mm.group(2), 16) - int(at.group(1), 16), mm.group(1)))
+    far = max(targets) if targets else (APP_XIP - sym("_rt_start"), "-")
+    reach = 0x400000 - far[0]
     ramcode = sym("_hot_end") - sym("_rt_start")
     notes.append(f"RAM code {ramcode} B of {RAMTEXT_END - sym('_rt_start')}; {len(targets)} calls into the image, the farthest "
                  f"{far[1]} with {reach} B of reach to spare (the image's end: {sym('_rt_start') + 0x400000 - sym('_etext')} B)")
@@ -974,6 +1024,7 @@ def main():
         ota = ldr.result()
     img, syms, dis, rt = build_app()
     errors, notes = check(img, syms, dis, rt)
+    audio_map(syms, dis)
     hal_err = mmio_check()
     errors += hal_err
     if not hal_err:

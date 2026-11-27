@@ -2839,6 +2839,14 @@ static void fx_run0(uint32_t n);                         /* (below) */
 #else
 static void fx_run(uint32_t n);                          /* (below) */
 #endif
+#ifndef CPU_LINES_PART
+#define CPU_LINES_PART(i, v) ((void)0)                   /* (V10.8.60, tests/cpu_lines_test.c: a part's block marked, the
+                                                         * lines model; JIANT BYTE byte-cpu-light's) */
+#define CPU_LINES_HOST 0
+#else
+#define CPU_LINES_HOST 1
+#endif
+
 static __attribute__((noinline)) void mc_job(uint32_t a)  /* core 1: the buses (MC_FX), the parts of mask a & 0x3F, a >> 8
                                                          * samples */
 {
@@ -2878,12 +2886,15 @@ static uint32_t mc_tk[NTRK], mc_fx_tk;                  /* (and the buses': fx_r
 static inline __attribute__((always_inline)) void mix_part_t(track_t *t, uint32_t n)   /* mix_part, timed */
 {
     uint32_t t0 = MC_TICKS(), i = (uint32_t)(t - trk) % NTRK, d;
+    CPU_LINES_PART(i, 1);
     mix_part(t, n);
+    CPU_LINES_PART(i, 2);
     d = MC_TICKS() - t0;
     mc_tk[i] = d > mc_tk[i] ? mc_tk[i] + ((d - mc_tk[i]) >> 1) : mc_tk[i] - ((mc_tk[i] - d) >> 3);   /* (up fast) */
 }
 static void mix_part_m(track_t *t, uint32_t n) { mix_part_t(t, n); }   /* (core 1: from the flash) */
-#if FELUCCA_HOTRAM                                       /* (0.6.78) core 0's copy, in RAM (app.ld .hot_text) */
+#if FELUCCA_HOTRAM || CPU_LINES_HOST                     /* (0.6.78) core 0's copy, in RAM (app.ld .hot_text; the lines
+                                                         * model's host: a function of its own, as on the FM-1) */
 static __attribute__((noinline)) void mix_part_m0(track_t *t, uint32_t n) { mix_part_t(t, n); }
 #else
 #define mix_part_m0 mix_part_m
