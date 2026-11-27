@@ -52,8 +52,33 @@ static inline void og_plot(int32_t x, int32_t y, uint16_t c, int32_t a)
     b = (o & 31u) + ((((int32_t)(c & 31u) - (int32_t)(o & 31u)) * a) >> 8);
     *p = swap16((uint16_t)(r << 11 | g << 5 | b));
 }
+/* (V10.8.60 prototype) HOME > VISUAL's field (ui_lzhome.c vis_wp): while set, every line and node drawn passes through
+ * it (a point, and the line's colour once), at og_wa's strength: the creatures bent, fused, recoloured */
+static void (*og_wf)(int32_t *p, uint16_t *c);
+static int32_t og_wa = 256;
+static __attribute__((noinline)) void og_line_r(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint16_t c, int32_t a);
 /* an antialiased line between Q4 points, at strength a (0..256) */
 static __attribute__((noinline)) void og_line_a(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint16_t c, int32_t a)
+{
+    int32_t d, n, i, p[2], q[2];
+    if (!og_wf) {
+        og_line_r(x0, y0, x1, y1, c, a);
+        return;
+    }
+    d = (x1 - x0 < 0 ? x0 - x1 : x1 - x0) + (y1 - y0 < 0 ? y0 - y1 : y1 - y0);
+    n = d / 96 + 1;                                      /* (pieces of ~6 px: the field bends them) */
+    if (n > 16) n = 16;
+    a = a * og_wa >> 8;
+    p[0] = x0; p[1] = y0;
+    og_wf(p, &c);
+    for (i = 1; i <= n; i++) {
+        q[0] = x0 + (x1 - x0) * i / n; q[1] = y0 + (y1 - y0) * i / n;
+        og_wf(q, 0);
+        og_line_r(p[0], p[1], q[0], q[1], c, a);
+        p[0] = q[0]; p[1] = q[1];
+    }
+}
+static __attribute__((noinline)) void og_line_r(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint16_t c, int32_t a)
 {
     int32_t dx = x1 - x0, dy = y1 - y0, adx = dx < 0 ? -dx : dx, ady = dy < 0 ? -dy : dy, t, g, p, e, f;
     if (adx >= ady) {                                    /* along x: y in Q8, two pixels per column */
@@ -203,7 +228,9 @@ static void og_ring(int32_t cx, int32_t cy, int32_t r, uint16_t c)
 /* a filled dot of radius r px (pixel centre (cx, cy) in Q4) with an antialiased rim */
 static void og_node(int32_t cx, int32_t cy, int32_t r, uint16_t c)
 {
-    int32_t x0 = cx >> 4, y0 = cy >> 4, i, j;
+    int32_t x0, y0, i, j, p[2] = {cx, cy};
+    if (og_wf) og_wf(p, &c);
+    x0 = p[0] >> 4; y0 = p[1] >> 4;
     for (j = -r; j <= r; j++)
         for (i = -r; i <= r; i++) {
             int32_t d = i * i + j * j - r * r;          /* inside: d <= 0; the rim: 0 .. 2r */
