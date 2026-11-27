@@ -442,6 +442,7 @@ enum { SCR_ON, SCR_OFF, SCR_WAKE, SCR_SLPOUT, SCR_SHOW, SCR_VIS };   /* (V10.8.5
  * press, key or turn only brings the page back (swallowed as SCREEN OFF's wake). OFF 1 3 5 10 MIN, 3 the default: bits 4-6
  * of a byte the teaching hints' counts once used (their small counts left 0 there: 3 MIN), stored ^ 2 (menu_items.c) */
 #define vis_scr (favorites.factory[15][12])
+#define lcd_pnl (favorites.factory[15][15])  /* (V10.8.63) MENU > DISPLAY > PANEL: bits 0-1, 0 AUTO (every older record), 1 A, 2 B */
 static const uint8_t VIS_MIN[8] = {0, 1, 3, 5, 10, 3, 3, 3};
 static void vis_new(int say);
 static struct {

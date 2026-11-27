@@ -174,6 +174,8 @@ static void lcd_power(uint32_t s)              /* MENU > SCREEN OFF (lcd.c): off
         web_draws++;
     }
 }
+static uint32_t fl_jedec_id;                    /* (V10.8.63: MENU > DISPLAY > PANEL; the browser has no panel: A, no change) */
+static void lcd_panel_apply(uint32_t b, uint32_t boot) { (void)b; (void)boot; }
 static void lcd_wake_now(void) {}
 static void lcd_init(void) {}
 

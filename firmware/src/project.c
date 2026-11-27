@@ -1924,6 +1924,7 @@ static void persist_boot(void)                    /* before settings_init / pane
                                                          * 02 0B), as the stock firmware on those units does */
         uint32_t id = FL_FAR(fl_jedec_ram)();
         flash_ok = id == 0x856014u || id == 0xB36014u;
+        fl_jedec_id = id;                               /* (V10.8.63: MENU > DISPLAY > PANEL AUTO) */
     }
     irq_restore(f);
     if (!flash_ok)

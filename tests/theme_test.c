@@ -10,6 +10,8 @@
 #include <string.h>
 #define __attribute__(x)
 static void lcd_sync(void) {}
+static uint32_t fl_jedec_id;                    /* (V10.8.63: lcd.c, MENU > PANEL) */
+static void lcd_panel_apply(uint32_t b, uint32_t boot) { (void)b; (void)boot; }
 static void lcd_power(uint32_t s) { (void)s; }   /* (MENU > SCREEN OFF: lcd.c) */
 static void lcd_wake_now(void) {}
 static void lcd_blit(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint16_t *p)

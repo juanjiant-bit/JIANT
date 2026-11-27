@@ -98,6 +98,9 @@ static void host_pw_log(uint32_t s)
     host_pw_n++;
     host_bl = s != 0u;
 }
+static uint32_t fl_jedec_id;                    /* (V10.8.63: lcd.c, MENU > PANEL) */
+static int32_t host_panel = -1;                  /* (V10.8.63) the last lcd_panel_apply: 0 A, 1 B */
+static void lcd_panel_apply(uint32_t b, uint32_t boot) { (void)boot; host_panel = (int32_t)b; }
 static void lcd_power(uint32_t s) { host_pw_log(s); }
 static void lcd_wake_now(void) { host_pw_log(3u); }
 #define SCOPE_N 512u                              /* audio.c: the HOME oscilloscope */
@@ -2781,7 +2784,7 @@ static int test_menu_tabs(void)
     for (i = 0; i < MI_COUNT; i++) ok &= MI_TAB[i] < MTAB_COUNT;
     ui_prefs = 0;
     bad += check("MENU tabs: DISPLAY CONTROL AUDIO SYSTEM (7 12 8 7 rows: V10.7.60 HELP; STYLE retired; codex/coherence INIT SYSTEM gone; 0.8.9 SKIN, retired V10.7.23; 0.9.7 SCOPE, 0.9.9-stab CPU CLOCK, p1 CPU CORES, MIDI MAP, LEARN, LOAD in AUDIO; V10.12 BLUETOOTH; V10.6z4 OCT BEND in AUDIO; V10.6z6 VELOCITY VEL MIN AFTERTOUCH VEL LEARN in CONTROL), each in a run, their rows and values fit the lens's panel",
-                 ok && MTAB_COUNT == 4u && str_eq(MTAB_NAME[0], "DISPLAY") && mtab_rows(MTAB_DISPLAY) == 9u &&   /* (V10.7.81: PRESETS; V10.8.56: SAVER) */
+                 ok && MTAB_COUNT == 4u && str_eq(MTAB_NAME[0], "DISPLAY") && mtab_rows(MTAB_DISPLAY) == 10u &&   /* (V10.7.81: PRESETS; V10.8.56: SAVER; V10.8.63: PANEL) */
                  mtab_rows(MTAB_CONTROL) == 12u && mtab_rows(MTAB_AUDIO) == 8u && mtab_rows(MTAB_SYSTEM) == 7u);   /* (0.6.58: INIT SYSTEM;
                                                                          * 0.6.72: MIDI OUT in CONTROL; 0.9.9-stab: CPU CLOCK in SYSTEM) */
 
@@ -2793,8 +2796,9 @@ static int test_menu_tabs(void)
                                                      * V10.7.60: HELP a row more) */
     ok &= ui.menu_sel == MI_HELP;
     turn(EN_SELECT, 1); ok &= ui.menu_sel == MI_PRSCR;  /* (V10.7.81: PRESETS) */
+    turn(EN_SELECT, 1); ok &= ui.menu_sel == MI_LCD;    /* (V10.8.63: PANEL) */
     turn(EN_SELECT, 1); ok &= ui.menu_sel == MI_HOLD && menu_tab() == MTAB_CONTROL;   /* (into the next tab) */
-    turn(EN_SELECT, -1); ok &= ui.menu_sel == MI_PRSCR;
+    turn(EN_SELECT, -1); ok &= ui.menu_sel == MI_LCD;
     turn(EN_SELECT, -40); ok &= ui.menu_sel == MI_COLOR; /* (no wrap) */
     turn(EN_PRESET, 1); ok &= ui.menu_sel == MI_COLOR;   /* (PRESETS: nothing, rule 3) */
     turn(EN_SELECT, 40); ok &= ui.menu_sel == MI_ABOUT;
@@ -2950,9 +2954,9 @@ static int test_menu_tabs(void)
     hold(B_HOME);
     frame();
     ok = ui.menu == 1 && ui.mlv == 1u && lz_on() && lz_fam() == LZ_MENU && lz_tabs() == 4u && lz_tab_lit(0) &&
-         lz_crumb_is("MENU \xB7 DISPLAY \xB7 COLOR") && lz_count_is("1/36");
+         lz_crumb_is("MENU \xB7 DISPLAY \xB7 COLOR") && lz_count_is("1/37");
     turn(EN_SELECT, 1); frame();
-    ok &= ui.mlv == 1u && lz_tab_lit(0) && lz_crumb_is("MENU \xB7 DISPLAY \xB7 SCOPE") && lz_count_is("2/36");
+    ok &= ui.mlv == 1u && lz_tab_lit(0) && lz_crumb_is("MENU \xB7 DISPLAY \xB7 SCOPE") && lz_count_is("2/37");
     turn(EN_ALGO, 1); frame();
     ok &= menu_tab() == MTAB_CONTROL && lz_tab_lit(1) && lz_crumb_is("MENU \xB7 CONTROL \xB7 HOLD");
     turn(EN_SELECT, 2); frame();
@@ -2961,7 +2965,7 @@ static int test_menu_tabs(void)
     ok &= (fx_latch & 1u) != 0u;
     turn(EN_K3, -1); frame();
     menu_close();
-    bad += check("0.9.2 MENU: four tabs (the row's lit), MENU . TAB . ROW and n/33 (STYLE retired; codex/coherence: INIT SYSTEM gone; 0.9.7: SCOPE; 0.9.9-stab: CPU CLOCK; p1: CPU CORES, MIDI MAP, LEARN; V10.12: BLUETOOTH; V10.6z4: OCT BEND; V10.6z6: the keys' four; V10.7.23: SKIN retired); ALGORITHM the tab, any knob the value", ok && MI_COUNT == 36u);   /* (V10.7.81: PRESETS; V10.8.56: SAVER) */
+    bad += check("0.9.2 MENU: four tabs (the row's lit), MENU . TAB . ROW and n/33 (STYLE retired; codex/coherence: INIT SYSTEM gone; 0.9.7: SCOPE; 0.9.9-stab: CPU CLOCK; p1: CPU CORES, MIDI MAP, LEARN; V10.12: BLUETOOTH; V10.6z4: OCT BEND; V10.6z6: the keys' four; V10.7.23: SKIN retired); ALGORITHM the tab, any knob the value", ok && MI_COUNT == 37u);   /* (V10.7.81: PRESETS; V10.8.56: SAVER; V10.8.63: PANEL) */
     {   /* (V10.7.81, the owner) MENU > DISPLAY > PRESETS: SCROLL (the default) loads the next sound; MENU opens the
          * PRESETS list first (the sound kept), then scrolls it */
         uint32_t p0;
@@ -11884,8 +11888,34 @@ static int test_style(void)
     for (ok = 1, i = 0; i < MI_COUNT; i++)
         ok &= !str_eq(MI_NAME[i], "STYLE");
     ok &= MI_COLOR == 0u && MI_SCOPE == 1u && MI_LARGE == 2u && MI_ANIM == 3u && MI_LEDS == 4u && MI_SCROFF == 5u && MI_SAVER == 6u &&
-          MI_HELP == 7u && MI_PRSCR == 8u && MI_HOLD == 9u && mtab_rows(MTAB_DISPLAY) == 9u &&   /* (V10.7.81: PRESETS) */ mtab_first(MTAB_CONTROL) == MI_HOLD;
+          MI_HELP == 7u && MI_PRSCR == 8u && MI_LCD == 9u && MI_HOLD == 10u && mtab_rows(MTAB_DISPLAY) == 10u &&   /* (V10.7.81: PRESETS; V10.8.63: PANEL) */ mtab_first(MTAB_CONTROL) == MI_HOLD;
     bad += check("MENU: no STYLE row, no SKIN row (FLAT and COLORS the ones); DISPLAY's six rows, the rest renumbered in order", ok);
+    {   /* (V10.8.63) MENU > DISPLAY > PANEL: AUTO (0, every older record) A B, stored in engine 15's byte 15 bits 0-1 (kept
+         * in the settings' export), the panel applied at once with its banner; AUTO B only for the late-2026 flash */
+        persist_t p, q;
+        uint8_t was = lcd_pnl;
+        ok = menu_get(MI_LCD) == 0u && str_eq(menu_vname(MI_LCD, 0), "AUTO") && str_eq(menu_vname(MI_LCD, 2), "B");
+        menu_put(MI_LCD, 2u);
+        ok &= menu_get(MI_LCD) == 2u && (lcd_pnl & 3u) == 2u && host_panel == 1 && str_eq(ui.msg, "PANEL B");
+        menu_put(MI_LCD, 1u);
+        ok &= menu_get(MI_LCD) == 1u && host_panel == 0 && str_eq(ui.msg, "PANEL A");
+        settings_export(&p);
+        lcd_pnl = 0;
+        settings_import(&p, (int)sizeof p);
+        ok &= menu_get(MI_LCD) == 1u;
+        settings_export(&q);
+        ok &= !memcmp(&p, &q, sizeof p);
+        ok &= !lcd_panel_is_b(0, 0x856014u) && lcd_panel_is_b(0, 0xB36014u) && !lcd_panel_is_b(0, 0) &&
+              !lcd_panel_is_b(1, 0xB36014u) && lcd_panel_is_b(2, 0x856014u);
+        fl_jedec_id = 0xB36014u;
+        menu_put(MI_LCD, 0u);
+        ok &= host_panel == 1 && str_eq(ui.msg, "PANEL B");
+        fl_jedec_id = 0;
+        menu_put(MI_LCD, 0u);
+        ok &= host_panel == 0;
+        lcd_pnl = was;
+        bad += check("V10.8.63 MENU > PANEL: AUTO A B kept in the settings, applied at once (PANEL A / B), AUTO B only on flash 0xB36014", ok);
+    }
     {
         persist_t p, q;
         uint32_t v;

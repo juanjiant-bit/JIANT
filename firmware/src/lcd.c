@@ -140,27 +140,66 @@ static const uint8_t LCD_SEQ[] = {
     0x13, 0,                     /* NORON */
 };
 
-static void lcd_init(void)
+/* (V10.8.63, the owner; a user's report: the units sold from late 2026, flash 0xB36014, carry another 1.3" 240 x 240 IPS
+ * panel, ST7789-compatible, whose colours look washed out with A) MENU > DISPLAY > PANEL B: after A's sequence (above,
+ * unchanged), the ST7789V datasheet's power, VCOM and gamma registers set instead of left at their reset values, and the
+ * inversion the other way (INVOFF: A's INVON undone). MADCTL (the colour order) as A's. UNTESTED on that panel: a
+ * hypothesis from the report; OCT- + SAVE held at power-on starts with A (lcd_panel_boot) */
+static const uint8_t LCD_SEQ_B[] = {
+    0xB2, 5, 0x0C, 0x0C, 0x00, 0x33, 0x33,     /* PORCTRL: back / front porch 12, porch control off, idle / partial 3 + 3 */
+    0xB7, 1, 0x35,                             /* GCTRL: VGH 13.26 V, VGL -10.43 V */
+    0xBB, 1, 0x19,                             /* VCOMS: 0.725 V (the datasheet's 0x19 .. 0x20 range, its low end) */
+    0xC0, 1, 0x2C,                             /* LCMCTRL: XMY XBGR XMX XMH as set by MADCTL, XMV */
+    0xC2, 2, 0x01, 0xFF,                       /* VDVVRHEN: VDV and VRH from the commands */
+    0xC3, 1, 0x12,                             /* VRHS: VAP 4.45 V */
+    0xC4, 1, 0x20,                             /* VDVS: 0 V */
+    0xC6, 1, 0x0F,                             /* FRCTRL2: 60 Hz, no column inversion */
+    0xD0, 2, 0xA4, 0xA1,                       /* PWCTRL1: AVDD 6.8 V, AVCL -4.8 V, VDS 2.3 V */
+    0xE0, 14, 0xD0, 0x04, 0x0D, 0x11, 0x13, 0x2B, 0x3F, 0x54, 0x4C, 0x18, 0x0D, 0x0B, 0x1F, 0x23,   /* PVGAMCTRL */
+    0xE1, 14, 0xD0, 0x04, 0x0C, 0x11, 0x13, 0x2C, 0x3F, 0x44, 0x51, 0x2F, 0x1F, 0x1F, 0x20, 0x23,   /* NVGAMCTRL */
+    0x20, 0,                                   /* INVOFF (A: INVON) */
+};
+static void lcd_seq(const uint8_t *q, uint32_t n)
 {
     uint32_t r, x;
-    fm1_lcd_hw_init();
-    lcd_spin(2000000u);
-    for (r = 0; r < sizeof LCD_SEQ; r += 2u + LCD_SEQ[r + 1u]) {
-        if (LCD_SEQ[r] == 0x00u) {                       /* pseudo command: wait */
-            lcd_spin(LCD_SEQ[r + 2u] * 25000u);          /* ~1 ms per unit (lcd_spin(3000000) ~ 120 ms) */
+    for (r = 0; r < n; r += 2u + q[r + 1u]) {
+        if (q[r] == 0x00u) {                             /* pseudo command: wait */
+            lcd_spin(q[r + 2u] * 25000u);                /* ~1 ms per unit (lcd_spin(3000000) ~ 120 ms) */
             continue;
         }
-        lcd_cmd(LCD_SEQ[r]);
-        for (x = 0; x < LCD_SEQ[r + 1u]; x++)
-            lcd_small[x] = LCD_SEQ[r + 2u + x];
-        if (LCD_SEQ[r + 1u])
-            lcd_data(lcd_small, LCD_SEQ[r + 1u]);
+        lcd_cmd(q[r]);
+        for (x = 0; x < q[r + 1u]; x++)
+            lcd_small[x] = q[r + 2u + x];
+        if (q[r + 1u])
+            lcd_data(lcd_small, q[r + 1u]);
     }
+}
+static void lcd_init(void)
+{
+    fm1_lcd_hw_init();
+    lcd_spin(2000000u);
+    lcd_seq(LCD_SEQ, sizeof LCD_SEQ);
     fm1_lcd_baud(LCD_BAUD);
     lcd_fill(0, 0, 240, 240, 0);
     lcd_cmd(0x29);
 }
 
+/* (V10.8.63) MENU > DISPLAY > PANEL (menu_items.c lcd_panel_is_b: AUTO, A, B) */
+static uint32_t fl_jedec_id;                   /* (project.c persist_boot) the flash's JEDEC id at boot (0: none read) */
+static uint8_t lcd_b_on;                       /* (B's registers sent since the last A) */
+/* the panel as the setting wants it: B after A's set-up, or A again (its reset and sequence: B's registers back to their
+ * defaults); boot: A already sent (lcd_init), only B's added */
+static void lcd_panel_apply(uint32_t b, uint32_t boot)
+{
+    if (!boot && lcd_b_on && !b) {
+        lcd_init();
+        lcd_b_on = 0;
+    }
+    if (b && !lcd_b_on) {
+        lcd_seq(LCD_SEQ_B, sizeof LCD_SEQ_B);
+        lcd_b_on = 1;
+    }
+}
 /* MENU > SCREEN OFF (ui.c scr_frame): the panel dark while the sound goes on. s 0: DISPOFF, SLPIN; 1: SLPOUT (the
  * panel wants 120 ms after it, and 120 ms after SLPIN before it: ui.c waits, a frame at a time, never here); 2: DISPON
  * (after the frame that redrew it all). The panel keeps its RAM asleep, but the UI redraws everything before it shows

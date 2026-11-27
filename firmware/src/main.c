@@ -354,6 +354,9 @@ static void fm1_main(void)
     fm1_guard_lock_top();
     fm1_irq_enable_all();
     fm1_delay_ms(30);
+    if (!((fm1_in.buttons & 1u) && ((fm1_in.buttons >> panel.btn[B_SAVE]) & 1u)))   /* (V10.8.63) MENU > PANEL (OCT- + SAVE held
+                                                 * at power-on: A this time, in case B leaves the screen dark) */
+        lcd_panel_apply(lcd_panel_is_b(favorites.factory[15][15] & 3u, fl_jedec_id), 1);
     if ((fm1_in.buttons & 3u) == 3u) {
         panel_setup();                        /* OCT- + OCT+ held at power-on */
         settings_save();

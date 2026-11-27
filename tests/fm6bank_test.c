@@ -17,6 +17,8 @@
 static int32_t fm1_enc_take(uint32_t enc) { (void)enc; return 0; }
 static void fm1_irq_on(void) { }
 static void fm1_irq_off(void) { }
+static uint32_t fl_jedec_id;                    /* (V10.8.63: lcd.c, MENU > PANEL) */
+static void lcd_panel_apply(uint32_t b, uint32_t boot) { (void)b; (void)boot; }
 static void lcd_power(uint32_t s) { (void)s; }
 static void lcd_wake_now(void) { }
 static void lcd_sync(void) { }
