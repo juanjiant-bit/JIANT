@@ -728,7 +728,7 @@ static int16_t mx_ui[4] = {0, 2, 0, 0};                 /* (the macro, the desti
  * 4 FX (the reverb and delay sends breathe). All 0: nothing runs, the sound bit for bit as before. Kept with the project
  * ('L' 'F', project.c) */
 static const param_desc_t LIFE_DESC[4] = {PD("FILTER", F_PCT, 0, 100, 0), PD("TIMBRE", F_PCT, 0, 100, 0),
-                                          PD("PUMP", F_PCT, 0, 100, 0), PD("FX", F_PCT, 0, 100, 0)};
+                                          PD("STEREO", F_PCT, 0, 100, 0), PD("FX", F_PCT, 0, 100, 0)};   /* (V10.8.64: STEREO, was PUMP) */
 static int16_t life_v[4] __attribute__((section(".bss.tape")));
 /* (V10.8.56, the owner: "visuales random en HOME") HOME > VISUAL, BEING's second page, and the screensaver (ui.c scr_*): a
  * figure from a seed (OCT+ a new one), drawn with the creatures' pieces (ui_lzhome.c vis_fig): KNOB 1 COMPLEX (how many

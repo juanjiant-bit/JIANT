@@ -259,7 +259,7 @@ static void graph_eco(void)
         bx[c] >>= 4;
         by[c] >>= 4;
     }
-    if (home_set() && life_on) {                        /* (V10.7.62) LIFE: who moves whom, as bright as the mover sounds */
+    if (home_set() == 1u && life_on) {                        /* (V10.7.62) LIFE: who moves whom, as bright as the mover sounds */
         uint32_t n = trk_live < ECO_N ? trk_live : ECO_N, j;
         for (c = 0; c < n; c++) {
             j = (c + n - 1u) % n;
@@ -275,8 +275,9 @@ static void graph_eco(void)
         ny = clamp(py + rad / 2 + 4, 4, bot);
         cv_text_in(px - 30, ny, 60, &AF_S, num, eco_off(c) ? T_DIM : trk_col(c), T_SURF);   /* (V10.8.10) */
     }
-    if (home_set())                                     /* (V10.7.62) LIFE (was MACROS: the FX layer's knobs since V10.7.59) */
-        cv_text(6, 2, &AF_X, life_on ? "LIFE ON" : "LIFE OFF", life_on ? T_MID : T_DIM);
+    if (home_set())                                     /* (V10.8.64, the owner: "LIFE en grande") LIFE / MACROS: the
+                                                         * page's name large, its state under it */
+        page_big(home_set() == 1u ? "LIFE" : "MACROS", home_set() == 1u ? (life_on ? "ON" : "OFF") : "HOME+SELECT DICE");
 }
 /* (V10.8.60 prototype, the owner: "no inventar tres dibujos y repetirlos: usar la estética que ya tiene el sistema";
  * "tomá comportamientos, cómo se mueven los gusanitos ... pueden aparecer enormes en toda la pantalla, ANIMAL y VOICE

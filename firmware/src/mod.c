@@ -84,6 +84,8 @@ static volatile int8_t pkr_a;   /* .. its amount (AMT: 64 the whole range) */
 /* (V10.7.62) LIFE's sources a track (life_block) and whether it runs */
 static int16_t life_x[NTRK] __attribute__((section(".bss.tape"))), life_p[NTRK] __attribute__((section(".bss.tape")));
 static uint8_t life_on __attribute__((section(".bss.tape")));
+static uint16_t life_ph[NTRK] __attribute__((section(".bss.tape")));   /* (V10.8.64) STEREO's swing */
+static uint32_t life_rk;   /* (its place in the ring: every other one the other way) */
 static uint8_t life_fol __attribute__((section(".bss.tape")));
 static int16_t macro_e[4];       /* (V10.8.7) M1..M4 as they act this block: the knob's value plus what the tracks' slots
                                   * added the block before (macro_master, once a block, first) */
@@ -311,12 +313,14 @@ static __attribute__((noinline)) void ms_tick(track_t *t)
  * Out of mod_begin's loop (and of the RAM code: a call through a pointer) */
 static __attribute__((noinline)) void life_mod(track_t *t, int32_t *off)
 {
-    static const uint8_t LD[LF_N] = {MD_CUT, MD_SHP, MD_LEVEL, MD_REV, MD_DLY};
+    static const uint8_t LD[LF_N] = {MD_CUT, MD_SHP, MD_PAN, MD_REV, MD_DLY};   /* (V10.8.64: STEREO, was PUMP's level) */
     mod_t *const mp = &MOD;
     uint32_t q, j, ti = (uint32_t)(t - trk) % NTRK, e = t->engine;
     for (q = 0; q < LF_N; q++) {
         uint32_t d = LD[q], id;
-        int32_t a = life_v[q < 3u ? q : 3u] * 127 / 100, x = q == 2u ? life_p[ti] : life_x[ti];
+        int32_t v = life_v[q < 3u ? q : 3u], a = v * 127 / 100 + (v > 60 ? ((v - 60) * (v - 60) * 39) >> 8 : 0),
+                x = q == 2u ? life_p[ti] : life_x[ti];   /* (V10.8.64, the owner: "todo en 100 mucho más extremo") as
+                                                         * before to 60, then curved: at 100 about 2.5 times */
         const param_desc_t *pd;
         if (!a || !x)
             continue;
@@ -531,6 +535,7 @@ static __attribute__((noinline)) void life_block(void)
     if (!life_on)
         return;
     for (i = 0; i < n; i++) {
+        prv[i] = NTRK;
         kit |= (uint32_t)(trk[i].engine == ENGI_DRUM) << i;
         on |= (uint32_t)!trk[i].p[P_MUTE] << i;         /* (the ring: the tracks not muted, in order) */
     }
@@ -540,6 +545,7 @@ static __attribute__((noinline)) void life_block(void)
                 if (last < NTRK) prv[i] = last;
                 last = i;
             }
+    life_rk = 0;
     for (i = 0; i < n; i++) {
         int32_t x = 0, pk = 0, pr = 0;
         if (!((on >> i) & 1u)) {
@@ -557,7 +563,16 @@ static __attribute__((noinline)) void life_block(void)
                 pr += e * w;
         }
         life_x[i] = (int16_t)clamp(x >> 1, -32767, 32767);   /* (x2 over the weights' 4: a follower seldom peaks full) */
-        life_p[i] = (int16_t)((kit >> i) & 1u ? 0 : -clamp((pk ? pk : pr) >> 1, 0, 32767));   /* (no kit sounding: the ring's) */
+        {   /* (V10.8.64, the owner) STEREO (was PUMP): each track pushed across the stereo field by its neighbours' sound
+             * (the louder they play, the further), every other one in the ring the other way (two playing apart), swinging
+             * at a speed the track before it sets; quiet, back to its own PAN (the followers fall) */
+            int32_t push = clamp((pk + pr) >> 1, 0, 32767), tri;
+            life_ph[i] = (uint16_t)(life_ph[i] + 24u + ((uint32_t)track_env[prv[i] < NTRK ? prv[i] : i] >> 8));
+            tri = (int32_t)(life_ph[i] & 0x7FFFu) * 2 - 32767;
+            tri = life_ph[i] & 0x8000u ? -tri : tri;
+            life_p[i] = (int16_t)clamp((((life_rk & 1u) ? -16384 : 16384) + (tri >> 1)) * push >> 15, -32767, 32767);
+            life_rk++;
+        }
     }
     life_fol = (uint8_t)(on & ~track_follow_mask);      /* (the followers LIFE alone asks for: every 4th sample, fx.c) */
     track_follow_mask |= (uint8_t)on;                   /* (every track's follower: the next block's) */

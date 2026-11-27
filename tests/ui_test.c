@@ -12262,16 +12262,32 @@ static int test_lz_home(void)
     uint32_t c, k;
     ui_power_on(); frame();
     ok = ui.home && lz_on() && lz_fam() == LZ_HOME && home_level() == 0u && !home_set() && lz_tab_lit(0) && lz_tabs() == 4u &&
-         lz_crumb_is("HOME \xB7 ECOSYSTEM \xB7 ECOSYSTEM") && lz_count_is("1/11");   /* (V10.7.62: LIFE in MACROS' place, seven) */   /* (seven pages, as the n/7 below; the "1/8" came
+         lz_crumb_is("HOME \xB7 ECOSYSTEM \xB7 ECOSYSTEM") && lz_count_is("1/12");   /* (V10.7.62: LIFE in MACROS' place, seven) */   /* (seven pages, as the n/7 below; the "1/8" came
                                                          * with e147a98's import, 2026-11-04, the rest of the test says 7) */
     press(B_HOME); frame();                                         /* a HOME tap: BEING (the next group) */
     ok &= ui.home && home_level() == 1u && !home_set() && lz_tab_lit(1) && lz_crumb_is("HOME \xB7 BEING \xB7 BEING") &&
-          lz_count_is("3/11");
+          lz_count_is("4/12");
     k = macro_v[0];
     c = (uint32_t)TSEL->p[ENGINES[TSEL->eng_req]->knob[0]];
+    turn(EN_SELECT, -1); frame();                                   /* (V10.8.64) SELECT left: MACROS, KNOB 1 M1 (the FX
+                                                                     * layer's own) */
+    ok &= home_level() == 0u && home_macros() && !home_life() && lz_crumb_is("HOME \xB7 ECOSYSTEM \xB7 MACROS") &&
+          lz_count_is("3/12");
+    turn(EN_K1, 5); frame();
+    ok &= macro_v[0] != (uint8_t)k && (uint32_t)TSEL->p[ENGINES[TSEL->eng_req]->knob[0]] == c;
+    {   /* HOME + SELECT: DICE MACROS, one UNDO */
+        uint8_t m0[4];
+        memcpy(m0, macro_v, 4);
+        ui_message("");
+        fm1_ms += 1000u; held_turn(B_HOME, 1); frame(); frame();
+        ok &= !strcmp(ui.msg, "DICE MACROS") && home_macros() && undo_ok;
+        memcpy(macro_v, m0, 4);
+        fm1_ms += 1000u; frames(32);
+    }
+    k = macro_v[0];
     turn(EN_SELECT, -1); frame();                                   /* SELECT left: LIFE (V10.7.62), its KNOB 1 FILTER */
     ok &= home_level() == 0u && home_set() && home_life() && !home_macros() && lz_crumb_is("HOME \xB7 ECOSYSTEM \xB7 LIFE") &&
-          lz_count_is("2/11");
+          lz_count_is("2/12");
     turn(EN_K1, 3); frame();
     ok &= life_v[0] > 0 && (uint32_t)TSEL->p[ENGINES[TSEL->eng_req]->knob[0]] == c && !strncmp(ui.col[0], "FILTER|", 7);
     life_v[0] = 0;
@@ -12282,9 +12298,8 @@ static int test_lz_home(void)
     turn(EN_SELECT, -1); frame();                                   /* (no wrap) */
     ok &= home_level() == 0u && !home_set() && ui.home && !ui.confirm;
     bad += check("0.9.2 HOME: ECO LIFE BEING .. one chain by SELECT (no wrap), a HOME tap the next group; tabs, crumb, n/7 (V10.7.62: LIFE)", ok);
-    turn(EN_SELECT, 2); frame();                                    /* BEING (V10.7.66: ROUTES gone, the macros FX >
-                                                                     * PUNCH IN's) */
-    ok = home_level() == 1u && !home_set() && !home_macros() && lz_count_is("3/11");
+    turn(EN_SELECT, 3); frame();                                    /* BEING (V10.8.64: past MACROS) */
+    ok = home_level() == 1u && !home_set() && !home_macros() && lz_count_is("4/12");
     {   /* (V10.8.56) VISUAL, BEING's second page: a figure from a seed; KNOB 1 COMPLEX, OCT+ a new one ("VISUAL #n") */
         static uint16_t a[240 * 140];
         uint16_t sd;
@@ -12332,7 +12347,7 @@ static int test_lz_home(void)
     fm1_ms += 1000u;
     turn(EN_SELECT, 5); frame();                                    /* GEN 1 (V10.8.2: past the song's three; V10.8.56: VISUAL) */
     ok &= gen_on() && gen_page() == 0u && home_level() == 2u && lz_on() && lz_tab_lit(3) && lz_crumb_is("HOME \xB7 GENERATOR \xB7 GENERATOR 1") &&
-          lz_count_is("8/11");
+          lz_count_is("9/12");
     k = gp.genre;
     {   /* (V10.7.22, the owner) PRESETS on GEN: the sound, as on every page but SEQ's; the GENRE only by KNOB 1 */
         uint32_t pr = TSEL->preset, en = TSEL->eng_req;
@@ -12343,7 +12358,7 @@ static int test_lz_home(void)
     ok &= gp.genre == (k == GEN_EXPLORE ? 0u : k == NGENRE ? GEN_EXPLORE : k + 1u);   /* KNOB 1: the GENRE, its order
                                                          * (0.8.6: EXPLORE, RANDOM, the genres) */
     turn(EN_SELECT, 1); frame();
-    ok &= gen_on() && gen_page() == 1u && lz_crumb_is("HOME \xB7 GENERATOR \xB7 GENERATOR 2") && lz_count_is("9/11");
+    ok &= gen_on() && gen_page() == 1u && lz_crumb_is("HOME \xB7 GENERATOR \xB7 GENERATOR 2") && lz_count_is("10/12");
     turn(EN_SELECT, -6); frame();                                   /* back: BEING, GEN shut */
     ok &= !ui.confirm && ui.home && home_level() == 1u && !home_set();
     turn(EN_SELECT, 5); frame();
@@ -12351,7 +12366,7 @@ static int test_lz_home(void)
     press(B_HOME); frame();                                         /* a HOME tap on GEN: round to ECO */
     ok &= !ui.confirm && ui.home && home_level() == 0u && !home_set();
     bad += check("0.9.2 HOME: ROUTES, then GEN 1..3 (KNOB 1 its GENRE, PRESETS the sound); SELECT back out of GEN; a HOME tap on GEN: ECO", ok);
-    turn(EN_SELECT, 8); frame();                                    /* GEN 2 */
+    turn(EN_SELECT, 9); frame();                                    /* GEN 2 */
     ok = gen_on() && gen_page() == 1u;
     press(B_ENV); frame();                                          /* not modal: a section's button leaves it */
     ok &= !ui.confirm && !ui.home && str_eq(cur_page()->title, "ENV");
@@ -12365,26 +12380,26 @@ static int test_lz_home(void)
     bad += check("0.9.2 HOME: GEN is HOME's pages, not modal (ENV leaves it, HOME comes back to GEN 2, ALGORITHM works); OCT- ECO", ok);
     {   /* (V10.8, testers) GEN's GENRE kept when GEN is left and opened again */
         uint32_t g0;
-        turn(EN_SELECT, 7); frame();                    /* GEN 1 */
+        turn(EN_SELECT, 8); frame();                    /* GEN 1 */
         ok = gen_on() && gen_page() == 0u;
         turn(EN_K1, 3); frame();                        /* (V10.7.22: KNOB 1 the GENRE; PRESETS the sound) */
         g0 = gp.genre;
         press(B_OCTDN); frame();                        /* out (ECO) */
         open_family(FAM_ENV); frame();
         go_home(); frames(64);
-        turn(EN_SELECT, 7); frame();
+        turn(EN_SELECT, 8); frame();
         ok &= gen_on() && gp.genre == g0 && g0 != GEN_EXPLORE;
         press(B_OCTDN); frame();
         bad += check("V10.8 GEN: the GENRE picked stays after leaving GEN (was EXPLORE again each visit)", ok);
     }
-    turn(EN_SELECT, 2); frame();                                    /* BEING */
+    turn(EN_SELECT, 3); frame();                                    /* BEING */
     open_family(FAM_ENV); frame();
     ok = !ui.home;
     press(B_HOME); frame();                                         /* HOME from elsewhere: where it was left */
     ok &= ui.home && home_level() == 1u && home_set() == 0u;
     {   /* the beings drawn: the ECO panel differs from frame to frame while the tracks sound (their life, their faces) */
         static uint16_t a[240 * 140];
-        turn(EN_SELECT, -2); frame();
+        turn(EN_SELECT, -3); frame();
         for (c = 0; c < NTRK; c++) trk[c].peak = 9000;
         frames(64);
         memcpy(a, host_screen + LZ_GRAPH_Y * 240, sizeof a);
@@ -13360,17 +13375,17 @@ static int test_lz_reach(void)
                         if (rv_has(OLD_LV[i].t[k], OLD_LV[i].fam, OLD_LV[i].lv)) seen_old[i][k] |= 1u;
                     }
             {   /* HOME: its eleven pages (ECO LIFE BEING ROUTES, V10.7.63 the song's TIMELINE ARRANGE PARTS CLIPS, GEN 1..3) */
-                static const uint8_t HL[4] = {0, 0, 1, 1};
+                static const uint8_t HL[5] = {0, 0, 0, 1, 1}, HS[5] = {0, 1, 2, 0, 1};   /* (V10.8.64: MACROS) */
                 uint32_t n = 0, e;
                 go_home(); frames(32); press(B_HOME); frames(32);
-                turn(EN_SELECT, -12); frames(2);
-                for (e = 0; e < 12u; e++) {
+                turn(EN_SELECT, -13); frames(2);
+                for (e = 0; e < 13u; e++) {
                     n += nav_cur() == e && (e >= HE_GEN ? gen_on() && gen_page() == e - HE_GEN :
                                             e >= HE_SONG ? !ui.home && song_pg(ui.page) :
-                                            ui.home && home_level() == HL[e] && home_set() == (e & 1u));
+                                            ui.home && home_level() == HL[e] && home_set() == HS[e]);
                     turn(EN_SELECT, 1); frames(2);
                 }
-                okh &= n == 11u;   /* (V10.8: TIMELINE, PARTS gone; V10.8.2: TAKE; V10.8.56: VISUAL in ROUTES' place) */
+                okh &= n == 12u;   /* (V10.8.64: MACROS) */   /* (V10.8: TIMELINE, PARTS gone; V10.8.2: TAKE; V10.8.56: VISUAL in ROUTES' place) */
                 press(B_OCTDN); frames(2);
             }
         }
@@ -13383,7 +13398,7 @@ static int test_lz_reach(void)
     bad += check("0.9.2 reach: every page each engine shows (LOFI BYTE, LOAD ECO too) by its button and SELECT alone", ok);
     bad += check("0.9.2 reach: every parameter of those pages (the ids on them)", okp);
     bad += check("0.9.2 reach: every 0.9.1 lens page at its 0.9.1 level (drawn as it was; NOTE's STEP view merged)", okold);
-    bad += check("0.9.2 reach: HOME's eleven pages by SELECT (ECO LIFE BEING VISUAL JAM TAKE ARRANGE GEN 1..4; V10.8.56)", okh);
+    bad += check("0.9.2 reach: HOME's twelve pages by SELECT (ECO LIFE MACROS BEING VISUAL JAM TAKE ARRANGE GEN 1..4; V10.8.56)", okh);
     ui_power_on();
     return bad;
 }

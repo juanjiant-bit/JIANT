@@ -84,7 +84,7 @@ int main(void)
 {
     int bad = 0, ok, q;
     double e0, e1;
-    static const char *const NM[4] = {"FILTER", "TIMBRE", "PUMP", "FX"};
+    static const char *const NM[4] = {"FILTER", "TIMBRE", "STEREO", "FX"};
     ok = !life_on && !life_v[0] && !life_v[1] && !life_v[2] && !life_v[3];
     bad += check("LIFE: off at power-on (nothing runs)", ok);
     {   /* (the yardstick: the voices' free phases move a render a few %: four runs, their spread) */
@@ -101,8 +101,6 @@ int main(void)
         for (q = 0; q < 4; q++) {
             char what[120];
             double r;
-            if (q == 2)                                 /* (PUMP: with a kit, below; two synths duck each other) */
-                continue;
             {
                 double br1 = 0, sd1 = 0, ex;
                 int u;
@@ -113,27 +111,16 @@ int main(void)
                     ex = rms_song(600, 0, 0);
                     e1 += ex / 4.0; br1 += bright / 4.0; sd1 += side / 4.0;
                 }
-                r = q == 0 ? br1 / br0 : q == 3 ? sd1 / sd0 : e1 / e0;
+                r = q == 0 ? br1 / br0 : q >= 2 ? sd1 / sd0 : e1 / e0;   /* (V10.8.64: STEREO, the side too) */
             }   /* (FILTER: brighter; FX: wider; TIMBRE: its
                                                          * shape, the energy) */
             snprintf(what, sizeof what, "LIFE %s 100: the tracks move each other (%s x%.2f)", NM[q],
-                     q == 0 ? "slope" : q == 3 ? "side" : "energy", r);
+                     q == 0 ? "slope" : q >= 2 ? "side" : "energy", r);
             bad += check(what, life_on && fabs(r - 1.0) > 0.1);
             life_v[q] = 0;
         }
     }
-    {   /* PUMP: a kit's kicks duck the synth (the kit not pumped): T3's follower on average, against LIFE with FX at 1 %
-         * (the followers running, nothing pumped) */
-        double ek0, ek1, kt0, kt1;
-        kit_duet(); life_v[3] = 1; ek0 = kick_song(1500, &kt0); life_v[3] = 0;
-        kit_duet(); life_v[3] = 1; life_v[2] = 100; ek1 = kick_song(1500, &kt1); life_v[2] = life_v[3] = 0;
-        {
-            char what[120];
-            snprintf(what, sizeof what, "LIFE PUMP 100 with a kit: the kicks duck the synth (its level x%.2f, the kit's x%.2f)",
-                     ek1 / ek0, kt1 / kt0);
-            bad += check(what, ek1 < ek0 * 0.6 && fabs(kt1 / kt0 - 1.0) < 0.1);
-        }
-    }
+    /* (V10.8.64) PUMP gone: STEREO (above, the side wider) */
     {   /* (V10.7.63) SCENE led by a track: T1's sequence (C4, then F4 at step 8) plays T2's CHORD (its chord follows each
          * note); the keys stay T1's own; a stop lets T2's notes go */
         uint32_t i, k, c, got0 = 0, got1 = 0;
@@ -191,7 +178,9 @@ int main(void)
     {   /* (V10.7.63) a kit's GAIN (KIT 2 KNOB 4): the kit louder (its DRIVE off the panel, still playing), kept with the
          * project ('K' 'G') */
         project_t p;
-        double e0g = kit_energy(0), e1g = kit_energy(12);
+        double e0g, e1g;
+        (void)kit_energy(0);                            /* (V10.8.64: the kit once first, as PUMP's kit test left it) */
+        e0g = kit_energy(0); e1g = kit_energy(12);
         ok = e1g > e0g * 3.0;                           /* (+12 dB: x16 in power, the knee taking its top) */
         dx_gain = 7;
         project_capture(&p);

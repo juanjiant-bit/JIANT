@@ -2653,8 +2653,16 @@ static void ui_input_frame(void)
                          0u;                    /* (V10.7.66, the owner: FX + SELECT's dice gone) */
             if (f == FAM_COUNT) {                       /* HOME held: GEN, HOME's generator */
                 ui.home_t0 |= 2u;
-                if (!pj_sel_ms || fm1_ms - pj_sel_ms > 400u)
-                    nav_go(SEC_HOME, HE_GEN + gen_page(), 1);
+                if (!pj_sel_ms || fm1_ms - pj_sel_ms > 400u) {
+                    if (home_macros()) {                /* (V10.8.64, the owner) HOME > MACROS: HOME + SELECT the macros'
+                                                         * dice (their routes on the tracks sounding, their values), one UNDO */
+                        undo_mark();
+                        macro_dice(1);
+                        for (uint32_t m = 0; m < 4u; m++) macro_v[m] = (uint8_t)(rng() % 128u);
+                        ui_message("DICE MACROS");
+                    } else
+                        nav_go(SEC_HOME, HE_GEN + gen_page(), 1);
+                }
             } else if (k) {
                 if (f == FAM_EDIT)                      /* (0.9.9-seq2f) EDIT + SELECT: the sound dice again (SELECT is
                                                          * no sound parameter; the presets: PRESETS only) */

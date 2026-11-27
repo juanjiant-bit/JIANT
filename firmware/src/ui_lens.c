@@ -45,9 +45,11 @@ typedef struct { const nv_t *e; const ng_t *g; uint8_t n, ng; } ch_t;
  * (the rows: part and bars), PARTS, CLIPS. PAGES' FAM_SAVE GR_SONG pages as they were (drawn and played as before);
  * HOME's tabs, breadcrumb and header (nav_sec). SAVE keeps saving and loading */
 enum { SV_LIB, SV_PROJ, SV_SOUND };
-#define HE_SONG 4u                                      /* CE_HOME: the song's first entry, */
-#define HE_GEN 7u                                       /* .. GENE 1's */
-static const nv_t CE_HOME[] = {NV(0, "ECOSYSTEM", 0, 0), NV(0, "LIFE", 0, 0), NV(0, "BEING", 1, 1), NV(0, "VISUAL", 1, 1),
+#define HE_SONG 5u                                      /* CE_HOME: the song's first entry, */
+#define HE_GEN 8u                                       /* .. GENE 1's */
+static const nv_t CE_HOME[] = {NV(0, "ECOSYSTEM", 0, 0), NV(0, "LIFE", 0, 0), NV(0, "MACROS", 0, 0),   /* (V10.8.64, the owner:
+                                                         * "la página de macros en HOME con DICE, es clave") */
+                               NV(0, "BEING", 1, 1), NV(0, "VISUAL", 1, 1),
                                NV("JAM", 0, 2, SV_PROJ), NV("TAKE", 0, 2, SV_PROJ), NV("ARRANGE", 0, 2, SV_PROJ),   /* (V10.8: JAM's CLIPS first;
                                                          * TIMELINE, PARTS gone, the song mode's redesign) */
                                NV(0, "GENERATOR 1", 3, 2), NV(0, "GENERATOR 2", 3, 2), NV(0, "GENERATOR 3", 3, 2),
@@ -191,7 +193,7 @@ static uint32_t nav_cur(void)
     uint32_t sec = nav_sec(), key = nav_key(sec), e = nav_mem(key), k, pass, s;
     const ch_t *c = &CHAINS[key];
     if (sec == SEC_HOME && (ui.home || gen_on()))
-        return gen_on() ? HE_GEN + gen_page() : (ui.hlv ? 2u : 0u) + (ui.hset[ui.hlv ? 1 : 0] & 1u);
+        return gen_on() ? HE_GEN + gen_page() : ui.hlv ? 3u + (ui.hset[1] & 1u) : (uint32_t)(ui.hset[0] > 2u ? 0u : ui.hset[0]);
     if (sec == SEC_HOME) {                              /* (V10.7.63) a song page */
         for (k = HE_SONG; k < HE_GEN && nv_page(sec, k) != ui.page; k++) {}
         return k < HE_GEN ? k : HE_SONG;
@@ -222,10 +224,11 @@ static uint32_t nav_lv(void) { return nav_ch(nav_sec())->e[nav_cur()].lv; }   /*
 static uint32_t pd_level(void) { return nav_lv(); }
 static uint32_t save_level(void) { return nav_lv(); }
 static uint32_t home_level(void) { return gen_on() ? 2u : ui.hlv ? 1u : 0u; }
-static uint32_t home_set(void) { return ui.hset[home_level() & 1u] & 1u; }
-static int home_macros(void) { return 0; }             /* (V10.7.66: HOME > ROUTES gone, the macros FX > PUNCH IN's) */
-static int home_life(void) { return ui.home && !ui.menu && home_level() == 0u && home_set(); }   /* (V10.7.62) LIFE */
-static int home_vis(void) { return ui.home && !ui.menu && home_level() == 1u && home_set(); }   /* (V10.8.56) VISUAL */
+static uint32_t home_set(void) { return ui.hset[home_level() & 1u]; }   /* (V10.8.64: ECO's 0 1 2, BEING's 0 1) */
+static int home_macros(void) { return ui.home && !ui.menu && home_level() == 0u && home_set() == 2u; }   /* (V10.8.64)
+                                                         * HOME > MACROS back: M1..M4, the FX layer's knobs' own */
+static int home_life(void) { return ui.home && !ui.menu && home_level() == 0u && home_set() == 1u; }   /* (V10.7.62) LIFE */
+static int home_vis(void) { return ui.home && !ui.menu && home_level() == 1u && home_set() == 1u; }   /* (V10.8.56) VISUAL */
 /* the entries shown now (on this track, at this LOAD), in order: their indices in v (NAV_MAX at most: the longest chain,
  * FX's 17 since snd8's TAPE, fits: ui_test checks every chain against it; snd8b's 17th page overran a 16 and crashed
  * FX); how many */
@@ -289,8 +292,8 @@ static void nav_go(uint32_t sec, uint32_t e, int outside)
         } else {
             if (gen_on())
                 ui.confirm = 0;
-            ui.hlv = (uint8_t)(e >> 1);
-            ui.hset[e >> 1] = (uint8_t)(e & 1u);
+            ui.hlv = (uint8_t)(e >= 3u);                /* (V10.8.64) ECO 0..2, BEING 3..4 */
+            ui.hset[e >= 3u] = (uint8_t)(e >= 3u ? e - 3u : e);
             lz_hint_ms = fm1_ms;                        /* (V10.8.56: VISUAL's OCT+ said in the footer) */
         }
         if (!ui.home)

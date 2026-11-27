@@ -46,3 +46,12 @@ static void gx_keys(int32_t x, int32_t y, uint32_t oct, int32_t sp, int32_t wh, 
             cv_rect(kx, y, kw, kh - 14, c);
         }
 }
+
+/* (V10.8.64, the owner: "LIFE en grande ... cuánto se puede agrandar el nombre de lo que hace la página") a page's name
+ * large at the panel's top left (AF_L), its state or hint small under it: one call a page, the same place on each */
+static __attribute__((noinline)) void page_big(const char *a, const char *b)
+{
+    cv_text(6, 2, &AF_L, a, T_TEXT);
+    if (b)
+        cv_text(8, 34, &AF_X, b, T_DIM);
+}
