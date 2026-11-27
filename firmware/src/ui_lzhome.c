@@ -288,27 +288,32 @@ static void graph_eco(void)
  * mesh and the contours the output's history, the tentacles the tracks' levels, the core's heat the level, the numbers
  * live, the beat a spike. KNOB 1 DENSITY (layers and elements), 2 WOBBLE, 3 PALETTE (MIXED: a blue ground,
  * orange links, a thermal core, white data), 4 REACT */
-static const uint16_t VIS_PC[6][3] = {{0x2B7F, 0xFB62, 0xF185}, {0, 0, 0}, {0x2B7F, 0xFB62, 0xFB62},
-                                      {0x3F2B, 0xF185, 0xF185}, {0xFD40, 0xFAC0, 0xFAC0}, {0x9CF3, 0xFFFF, 0xFFFF}};
+/* (V10.8.58, the owner: "veamos qué se puede hacer con menos espacio") a role's colours by PALETTE: core, ground,
+ * links, data; MIXED one of three duos a scene (a blue ground and orange links, green and red, violet and yellow),
+ * THERMAL the heat ramp, the rest their own (data included) */
+static const uint16_t VIS_PC[8][4] = {{0, 0, 0, 0xFFFF}, {0xFB62, 0x2B7F, 0xFB62, 0xFFFF},
+                                      {0xF185, 0x3F2B, 0xF185, 0xFFFF}, {0xFD40, 0xFAC0, 0xFD40, 0xFD40},
+                                      {0xFFFF, 0x9CF3, 0xFFFF, 0xFFFF}, {0, 0x2B7F, 0xFB62, 0xFFFF},
+                                      {0, 0x3F2B, 0xF185, 0xFFFF}, {0, 0x6A5C, 0xFE60, 0x07FF}};
 #define VIS_H ((int8_t *)&vxs.wv[128])                  /* the output's history, 16 x 16 (LOFI's half of vxs.wv: it fills it
                                                          * again each frame it draws) */
 static struct {
     uint32_t fr, r, t, sd;
-    int32_t lv, sp, pe, bx, by, k, px, py;
+    int32_t lv, sp, pe, bx, by, k, px, py, oy;
     uint8_t hr, na;
     int16_t ax[8], ay[8];
 } vq __attribute__((section(".bss.tape")));
-/* a role's colour: 0 the core, 1 the ground, 2 the links, 3 the data, 4 the alert; h 0..256 */
+/* a role's colour: 0 the core (4 its ring), 1 the ground, 2 the links, 3 the data; h 0..256 */
 static VX_SEG uint16_t vc(uint32_t role, int32_t h)
 {
     uint32_t p = (uint32_t)vis_v[2] % 6u;
     uint16_t c;
+    if (!p) p = 6u + (vq.sd >> 3) % 3u;
     h = clamp(h, 0, 256);
-    if (role == 3u)
-        return 0xFFFF;
-    if (p == 1u || (!p && !role))
+    role &= 3u;
+    if (role < 3u && (p == 1u || (p >= 6u && !role)))
         return vk_heat(h);
-    c = VIS_PC[p][role ? role - 1u : 1u];
+    c = VIS_PC[p - 1u][role];
     return h < 96 ? ux_mix(0, c, 60) : c;
 }
 static VX_SEG void vp(uint32_t i, int32_t x, int32_t y, uint16_t c, int32_t a)   /* a polyline's point (i 0: the first) */
@@ -317,9 +322,12 @@ static VX_SEG void vp(uint32_t i, int32_t x, int32_t y, uint16_t c, int32_t a)  
     if (i && a) og_line_a(vq.px, vq.py, x, y, c, a);
     vq.px = x; vq.py = y;
 }
-static VX_SEG void vm(void)                             /* the point just drawn, marked for the data */
+static VX_SEG void vm(void)            /* the point just drawn, marked for the data: a few, apart, on the screen */
 {
-    if (vq.na < 8u) { vq.ax[vq.na] = (int16_t)(vq.px >> 4); vq.ay[vq.na++] = (int16_t)(vq.py >> 4); }
+    int32_t x = vq.px >> 4, y = vq.py >> 4, n = vq.na;   /* (y on the screen: the strips draw the same points) */
+    if (n >= 2 + vis_v[0] / 34 || x < 16 || x > 176 || y + vq.oy < 14 || y + vq.oy > 226 ||
+        (n && (uint32_t)(x - vq.ax[n - 1] + 52) < 104u && (uint32_t)(y - vq.ay[n - 1] + 40) < 80u)) return;
+    vq.ax[n] = (int16_t)x; vq.ay[n] = (int16_t)y; vq.na++;
 }
 static VX_SEG uint32_t vr(void) { return vx_rnd(&vq.r); }
 static VX_SEG void vring(int32_t x, int32_t y, int32_t r, uint16_t c, uint32_t dash)   /* wobbling, maybe dashed */
@@ -333,14 +341,13 @@ static VX_SEG void vring(int32_t x, int32_t y, int32_t r, uint16_t c, uint32_t d
 }
 static VX_SEG void vtxt(char *b, uint16_t c) { cv_text((vq.px >> 4) + 3, (vq.py >> 4) - 9, &AF_X, b, c); }
 static VX_SEG int32_t vh(uint32_t row, uint32_t col) { return VIS_H[((vq.hr - row) & 15u) * 16u + (col & 15u)]; }
-/* grounds: 0 the isometric mesh, the history its relief, digits on it; 1 topographic lines, a red overlay, the beat a
- * spike in the middle */
+/* grounds: 0 the isometric mesh, the history its relief, digits on it; 1 the same rows alone (topographic lines);
+ * 2 stars flying out of a vanishing point, streaks on the beat; 3 a rain of glyphs, the heads bright */
 static VX_SEG void vis_ground(uint32_t kind)
 {
     uint32_t n = 8u + (uint32_t)vis_v[0] / 14u, i, j, d;
     int32_t S = 360 / (int32_t)n, h;
-    if (kind >= 2u) {                                   /* 2 stars flying out of a vanishing point, streaks on the beat; 3 a
-                                                         * rain of glyphs, the heads bright */
+    if (kind >= 2u) {
         for (i = 0; i < (kind == 2u ? 4u : 2u) * n; i++) {
             uint32_t a = vr(), z = (a >> 16) + vq.t * (3u + (a & 7u)) * (kind == 2u ? 2u : 1u);
             if (kind == 2u) {
@@ -358,51 +365,54 @@ static VX_SEG void vis_ground(uint32_t kind)
         }
         return;
     }
-    for (d = 0; d < 2u; d++)
+    for (d = 0; d < 2u - kind; d++)
         for (i = 0; i < n; i++)
             for (j = 0; j < n; j++) {
                 uint32_t a = d ? j : i, b = d ? i : j;
                 h = vh(b * 16u / n, a * 16u / n) * (2 + vis_v[1] / 25);
                 vp(j, ((int32_t)a - (int32_t)b) * S, ((int32_t)a + (int32_t)b) * S / 2 - S * (int32_t)n / 2 - h, vc(1u, h * 2), 220);
-                if (!d && (a * 7u + b * 13u + vq.sd) % 9u == 0u) {
+                if (!d && !kind && (a * 7u + b * 13u + vq.sd) % 11u == 0u) {
                     char c2[2] = {(char)('0' + (uint32_t)h / 12u % 10u), 0};
                     vtxt(c2, 0xFFFF);
-                    if (a == b) vm();
+                    vm();
                 }
             }
 }
-/* cores: 0 a radial skull diagram (the skull's ring, spokes from a hub to the callouts, one dashed circle), 1 a scanned
- * head (its outline, a thermal fill of scan lines by the tracks' levels, the eyes); never one shape at several sizes */
+/* a head seen from the front, its right half from the crown down the jaw to the neck (x, y; mirrored) */
+static const int8_t VIS_HD[] = {0, -86, 20, -84, 38, -77, 50, -64, 57, -50, 60, -35, 58, -20, 55, -8, 58, 2, 55,
+                                14, 48, 30, 38, 44, 27, 54, 24, 62, 25, 80};
+/* cores: 0 a radial skull diagram (the skull's ring, spokes from a hub to square-tipped callouts, one dashed circle),
+ * 1 a scanned head (crown, temples, cheekbones, jaw, neck; a thermal fill of scan lines by the tracks' levels, the eye
+ * sockets);
+ * never one shape at several sizes */
 static VX_SEG void vis_core(uint32_t k)
 {
-    uint32_t i, n = 8u + (uint32_t)vis_v[0] / 8u;
-    int32_t y, w;
+    uint32_t i, n = 8u + (uint32_t)vis_v[0] / 8u, s;
+    int32_t x, y;
     if (!k) {
-        vring(0, 0, 230, 0xFFFF, 1);
+        vring(0, 0, 230, vc(3u, 256), 1);
         vring(0, 0, 150 + vq.sp / 4, vc(4u, 230), 0);
         for (i = 0; i < n; i++) {                       /* spokes from the hub, a node where they cross the skull */
             uint32_t a = i * 65536u / n + vq.sd;
             vp(0, 14 * og_cos(a) >> 15, 14 * og_sin(a) >> 15, 0, 0);
-            vp(1, 150 * og_cos(a) >> 15, 150 * og_sin(a) >> 15, vc(1u, 220), 256);
+            vp(1, 150 * og_cos(a) >> 15, 150 * og_sin(a) >> 15, vc(2u, 220), 256);
             cv_rect((vq.px >> 4) - 1, (vq.py >> 4) - 1, 3, 3, 0xFFFF);
-            vp(1, 262 * og_cos(a) >> 15, 262 * og_sin(a) >> 15, vc(1u, 160), 180);
-            if (i % 3u == 0u) vm();
+            vp(1, 262 * og_cos(a) >> 15, 262 * og_sin(a) >> 15, vc(2u, 160), 180);
+            cv_rect((vq.px >> 4) - 2, (vq.py >> 4) - 2, 5, 5, vc(2u, 256));
+            if (i & 1u) vm();
         }
         return;
     }
-    for (i = 0; i <= 48u; i++) {                        /* the head's outline; its scan lines, hot where the tracks sound */
-        uint32_t an = i * 1366u;
-        w = 150 - (30 * og_sin(an) >> 15);
-        vp(i, w * og_cos(an) * 4 / 5 >> 15, w * og_sin(an) >> 15, 0xFFFF, 256);
+    for (s = 0; s < 2u; s++)                            /* the outline, both halves */
+        for (i = 0; i < sizeof VIS_HD / 2u; i++)
+            vp(i, (s ? -2 : 2) * VIS_HD[2u * i], 2 * VIS_HD[2u * i + 1u], vc(3u, 256), 256);
+    for (i = 1; i < sizeof VIS_HD / 2u; i++) {          /* scan lines, hot where the tracks sound */
+        x = 2 * VIS_HD[2u * i] - 4; y = 2 * VIS_HD[2u * i + 1u];
+        vp(0, -x, y, 0, 0);
+        vp(1, x, y, vc(0u, trk[i % NTRK].peak * 256 / 7000 + vq.lv / 3), 140);
     }
-    for (y = -160; y < 116; y += 9) {
-        w = (150 + y / 5) * 4 / 5 - 8;
-        w = w * (256 - y * y / 160) / 256;
-        vp(0, -w, y, 0, 0);
-        vp(1, w, y, vc(0u, trk[(uint32_t)(y + 160) / 46u % NTRK].peak * 256 / 7000 + vq.lv / 3 + (og_sin((uint32_t)y * 900u + vq.t * 20u) >> 10)), 150);
-    }
-    for (i = 0; i < 2u; i++) {                          /* the eyes */
-        vring(i ? 48 : -48, -10, 12 + vq.lv / 24, 0xFFFF, 0);
+    for (i = 0; i < 2u; i++) {                          /* the eye sockets */
+        vring(i ? 44 : -44, -24, 15 + vq.lv / 32, vc(3u, 256), 0);
         vm();
     }
 }
@@ -413,52 +423,53 @@ static VX_SEG void vis_tick(void)
     uint32_t k;
     if (vq.fr == anim_fr)
         return;
-    {                             /* (once a tick) the level, the beat, the time, the history */
-        lv = bg_energy() * vis_v[3] / 100;
-        vq.fr = anim_fr;
-        vq.sp = vq.sp * 7 / 8 > (lv - vq.pe) * 3 ? vq.sp * 7 / 8 : (lv - vq.pe) * 3;
-        vq.pe = vq.lv = lv;
-        vq.t += 6u + (uint32_t)lv / 16u;
-        if (!(anim_fr & 3u)) {
-            vq.hr = (uint8_t)((vq.hr + 1u) & 15u);
-            for (k = 0; k < 16u; k++) {
-                v = scope_buf[(scope_w - 256u + k * 16u) & (SCOPE_N - 1u)];
-                VIS_H[vq.hr * 16u + k] = (int8_t)(4 + (v < 0 ? -v : v) * vis_v[3] / 25600);
-            }
+    lv = bg_energy() * vis_v[3] / 100;
+    vq.fr = anim_fr;
+    vq.sp = vq.sp * 7 / 8 > (lv - vq.pe) * 3 ? vq.sp * 7 / 8 : (lv - vq.pe) * 3;
+    vq.pe = vq.lv = lv;
+    vq.t += 6u + (uint32_t)lv / 16u;
+    if (!(anim_fr & 3u)) {
+        vq.hr = (uint8_t)((vq.hr + 1u) & 15u);
+        for (k = 0; k < 16u; k++) {
+            v = scope_buf[(scope_w - 256u + k * 16u) & (SCOPE_N - 1u)];
+            VIS_H[vq.hr * 16u + k] = (int8_t)(4 + (v < 0 ? -v : v) * vis_v[3] / 25600);
         }
     }
 }
 static void vis_fig(int32_t cx, int32_t cy, int32_t R, uint32_t sd)
 {
-    uint32_t i, b;
+    uint32_t i, b, sx;
     char t[12];
     if (!vis_seed) {                                    /* (the first time: the knobs' defaults, a seed) */
         vis_v[0] = 50; vis_v[1] = 40; vis_v[3] = 60;
         vis_seed = 1791;
     }
     vis_tick();
-    vq.sd = sd; vq.na = 0;
+    vq.sd = sd; vq.na = 0; vq.oy = 120 - (cy >> 4);
     vq.r = sd * 2654435761u | 1u;
-    b = vr();                                           /* the ground low, the links rising from it, the core on a third */
-    vq.bx = cx; vq.by = cy + 140 * R / 256; vq.k = 210 * R / 256;
-    vis_ground(b & 3u);                                /* (1: the mesh too) */
-    vq.by = cy + 30 * R / 256; vq.k = R * 3 / 4;
-    {
-        int32_t A[4] = {(cx >> 4) - 100, (cy >> 4) + 10, 200, 90};
-        vx_gx(&trk[1], A, vq.lv, &VX_G[1]);            /* the links: WHEEL's worms, their crowns */
-        vq.bx = cx + ((b & 4u) ? 96 : -96) * R / 256; vq.by = cy - 50 * R / 256; vq.k = (150 + (int32_t)(b >> 8) % 50) * R / 256;
-        A[0] = (vq.bx - R / 2) >> 4; A[1] = (vq.by - R / 2) >> 4; A[2] = A[3] = R >> 4;
-        if ((b >> 4 & 3u) == 3u)                        /* the core: a skull's diagram, a scanned head, or a creature */
-            vx_gx(&trk[0], A, vq.lv, &VX_G[(b >> 12) % 5u == 1u ? 0u : (b >> 12) % 5u]);
-        else
-            vis_core(b >> 4 & 1u);
+    b = vr();
+    sx = b & 4u;                                        /* the core's third (left or right); the links on the other */
+    vq.bx = cx;                                         /* the ground low, its height and size from the seed */
+    vq.by = cy + (110 + (int32_t)(b >> 10 & 3u) * 18) * R / 256; vq.k = (170 + (int32_t)(b >> 12 & 3u) * 24) * R / 256;
+    vis_ground(b & 3u);
+    if (b & 0x8000u) {                                  /* the links (some scenes): WHEEL's worms, on the other third */
+        int32_t A[4] = {(cx >> 4) + (sx ? 10 : -110), (cy >> 4) + 20, 100, 90};
+        vx_gx(&trk[1], A, vq.lv, &VX_G[1]);
     }
-    for (i = 0; i < vq.na; i++) {                       /* the data: boxes on the marked points, joined, their live numbers */
-        int32_t x = vq.ax[i], y = vq.ay[i], s = 5 + (int32_t)i % 3 * 2 + vq.lv / 64;
-        cv_frame(x - s, y - s, 2 * s + 1, 2 * s + 1, 0xFFFF);
-        if (i) og_line_a(vq.ax[i - 1u] * 16, vq.ay[i - 1u] * 16, x * 16, y * 16, 0xFFFF, 150);
-        fmt_fix(t, (int32_t)((sd + i) * 2654435761u >> 15) % 99991 - 49995 + vq.lv * 37 + (int32_t)(vq.t & 63u), 3);
-        cv_text(x + s + 2, y - s - 2, &AF_X, t, 0xFFFF);
+    {
+        int32_t A[4];
+        vq.bx = cx + (sx ? 80 : -80) * R / 256; vq.by = cy - (30 + (int32_t)(b >> 16 & 3u) * 14) * R / 256;
+        vq.k = (130 + (int32_t)(b >> 18) % 60) * R / 256;
+        A[0] = (vq.bx - R / 2) >> 4; A[1] = (vq.by - R / 2) >> 4; A[2] = A[3] = R >> 4;
+        vis_core(b >> 4 & 1u);                          /* the core: a skull's diagram or a scanned head */
+    }
+    for (i = 0; i < vq.na; i++) {                       /* the data: boxes on the marked points, joined, a callout each */
+        int32_t x = vq.ax[i], y = vq.ay[i], s = 6 + vq.lv / 64;
+        uint16_t c = vc(3u, 256);
+        cv_frame(x - s, y - s, 2 * s + 1, 2 * s + 1, c);
+        if (i) og_line_a(vq.ax[i - 1u] * 16, vq.ay[i - 1u] * 16, x * 16, y * 16, c, 120);
+        fmt_fix(t, (int32_t)((sd + i) * 2654435761u >> 17) % 9999 + vq.lv * 7 + (int32_t)(vq.t & 15u), 3);
+        cv_text(x + s + 3, y - s - 4, &AF_X, t, c);
     }
 }
 /* BEING: the track's being large, its HOME knobs as organs at the corners */
