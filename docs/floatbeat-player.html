@@ -1,0 +1,95 @@
+<!-- JIANT BYTE's landing: a floatbeat player in the formula card (PLAY / STOP, NEXT, a live oscilloscope). Self-contained:
+     its CSS is scoped to .fbp, its AudioWorklet inline (a Blob), no library. The formulas are this fixed list (compiled
+     once each; no user input). t in seconds, a sample -1..1, clamped. Keys on the card: Space play / stop, -> next.
+     SPDX-License-Identifier: GPL-3.0-only · Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) -->
+<style>
+.fbp{--fbp-line:#7a5cff;border:1px solid var(--fbp-line);border-radius:10px;background:#07070c;padding:16px;color:#f4ead0;font-family:"IBM Plex Mono",ui-monospace,monospace;outline:none}
+.fbp:focus-visible{box-shadow:0 0 0 2px #ff8a1f}
+.fbp-top{display:flex;align-items:center;gap:10px;min-height:28px}
+.fbp-n{background:#ff8a1f;color:#000;font-weight:700;font-size:13px;min-width:22px;height:20px;display:grid;place-items:center;border-radius:3px;padding:0 4px}
+.fbp-f{flex:1;min-width:0;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#f4ead0}
+.fbp-f::before{content:"\25B6  ";color:#a77bff}
+.fbp-cv{display:block;width:100%;height:auto;aspect-ratio:2/1;margin-top:12px;background:#0d0d14;border-radius:6px}
+.fbp-bar{height:6px;border-radius:3px;margin-top:12px;background:linear-gradient(90deg,#5b3cff,#a77bff 30%,#ff4a7a 55%,#ff8a1f 78%,#ffe7b0)}
+.fbp-ctl{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+.fbp-btn{font:600 12px/1 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;color:#ff8a1f;background:none;border:1px solid #ff8a1f;padding:10px 14px;cursor:pointer;min-width:44px;min-height:40px}
+.fbp-btn:hover{background:#ff8a1f;color:#000}.fbp-btn[aria-pressed="true"]{background:#ff8a1f;color:#000}
+.fbp-name{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#a77bff;margin-left:auto}
+</style>
+<div class="fbp" id="fbp" tabindex="0" role="group" aria-label="Floatbeat player">
+  <div class="fbp-top"><span class="fbp-n" id="fbp-n">1</span><code class="fbp-f" id="fbp-f"></code></div>
+  <canvas class="fbp-cv" id="fbp-cv" width="1200" height="600" aria-hidden="true"></canvas>
+  <div class="fbp-bar"></div>
+  <div class="fbp-ctl"><button class="fbp-btn" id="fbp-play" type="button" aria-pressed="false">&#9654; Play</button><button class="fbp-btn" id="fbp-next" type="button">Next &#8250;</button><span class="fbp-name" id="fbp-name"></span></div>
+</div>
+<script>
+(() => {
+  /* the formulas: [name, floatbeat of t in seconds] */
+  const F = [
+    ["FM BELL", "sin(2*PI*110*t+3*sin(2*PI*220*t)*exp(-4*(t%0.5)))"],
+    ["ARP", "sin(2*PI*[220,277.2,329.6,440][floor(t*8)%4]*t)*exp(-7*(t%0.125))"],
+    ["KICK + HAT", "0.9*sin(2*PI*(42+260*exp(-28*(t%0.5)))*(t%0.5))*exp(-5*(t%0.5))+0.25*(random()*2-1)*exp(-70*((t+0.25)%0.5))"],
+    ["DRONE", "0.3*(sin(2*PI*110*t)+sin(2*PI*110.6*t)+0.6*sin(2*PI*165.3*t))*(0.65+0.35*sin(2*PI*0.2*t))"],
+    ["WOBBLE", "0.6*tanh(3*sin(2*PI*55*t+2*sin(2*PI*55*t))*(0.5+0.5*sin(2*PI*3*t)))"],
+    ["CHORD", "(sin(2*PI*261.6*t)+sin(2*PI*329.6*t)+sin(2*PI*392*t)+0.5*sin(2*PI*130.8*t))/3.5*exp(-1.6*(t%1))"],
+    ["GLITCH", "sin(2*PI*220*t*(1+floor(t*16)%4))*(floor(t*16)%3?exp(-18*(t%0.0625)):0)"],
+    ["RAIN", "0.45*sin(2*PI*(900+500*sin(t*2.3))*t)*exp(-28*(t%0.07))"],
+    ["PHASE", "0.5*sin(2*PI*110*t+4*sin(2*PI*0.5*t)*sin(2*PI*110.5*t))"],
+    ["BASS LINE", "0.7*tanh(2*sin(2*PI*[55,55,65.4,49][floor(t*2)%4]*t))*exp(-3*(t%0.25))"],
+  ];
+  const $ = (id) => document.getElementById(id), cv = $("fbp-cv"), g = cv.getContext("2d");
+  const compile = (f) => new Function("t", "with(Math){return +(" + f + ")||0}");
+  let i = 0, ac = null, node = null, gain = null, an = null, playing = false, raf = 0, typing = 0;
+  const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const grad = () => { const gr = g.createLinearGradient(0, 0, cv.width, 0); [["#5b3cff", 0], ["#a77bff", .3], ["#ff4a7a", .55], ["#ff8a1f", .78], ["#ffe7b0", 1]].forEach(([c, p]) => gr.addColorStop(p, c)); return gr; };
+  function draw(ys) {                                            // a curve over the canvas, the zero line behind
+    const W = cv.width, H = cv.height; g.clearRect(0, 0, W, H);
+    g.strokeStyle = "rgba(244,234,208,.12)"; g.lineWidth = 2; g.beginPath(); g.moveTo(0, H / 2); g.lineTo(W, H / 2); g.stroke();
+    g.strokeStyle = grad(); g.lineWidth = 5; g.lineJoin = "round"; g.beginPath();
+    ys.forEach((y, k) => { const x = k / (ys.length - 1) * W, yy = H / 2 - Math.max(-1, Math.min(1, y)) * H * .44; k ? g.lineTo(x, yy) : g.moveTo(x, yy); });
+    g.stroke();
+  }
+  function still() {                                             // the formula's own shape, still (the first 30 ms)
+    const fn = compile(F[i][1]), ys = []; for (let k = 0; k < 600; k++) { try { ys.push(fn(k / 600 * .03)); } catch (_) { ys.push(0); } } draw(ys);
+  }
+  function show() {
+    $("fbp-n").textContent = i + 1; $("fbp-name").textContent = F[i][0];
+    const f = F[i][1], el = $("fbp-f"); clearInterval(typing);
+    if (RM) el.textContent = f; else { let n = 0; el.textContent = ""; typing = setInterval(() => { n += 3; el.textContent = f.slice(0, n); if (n >= f.length) clearInterval(typing); }, 16); }
+    el.title = f;
+    if (node) node.port.postMessage({ f }); if (!playing) still();
+  }
+  const WORKLET = `class FB extends AudioWorkletProcessor{constructor(){super();this.t=0;this.f=null;this.o=null;this.x=1;this.port.onmessage=(e)=>{try{const fn=new Function("t","with(Math){return +("+e.data.f+")||0}");fn(0);this.o=this.f;this.f=fn;this.x=this.o?0:1}catch(_){}}}
+process(_,out){const L=out[0][0],R=out[0][1]||L,dt=1/sampleRate;for(let k=0;k<L.length;k++){let v=0;try{v=this.f?this.f(this.t):0;if(this.x<1&&this.o){v=v*this.x+this.o(this.t)*(1-this.x);this.x=Math.min(1,this.x+dt/0.05)}}catch(_){v=0}v=v>1?1:v<-1?-1:v;if(v!==v)v=0;L[k]=v;if(R!==L)R[k]=v;this.t+=dt}return true}}registerProcessor("fbp",FB);`;
+  async function start() {
+    if (!ac) {
+      ac = new AudioContext();
+      await ac.audioWorklet.addModule(URL.createObjectURL(new Blob([WORKLET], { type: "application/javascript" })));
+      node = new AudioWorkletNode(ac, "fbp", { outputChannelCount: [2] }); gain = ac.createGain(); an = ac.createAnalyser(); an.fftSize = 2048;
+      node.connect(gain).connect(ac.destination); gain.connect(an); gain.gain.value = 0;
+    }
+    await ac.resume(); node.port.postMessage({ f: F[i][1] });
+    gain.gain.cancelScheduledValues(ac.currentTime); gain.gain.setTargetAtTime(.25, ac.currentTime, .02);   // about -12 dB, a 20 ms fade
+    playing = true; $("fbp-play").textContent = "\u25A0 Stop"; $("fbp-play").setAttribute("aria-pressed", "true"); scope();
+  }
+  function stop() {
+    if (gain) gain.gain.setTargetAtTime(0, ac.currentTime, .02);
+    playing = false; cancelAnimationFrame(raf); $("fbp-play").textContent = "\u25B6 Play"; $("fbp-play").setAttribute("aria-pressed", "false");
+    setTimeout(() => { if (!playing && ac) ac.suspend(); still(); }, 120);
+  }
+  function scope() {                                             // live, triggered on a rising zero crossing so it stands still
+    if (!playing) return; raf = requestAnimationFrame(scope);
+    const d = new Float32Array(an.fftSize); an.getFloatTimeDomainData(d);
+    let s = 0; for (let k = 1; k < d.length / 2; k++) if (d[k - 1] <= 0 && d[k] > 0) { s = k; break; }
+    draw(Array.from(d.subarray(s, s + 1024), (v) => v * 3.6));   // (the gain's -12 dB undone for the picture)
+  }
+  $("fbp-play").onclick = () => (playing ? stop() : start());
+  $("fbp-next").onclick = () => { i = (i + 1) % F.length; show(); };
+  $("fbp").addEventListener("keydown", (e) => {
+    if (e.target.tagName === "BUTTON" && (e.key === " " || e.key === "Enter")) return;
+    if (e.key === " ") { e.preventDefault(); playing ? stop() : start(); } else if (e.key === "ArrowRight") { e.preventDefault(); $("fbp-next").click(); }
+  });
+  document.addEventListener("visibilitychange", () => { if (document.hidden && playing) stop(); });
+  show();
+})();
+</script>
