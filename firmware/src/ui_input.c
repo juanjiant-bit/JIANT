@@ -2213,7 +2213,8 @@ static void sound_dice_of(track_t *t, int quiet)
         if (!d->label || d->label[0] == '-' || d->max <= d->min)
             continue;
         if (d->fmt == F_ENUM)
-            t->p[P_E0 + i] = (int16_t)(rng() % 3u ? t->p[P_E0 + i] : d->min + (int32_t)(rng() % (uint32_t)(d->max - d->min + 1)));
+            t->p[P_E0 + i] = (int16_t)(rng() % 3u ? t->p[P_E0 + i] : d->min + (int32_t)(rng() % (uint32_t)(d->max - d->min + 1 -
+                                       (d == &ENG_LOFI.edit[1]))));   /* (V10.8.62: MATH's WAVE SYNC not diced: BYTE or FLOAT as before) */
         else if (d->fmt == F_SEMI)                      /* (V10.38) an interval: 0, 4th, 5th, octave, up or down */
             t->p[P_E0 + i] = (int16_t)semi_pick(rng(), d->min, d->max);
         else

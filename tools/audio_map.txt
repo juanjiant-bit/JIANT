@@ -656,7 +656,7 @@ gen_rs_apply 758 bt drum_track gen_evolve gen_fxs gen_kit gen_mix gen_pick gen_s
 gen_rs_prep 282 bt drum_track gls_role
 gen_scale_page 380 text
 gen_sig 124 text
-gen_sound 2328 text apply_preset_to gch gnear gnever gpickw gr grg grr semi_pick set_engine_of track_desc trk_engp
+gen_sound 2364 text apply_preset_to gch gnear gnever gpickw gr grg grr semi_pick set_engine_of track_desc trk_engp
 gen_texture 174 text dhold gch gchord gnote gseed gtone
 gen_tick 358 text gen_new_seed gen_press gst_put
 gen_value 480 text
@@ -909,7 +909,7 @@ lock_held 198 text cur_page grid_on key_black key_place live_rec_sel name_on tse
 lock_id 84 text lock_page_ok motion_param trk_engp tsel_p
 lock_page_ok 68 text motion_param
 lofi_byte 1366 text
-lofi_byte_render 946 text lofi_byte lofi_mut lofi_sync
+lofi_byte_render 1038 text lofi_byte lofi_mut lofi_sync
 lofi_desc 84 text *
 lofi_float 3452 text mul64_sh15
 lofi_float_render 964 text lofi_float lofi_mut lofi_sync
@@ -1029,7 +1029,7 @@ mod_dst_name 50 text bt_hw_seg
 mod_dst_name_bt 178 bt clamp eng_idx mod_dst_ok track_desc
 mod_dst_offer 32 text bt_hw_seg
 mod_dst_offer_bt 92 bt eng_idx mod_dst_ok
-mod_dst_ok 272 bt eng_idx track_desc
+mod_dst_ok 280 bt eng_idx track_desc
 mod_dst_scope 62 text
 mod_end 66 text
 mod_midi 54 text
@@ -1188,7 +1188,7 @@ param_kept 52 text
 param_store_def 18 text param_desc_of
 param_turn 372 text enum_order enum_rank enum_skip name_of
 params_by_count 58 text
-part_dice 736 text apply_preset_to chain_busy confirm_open dice_by dk_vis_take drum_elsewhere rng semi_pick track_desc trk_eng tsel_p undo_mark
+part_dice 754 text apply_preset_to chain_busy confirm_open dice_by dk_vis_take drum_elsewhere rng semi_pick track_desc trk_eng tsel_p undo_mark
 pb_loop 228 text
 pb_ring_f 76 text
 pc_shown 42 text

@@ -1684,7 +1684,7 @@ static VX_SEG void vx_phase(const track_t *t, const int32_t *A, int32_t en_home)
 static VX_SEG void vx_lofi(const track_t *t, const int32_t *A, int32_t en_home)
 {
     const int16_t *p = t->p;
-    int32_t a0 = A[2] * 256 / 124, b0 = (A[3] - 4) * 256 / 94, fl = p[P_E1] != RW_BYTE, new_fr = vxs.fr[8] != anim_fr;
+    int32_t a0 = A[2] * 256 / 124, b0 = (A[3] - 4) * 256 / 94, fl = p[P_E1] == RW_FLOAT, new_fr = vxs.fr[8] != anim_fr;
     int32_t en = vx_level(t, 8, en_home), i, j, pk = 6000, sx[9], sy[9], bc[8], px = 0, py = 0, qx = 0, qy = 0, q[2 * 22], g = fl ? 38 : 27;
     uint32_t mt = vxs.mt[8], age = vx_age(t, 8, 0), w0 = scope_w - 256u, byte = 0, cr;
     int32_t sq = vx_sq(vx_fall(age, 154u), age);
@@ -2078,7 +2078,7 @@ static __attribute__((noinline)) void vx_gchain(const track_t *t, const vxf_t *f
     int32_t sx[9], sy[9], bt[8], tx = 0, ty = 0, bx = 0, by = 0;
     uint32_t cr = mt * (uint32_t)(307 + 4 * en) >> 8, by8 = (uint32_t)(vx_gw(127) / 32 + 128) & 255u, na = 0;
     for (i = 0; i < NVOICE; i++)                     /* (BYTE: the byte its newest voice holds, as its own) */
-        if (p[P_E1] == RW_BYTE && t->v[i].active && t->v[i].age >= na) { na = t->v[i].age; by8 = (uint32_t)((t->v[i].s[0] + 32640) >> 8) & 255u; }
+        if (p[P_E1] != RW_FLOAT && t->v[i].active && t->v[i].age >= na) { na = t->v[i].age; by8 = (uint32_t)((t->v[i].s[0] + 32640) >> 8) & 255u; }
     for (i = 0; i < 8u; i++) bt[i] = (by8 >> i & 1u) ? en : 0;
     for (i = 0; i <= 8u; i++) {
         int32_t amp = (26 + (en * 54 >> 8)) * (77 + (int32_t)i * 179 / 8) / 256;
@@ -2115,7 +2115,7 @@ static __attribute__((noinline)) void vx_gchain(const track_t *t, const vxf_t *f
     vx_curve(&f, q, 3, 0, 60);
     for (i = 8; i >= 1; i--) {                       /* the segments */
         int32_t rr = VR(i), v = vx_gw((int32_t)i * 15), m;
-        v = p[P_E1] == RW_BYTE ? bt[8 - i] : clamp((v < 0 ? -v : v) * 115 / 100, 0, 4096) * 218 / 4096 + 13;
+        v = p[P_E1] != RW_FLOAT ? bt[8 - i] : clamp((v < 0 ? -v : v) * 115 / 100, 0, 4096) * 218 / 4096 + 13;
         for (m = 0; m < 18; m++) {
             uint32_t a = (uint32_t)m * 65536u / 18u;
             int32_t w = (4096 + vx_gw((int32_t)i * 29 + m * 9) * 9 / 100) * vx_wf(a + i * 7000u) >> 12;

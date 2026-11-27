@@ -6,9 +6,10 @@
  * project, a user preset -- plays as ANALOG's nearest (core.h analog_from_chip). The engine's number (3) and its stored
  * values stay: WAVE 5 BYTE, 6 FLOAT; CHIP 0..3 the bits (STEP, 4, read as 4BIT: the same sound on BYTE and FLOAT) */
 static const char *const N_CHIP[] = {"4BIT", "4B/2", "8BIT", "1BIT"};
-static const char *const N_RWAVE[] = {"-", "-", "-", "-", "-", "BYTE", "FLOAT"};   /* (WAVE 5, 6: the stored numbers) */
+static const char *const N_RWAVE[] = {"-", "-", "-", "-", "-", "BYTE", "FLOAT", "SYNC"};   /* (WAVE 5, 6: the stored numbers;
+                                                         * V10.8.62 7: SYNC, BYTE with its time locked) */
 enum { CHIP_4BIT, CHIP_4B2, CHIP_8BIT, CHIP_1BIT };
-enum { RW_BYTE = 5, RW_FLOAT = 6 };
+enum { RW_BYTE = 5, RW_FLOAT = 6, RW_BLOCK = 7 };   /* (V10.8.62) SYNC: BYTE, its rhythm locked to the tempo */
 
 /* (JIANT 0.4) WAVE = BYTE: bytebeat, an 8-bit formula of the time t played as the wave (after viznut's 2011
  * one-liners: the music is in the formula). DUTY picks one of 32 (ALGO, DUTY / 4), CRSH is the formulas' variable
@@ -260,7 +261,17 @@ static __attribute__((noinline)) void lofi_byte_render(track_t *t, voice_t *v, i
     uint32_t lm = p[P_E7] ? (1u << (17u - (uint32_t)p[P_E7] * 12u / 127u)) - 1u : 0xFFFFFFFFu;   /* LOOP: t's window */
     uint32_t t0 = (uint32_t)(f < 32u ? BYTE_T0[f] : 0u) << 9;    /* (0.5.1: the formula's start) */
     uint32_t mul = lofi_motion(p[P_E4]), ts = v->ph[1], var = vr;   /* (0.5.4) MOTN: the slow time, Q8 */
-    uint32_t sy = p[P_E4] >= 128, sr = 0, sb = sy ? lofi_sync(&sr) : 0u;   /* (p6) SYNC */
+    uint32_t lk = p[P_E1] == RW_BLOCK, sy = p[P_E4] >= 128 || lk, sr = 0, sb = sy ? lofi_sync(&sr) : 0u;   /* (p6) SYNC;
+                                                         * (V10.8.62, a user: "the bpm is not the same from a note to
+                                                         * another") WAVE SYNC: the time locked, the slow bits (the rhythm) from
+                                                         * the tempo (at 120 BPM as C4's own), the fast
+                                                         * ones (the pitch) the note's: every key the same pattern, in
+                                                         * time, transposed; stopped, the bar free at the BPM */
+    if (lk) {
+        mul = lofi_motion(p[P_E4] & 127);
+        sb = (sb >> 7) * 43u + ((sb & 127u) * 43u >> 7);   /* (x 0.336: at 120 BPM the rhythm as C4's today with */
+        sr = sr * 43u >> 7;                             /* MOTION 0, its slow time's own rounding included) */
+    }
     hold *= 1 + (p[P_E5] >> 3);                         /* (0.5.4) GRIT: each sample held up to 16 x longer */
     uint32_t vsh = VH_SH();                             /* (V10.7.56) at half the rate: the hold half as many samples, */
     int32_t sk = vsh ? 3 : 2;                           /* the two smoothing poles squared (1/2 -> 3/4 a sample), SYNC's */
@@ -283,7 +294,8 @@ static __attribute__((noinline)) void lofi_byte_render(track_t *t, voice_t *v, i
         tf += ti;
         tt += tf >> 24;
         tf &= 0xFFFFFFu;
-        ts += ((ti >> 8) * mul) >> 16;
+        if (!lk)
+            ts += ((ti >> 8) * mul) >> 16;
         l1 += (((held >> 1) - l1) * sk) >> 2;           /* (JIANT 0.5) the 8-bit steps rounded: two one-poles before
                                                          * the filter (BYTE was knife-sharp); 0.9.11: at ~4.9 kHz, were
                                                          * ~6.3 (x 0.6): their images softer, the steps' edges filed */
@@ -442,10 +454,14 @@ static const preset_t LOFI_PRESETS[] = {
      MODS(P_FCUT, 100, P_LWAVE, LW_SH, P_LRATE, -10, P_LD_FLT, 16, MMOD(1, PS_RAND, PD_PAN, 40))},
     {"FLOAT PAD", {2, 6, 112, 0, 0, 0, 0, 0}, {80, 90, 69, 100}, 0, 1 | TAG(PAD), FX(30, 20, 30, 55), PAT(3), BREATHE(14, 0, 0),
      MODS(P_FCUT, 90)},
+    /* (V10.8.62, appended; a user: "I love BYTEBEAT's sound and its kinda arp, but the bpm is not the same from a note to
+     * another") BYTEBEAT with WAVE SYNC: its rhythm the tempo's, every key the same arp transposed */
+    {"BYTE SYNC", {2, 7, 4, 0, 0, 0, 0, 0}, {0, 80, 110, 40}, 0, 1 | TAG(FX), FX(0, 0, 25, 20), PAT(4),
+     MODS(MMOD(1, PS_MODW, PD_E(3), 40), MMOD(2, PS_AT, PD_E(6), 40))},
 };
 /* (V10.6i) browsed: the voices to play, the experiments, INIT (ui.c: in LOFI_ORDER's place; LOFI_PC stays) */
 static const uint8_t MATH_ORDER[] = {3, 4, 5, 6, 7, 11,   /* to play */
-                                     0, 1, 2, 8, 10,      /* experiments */
+                                     0, 12, 1, 2, 8, 10,  /* experiments (V10.8.62: BYTE SYNC by BYTEBEAT) */
                                      9};                  /* INIT */
 _Static_assert(sizeof MATH_ORDER == NELEM(LOFI_PRESETS), "MATH's browsing order: every preset once");
 
@@ -454,7 +470,7 @@ static const engine_t ENG_LOFI = {
     .page_title = {"FORMULA", "MOTION"},
     .edit = {
         {"CHIP", F_ENUM, 0, 3, 2, N_CHIP},           /* (FLOAT: 8BIT reads FULL, lofi_desc) */
-        {"WAVE", F_ENUM, RW_BYTE, RW_FLOAT, RW_BYTE, N_RWAVE},
+        {"WAVE", F_ENUM, RW_BYTE, RW_BLOCK, RW_BYTE, N_RWAVE},   /* (V10.8.62: SYNC, the time locked) */
         {"ALGO", F_INT, 0, 127, 64, 0},              /* (the knob 0..191 and the names: lofi_desc) */
         {"VARIANT", F_PCT, 0, 127, 0, 0},
         {"MOTION", F_INT, 0, 127, 0, 0},             /* (V10.6d: 0 the default; the knob to 255 SYNC: lofi_desc) */

@@ -733,6 +733,7 @@ BTAPP_FN static int mod_dst_ok(const track_t *t, uint32_t d)
         const param_desc_t *pd = track_desc(t, P_E0 + (k = d - MD_E1));
         if (!pd->label || !pd->label[0] || pd->label[0] == '-' || pd->max - pd->min <= 1) return 0;
         if (e == ENGI_FM6 && (k == 7u || k == 3u || k == 5u)) return 0;  /* SLOT requires a bank load, not a parameter offset. */
+        if (e == ENGI_LOFI && k == 1u) return 0;         /* (V10.8.62) MATH's WAVE (BYTE FLOAT SYNC): a list, as when it was two */
         if (e == ENGI_STRING && k == 3u && t->p[P_E0] != SX_FDBK) return 0; /* POS is excitation-only. */
         if (e == ENGI_INPUT && (k == 3u || (k == 5u && !t->p[P_E3]) || (k == 4u && (t->p[P_E0] != AIN_ST || t->p[P_E3])))) return 0;
     }

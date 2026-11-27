@@ -134,7 +134,7 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | PHASE 2 | 121 | SUB | 0..127 | 0 | |
 | PHASE 2 | 122 | FEEDBK | 0..127 | 0 | |
 | MATH 3 | 115 | CHIP | 0..3 | 2 | 4BIT 4B/2 8BIT 1BIT |
-| MATH 3 | 116 | WAVE | 5..6 | 5 | BYTE FLOAT |
+| MATH 3 | 116 | WAVE | 5..7 | 5 | BYTE FLOAT SYNC |
 | MATH 3 | 117 | ALGO | 0..191 | 64 | |
 | MATH 3 | 118 | VARIANT | 0..127 | 0 | |
 | MATH 3 | 119 | MOTION | 0..255 | 0 | |

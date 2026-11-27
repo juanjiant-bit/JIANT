@@ -13731,8 +13731,9 @@ static int test_engine_order_099(void)
             uint32_t q, e_pc = preset_all_at_in(pc, &q, ENGINE_PC_ORDER);
             in_pc = e_pc == engine && q == preset;
         }
-        /* ANIMAL added five sounds after its 24 programs. WEST keeps NOISE's eight. */
-        int browser_only = (engine == ENGI_ANIMAL && preset >= 24u) || (engine == ENGI_WEST && preset >= 8u);
+        /* ANIMAL added five sounds after its 24 programs. WEST keeps NOISE's eight. MATH's 18 (0.9.8's) without BYTE SYNC. */
+        int browser_only = (engine == ENGI_ANIMAL && preset >= 24u) || (engine == ENGI_WEST && preset >= 8u) ||
+                           (engine == ENGI_LOFI && preset >= 12u);   /* (V10.8.62: MATH's BYTE SYNC, its 18 programs as 0.9.8's) */
         if (in_pc == browser_only)
             break;
     }

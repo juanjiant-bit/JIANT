@@ -1692,7 +1692,7 @@ static __attribute__((noinline)) void gen_sound(track_t *t, uint32_t role, uint3
     gs.fm6 += e == ENGI_FM6;
     set_engine_of(t, e);
     en = trk_engp(t);
-    n = en->npresets;
+    n = en->npresets - (en == &ENG_LOFI);              /* (V10.8.62: MATH's appended BYTE SYNC not GEN's: its picks as before) */
     if (!n) return;
     if (pre != 255u && !sub && gch(35) && !(role == RL_BASS && gs.g->lead == LD_EBM) && ri != SR_COWBELL)   /* (V10.6z10) a third of
                                                          * the time another of the engine's presets of the same type (EBM's
