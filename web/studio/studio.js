@@ -96,7 +96,7 @@ const TEXT = {
     cvConverting: "Convirtiendo %s…", cvDone: "Listo: %s convertidos. Abrilos en el FM-1 (SAVE › PROJECTS).", cvFileDone: "Listo: %s convertidos; se bajó el archivo nuevo.", cvFail: "No se pudo convertir: %s", cvBefore: "Antes de convertir",
     vVis: "Visuales", visTitle: "Visuales que viven de la música", visLead: "El generador de visuales de JIANT BYTE en grande, para una pantalla o un proyector: cada canción arma su receta (ingredientes de las pantallas de BYTE, mezclados y deformados) y todo reacciona a los golpes, al bajo y a los acordes. Funciona con BYTE por USB, con el emulador o con cualquier aparato MIDI.",
     visSrc: "Fuente", visSrcUsb: "%s por USB (la receta del equipo)", visSrcEmu: "El emulador", visStart: "▶ Empezar", visStop: "Parar", visPal: "PALETA", visNew: "Otra receta",
-    visNoEmu: "Prendé el emulador (pestaña Emulador) y volvé a empezar.", visOld: "El equipo no respondió: los visuales por USB necesitan JIANT BYTE con VIS.",
+    visNoEmu: "Prendé el emulador (pestaña Emulador) y volvé a empezar.", visOld: "El equipo no respondió: los visuales por USB necesitan JIANT BYTE con VIS.", visNone: "VIS no disponible en esta versión de JIANT BYTE. Probá con el emulador o con cualquier aparato MIDI.", visNoneEmu: "VIS no disponible en esta versión de JIANT BYTE: Studio dibuja con lo que suena el emulador.",
     tourV_visT: "Visuales", tourV_vis: "Visuales generativos que se mueven con la música, para proyectar.", tourV_visH: "Con BYTE, el emulador o cualquier MIDI.",
     vAn: "Análisis", anTitle: "Análisis: los datos exactos", anLead: "Lee del FM-1 o del emulador todo lo que tiene: cada pista con su motor, preset, nivel y cada parámetro con su nombre y valor (y cuáles cambiaron), los globales y los efectos, los pasos, la canción y el generador. Con el emulador escucha además unos segundos: nivel, picos, cuánto sostiene cada pista y su espectro. Bajá el archivo o copiá el resumen y pasalo tal cual.",
     anGo: "Analizar", anSteps: "Incluir los pasos", anAudio: "Escuchar 8 s del emulador", anFrom: "De: %s (elige la pista de a una un instante y vuelve a la tuya)", anNoDev: "Conectá el FM-1 o prendé el emulador.",
@@ -294,7 +294,7 @@ const TEXT = {
     cvConverting: "Converting %s…", cvDone: "Done: %s converted. Open them on the FM-1 (SAVE › PROJECTS).", cvFileDone: "Done: %s converted; the new file was downloaded.", cvFail: "Could not convert: %s", cvBefore: "Before converting",
     vVis: "Visuals", visTitle: "Visuals that live on the music", visLead: "JIANT BYTE's visual generator, big, for a screen or a projector: each song makes its recipe (ingredients from BYTE's screens, mixed and bent) and everything reacts to the hits, the bass and the chords. Works with BYTE over USB, the emulator or any MIDI device.",
     visSrc: "Source", visSrcUsb: "%s over USB (the device's recipe)", visSrcEmu: "The emulator", visStart: "▶ Start", visStop: "Stop", visPal: "PALETTE", visNew: "Another recipe",
-    visNoEmu: "Switch the emulator on (Emulator tab) and start again.", visOld: "The device did not answer: visuals over USB need JIANT BYTE with VIS.",
+    visNoEmu: "Switch the emulator on (Emulator tab) and start again.", visOld: "The device did not answer: visuals over USB need JIANT BYTE with VIS.", visNone: "VIS is not available in this JIANT BYTE version. Try the emulator or any MIDI device.", visNoneEmu: "VIS is not available in this JIANT BYTE version: Studio draws from what the emulator plays.",
     tourV_visT: "Visuals", tourV_vis: "Generative visuals moving with the music, to project.", tourV_visH: "With BYTE, the emulator or any MIDI device.",
     vAn: "Analysis", anTitle: "Analysis: the exact data", anLead: "Reads everything the FM-1 or the emulator holds: each track with its engine, preset, level and every parameter by name and value (and which ones changed), the globals and effects, the steps, the song and the generator. From the emulator it also listens for a few seconds: level, peaks, how long each track sustains and its spectrum. Download the file or copy the summary and pass it on as it is.",
     anGo: "Analyze", anSteps: "Include the steps", anAudio: "Listen to 8 s of the emulator", anFrom: "From: %s (selects each track for an instant and goes back to yours)", anNoDev: "Connect the FM-1 or switch the emulator on.",
@@ -1890,10 +1890,13 @@ function visPush(f, link) {
   else visTick({ levels: a.slice(0, 6).map((v) => v / 127), hits: a[6], root: a[7], quality: a[8], step: a[9], playing: true });
 }
 /* the emulator: jiantEmu.vis() when it has it (JIANT BYTE's), else (JIANT FM's) its generator and its stems */
-function visEmu() {
+async function visEmu() {
   const e = (() => { try { return frames.emu.el.contentWindow.jiantEmu; } catch (_) { return null; } })();
   if (!e || !e.on()) { visSay(t("visNoEmu")); return; }
-  if (e.vis) {
+  let hasVis = !!e.vis;
+  if (hasVis) { try { const v = await e.vis(); hasVis = !!(v && typeof v === "object" && "seed" in v); } catch (_) { hasVis = false; } }   // (BYTE v1.0: "This engine has no VIS.")
+  if (!hasVis && state.fw === "byte") visSay(t("visNoneEmu"));
+  if (hasVis) {
     vis.poll = setInterval(async () => { const v = await e.vis().catch(() => null); if (!v) return; visSong(v); visTick({ levels: (v.levels || []).map((x) => x / 127), hits: v.hits, root: v.root, quality: v.quality, step: v.step, section: v.section, playing: !!v.playing }); }, 40);
     return;
   }
@@ -1957,8 +1960,12 @@ async function visStart() {
   vis.eng = new VisEngine(W, H); vis.R = null; vis.lastSong = ""; vis.on = true; vis.knobs.user = false;
   visSong({ seed: 1, recipe: 0, genre: 27, energy: 50, engines: 0 });
   const src = $("vissrc").value;
-  if (src === "usb" && state.dev) { vis.link = state.dev.link; try { await vis.link.request(22, [0, 1], 900); } catch (_) { visSay(t("visOld")); } }
-  else if (src === "emu") visEmu();
+  if (src === "usb" && state.dev) {
+    vis.link = state.dev.link;
+    try { const a = await vis.link.request(22, [0, 1], 900); if (!(a.length > 1 && a[1] & 1)) { visSay(t("visNone")); vis.link.request(22, [0, 0], 600).catch(() => {}); vis.link = null; } }   // (WATCH's second byte 0: this firmware has no VIS)
+    catch (_) { visSay(t("visOld")); }
+  }
+  else if (src === "emu") await visEmu();
   else if (src.startsWith("midi:")) { const a = await midiAccess(); const i = a.inputs.get(src.slice(5)); if (i) visMidi(i); }
   $("visgo").textContent = t("visStop");
   const g = cv.getContext("2d");
