@@ -183,8 +183,12 @@ run "user presets (UP_PUT parser, bank round trip, versions, PHYS DRUM kept, SAM
 
 $CC -o "$OUT/input_test" tests/input_test.c
 run "keys and buttons: fast press, long release, bouncy contacts (one note each), glitches, encoders" "$OUT/input_test"
-$CC -Ibuild/gen -Ifirmware/src -o "$OUT/vel_diag_test" tests/vel_diag_test.c
-run "velocity diagnostic (V10.6z5): the scan's ADC slots, MASTER kept, drive, presses and captures on synthetic traces" "$OUT/vel_diag_test"
+if [ -f tests/vel_diag_test.c ]; then                # (V10.8.48's tree has no tests/vel_diag_test.c: skipped, not fatal)
+    $CC -Ibuild/gen -Ifirmware/src -o "$OUT/vel_diag_test" tests/vel_diag_test.c
+    run "velocity diagnostic (V10.6z5): the scan's ADC slots, MASTER kept, drive, presses and captures on synthetic traces" "$OUT/vel_diag_test"
+else
+    echo "== skip velocity diagnostic (no tests/vel_diag_test.c in this tree)"
+fi
 $CC -Ifirmware/src -o "$OUT/boot_lz4_test" tests/boot_lz4_test.c
 run "the boot's packed RAM code (V10.6z5): LZ4 blocks back byte for byte, the build's own too" "$OUT/boot_lz4_test"
 
@@ -462,6 +466,66 @@ if command -v valgrind >/dev/null 2>&1 && [ "$(uname -s)" = Linux ] && [ "$(unam
 else
     echo "== skip CPU under valgrind (no valgrind, or not Linux x86-64)"
 fi
+
+# (SMK-37, docs/SMK37.md) the flash map and its guards, the store on it, the board check, the loader
+$CC -DBOARD_SMK37=1 -Ifirmware/hal -o "$OUT/smk_flash_test" tests/smk_flash_test.c
+run "SMK-37 flash map + store: never the head, BTIF/USRTRIM, USR, 0xFE000, key_mac; the stock marker only released" \
+    "$OUT/smk_flash_test"
+smk_driver_guard() {                              # the RAM driver checks FL_GUARD (FL_PROTECTED on the SMK) itself
+    [ "$(grep -c '!FL_GUARD(off, 0x1000u)\|!FL_GUARD(off, n)' firmware/hal/fm1_flash.h)" = 2 ] &&
+        ! grep -q 'FL_RANGE_OK(off, 0x1000u) ||\|!FL_RANGE_OK(off, n) ||' firmware/hal/fm1_flash.h
+}
+run "SMK-37 flash driver: fl_erase4k_ram / fl_prog_ram refuse what FL_GUARD refuses" smk_driver_guard
+$CC -w -DBOARD_SMK37=1 -Ifirmware/hal -o "$OUT/smk_map_test" tests/smk_map_test.c
+run "SMK-37 controls (V10.8 layout): the printed buttons, K1-K8, all 37 keys at every octave, pads, banks, wheels, pedal" \
+    "$OUT/smk_map_test"
+smk_ram_only() {                                  # RAM-only unless FELUCCA_SMK_FLASH=1: the store's and the OTA's writes refuse
+    grep -q '^#define SMK_MAY_WRITE (FELUCCA_SMK_FLASH && flash_ok)$' firmware/src/storage_hw.c &&
+        [ "$(grep -c 'if (!SMK_MAY_WRITE)' firmware/src/storage_hw.c)" = 2 ] &&
+        [ "$(grep -c 'if (!SMK_MAY_WRITE)' firmware/src/ota_hw.c)" = 2 ] &&
+        grep -q '^#define FELUCCA_SMK_FLASH 0 ' firmware/src/felucca.c &&
+        grep -q '^#define FELUCCA_BT 0 ' firmware/src/felucca.c
+}
+run "SMK-37 RAM-only by default: every store / OTA erase and write refused unless FELUCCA_SMK_FLASH=1; no Bluetooth segment" \
+    smk_ram_only
+smk_pages() {                                     # the pads' page shortcuts (smk_map.h) are pages of the chains (ui_lens.c)
+    sed -n '/SMK_PAGES\[8\]/,/^};/p' firmware/src/smk_map.h | grep -o '"[A-Z0-9 ]*"' | while read -r n; do
+        grep -q "NV($n,\|NV([^,]*, $n," firmware/src/ui_lens.c || { echo "no page $n"; return 1; }
+    done
+}
+run "SMK-37 pads 9..16: each page shortcut is a page of its section's chain" smk_pages
+$CC -w -DBOARD_SMK37=1 -Ifirmware/hal -o "$OUT/smk_keys_test" tests/smk_keys_test.c
+run "SMK-37 keybed (hal/smk_input.h, Melodee's test): two contacts, bounces, re-strikes, outer keys, pads, curves" \
+    "$OUT/smk_keys_test"
+if [ -f build/smk37-pro/felucca-smk37-pro.fwsc ]; then
+    $CC -w -DOWN_PKG=1 -DBOARD_SMK37=1 -Ifirmware/hal -o "$OUT/ota_test_smk" tests/ota_test.c
+    run "SMK-37 M-UPGRADE entry: staging 0xBB000, the model's record, the board check (-15 FM-1 package, -16 table)" \
+        "$OUT/ota_test_smk" build/smk37-pro/felucca-smk37-pro.fwsc build/felucca.fwsc
+    head -c 200000 build/smk37-pro/felucca.bin > "$OUT/smk_old_app.bin"
+    python3 tools/fm1pkg_make.py --board smk37 --product "SMK-37 Pro_900" "$OUT/smk_old_app.bin" \
+        build/smk37-pro/loader/ota.bin "$OUT/smk_old.fwsc" >/dev/null
+    # (V10.8) an SMK package carrying the FM-1's Bluetooth segment (fm1pkg_make refuses to make one: made here)
+    python3 -c 'import sys; sys.path.insert(0, "tools"); import fm1pkg_make as m; m.set_board("smk37")
+a = open("build/smk37-pro/felucca.bin", "rb").read(); o = open("build/smk37-pro/loader/ota.bin", "rb").read()
+b = open("build/bt.bin", "rb").read(); open(sys.argv[1], "wb").write(m.ufw(m.flash_image(a, m.KEY), o, "SMK-37 Pro_909", b))' \
+        "$OUT/smk_bt.fwsc" 2>/dev/null || rm -f "$OUT/smk_bt.fwsc"
+    $CC -DBOARD_SMK37=1 -Ifirmware/hal -o "$OUT/smk_ldr_test" tests/smk_ldr_test.c
+    run "SMK-37 update loader: the app area 0x4000-0x9CFFF only, the record at 0xBFF00, FM-1 and Bluetooth packages refused" \
+        "$OUT/smk_ldr_test" "$OUT/smk_old.fwsc" build/smk37-pro/felucca-smk37-pro.fwsc build/felucca.fwsc \
+        $( [ -f "$OUT/smk_bt.fwsc" ] && echo "$OUT/smk_bt.fwsc")
+fi
+# the SMK-37 packages, when built (./build.sh --board smk37 [--model elite]); a stock M-VAVE
+# v016 package for the region table's bytes: SMK_STOCK=folder with SMK37-Pro-V16.fwsc / SMK37-Elite-V16.fwsc (read only)
+for m in pro elite; do
+    P=build/smk37-$m/felucca-smk37-$m.fwsc
+    [ -f "$P" ] || { echo "== skip SMK-37 $m package (./build.sh --board smk37 --model $m)"; continue; }
+    [ $m = pro ] && N="SMK-37 Pro" || N="SMK-37 Elite"
+    [ $m = pro ] && S=SMK37-Pro-V16.fwsc || S=SMK37-Elite-V16.fwsc
+    STOCK=""
+    [ -n "${SMK_STOCK:-}" ] && [ -f "$SMK_STOCK/$S" ] && STOCK="$SMK_STOCK/$S"
+    run "SMK-37 $m package: identity, flash.bin 0x9D000, the stock v016 region table${STOCK:+ (= $S's bytes)}" \
+        python3 tests/smk_pkg_test.py "$P" "${N}_909" "build/smk37-$m/felucca.bin" $STOCK
+done
 
 run "installer CLI (fm1_install.py) against a simulated FM-1" python3 tests/install_test.py
 run "navigation map (docs/navigation-map*.svg) matches the firmware's chains" python3 tools/gen_nav_map.py --check

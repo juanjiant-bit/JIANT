@@ -354,7 +354,11 @@ static void fm1_main(void)
     fm1_guard_lock_top();
     fm1_irq_enable_all();
     fm1_delay_ms(30);
+#if BOARD_SMK37
+    if ((fm1_in.buttons & FM1_OCT_BOTH) == FM1_OCT_BOTH) {   /* (SMK-37: OCTAVE- 4, OCTAVE+ 5) */
+#else
     if ((fm1_in.buttons & 3u) == 3u) {
+#endif
         panel_setup();                        /* OCT- + OCT+ held at power-on */
         settings_save();
     }

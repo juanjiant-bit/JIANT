@@ -1876,10 +1876,17 @@ static __attribute__((noinline)) void kb_lat(uint32_t k)
 }
 #endif
 
+#if BOARD_SMK37
+static void smk_kb_block(void);                   /* (smk.c) */
+#endif
 static void keyboard_block(void)
 {
     uint32_t cur = fm1_in.notes & ~vk_hold, ch, k;   /* (V10.6z6: a press waiting for its strike, vel_kb.h: not yet) */
     uint32_t lay, fx;
+#if BOARD_SMK37
+    smk_kb_block();                               /* (SMK-37, smk.c) the keybed, the wheels and the pedal: MIDI in on the
+                                                   * selected track; the pads' velocities as the white keys' */
+#endif
     keys_strum(CTL);                              /* (0.6.81) the chords' strums */
     ch = cur ^ kb_prev;                           /* keys also sound while entering steps */
     if (!ch)

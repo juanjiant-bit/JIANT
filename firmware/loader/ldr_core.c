@@ -33,12 +33,26 @@
  *   ldr_record_clear()    forget the RAM update record
  *   ldr_progress(done, total)
  * plus the ota.c hooks (frames, time, idle). */
+#if BOARD_SMK37
+/* (SMK-37, after Melodee's ldr_core.c; hal/fm1_flash_map.h) the app area is the stock PRCT [0x4000, 0x9D000); the
+ * record scan covers only the VM below BTIF [0x9D000, 0xC0000) minus JIANT's store A [0x9D000, 0xBB000): the OTA
+ * area. It never reaches BTIF / USRTRIM, USRFLASH, USR or key_mac */
+#define LDR_APP_LO FL_APP_LO
+#define LDR_APP_HI FL_APP_HI
+#define LDR_REC_LO FL_APP_HI
+#define LDR_REC_HI FL_CAL_LO
+#define LDR_DATA_LO FL_DATA_LO
+#define LDR_DATA_HI FL_DATA_HI
+_Static_assert(LDR_APP_HI == 0x9D000u && LDR_REC_HI == 0xC0000u && LDR_DATA_HI == FL_OTA_LO,
+               "SMK loader: the app area, and records in the OTA area only");
+#else
 #define LDR_APP_LO 0x4000u
 #define LDR_APP_HI 0x93000u
 #define LDR_REC_LO 0x93000u                     /* update records live above the app ... */
 #define LDR_REC_HI 0xFC000u                     /* ... and below Felucca's globals (Felucca's records: 0xE4F00, */
 #define LDR_DATA_LO 0x97000u                    /* the stock firmware's: 0xE8F00), never in Felucca's store, whose */
 #define LDR_DATA_HI 0xE0000u                    /* bytes (the store) the host writes */
+#endif
 #define LDR_NSEC ((LDR_APP_HI - LDR_APP_LO) >> 12)
 #define LDR_FL_MAX 0x100000u                    /* flash.bin: at most the 1 MiB part */
 #define LDR_BT_LO 0xEA000u                      /* (V10.12) the Bluetooth segment (hal/fm1_flash.h FL_EXT_*) */
@@ -201,6 +215,10 @@ static int ldr_session(void)
     }
     if (bt_off && (bt_len <= 32u || bt_len > LDR_BT_HI - LDR_BT_LO))
         return -14;
+#if BOARD_SMK37
+    if (bt_off)                                          /* (SMK-37) no Bluetooth segment: 0xEA000.. is the SMK's */
+        return -14;                                      /* USRFLASH marker, store C and USR (fm1_flash_map.h) */
+#endif
     /* 2. the package's app area must decrypt with this chip's key */
     if ((rc = ldr_chip_key(&key)) != 0)
         return -40 + rc;
@@ -209,6 +227,14 @@ static int ldr_session(void)
     ldr_sfc(sec, 32, 0, key);
     if (ota_crc16(sec + 2, 30, 0) != ota_rd16(sec))
         return -6;                                       /* package for another chip key */
+#if BOARD_SMK37
+    /* (SMK-37) the package's region table (flash 0x4060..0x411F, enciphered) must be this device's: an SMK
+     * package on an FM-1, or a package with another layout, is refused before anything is erased */
+    if (ota_read(fl_off + FL_RT_OFF, sec, FL_RT_LEN) || ldr_fread(FL_RT_OFF, cur, FL_RT_LEN))
+        return -5;
+    if (!ota_memeq(sec, cur, FL_RT_LEN))
+        return -14;
+#endif
     /* 2b. the whole package first: nothing is erased for a damaged one */
     if ((rc = ldr_check(fl_off, fl_size, want, sc, sec)) != 0)
         return rc;

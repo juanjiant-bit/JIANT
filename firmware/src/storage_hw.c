@@ -4,6 +4,15 @@
  * audio keeps up, erases and writes only inside the storage areas, the audio buffer silenced
  * first. The host tests (storage_test.c) provide their own st_* on a simulated NOR. */
 static uint8_t flash_ok;                 /* JEDEC id matched at boot (persist_boot) */
+#if BOARD_SMK37
+/* (SMK-37, docs/SMK37.md) the flash is written only by a FELUCCA_SMK_FLASH=1 build, and only once persist_boot found
+ * the SMK's own part (flash_ok): the default build refuses every erase and write here at compile time (as does ota_hw.c),
+ * whatever any caller's own flash_ok check does */
+#define SMK_MAY_WRITE (FELUCCA_SMK_FLASH && flash_ok)
+#define ST_IDLE() fm1_wdt_feed()                /* (storage.c st_owner_check: a first boot clears ~78 sectors) */
+static void st_stock_release(void);             /* storage.c: the stock mapping's end marker */
+static int st_in_usrflash(uint32_t off);
+#endif
 static int st_read(uint32_t off, void *dst, uint32_t n)   /* 256-byte IRQ-off windows: audio keeps up */
 {
     uint8_t *d = dst;
@@ -25,12 +34,33 @@ static void audio_silence(void)                 /* IRQs off: the DMA would loop 
     for (i = 0; i < sizeof abuf / sizeof abuf[0]; i++)
         abuf[i] = 0;
 }
+#if BOARD_SMK37
+static int st_erase_raw(uint32_t off);
+#define ST_ERASE_MARKER() st_erase_raw(FL_STOCKTAG_LO)   /* (storage.c st_stock_release: the marker's sector only) */
+#endif
 static int st_erase(uint32_t off)
 {
-    uint32_t took, f;
-    int rc;
+#if BOARD_SMK37
     if (!FL_STORE_OK(off, 0x1000u))
         return -8;
+    if (st_in_usrflash(off))
+        st_stock_release();                     /* before the first erase in USRFLASH: see storage.c */
+    return st_erase_raw(off);
+}
+static int st_erase_raw(uint32_t off)           /* (the store windows, and the marker's sector: FL_GUARD) */
+{
+#endif
+    uint32_t took, f;
+    int rc;
+#if BOARD_SMK37
+    if (!FL_STORE_OK(off, 0x1000u) && !FL_STOCKTAG_OK(off, 0x1000u))
+        return -8;
+    if (!SMK_MAY_WRITE)                         /* RAM-only (the default): never an erase, whoever asks */
+        return -8;
+#else
+    if (!FL_STORE_OK(off, 0x1000u))
+        return -8;
+#endif
     f = irq_save();
     audio_silence();
     rc = FL_FAR(fl_erase4k_ram)(off, &took);
@@ -41,5 +71,11 @@ static int st_prog(uint32_t off, const void *src, uint32_t n)
 {
     if (!FL_STORE_OK(off, n))                   /* only inside the storage areas */
         return -8;
+#if BOARD_SMK37
+    if (!SMK_MAY_WRITE)                         /* RAM-only (the default): never a write, whoever asks */
+        return -8;
+    if (st_in_usrflash(off))
+        st_stock_release();                     /* before the first program in USRFLASH too */
+#endif
     return fl_write(off, src, n);
 }

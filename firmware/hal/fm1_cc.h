@@ -13,3 +13,15 @@
  * register, never as a direct call (JIANT 0.9.9-snd8: RAM code reaching a function in the flash past the tables, out of
  * a direct call's reach) */
 #define FM1_OPAQUE(v) __asm__("" : "+r"(v))
+
+/* (JIANT, after Melodee's BOARD_SMK37) the target board: 0 the M-VAVE FM-1 (the default; its build gets no new flag
+ * and stays byte-identical), 1 the M-VAVE SMK-37 Pro / Elite (same AC791N; tools/build.py --board smk37 sets
+ * -DBOARD_SMK37=1, docs/SMK37.md). Every SMK difference is behind #if BOARD_SMK37. */
+#ifndef BOARD_SMK37
+#define BOARD_SMK37 0
+#endif
+#if BOARD_SMK37
+#ifndef SMK_MODEL
+#define SMK_MODEL "SMK-37 Pro"                     /* build.py --model elite: -DSMK_MODEL="SMK-37 Elite" */
+#endif
+#endif

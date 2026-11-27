@@ -80,6 +80,142 @@ static uint32_t st_crc32_add(uint32_t c, const void *p, uint32_t n)   /* zlib CR
 }
 static uint32_t st_crc32(const void *p, uint32_t n) { return ~st_crc32_add(0xFFFFFFFFu, p, n); }
 
+#if BOARD_SMK37
+/* (SMK-37, hal/fm1_flash_map.h) the stock region table keeps the head, BTIF / USRTRIM 0xC0000..0xC1FFF (the keys'
+ * factory calibration), USR 0xF4000..0xFDFFF and key_mac, and its app area runs to 0x9D000; JIANT's objects are the
+ * FM-1's, only their places differ, in three windows (after Melodee's store; 78 of its 79 sectors):
+ *   store A, FL_DATA 0x9D000..0xBAFFF (the stock VM): 0x9D000 the settings pair; 0x9F000..0xA6FFF the four projects
+ *     (song 1); 0xA7000 / 0xA8000 the user presets' FM6 patches (OBJ_UPFM6); 0xA9000 / 0xAA000 the autosave;
+ *     0xAB000 the FM6 voice bank (fm6_vbank.c FVB_HOME); 0xAC000 / 0xAD000 the song index; 0xAE000 (A) + 0xBA000 (B)
+ *     song 2's section 4; 0xAF000 the store owner tag (st_owner_check); 0xB0000..0xB3FFF the user preset banks;
+ *     0xB4000..0xB9FFF song 2's sections 1..3
+ *   store B, FL_UFL 0xC2000..0xE9FFF (USRFLASH below its end marker): (V10.8: six songs) songs 3..6 (16 pairs,
+ *     0xC2000..0xE1FFF); 0xE2000..0xE9FFF spare
+ *   0xEA000 the stock end marker's sector: never data (FL_STOCKTAG, only erased whole as the release below)
+ *   store C, FL_GAP 0xEB000..0xF3FFF (unlisted, below USR): (V10.8) the songs' JAM takes (OBJ_JAM) 0xEB000 / 0xEC000;
+ *     0xED000..0xF3FFF spare
+ * tests/smk_flash_test.c checks every object's pair against the windows, the tag and each other. */
+#define ST_SMK_TAG 0xAF000u
+#define ST_SMK_VBANK 0xAB000u                      /* (fm6_vbank.c FVB_HOME) */
+static uint32_t st_sector(uint32_t obj, uint32_t copy)  /* flash offset of copy A (0) / B (1) */
+{
+    if (obj == OBJ_SETTINGS)
+        return 0x9D000u + copy * ST_SECTOR;
+    if (obj == OBJ_FM6BANK || obj == OBJ_UPFM6)          /* (the same pair, as the FM-1's) */
+        return 0xA7000u + copy * ST_SECTOR;
+    if (obj == OBJ_AUTOSAVE)
+        return 0xA9000u + copy * ST_SECTOR;
+    if (obj == OBJ_SONGIDX)
+        return 0xAC000u + copy * ST_SECTOR;
+    if (obj == OBJ_JAM)
+        return FL_GAP_LO + copy * ST_SECTOR;
+    if (obj >= OBJ_SONG1) {
+        uint32_t j = (obj - OBJ_SONG1) % (OBJ_COUNT - OBJ_SONG1);   /* (song - 2) * 4 + section, 0..19 */
+        if (j < 3u)
+            return 0xB4000u + j * 2u * ST_SECTOR + copy * ST_SECTOR;
+        if (j == 3u)
+            return copy ? 0xBA000u : 0xAE000u;
+        return FL_UFL_LO + (j - 4u) * 2u * ST_SECTOR + copy * ST_SECTOR;
+    }
+    if (obj >= OBJ_UPRESET0)
+        return 0xB0000u + (obj - OBJ_UPRESET0) * 2u * ST_SECTOR + copy * ST_SECTOR;
+    return 0x9F000u + (obj - OBJ_PROJECT0) * 2u * ST_SECTOR + copy * ST_SECTOR;
+}
+_Static_assert(OBJ_COUNT - OBJ_SONG1 == 20u && OBJ_UPRESET0 - OBJ_PROJECT0 == 4u && OBJ_FM6BANK - OBJ_UPRESET0 == 2u &&
+               OBJ_JAM >= OBJ_COUNT && OBJ_JAM != OBJ_FM6VB,
+               "SMK store: st_sector's table is laid out for 4 projects, 2 preset banks, 20 song objects and the JAM");
+_Static_assert(FL_UFL_LO + 16u * 2u * 0x1000u <= FL_UFL_HI && FL_GAP_LO + 2u * 0x1000u <= FL_GAP_HI &&
+               ST_SMK_TAG >= FL_DATA_LO && ST_SMK_TAG < FL_DATA_HI, "SMK store: the windows and the table disagree");
+
+/* The owner of the store (after Melodee's storage.c st_owner_check). Several FM-1 firmwares are ported to the SMK-37
+ * with the same store windows, each with its own formats: a firmware must never parse another's data. The sector
+ * 0xAF000 (the same in every port) holds "SMK37DATA" + the firmware's family (JIANT). Ours: load as ever. Erased or
+ * another family's: clear JIANT's whole store (A, B unless the stock mapping is intact there, and C) and take it.
+ * BTIF, USRTRIM, USR, key_mac and the head lie outside the three windows: never touched. */
+#define ST_DATA_FAMILY "JIANT"
+#ifndef ST_IDLE
+#define ST_IDLE() ((void)0)                        /* (the firmware: the watchdog, storage_hw.c) */
+#endif
+/* The stock firmware's mapping in USRFLASH (global settings at 0xC2000, magic A3 3A; 8 presets from 0xC3000 every
+ * 0x5000, the rest erased; the end marker "usrdata\0" at 0xEAFF8, FL_STOCKTAG): the stock firmware trusts the area
+ * while the marker is there and never rebuilds it, so after a return to stock JIANT's store B would be read as its
+ * key mapping. So an intact stock mapping is kept (its sectors read as empty objects: no JIANT commit record), and
+ * the marker is released (its sector erased: the stock firmware rebuilds its factory mapping at its next start)
+ * before the first erase or program in USRFLASH (storage_hw.c) and at boot when it stands over anything else. */
+static int st_stock_tagged(void)
+{
+    static const uint8_t TAG[8] = {'u', 's', 'r', 'd', 'a', 't', 'a', 0};
+    uint8_t t[8];
+    uint32_t i;
+    if (st_read(FL_STOCKTAG_OFF, t, 8))
+        return 0;
+    for (i = 0; i < 8u; i++)
+        if (t[i] != TAG[i])
+            return 0;
+    return 1;
+}
+static int st_stock_intact(void)                /* the marker over the stock layout */
+{
+    uint8_t b[8];
+    uint32_t n, k, i, ff;
+    if (!st_stock_tagged() || st_read(FL_UFL_LO, b, 2) || b[0] != 0xA3u || b[1] != 0x3Au)
+        return 0;
+    for (n = 0; n < 8u; n++)                    /* each preset: its head written, its last two sectors erased */
+        for (k = 0; k < 3u; k++) {
+            if (st_read(FL_UFL_LO + 0x1000u + n * 0x5000u + (k ? 0x2000u + k * 0x1000u : 0u), b, 8))
+                return 0;
+            for (ff = 1, i = 0; i < 8u; i++)
+                ff &= b[i] == 0xFFu;
+            if (ff != (k != 0u))
+                return 0;
+        }
+    return 1;
+}
+#ifndef ST_ERASE_MARKER
+#define ST_ERASE_MARKER() st_erase(FL_STOCKTAG_LO)   /* (host tests; the firmware: storage_hw.c, the raw erase) */
+#endif
+static void st_stock_release(void)              /* erase the marker's sector, once: later calls find no marker */
+{
+    if (st_stock_tagged())
+        (void)ST_ERASE_MARKER();
+}
+static int st_in_usrflash(uint32_t off) { return off >= FL_UFL_LO && off < FL_STOCKTAG_LO; }
+static uint8_t st_foreign __attribute__((unused));                      /* the store could not be cleared: RAM-only this boot (persist_boot) */
+static int st_owner_check(void)                 /* 0 ours; 1 another firmware's (or untagged) store was cleared; -1 an
+                                                 * erase failed: not tagged as ours, so the next boot clears it again */
+{
+    static const char FAM[] = ST_DATA_FAMILY;
+    uint8_t tag[16], want[16];
+    uint32_t i, ours = 1, s, keep, bad = 0;
+    for (i = 0; i < 16u; i++)
+        want[i] = i < 9u ? (uint8_t)"SMK37DATA"[i] : i - 9u < sizeof FAM - 1u ? (uint8_t)FAM[i - 9u] : 0u;
+    if (!st_stock_intact())
+        st_stock_release();                     /* the marker over anything but the stock mapping: let it rebuild */
+    if (st_read(ST_SMK_TAG, tag, 16))
+        return -1;
+    for (i = 0; i < 16u; i++)
+        ours &= tag[i] == want[i];
+    if (ours)
+        return 0;
+    for (s = FL_DATA_LO; s < FL_DATA_HI; s += ST_SECTOR)
+        if (s != ST_SMK_TAG) {
+            bad |= st_erase(s) != 0;
+            ST_IDLE();
+        }
+    keep = st_stock_intact();                   /* the stock mapping: kept until JIANT writes there */
+    for (s = FL_UFL_LO; !keep && s < FL_UFL_HI; s += ST_SECTOR) {
+        bad |= st_erase(s) != 0;
+        ST_IDLE();
+    }
+    for (s = FL_GAP_LO; s < FL_GAP_HI; s += ST_SECTOR) {
+        bad |= st_erase(s) != 0;
+        ST_IDLE();
+    }
+    if (bad || st_erase(ST_SMK_TAG) || st_prog(ST_SMK_TAG, want, 16))
+        return -1;                              /* the tag only over a store that is all ours */
+    return 1;
+}
+#else
 static uint32_t st_sector(uint32_t obj, uint32_t copy)  /* flash offset of copy A (0) / B (1) */
 {
     if (obj == OBJ_SETTINGS)
@@ -98,6 +234,7 @@ static uint32_t st_sector(uint32_t obj, uint32_t copy)  /* flash offset of copy 
         return 0xDC000u + (obj - OBJ_UPRESET0) * 2u * ST_SECTOR + copy * ST_SECTOR;
     return 0x97000u + (obj - OBJ_PROJECT0) * 2u * ST_SECTOR + copy * ST_SECTOR;
 }
+#endif /* BOARD_SMK37 */
 
 static uint8_t st_buf[ST_PAYLOAD_MAX] __attribute__((aligned(4), section(".lowbuf")));   /* (0.9.0: app.ld LOWBUF, was
                                                    * .bss: main loop only, zeroed at boot as .bss) */

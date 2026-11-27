@@ -23,9 +23,22 @@
  *   ota_show(step, code)       progress / result for the screen
  *   ota_commit(parm)           write RAM record + reset (never returns on hardware)
  */
+#if BOARD_SMK37
+/* (SMK-37, after Melodee's ota.c) the stock app's parm identity (Pro 18 B, Elite 20 B) */
+#define OTA_PARM_ID "ota-" SMK_MODEL "_016"
+_Static_assert(sizeof OTA_PARM_ID - 1u <= 20u, "SMK: the parm identity ends before +0x1C");
+/* the last 5 sectors of the stock VM (0xBB000..0xBFFFF, hal/fm1_flash_map.h FL_OTA), below BTIF / USRTRIM
+ * 0xC0000..0xC1FFF; the update loader may erase records only there (ldr_core.c) */
+#define OTA_AREA 0x000BB000u                     /* staged loader, 5 x 4 KiB */
+#define OTA_AREA_LEN 0x5000u
+#define OTA_RES (OTA_AREA + OTA_AREA_LEN - 0x100u)  /* 0xBFF00 = 4K boundary - 256: SPL scan */
+_Static_assert(OTA_AREA + OTA_AREA_LEN <= 0xC0000u && OTA_AREA >= 0x9D000u, "SMK: OTA area outside the VM");
+#else
+#define OTA_PARM_ID "ota-FM-1_015"
 #define OTA_AREA 0x000E0000u                     /* staged loader, 5 x 4 KiB */
 #define OTA_AREA_LEN 0x5000u
 #define OTA_RES (OTA_AREA + OTA_AREA_LEN - 0x100u)  /* 0xE4F00 = 4K boundary - 256: SPL scan */
+#endif
 #define OTA_LDR_HCRC 0xEBAAu                     /* official update loader (usb_hid_ota.bin) */
 #define OTA_LDR_DCRC 0x5881u
 #define OTA_LDR_LEN 0x4DE1u
@@ -256,6 +269,38 @@ static int ota_ufw(uint8_t *hdr, uint32_t *fl_off, uint32_t *fl_len, uint32_t *o
     return 0;
 }
 
+#if BOARD_SMK37
+/* (SMK-37, after Melodee's ota.c) the board check, before anything is erased. The FM-1's official package has the
+ * same head and the same official update loader as the SMK-37's, so the head check alone lets it through; its loader
+ * then writes the FM-1's layout: the factory calibration (BTIF / USRTRIM 0xC0000-0xC1FFF) erased, the FM-1's USR
+ * image over the SMK's. So a package must be laid out for the SMK-37:
+ *   -15  flash.bin is not the SMK's app area, 0x9D000 bytes (the FM-1's is 0x93000), either loader
+ *   -16  the package's region table (flash 0x4060-0x411F: VM, PRCT, BTIF, USRTRIM, USRFLASH, USR) is not this
+ *        keyboard's, either loader (JIANT's own loader checks it again, ldr_core.c). Both are SFC-enciphered at the
+ *        same offset with the same chip key, so equal bytes mean an equal table, and any other key differs.
+ *   -17  official loader: a USR image (UFW entry 50) for another place than 0xF4000 / 0xA000
+ * The screen shows FAILED -15 / -16 / -17; the staging area is not touched. pk, dv: 0xC0 bytes of scratch each */
+#define OTA_E_FL_LEN (-15)
+#define OTA_E_USR (-17)
+static int ota_board_check(const uint8_t *hdr, uint32_t fl_off, uint32_t fl_len, uint32_t official, uint8_t *pk,
+                           uint8_t *dv)
+{
+    uint32_t i, nent = ota_rd16(hdr + 8);           /* hdr: entries deciphered by ota_ufw */
+    if (fl_len != FL_APP_HI)
+        return OTA_E_FL_LEN;
+    if (ota_read(fl_off + FL_RT_OFF, pk, FL_RT_LEN) || ota_fread(FL_RT_OFF, dv, FL_RT_LEN))
+        return -4;
+    if (!ota_memeq(pk, dv, FL_RT_LEN))
+        return -16;
+    for (i = 0; official && i < nent && i < 11u; i++) {
+        const uint8_t *e = hdr + 0x40 + i * 0x50u;
+        if (ota_rd16(e) == 50u && (ota_rd32(e + 0x1C) != 0xF4000u || ota_rd32(e + 0x20) != 0xA000u))
+            return OTA_E_USR;
+    }
+    return 0;
+}
+#endif
+
 static int ota_stage(void)                       /* steps 1..6; 0 = host said success */
 {
 #ifdef MSCR                                      /* (seq2h) core.h mscr: the main loop's scratch, hdr step 1's only */
@@ -285,6 +330,10 @@ static int ota_stage(void)                       /* steps 1..6; 0 = host said su
         own = ota_memeq(b + i, (const uint8_t *)"FELUCCA-LOADER-1", 16) && ota_rd32(b + 0x20 + 4) <= 0x14000u;
     if (!official && !own)
         return -7;
+#if BOARD_SMK37
+    if ((rc = ota_board_check(hdr, fl_off, fl_len, official, b, mine)) != 0)
+        return rc;                                  /* another board's package: nothing staged, nothing erased */
+#endif
     if (official) {                    /* the official loader writes the head: it must equal ours, or be one of M-VAVE's
                                         * own (add15-beta6: V15's or V16's, by two fingerprints): JIANT over V15 -> V16 */
         uint32_t same = 1, crc = 0, fnv = 0x811C9DC5u, j;
@@ -357,6 +406,9 @@ static int ota_session(void)
     ota_deadline = ota_now_ms() + 120000u;          /* step 1 normally takes ~5 s; a stalled host gives up after 2 min */
     rc = ota_stage();
     if (rc) {
+#if BOARD_SMK37
+        if (rc > OTA_E_FL_LEN || rc < OTA_E_USR)   /* (refused by the board check: nothing to erase) */
+#endif
         ota_unstage();
         ota_show(9, rc);
         return rc;
@@ -367,8 +419,8 @@ static int ota_session(void)
     ota_wr16(parm + 2, 0x5A0Du);
     ota_wr16(parm + 4, 0x5A01u);
     ota_wr16(parm + 6, 0x5441u);
-    for (i = 0; i < 12u; i++)
-        parm[8 + i] = (uint8_t)"ota-FM-1_015"[i];    /* the loader's own USB identity */
+    for (i = 0; i < sizeof OTA_PARM_ID - 1u; i++)  /* FM-1 12 B, SMK 18 / 20 B (zero up to +0x27) */
+        parm[8 + i] = (uint8_t)OTA_PARM_ID[i];    /* the loader's own USB identity */
     ota_wr32(parm + 72, OTA_AREA);
     ota_wr16(parm, ota_crc16(parm + 2, 78, 0));
 #if FELUCCA_OTA_DRYRUN

@@ -523,7 +523,13 @@ static const uint8_t STR0[4] = {4, 3, 0x09, 0x04};
 static const uint8_t STR1[] = {22, 3, 'J', 0, 'u', 0, 'a', 0, 'n', 0, ' ', 0, 'J', 0, 'i', 0, 'a', 0, 'n', 0, 't', 0};   /* (0.7.0) the names JIANT's; the editor and the installer match /jiant|felucca/ */
 /* the product (USB_STR_PRODUCT): Windows names the MIDI port after it, macOS the device and its port; no interface
  * or jack has a name of its own (iInterface / iJack 0). 0.7.0..0.9.11: "JIANT FM" (index 2); Felucca: "Felucca" */
-#ifdef FELUCCA_LOADER
+#if BOARD_SMK37 && defined FELUCCA_LOADER   /* (SMK-37, after Melodee's usb.c) the device never reports as an FM-1's */
+static const uint8_t STR_PROD[] = {34, 3, 'J', 0, 'I', 0, 'A', 0, 'N', 0, 'T', 0, ' ', 0, 'S', 0, 'M', 0, 'K', 0, ' ', 0,
+                                   'U', 0, 'p', 0, 'd', 0, 'a', 0, 't', 0, 'e', 0};
+#elif BOARD_SMK37
+static const uint8_t STR_PROD[] = {26, 3, 'J', 0, 'I', 0, 'A', 0, 'N', 0, 'T', 0, ' ', 0, 'S', 0, 'M', 0, 'K', 0, '-', 0,
+                                   '3', 0, '7', 0};
+#elif defined FELUCCA_LOADER
 static const uint8_t STR_PROD[] = {24, 3, 'F', 0, 'M', 0, '-', 0, '1', 0, ' ', 0, 'U', 0, 'p', 0, 'd', 0, 'a', 0, 't', 0, 'e', 0};
 #else
 static const uint8_t STR_PROD[] = {10, 3, 'F', 0, 'M', 0, '-', 0, '1', 0};

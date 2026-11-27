@@ -7,6 +7,7 @@ static uint8_t fx_mon;                                  /* (V10.7.59) ui_layer.c
 /* (V10.8.27) the knobs' hints in the header gone for the flash (DRONE CLAY's fix) */
 static void fx_macro_back(void);
 /* ----------------------------------------------------------- LEDs --- */
+#if !BOARD_SMK37                                        /* (the SMK-37's LEDs: ui_leds below) */
 /* The LED picture is built off-line and copied one byte per column: clearing
  * and relighting would let the 10 kHz scan catch the dark gap and flicker. */
 static uint8_t led_pos[41];                        /* (col << 3) | row bit, 0xFF = none */
@@ -38,6 +39,7 @@ static void led_clear(uint8_t *nl, uint32_t id)
     if (q != 0xFF)
         nl[q >> 3] &= (uint8_t)~(1u << (q & 7u));
 }
+#endif
 
 static const uint8_t FAM_BTN[FAM_COUNT] = {B_HOME, B_ENV, B_LFO, B_FX, B_SCL, B_EDIT, B_GLO, B_SAVE,
                                            B_ARP, B_SEQ, B_GLO};   /* GLO: mixer + global settings; REC is transport */
@@ -60,7 +62,7 @@ static uint32_t held_family(void)
 /* (0.6.67) a button whose SELECT combo was used: no next page when let go, no tap, its layer shut until let go */
 static void btn_used(uint32_t b)
 {
-    ui.pg_down &= (uint16_t)~(1u << panel.btn[b]);
+    ui.pg_down &= (ui_btnmask_t)~(1u << panel.btn[b]);
     if (b == B_SEQ) ui.seq_t0 |= 2u;
     if (b == B_SAVE) ui.save_t0 |= 2u;
     pj_btn = (uint8_t)b;
@@ -75,7 +77,7 @@ static void pj_hold(void)
         pj_btn = 0xFFu;
         return;
     }
-    ui.pg_down &= (uint16_t)~(1u << panel.btn[pj_btn]);
+    ui.pg_down &= (ui_btnmask_t)~(1u << panel.btn[pj_btn]);
     if (pj_btn == B_SEQ) ui.seq_t0 |= 2u;
     if (pj_btn == B_SAVE) ui.save_t0 |= 2u;
     if (ui.ly)
@@ -339,6 +341,9 @@ static uint32_t key_leds(uint32_t *br)                 /* (*br: a layer's keys t
  * rest: the root's keys lit, the scale's at the mid level, the others glowing; the keys held and playing as ever
  * (lit, INV dark). Each picture is built off-line and copied one byte per column, the
  * glow first: an LED going from lit to dim never has a dark frame */
+#if BOARD_SMK37
+static void ui_leds(void);                              /* (SMK-37: the buttons' LEDs and the RGB pads, smk.c) */
+#else
 static __attribute__((noinline)) void ui_leds(void)
 {
     uint8_t nl[FM1_NCOL] = {0}, nd[FM1_NCOL] = {0}, own[FM1_NCOL] = {0}, og[FM1_NCOL] = {0}, nb[FM1_NCOL] = {0};
@@ -413,6 +418,7 @@ static __attribute__((noinline)) void ui_leds(void)
     for (c = 0; c < FM1_NCOL; c++)
         fm1_led[c] = nl[c];
 }
+#endif /* BOARD_SMK37 */
 
 /* ---------------------------------------------------------- input --- */
 /* Predictable hardware response (#23): each decoded detent is one value step; a fast turn keeps its full signed
@@ -2430,6 +2436,9 @@ static void scale_link(void)
         }
 }
 
+#if BOARD_SMK37
+static void smk_input_frame(uint32_t *pressed);         /* (SMK-37: the SMK's own controls, each frame first: smk.c) */
+#endif
 static void ui_input_frame(void);
 /* (V10.8.22, the owner) MOD: while a slot's SRC or DEST turns, its route in full ("LFO > FILTER CUTOFF"), the engine's own
  * names for E1..E8; always (HELP OFF too), the message's 40 frames */
@@ -2477,6 +2486,9 @@ static void ui_input_frame(void)
     uint32_t oct;
     uint32_t lay, combo = 0, lytap, lkeys, glo, kq = 0;
     int32_t s, sel = 0, ks[4] = {0, 0, 0, 0};
+#if BOARD_SMK37
+    smk_input_frame(&pressed);
+#endif
     fm6_poll();                                         /* FM6: PTCH turned -> its patch */
     sc_beat();                                          /* (V10.6j) SCENE's DRUM: a key's beat into the kit */
     mom_poll();                                         /* (0.9.9-seq2e) MOMENTARY's glide back, its header tag */
@@ -2883,7 +2895,7 @@ static void ui_input_frame(void)
     if (home == BT_TAP)                                 /* HOME acts on release (a hold opens the menu): rule 2, HOME's */
         nav_button(SEC_HOME);                           /* page last shown; on HOME the next group (ECO BEING GEN) */
     cursor_fix();                                       /* LEN may have changed (knob, editor, load) */
-    for (id = 0; id < 14u; id++) {
+    for (id = 0; id < PANEL_NBTN; id++) {
         if (!((pressed >> id) & 1u))
             continue;
         b = panel_btn_of(id);
@@ -2987,7 +2999,7 @@ static void ui_input_frame(void)
                 break;
             }
             if (!lay)                                   /* (with FX held: swallowed) */
-                ui.pg_down |= (uint16_t)(1u << id);
+                ui.pg_down |= (ui_btnmask_t)(1u << id);
             break;
         }
     }
@@ -3187,7 +3199,7 @@ static void panel_setup(void)
             if (SETUP_GIVE_UP(t0))
                 goto timeout;
         }
-        for (id = 0; id < 14u; id++)
+        for (id = 0; id < PANEL_NBTN; id++)
             if (((p & ~used) >> id) & 1u)
                 break;
         panel.btn[i] = (uint8_t)id;
@@ -3198,17 +3210,17 @@ static void panel_setup(void)
         uint32_t e;
         int32_t st = 0;
         setup_show("TURN RIGHT", E_NAME[i]);
-        for (e = 0; e < 7u; e++)
+        for (e = 0; e < PANEL_NENC; e++)
             fm1_enc_take(e);
         t0 = fm1_ms;
         for (;;) {
             fm1_wdt_feed();
             if (SETUP_GIVE_UP(t0))
                 goto timeout;
-            for (e = 0; e < 7u; e++)
+            for (e = 0; e < PANEL_NENC; e++)
                 if (!((used >> e) & 1u) && (st = fm1_enc_take(e)) != 0)
                     break;
-            if (e < 7u)
+            if (e < PANEL_NENC)
                 break;
         }
         panel.enc[i] = (uint8_t)e;
