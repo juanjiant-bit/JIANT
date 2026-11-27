@@ -74,7 +74,7 @@ const TEXT = {
     rsSafe: "Solo se escribe la zona del firmware (0x4000–0x92FFF), sector por sector, cada uno releído y comparado; la cabecera de arranque y tus datos no se tocan. Sin firmware dentro, la placa queda como un FM-1 Transporter común. Basado en FM-1 Transporter (Hügelton Instruments), MvaveFM1Unbricker (Quixotic7), jl-uboot-tool (kagaimiq) y la guía de GoodPerson42. Usalo con la batería cargada y bajo tu responsabilidad: todavía no se probó en un FM-1 real.",
     rdLiked: "¿Qué te gustó? (opcional)", rdDisliked: "¿Qué no te gustó? (opcional)", rdNext: "Siguiente", rdpDrums: "Batería", rdpBass: "Bajo", rdpChords: "Acordes", rdpLead: "Lead", rdpArp: "Arp", rdpSound: "Sonido/mezcla",
     rdStarting: "Prendiendo…", rdEmuOn: "Prendiendo el emulador…",
-    emuVer: "Versión", emuVerConfirm: "Cambiar de versión reinicia el emulador (cada versión guarda su propia memoria). ¿Seguir?",
+    emuVer: "Versión", emuVerPinned: "La de este sitio (recomendada)", emuVerPublic: "pública", emuVerConfirm: "Cambiar de versión reinicia el emulador (cada versión guarda su propia memoria). ¿Seguir?",
     gPlay: "Tocar", gMake: "Crear", gLearn: "Aprender", gDevice: "Equipo",
     pathFm1E: "Tengo un FM-1", pathFm1: "Conectarlo y usarlo", pathFm1T: "Instalar JIANT, editar los sonidos, guardar proyectos, grabar y mirar su pantalla.",
     pathTryE: "No tengo uno", pathTry: "Probarlo sin equipo", pathTryT: "La radio y el emulador: el FM-1 entero en el navegador, sonando ya.",
@@ -268,7 +268,7 @@ const TEXT = {
     rsSafe: "Only the firmware area (0x4000–0x92FFF) is written, sector by sector, each read back and compared; the boot head and your data are not touched. Without a firmware inside, the board is a plain FM-1 Transporter. Built on FM-1 Transporter (Hügelton Instruments), MvaveFM1Unbricker (Quixotic7), jl-uboot-tool (kagaimiq) and GoodPerson42's guide. Use it with a charged battery and at your own risk: it has not been tried on a real FM-1 yet.",
     rdLiked: "What did you like? (optional)", rdDisliked: "What didn't you like? (optional)", rdNext: "Next", rdpDrums: "Drums", rdpBass: "Bass", rdpChords: "Chords", rdpLead: "Lead", rdpArp: "Arp", rdpSound: "Sound/mix",
     rdStarting: "Starting…", rdEmuOn: "Switching the emulator on…",
-    emuVer: "Version", emuVerConfirm: "Changing the version restarts the emulator (each version keeps its own memory). Go on?",
+    emuVer: "Version", emuVerPinned: "This site's (recommended)", emuVerPublic: "public", emuVerConfirm: "Changing the version restarts the emulator (each version keeps its own memory). Go on?",
     gPlay: "Play", gMake: "Make", gLearn: "Learn", gDevice: "Device",
     pathFm1E: "I have an FM-1", pathFm1: "Connect it and use it", pathFm1T: "Install JIANT, edit the sounds, keep projects, record and watch its screen.",
     pathTryE: "I don't have one", pathTry: "Try it without one", pathTryT: "The radio and the emulator: the whole FM-1 in the browser, playing now.",
@@ -646,8 +646,8 @@ function loadFrame(k) {
   const f = frames[k];
   if (f.fw === state.fw && f.el.src) return;
   f.fw = state.fw;
-  const q = k === "editor" && state.target === "emu" ? "?emu=1" : MOCK && k === "editor" ? "?mock=1" : k === "emu" && state.emuVer ? "?v=" + encodeURIComponent(state.emuVer) : "";
-  f.el.src = toolUrl(state.fw, f.tool, q);
+  const q = k === "editor" && state.target === "emu" ? "?emu=1" : MOCK && k === "editor" ? "?mock=1" : "";
+  f.el.src = k === "emu" && state.emuVer ? `${TOOLS[state.fw].base}emu-v/${state.emuVer}/` : toolUrl(state.fw, f.tool, q);   // another version: its own page (emu-v)
 }
 for (const [k, f] of Object.entries(frames)) f.el.addEventListener("load", () => { dress(f.el); if (k === "editor") editorLoaded(); });
 /* the firmware's look inside a tool's frame (same origin only): its colour tokens and type, over the page's own */
@@ -2391,14 +2391,16 @@ $("manclose").addEventListener("click", () => { $("mantry").hidden = true; $("f-
 
 /* ------------------------------------------------------------------------------------------- the whole page */
 /* the connection line under the bar: what Studio is talking to, and the next thing to do */
-/* the emulator's version (the public page's versions.json; the first is the pinned one): a reload with ?v= */
+/* the emulator's version: the pinned one, or one the installer offers, each its own page from the same commit
+   (the FM session's emu-v: index.json [{ version, sha7, public, ok }], /emu-v/<sha7>/) */
 async function emuVersions() {
   const sel = $("emuver"); if (!sel) return;
   if (sel.dataset.fw === state.fw) return; sel.dataset.fw = state.fw;
-  let list = null; try { const r = await fetch(`${TOOLS[state.fw].base}emu/versions.json`, { cache: "no-cache" }); if (r.ok) list = await r.json(); } catch (_) {}
-  $("emuverbox").hidden = !Array.isArray(list) || list.length < 2;
+  let list = null; try { const r = await fetch(`${TOOLS[state.fw].base}emu-v/index.json`, { cache: "no-cache" }); if (r.ok) list = (await r.json()).filter((v) => v.ok); } catch (_) {}
+  $("emuverbox").hidden = !Array.isArray(list) || !list.length;
   if (!Array.isArray(list)) return;
-  sel.replaceChildren(...list.map((v, i) => { const o = document.createElement("option"); o.value = i ? v.version : ""; o.textContent = v.version + (v.status ? ` · ${v.status}` : ""); return o; }));
+  const o = (v, txt) => { const e = document.createElement("option"); e.value = v; e.textContent = txt; return e; };
+  sel.replaceChildren(o("", t("emuVerPinned")), ...list.map((v) => o(v.sha7, v.version + (v.public ? ` · ${t("emuVerPublic")}` : ""))));
   sel.value = state.emuVer || "";
 }
 $("emuver").onchange = () => {
