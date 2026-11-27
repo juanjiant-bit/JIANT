@@ -172,7 +172,7 @@ UH_SEG static int uh_probe(uint8_t depth, uh_midi_t *m)
     cls = d8[4];
     if (uh_ctl(0, 0x00, 5, addr, 0, 0, 0, mps) < 0)     /* SET_ADDRESS */
         return 0;
-    uh_wait(10);
+    uh_wait(20);                                        /* (V10.8.69) 20 ms: some keyboards take more than 10 */
     r = uh_ctl(addr, 0x80, 6, 0x0200, 0, 9, uh_cfg, mps);
     if (r < 9)
         return 0;
@@ -348,12 +348,20 @@ UH_SEG static void uh_connect(void)                            /* a device on th
         uh.tried = 1;
         return;
     }
-    sie_wr(S_POWER, 0x08u);                             /* bus reset */
-    uh_wait(30);
-    sie_wr(S_POWER, 0);
-    uh_wait(30);
-    uh.next_addr = UH_FIRST_ADDR;
-    if (uh_probe(0, &m)) {
+    int ok = 0;
+    for (uint32_t k = 0; ; k++) {                       /* (V10.8.69) three tries, a bus reset and a longer recovery
+                                                         * each: a keyboard slow to answer after its reset is not
+                                                         * "NOT USB MIDI" on the first unanswered request */
+        sie_wr(S_POWER, 0x08u);                         /* bus reset */
+        uh_wait(30);
+        sie_wr(S_POWER, 0);
+        uh_wait(30 + 70 * k);
+        uh.next_addr = UH_FIRST_ADDR;
+        ok = uh_probe(0, &m);
+        if (ok || k == 2u)
+            break;
+    }
+    if (ok) {
         uh_start_ep(&m);
         uh.msg = uh.aud ? UH_MSG_AUDIO : UH_MSG_MIDI;
         uh.tried = 0;

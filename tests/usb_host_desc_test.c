@@ -85,6 +85,38 @@ int main(void)
         check("44.1 and 48 kHz: 44.1 kept (no conversion)", uh_parse_uac(UM2, sizeof UM2, &a) && !a.r48);
         check("a keyboard is no audio input", !uh_parse_uac(KBD, sizeof KBD, &a));
     }
+    {   /* (V10.8.69) shapes real keyboards use that the parser used to refuse ("NOT USB MIDI") */
+        static const uint8_t OUTFIRST[] = {9, 2, 0, 0, 2, 1, 0, 0x80, 50,
+                                           9, 4, 0, 0, 1, 1, 3, 0, 0,
+                                           7, 5, 0x01, 2, 64, 0, 0,
+                                           9, 4, 1, 0, 1, 1, 3, 0, 0,
+                                           7, 5, 0x81, 2, 64, 0, 0};
+        static const uint8_t INT0[] = {9, 2, 0, 0, 1, 1, 0, 0x80, 50,
+                                       9, 4, 0, 0, 1, 1, 3, 0, 0,
+                                       7, 5, 0x81, 3, 8, 0, 0};
+        static const uint8_t BULK48[] = {9, 2, 0, 0, 1, 1, 0, 0x80, 50,
+                                         9, 4, 0, 0, 1, 1, 3, 0, 0,
+                                         7, 5, 0x82, 2, 48, 0, 0};
+        /* MPK mini mk3-like: audio control, MIDI streaming with jacks, 9-byte endpoints and their class ones */
+        static const uint8_t MPK[] = {9, 2, 0, 0, 2, 1, 0, 0x80, 50,
+                                      9, 4, 0, 0, 0, 1, 1, 0, 0,
+                                      9, 0x24, 1, 0, 1, 9, 0, 1, 1,
+                                      9, 4, 1, 0, 2, 1, 3, 0, 0,
+                                      7, 0x24, 1, 0, 1, 0x41, 0,
+                                      6, 0x24, 2, 1, 1, 0,
+                                      9, 5, 0x01, 2, 64, 0, 0, 0, 0,
+                                      5, 0x25, 1, 1, 1,
+                                      9, 5, 0x81, 2, 64, 0, 0, 0, 0,
+                                      5, 0x25, 1, 1, 3};
+        uh_midi_t m;
+        check("an OUT-only MIDI interface first: the next one's IN taken", uh_parse_midi(OUTFIRST, sizeof OUTFIRST, &m) &&
+              m.iface == 1 && m.in_ep == 1 && !m.out_ep);
+        check("interrupt IN with bInterval 0: taken, polled every frame", uh_parse_midi(INT0, sizeof INT0, &m) &&
+              m.in_ep == 1 && m.in_type == 3 && m.in_interval == 1);
+        check("bulk IN of 48 bytes: taken", uh_parse_midi(BULK48, sizeof BULK48, &m) && m.in_ep == 2 && m.in_mps == 48);
+        check("MPK mini mk3-like: iface 1, IN 1, OUT 1", uh_parse_midi(MPK, sizeof MPK, &m) && m.iface == 1 &&
+              m.in_ep == 1 && m.out_ep == 1 && m.in_mps == 64);
+    }
     printf("usbhost: %s\n", bad ? "FAILED" : "all ok");
     return bad != 0;
 }

@@ -569,7 +569,7 @@ formant_note_on 150 text *
 formant_render 1918 text * fmt_glot fmt_ratio fmt_sung formant_word_render fres_coef mac2_64 mul64 mul64_us umul64 vowel_at
 formant_word_render 2468 text fmt_glot fmt_ratio fmt_sung fres_coef mac2_64 mul64 mul64_sh15 mul64_us umul64
 fres_coef 196 text mul64
-ft_of 14 text
+ft_of 14 text *
 fugue_tick 370 text fg_next fg_play fg_release
 fvb_boot 6 text
 fvb_commit 78 text st_crc32 st_prog
@@ -835,7 +835,7 @@ kc_w 22 text
 kern 78 text glyph_at
 key_black 28 text
 key_next 336 text drum_oct_note dxo_on midi_local_held mo_key mo_kon
-key_off 278 text drum_oct_note dxo_off input_off midi_local_held mo_koff rec_release trk_note_off
+key_off 278 text * drum_oct_note dxo_off input_off midi_local_held mo_koff rec_release trk_note_off
 key_place 46 text key_black
 keys_mode 32 text ckeys_on grid_on name_on skeys_on
 keys_pg 56 text cur_page
@@ -1393,10 +1393,10 @@ sc_track 374 text input_on midi_local_held mo_kon rec_note rec_on scn_notes
 scale_mask 32 text
 scale_snap 52 text scale_mask
 scale_steps 112 text scale_mask scale_snap
-scene_drum_tick 272 text div_samples trk_note_off trk_note_on
+scene_drum_tick 272 text * div_samples trk_note_off trk_note_on
 scene_follow 156 text sc_track scene_follow_off
-scene_follow_off 82 text input_off mo_koff
-scene_key 322 text input_off kb_map midi_local_held mo_koff sc_track
+scene_follow_off 82 text * input_off mo_koff
+scene_key 322 text * input_off kb_map midi_local_held mo_koff sc_track
 scn_notes 280 text chord_build_mode
 scope_at 238 text cv_rect scope_lod scope_seg
 scope_lod 110 text scope_seg
@@ -1669,7 +1669,7 @@ uac_stream 50 text memset
 uac_tap 172 text
 uac_tap48 226 text uac_collect uac_rs_run
 uac_tap8 436 text
-uh_connect 116 bt sie_rd sie_wr uh_probe uh_start_ep uh_wait
+uh_connect 128 bt sie_rd sie_wr uh_probe uh_start_ep uh_wait
 uh_csr0 88 bt fm1_wdt_feed sie_rd sie_wr
 uh_ctl 272 bt sie_rd sie_wr uh_csr0
 uh_ctl_out 170 bt sie_wr uh_csr0
@@ -1677,7 +1677,7 @@ uh_host_up 168 bt sie_wr uh_wait
 uh_hub_port_probe 230 bt uh_ctl uh_probe uh_wait
 uh_hub_probe 282 bt uh_ctl uh_hub_port_probe uh_hub_status uh_wait
 uh_hub_status 100 text uh_ctl
-uh_parse_midi 358 text
+uh_parse_midi 394 text
 uh_parse_uac 642 text
 uh_probe 536 bt uh_ctl uh_ctl_out uh_hub_probe uh_parse_midi uh_parse_uac uh_wait
 uh_session_end 30 bt

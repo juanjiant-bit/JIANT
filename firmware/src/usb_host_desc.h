@@ -35,7 +35,10 @@ static int uh_parse_midi(const uint8_t *d, uint32_t len, uh_midi_t *m)
         if (d[i + 1] == 2u && l >= 9u) {
             cfg = d[i + 5];
         } else if (d[i + 1] == 4u && l >= 9u) {
-            if (m->found) break;                        /* never combine interfaces or alternate settings */
+            if (m->found && m->in_ep) break;            /* never combine interfaces or alternate settings */
+            if (m->found)                               /* (V10.8.69) an OUT-only MIDI interface before the one with
+                                                         * the keyboard's IN: forgotten, keep looking */
+                *m = (uh_midi_t){0};
             m->cfg = cfg;
             m->iface = d[i + 2];
             m->alt = d[i + 3];
@@ -43,21 +46,20 @@ static int uh_parse_midi(const uint8_t *d, uint32_t len, uh_midi_t *m)
         } else if (d[i + 1] == 5u && l >= 7u && in_midi) {
             uint8_t ea = d[i + 2], type = d[i + 3] & 3u;
             uint16_t mps = (uint16_t)(d[i + 4] | d[i + 5] << 8);
-            /* Full-speed USB-MIDI 1.0 events are four bytes. The buffers hold at most 64 bytes. */
-            if ((ea & 15u) && !(ea & 0x70u) && mps >= 4u && mps <= 64u &&
-                ((type == 2u && (mps == 8u || mps == 16u || mps == 32u || mps == 64u)) ||
-                 (type == 3u && d[i + 6]))) {
+            /* Full-speed USB-MIDI 1.0 events are four bytes. The buffers hold at most 64 bytes. (V10.8.69: any bulk
+             * size of whole events, an interrupt one with bInterval 0 polled every frame) */
+            if ((ea & 15u) && !(ea & 0x70u) && mps >= 4u && mps <= 64u && (type == 2u || type == 3u)) {
                 if ((ea & 0x80u) && !m->in_ep) {
                     m->found = 1;
                     m->in_ep = ea & 0x0Fu;
                     m->in_type = type;
-                    m->in_interval = d[i + 6];
+                    m->in_interval = d[i + 6] ? d[i + 6] : 1u;
                     m->in_mps = mps;
                 } else if (!(ea & 0x80u) && !m->out_ep) {
                     m->found = 1;
                     m->out_ep = ea & 0x0Fu;
                     m->out_type = type;
-                    m->out_interval = d[i + 6];
+                    m->out_interval = d[i + 6] ? d[i + 6] : 1u;
                     m->out_mps = mps & ~3u;          /* send whole event packets only */
                 }
             }
