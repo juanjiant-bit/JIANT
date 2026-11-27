@@ -337,6 +337,12 @@
   .rdcenter p.rdask2 { font: 600 clamp(16px, 2.2vw, 22px)/1.3 var(--body); color: #f1eefc; max-width: 620px; }
   .rdcenter p.rdask2::before, .rdcenter p.rdask2::after { content: " — "; color: #3fe0e6; }
   .rdcall { margin: 0 0 6px; font: 11px/1.2 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: #3fe0e6; }
+  .visstage { position: relative; aspect-ratio: 16 / 9; background: #000; border: var(--border) solid var(--line); overflow: hidden; }
+  .visstage:fullscreen { aspect-ratio: auto; width: 100vw; height: 100vh; border: 0; }
+  #viscv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .visrec { position: absolute; left: 12px; bottom: 8px; margin: 0; font: 11px/1.3 var(--mono); color: rgba(232,236,244,.75); text-shadow: 0 0 4px #000; pointer-events: none; }
+  .visfull { position: absolute; right: 10px; bottom: 10px; font-size: 18px; min-height: 34px; padding: 2px 10px; }
+  .visknobs { margin-top: 10px; } .visknobs label { display: inline-flex; gap: 6px; align-items: center; font: 12px/1 var(--mono); }
   .wtframes { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin: 8px 0; }
   .wtframes canvas { width: 100%; aspect-ratio: 1; background: var(--field); border-radius: var(--radius-s); cursor: pointer; }
   .wtframes canvas.on { outline: 2px solid var(--accent); }
@@ -538,6 +544,7 @@
       <button data-go="emu" data-t="vEmu"></button>
       <button data-go="screen" data-t="vScreen"></button>
       <button data-go="rec" data-t="vRec"></button>
+      <button data-go="vis" data-t="vVis"></button>
       <span class="navgrp" data-t="gMake"></span>
       <button data-go="editor" data-t="vEditor"></button>
       <button data-go="proj" data-t="vProj"></button>
@@ -726,6 +733,18 @@
       <div class="emuctl" style="margin-bottom:10px"><button class="btn" id="anjson" type="button" data-t="anJson"></button><button class="btn ghost" id="ancopy" type="button" data-t="anCopy"></button></div>
       <pre class="anpre" id="anpre"></pre>
     </div>
+  </section>
+
+  <!-- ======================================================================================= VIS (visuals) -->
+  <section class="view" id="v-vis" hidden>
+    <div class="viewhead"><div><p class="eyebrow" data-t="vVis"></p><h1 data-t="visTitle"></h1></div>
+      <div class="emuctl"><label class="field"><span data-t="visSrc"></span><select id="vissrc"></select></label><button class="btn" id="visgo" type="button"></button></div></div>
+    <p class="lead" data-t="visLead"></p>
+    <div class="visstage" id="visstage"><canvas id="viscv"></canvas><p class="visrec" id="visrec"></p><button class="btn ghost visfull" id="visfull" type="button" data-t-label="scrFull" aria-label="Full screen">⛶</button></div>
+    <div class="wtsend visknobs">
+      <label>MIX <input id="vismix" type="range" min="0" max="100"></label><label>DEFORM <input id="visdef" type="range" min="0" max="100" value="50"></label>
+      <label data-t="visPal"></label><select id="vispal"></select><label>REACT <input id="visreact" type="range" min="0" max="100"></label>
+      <button class="btn ghost" id="visnew" type="button" data-t="visNew"></button><span class="dim" id="visstat"></span></div>
   </section>
 
   <!-- ======================================================================================= radio (votes) -->

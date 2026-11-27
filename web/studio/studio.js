@@ -14,6 +14,7 @@ import { Player, anim } from "./learn.js";
 import { Ecosystem, Levels } from "./radio-vis.js";
 import { capture as anCapture, text as anText } from "./analysis.js";
 import { checker as cvChecker, classify as cvClassify, convert as cvConvert, putObject as cvPut, replaceInFile as cvReplace, projectName as cvName } from "./convert.js";
+import { Vis as VisEngine, Live as VisLive, forDrawing as visRecipe, VI_NAMES, VD_NAMES, VB_NAMES, VP_NAMES } from "./visgen.js";
 import { makeTable, toI16, pack as wtPack, unpack as wtUnpack, parseInfo as parseWtInfo, render as wtRender, wav as wtWav, WT, FRAMES, LEN, CHUNKS } from "./wavetable.js";
 import { captureBackup, restoreBackup, readBackup, songsNotRestored, BACKUP_IDS, bkU32, bkR32, bkCrc, bkPack, bkUnpack, bkManifestAll } from "./fm1backup.js";
 
@@ -93,6 +94,10 @@ const TEXT = {
     cvDevice: "Revisar y convertir el FM-1", cvFile: "Convertir un archivo de backup…", cvChecking: "Buscando proyectos viejos…", cvNoChecker: "No se pudo cargar el firmware para revisarlos; probá de nuevo.",
     cvNone: "No hay proyectos viejos: todo abre con este firmware.", cvFound: "Proyectos viejos: %s (sin convertir).", cvConfirm: "Hay %n proyecto(s) viejo(s): %s.\nYa quedó un backup completo en este navegador. ¿Convertirlos y escribirlos en el FM-1?",
     cvConverting: "Convirtiendo %s…", cvDone: "Listo: %s convertidos. Abrilos en el FM-1 (SAVE › PROJECTS).", cvFileDone: "Listo: %s convertidos; se bajó el archivo nuevo.", cvFail: "No se pudo convertir: %s", cvBefore: "Antes de convertir",
+    vVis: "Visuales", visTitle: "Visuales que viven de la música", visLead: "El generador de visuales de JIANT BYTE en grande, para una pantalla o un proyector: cada canción arma su receta (ingredientes de las pantallas de BYTE, mezclados y deformados) y todo reacciona a los golpes, al bajo y a los acordes. Funciona con BYTE por USB, con el emulador o con cualquier aparato MIDI.",
+    visSrc: "Fuente", visSrcUsb: "%s por USB (la receta del equipo)", visSrcEmu: "El emulador", visStart: "▶ Empezar", visStop: "Parar", visPal: "PALETA", visNew: "Otra receta",
+    visNoEmu: "Prendé el emulador (pestaña Emulador) y volvé a empezar.", visOld: "El equipo no respondió: los visuales por USB necesitan JIANT BYTE con VIS.",
+    tourV_visT: "Visuales", tourV_vis: "Visuales generativos que se mueven con la música, para proyectar.", tourV_visH: "Con BYTE, el emulador o cualquier MIDI.",
     vAn: "Análisis", anTitle: "Análisis: los datos exactos", anLead: "Lee del FM-1 o del emulador todo lo que tiene: cada pista con su motor, preset, nivel y cada parámetro con su nombre y valor (y cuáles cambiaron), los globales y los efectos, los pasos, la canción y el generador. Con el emulador escucha además unos segundos: nivel, picos, cuánto sostiene cada pista y su espectro. Bajá el archivo o copiá el resumen y pasalo tal cual.",
     anGo: "Analizar", anSteps: "Incluir los pasos", anAudio: "Escuchar 8 s del emulador", anFrom: "De: %s (elige la pista de a una un instante y vuelve a la tuya)", anNoDev: "Conectá el FM-1 o prendé el emulador.",
     anDone: "Listo.", anFail: "No se pudo leer todo", anJson: "Bajar el archivo (JSON)", anCopy: "Copiar el resumen", anCopied: "Resumen copiado.", anNoCopy: "No se pudo copiar: seleccioná el texto.",
@@ -287,6 +292,10 @@ const TEXT = {
     cvDevice: "Check and convert the FM-1", cvFile: "Convert a backup file…", cvChecking: "Looking for old projects…", cvNoChecker: "The firmware to check them could not be loaded; try again.",
     cvNone: "No old projects: everything opens with this firmware.", cvFound: "Old projects: %s (not converted).", cvConfirm: "There are %n old project(s): %s.\nA full backup is already kept in this browser. Convert them and write them to the FM-1?",
     cvConverting: "Converting %s…", cvDone: "Done: %s converted. Open them on the FM-1 (SAVE › PROJECTS).", cvFileDone: "Done: %s converted; the new file was downloaded.", cvFail: "Could not convert: %s", cvBefore: "Before converting",
+    vVis: "Visuals", visTitle: "Visuals that live on the music", visLead: "JIANT BYTE's visual generator, big, for a screen or a projector: each song makes its recipe (ingredients from BYTE's screens, mixed and bent) and everything reacts to the hits, the bass and the chords. Works with BYTE over USB, the emulator or any MIDI device.",
+    visSrc: "Source", visSrcUsb: "%s over USB (the device's recipe)", visSrcEmu: "The emulator", visStart: "▶ Start", visStop: "Stop", visPal: "PALETTE", visNew: "Another recipe",
+    visNoEmu: "Switch the emulator on (Emulator tab) and start again.", visOld: "The device did not answer: visuals over USB need JIANT BYTE with VIS.",
+    tourV_visT: "Visuals", tourV_vis: "Generative visuals moving with the music, to project.", tourV_visH: "With BYTE, the emulator or any MIDI device.",
     vAn: "Analysis", anTitle: "Analysis: the exact data", anLead: "Reads everything the FM-1 or the emulator holds: each track with its engine, preset, level and every parameter by name and value (and which ones changed), the globals and effects, the steps, the song and the generator. From the emulator it also listens for a few seconds: level, peaks, how long each track sustains and its spectrum. Download the file or copy the summary and pass it on as it is.",
     anGo: "Analyze", anSteps: "Include the steps", anAudio: "Listen to 8 s of the emulator", anFrom: "From: %s (selects each track for an instant and goes back to yours)", anNoDev: "Connect the FM-1 or switch the emulator on.",
     anDone: "Done.", anFail: "Not everything could be read", anJson: "Download the file (JSON)", anCopy: "Copy the summary", anCopied: "Summary copied.", anNoCopy: "Could not copy: select the text.",
@@ -479,6 +488,7 @@ class Link {
     const f = unframe(data);
     if (!f) return;
     if (f.cmd === CMD.SCREEN_DATA) { this.onPush(f); return; }
+    if (f.cmd === 98 || f.cmd === 99) { visPush(f, this); return; }   // (VIS: JIANT BYTE's visual state)
     if (LIVE_PUSH.has(f.cmd)) { livePush(f, this); return; }    // (the live guide: what moved on the FM-1)
     if (this.cur && f.cmd === this.cur.cmd && (f.cmd !== CMD.SCREEN || f.a[0] === this.cur.args[0]) && (!this.cur.match || this.cur.match(f.a))) this.finish(f.a);
   }
@@ -586,7 +596,7 @@ try {
   window.navShow = () => { const b = nv.querySelector('[aria-current="page"]'); if (b) nv.scrollTo({ left: b.offsetLeft - (nv.clientWidth - b.offsetWidth) / 2, behavior: "smooth" }); edges(); };
   setTimeout(edges, 50);
 }
-const VIEWS = ["home", "install", "editor", "screen", "emu", "rec", "proj", "wt", "radio", "an", "learn", "docs", "rescue", "ports"];
+const VIEWS = ["home", "install", "editor", "screen", "emu", "rec", "proj", "wt", "radio", "an", "vis", "learn", "docs", "rescue", "ports"];
 function go(view, push = true) {
   if (!VIEWS.includes(view)) view = "home";
   state.view = view;
@@ -1839,6 +1849,117 @@ $("anjson").onclick = () => {
   a.download = `jiant-analysis-${state.fw}-${(an.data.firmware || "").replace(/\s+/g, "_")}-${stamp}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 };
 $("ancopy").onclick = async () => { try { await navigator.clipboard.writeText($("anpre").textContent); anSay(t("anCopied")); } catch (_) { anSay(t("anNoCopy")); } };
+/* ------------------------------------------------------------------------------------------------ VIS (visuals) */
+/* JIANT BYTE's visual generator drawn big (visgen.js): one recipe and drawing, three sources filling the same state:
+ * JIANT BYTE over USB (WATCH's second byte bit 0: VIS_SONG 98 when the song changes, VIS_TICK 99 25 times a second),
+ * the emulator (jiantEmu.vis(); JIANT FM's: its generator and its stems), or any MIDI device (Studio reads it) */
+const vis = { on: false, src: "", eng: null, live: null, song: null, R: null, knobs: {}, raf: 0, poll: 0, untap: null, midi: null, link: null, rec: 0, lastSong: "" };
+const visSay = (x) => { $("visstat").textContent = x; };
+function visSong(o) {                                           // { seed, recipe, genre, energy, engines, section, palette?, mix?, deform?, react? }
+  const key = [o.seed, o.recipe, o.genre, o.energy, o.engines].join(",");
+  if (key !== vis.lastSong || !vis.R) {
+    vis.lastSong = key; vis.R = visRecipe(o.seed >>> 0, o.genre | 0, o.energy | 0, o.engines | 0, ((o.recipe | 0) + vis.rec) & 255);
+    vis.live = new VisLive(); vis.eng.set(vis.live, vis.R);
+    if (!vis.knobs.user) { $("vismix").value = Math.round(vis.R.mix * 100); $("visreact").value = Math.round(vis.R.react * 100); }
+    const C = vis.R.c;
+    $("visrec").textContent = `#${(o.seed >>> 0).toString(16).toUpperCase()} · ${VI_NAMES[C.content]} / ${VI_NAMES[C.skel[0]]}${C.over[0] !== 255 ? " + " + VI_NAMES[C.over[0]] : ""} · ${C.def[0].filter((d) => d !== 255).map((d) => VD_NAMES[d]).join(" ")} · ${VB_NAMES[C.blend]} · ${VP_NAMES[C.pal]}`;
+  }
+  if (o.section != null && vis.live) vis.live.tick({ section: o.section });
+}
+function visTick(t) { if (vis.live) vis.live.tick(t); }
+/* JIANT BYTE over USB */
+function visPush(f, link) {
+  if (!vis.on || link !== vis.link) return;
+  const a = f.a;
+  if (f.cmd === 98) visSong({ seed: a[0] | a[1] << 7 | a[2] << 14, recipe: a[3] | a[4] << 7, genre: a[5], energy: a[6], engines: a[7] | a[8] << 7, section: a[9] });
+  else visTick({ levels: a.slice(0, 6).map((v) => v / 127), hits: a[6], root: a[7], quality: a[8], step: a[9], playing: true });
+}
+/* the emulator: jiantEmu.vis() when it has it (JIANT BYTE's), else (JIANT FM's) its generator and its stems */
+function visEmu() {
+  const e = (() => { try { return frames.emu.el.contentWindow.jiantEmu; } catch (_) { return null; } })();
+  if (!e || !e.on()) { visSay(t("visNoEmu")); return; }
+  if (e.vis) {
+    vis.poll = setInterval(async () => { const v = await e.vis().catch(() => null); if (!v) return; visSong(v); visTick({ levels: (v.levels || []).map((x) => x / 127), hits: v.hits, root: v.root, quality: v.quality, step: v.step, section: v.section, playing: !!v.playing }); }, 40);
+    return;
+  }
+  const L = new Levels(); let step = 0, prev = new Float32Array(6);
+  vis.untap = e.tap && e.tap((m) => {
+    if (!m.planes) return;
+    const lv = L.of(m.planes); let hits = 0;
+    if (lv[0] - prev[0] > .25) hits |= 1; if (lv[2] - prev[2] > .3) hits |= 2; if (lv[3] - prev[3] > .3) hits |= 4;
+    prev = lv; step = (step + 1) & 63;
+    visTick({ levels: Array.from(lv), hits, step, playing: true });
+  });
+  const gen = async () => { const r = e.gen ? await e.gen(null, 0).catch(() => null) : null, i = r && rdInfo(r.info); visSong({ seed: i ? i[2] : 1, recipe: 0, genre: i && i[1] >= 0 ? i[1] : 27, energy: i ? i[4] : 50, engines: 0x90 }); };
+  gen(); vis.poll = setInterval(gen, 2000);
+}
+/* any MIDI device: channel 10 (GM) the drums, low notes the bass, three notes at once a chord, the clock the steps,
+   CC 1 MIX and CC 74 DEFORM; a recipe from this session (Another recipe for a new one) */
+function visMidi(input) {
+  const st = { lv: new Float32Array(6), hits: 0, root: null, q: 0, held: new Map(), clocks: 0, step: 0, notes: 0, chans: new Set(), t0: Date.now() };
+  const seed = (Date.now() / 1000 | 0) & 0x1FFFFF;
+  const tickT = setInterval(() => {
+    const energy = Math.min(100, 30 + st.notes * 3); st.notes *= .9;
+    const mask = (st.chans.has(9) ? 0x10 : 0) | (st.chans.size > 2 ? 0x80 : 0) | 0x01;
+    visSong({ seed, recipe: 0, genre: 27, energy: energy | 0, engines: mask, section: (st.step >> 7) & 3 });
+    visTick({ levels: Array.from(st.lv), hits: st.hits, root: st.root, quality: st.q, step: st.step & 63, playing: true });
+    st.hits = 0; for (let i = 0; i < 6; i++) st.lv[i] *= .85;
+  }, 40);
+  const on = (e) => {
+    const [s, d1, d2] = e.data, ty = s & 0xF0, ch = s & 15;
+    if (s === 0xF8) { if (++st.clocks % 6 === 0) st.step++; return; }
+    if (s === 0xFA) { st.step = 0; st.clocks = 0; return; }
+    if (ty === 0xB0) { if (d1 === 1) { $("vismix").value = Math.round(d2 / 1.27); vis.knobs.user = true; } if (d1 === 74) $("visdef").value = Math.round(d2 / 1.27); return; }
+    if (ty === 0x90 && d2) {
+      st.notes++; st.chans.add(ch);
+      if (ch === 9) { st.hits |= d1 === 35 || d1 === 36 ? 1 : d1 === 38 || d1 === 40 || d1 === 39 ? 2 : d1 === 42 || d1 === 44 || d1 === 46 ? 4 : 8; st.lv[0] = Math.max(st.lv[0], d2 / 127); }
+      else { const slot = 1 + (ch % 5); st.lv[slot] = Math.max(st.lv[slot], d2 / 127); if (d1 < 48) st.lv[1] = Math.max(st.lv[1], d2 / 127); }
+      st.held.set(d1, Date.now());
+      const now = [...st.held.entries()].filter(([, at]) => Date.now() - at < 60).map(([n]) => n).sort((a, b) => a - b);
+      if (now.length >= 3) { const r = now[0] % 12, iv = new Set(now.map((n) => (n - now[0]) % 12)); st.root = r; st.q = iv.has(4) ? (iv.has(8) ? 3 : 0) : iv.has(3) ? (iv.has(6) ? 2 : 1) : iv.has(5) ? 4 : 0; }
+    } else if (ty === 0x80 || (ty === 0x90 && !d2)) st.held.delete(d1);
+  };
+  input.addEventListener("midimessage", on);
+  vis.midi = () => { clearInterval(tickT); input.removeEventListener("midimessage", on); };
+}
+async function visSources() {
+  const sel = $("vissrc"), cur = sel.value, opts = [];
+  if (state.fw === "byte" && state.dev) opts.push(["usb", t("visSrcUsb").replace("%s", devName(state.dev))]);
+  opts.push(["emu", t("visSrcEmu")]);
+  try { const a = await midiAccess(); for (const i of a.inputs.values()) if (!PORT_RE.test(i.name || "") || state.fw !== "byte") opts.push(["midi:" + i.id, "MIDI · " + i.name]); } catch (_) {}
+  sel.replaceChildren(...opts.map(([v, n]) => { const o = document.createElement("option"); o.value = v; o.textContent = n; return o; }));
+  if (opts.some(([v]) => v === cur)) sel.value = cur;
+}
+function visStop() {
+  vis.on = false; clearInterval(vis.poll); cancelAnimationFrame(vis.raf);
+  if (vis.untap) { vis.untap(); vis.untap = null; } if (vis.midi) { vis.midi(); vis.midi = null; }
+  if (vis.link) { vis.link.request(22, [0, 0], 600).catch(() => {}); vis.link = null; }
+  $("visgo").textContent = t("visStart"); visSay("");
+}
+async function visStart() {
+  visStop();
+  const cv = $("viscv"), W = 960, H = 540; cv.width = W; cv.height = H;
+  vis.eng = new VisEngine(W, H); vis.R = null; vis.lastSong = ""; vis.on = true; vis.knobs.user = false;
+  visSong({ seed: 1, recipe: 0, genre: 27, energy: 50, engines: 0 });
+  const src = $("vissrc").value;
+  if (src === "usb" && state.dev) { vis.link = state.dev.link; try { await vis.link.request(22, [0, 1], 900); } catch (_) { visSay(t("visOld")); } }
+  else if (src === "emu") visEmu();
+  else if (src.startsWith("midi:")) { const a = await midiAccess(); const i = a.inputs.get(src.slice(5)); if (i) visMidi(i); }
+  $("visgo").textContent = t("visStop");
+  const g = cv.getContext("2d");
+  const loop = (now) => {
+    if (!vis.on) return; vis.raf = requestAnimationFrame(loop);
+    if (state.view !== "vis" && !document.fullscreenElement) return;
+    const K = { mix: $("vismix").value / 100, def: $("visdef").value / 100, pal: +$("vispal").value, react: $("visreact").value / 100 };
+    vis.eng.frame(now, K); g.drawImage(vis.eng.out, 0, 0);
+  };
+  vis.raf = requestAnimationFrame(loop);
+}
+$("visgo").onclick = () => (vis.on ? visStop() : visStart());
+$("visnew").onclick = () => { vis.rec = (vis.rec + 1) & 255; vis.lastSong = ""; };
+$("visfull").onclick = () => { const st = $("visstage"); document.fullscreenElement ? document.exitFullscreen() : st.requestFullscreen && st.requestFullscreen().catch(() => {}); };
+for (const id of ["vismix", "visreact"]) $(id).addEventListener("input", () => { vis.knobs.user = true; });
+$("vispal").replaceChildren(...VP_NAMES.map((n, i) => { const o = document.createElement("option"); o.value = i; o.textContent = n; return o; }));
 /* ------------------------------------------------------------------------------------------- how it works */
 /* each firmware's ideas (learn-fm.json, learn-byte.json): sectors (the concept, the engines, the sequencers, the
  * effects, the modulators, the generators, the songs), each item its statement, how it works, where it is on the
@@ -1966,7 +2087,7 @@ const TOUR = [
   { k: "Target", sel: "#targetseg" },
   { k: "Dev", sel: "#devchip", view: "home" },
   { k: "Find", sel: "#find", view: "home" },
-  ...["install", "editor", "screen", "emu", "rec", "proj", "wt", "radio", "an", "learn", "docs", "rescue", "ports"].map((v) => ({ k: "V_" + v, sel: `nav.views [data-go="${v}"]` })),
+  ...["install", "editor", "screen", "emu", "rec", "proj", "wt", "radio", "an", "vis", "learn", "docs", "rescue", "ports"].map((v) => ({ k: "V_" + v, sel: `nav.views [data-go="${v}"]` })),
   { k: "Lang", sel: "#lang" },
   { k: "End", sel: "#tourbtn" },
 ];
@@ -2472,6 +2593,7 @@ function render() {
   if (state.view === "proj") { renderProj(); renderPj(); $("cvcard").hidden = state.fw !== "fm"; }
   if (state.view === "wt") renderWtDev();
   if (state.view === "an") renderAn();
+  if (state.view === "vis") { visSources(); if (!vis.on) $("visgo").textContent = t("visStart"); }
   if (state.view === "radio" || rd.vis) renderRadio();
   document.querySelector('nav.views [data-go="wt"]').hidden = state.fw !== "byte";
   if (state.view === "learn") renderLearn();
