@@ -275,6 +275,10 @@ static drum_lane_t *drum_lane_of(track_t *t, const voice_t *v)
     return L->owner == i + 1u ? L : 0;
 }
 
+#if FELUCCA_HOST_POWER
+#include "drum_smp.c"           /* (ports/) the lanes' sample layer: SMORPH, BLEND, SOURCE, SLEVEL */
+#endif
+
 /* Different GM pitches on a lane still share its one sounding voice. */
 static voice_t *drum_reuse(track_t *t, uint32_t note)
 {
@@ -337,6 +341,9 @@ static __attribute__((noinline)) void drum_note_on(track_t *t, voice_t *v)
     dx_trigger(&L->x);
     if (lane == DV_HATC)                                 /* a closed hat chokes the open one */
         dx_choke(&K[DV_HATO].x);
+#if FELUCCA_HOST_POWER
+    dxs_note_on(t, v, lane, L);                          /* (ports/) its sample (SMORPH 0: none) */
+#endif
 }
 
 /* the voice's amplitude: the hit, not the ADSR (which still runs, held at full so a release never ends
@@ -348,7 +355,11 @@ static int32_t drum_amp(track_t *t, voice_t *v, int32_t adsr)
         return 0;
     if (v->stage == 4u)                                  /* (0.6.74) given up: env_tick's fade, not held at full */
         return adsr;
-    if (!L || (!L->x.live && !L->x.trig && !L->fl)) {   /* (0.8.5: a FLAM's hit to come keeps it) */
+    if (!L || (!L->x.live && !L->x.trig && !L->fl
+#if FELUCCA_HOST_POWER
+               && !dxs_playing(t, v)                     /* (ports/: its sample still sounding) */
+#endif
+               )) {                                      /* (0.8.5: a FLAM's hit to come keeps it) */
         v->active = v->gate = 0;
         v->stage = 0;
         v->env = 0;
@@ -576,6 +587,10 @@ static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
            p[P_E3] - 64 + DXO_DEC[L->dm & 3u] + ((hitfx&DXF_LONG)?36:0),
            p[P_E2] - 64 + DXO_TON[L->dm & 3u], p[P_E4] - 64 + DXO_TON[L->dm & 3u] + ((hitfx&DXF_NOISE)?32:0),
            (hitfx&DXF_FOLD)&&p[P_E6]<80 ? 80 : p[P_E6], p[P_E5], y, n, (hitfx&DXF_FB)?6u:0u);
+#if FELUCCA_HOST_POWER
+    if (dxs_morph(t) > 0)                                /* (ports/) the sample layer blended in */
+        dxs_layer(t, v, y, n);
+#endif
     {                                                    /* PUNCH: the boost before the knee (driven into it, as
                                                           * Drum Buss), the tail's cut on the amplitude ramp */
         int32_t pu = pnch_eff;

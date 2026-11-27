@@ -3462,7 +3462,9 @@ static void gen_go(void)
     }
     gls.u = gp.form == 3u;
     gen_make();
+#if !FELUCCA_HOST_POWER                                 /* (ports/: a computer's CPU, the guard on its real time) */
     if (!gls.u) gcpu_fit();                             /* (V10.7.39) within the FM-1's budget */
+#endif
     str_cpy(gp.last, gs.g->name, sizeof gp.last);
     k = str_len(gp.last);
     for (n = 0; n < 2u; n++) {                          /* "0421", (V10.7.66) "+7733" crossed */

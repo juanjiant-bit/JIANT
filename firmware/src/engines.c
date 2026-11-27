@@ -4,6 +4,9 @@
 /* Engine table (order = PRESETS browsing order and the engine numbers of the editor protocol), the
  * factory patterns (SEQ > PATTERNS) and the parts' sounds at power-on. */
 #include "dsp.c"
+#if FELUCCA_HOST_POWER
+#include "smp_slots.c"          /* (ports/) the sample slots, the recorder, the LIVE buffers */
+#endif
 /* (V10.8.37) movement by role: the lists the factory sounds share (a preset's .mod, as core.h MODS) */
 static const int8_t R_VELCUT[] = {MMOD(1, PS_VEL, PD_CUT, 26), -1};                               /* struck harder: brighter */
 static const int8_t R_VELKEY[] = {MMOD(1, PS_VEL, PD_CUT, 22), MMOD(2, PS_KEY, PD_CUT, 20), -1};   /* .. and up the keys */
@@ -28,6 +31,11 @@ static const int8_t R_WFOLD[] = {P_GLIDE, 12, MMOD(1, PS_MODW, PD_E(0), 40), MMO
 #include "eng_add.c"            /* (JIANT 0.9.9-snd5) ADD: additive, nine partials, in WHEEL's voice state (engine 13) */
 #include "eng_input.c"          /* (V10.54) INPUT: the audio input on a track (engine 15) */
 #include "fm4_convert.c"        /* DIGITAL's tables, and its sounds -> FM6 */
+#if FELUCCA_HOST_POWER
+static void voice_kill(voice_t *v);   /* (voice.c) */
+#include "eng_sample.c"         /* (ports/) SAMPLE: one shot, experimental modes, feedback, DESTROY, REC */
+#include "eng_grain.c"          /* (ports/) GRAIN: granular, on a slot or LIVE */
+#endif
 #if FELUCCA_FM4
 #include "eng_digital.c"        /* DIGITAL: four-operator FM (retired; FELUCCA_FM4=1 builds it) */
 #endif
@@ -68,12 +76,20 @@ static const engine_t *const ENGINES[NENGINES] = {
 #endif
     &ENG_PHASE,                  /* 2 */
     &ENG_LOFI,                   /* 3 */
+#if FELUCCA_HOST_POWER
+    &ENG_SAMPLE,                 /* 4 (ENGI_SAMPLE; ports/ only: eng_sample.c) */
+#else
     &ENG_GONE,                   /* 4: reserved (SAMPLE, retired in JIANT) */
+#endif
     &ENG_FORMANT,                /* 5 VOICE (eng_formant.c: "voice" is a sounding note in voice.c) */
     &ENG_GONE,                   /* 6: reserved (TRIO, folded into ANALOG in JIANT 0.4: core.h analog_from_trio) */
     &ENG_WHEEL,                  /* 7 */
     &ENG_STRING,                 /* 8 (ENGI_STRING, 0.9.9-snd5; GRAIN's, retired in JIANT: its sounds play as STRING's) */
+#if FELUCCA_HOST_POWER
+    &ENG_GRAIN,                  /* 9 (ENGI_GRAIN_HP; ports/ only: eng_grain.c, in PHYS's retired number) */
+#else
     &ENG_GONE,                   /* 9: reserved (PHYS, retired in TONIC: its sounds play as ANALOG) */
+#endif
     &ENG_DRUM,                   /* 10 (ENGI_DRUM) */
     &ENG_WEST,                   /* 11 */
     &ENG_FM6,                    /* 12 (ENGI_FM6) */
@@ -81,6 +97,33 @@ static const engine_t *const ENGINES[NENGINES] = {
     &ENG_ANIMAL,                 /* 14 (ENGI_ANIMAL, JIANT 0.8.3) */
     &ENG_INPUT,                  /* 15 (ENGI_INPUT, V10.54) */
 };
+
+#if FELUCCA_HOST_POWER
+/* (ports/) the engines of the big CPUs keep more values than EDIT's eight, in slots of other engines' a track of theirs
+ * never reads (SWARM's, eng_input.c SW_SLOT; DRUM-X's sample layer: drum_smp.c); stored in projects and user presets
+ * as those are. Their descriptors (params.c track_desc) and a preset's values of them (ui.c apply_preset_to) */
+static const param_desc_t *hp_xdesc(const track_t *t, uint32_t id)
+{
+    const engine_t *e = ENGINES[t->eng_req < NENGINES ? t->eng_req : 0u];
+    if (e == &ENG_SAMPLE && smp_xk(id) >= 0)
+        return smp_xdesc(t, (uint32_t)smp_xk(id));
+    if (e == &ENG_DRUM)
+        return dxs_desc(id);
+    if (e == &ENG_GRAIN && gr_xk(id) >= 0)
+        return gr_xdesc(t, id);
+    return 0;
+}
+static void hp_preset_x(track_t *t, const engine_t *e, uint32_t pi)
+{
+    uint32_t i;
+    if (e == &ENG_SAMPLE)
+        for (i = 0; i < 8u; i++)
+            t->p[SMP_XID[i]] = SMP_PRESET_X[pi % NELEM(SMP_PRESETS)][i];
+    if (e == &ENG_GRAIN)
+        for (i = 0; i < 10u; i++)
+            t->p[GR_XID[i]] = GR_PRESET_X[pi % NELEM(GR_PRESETS)][i];
+}
+#endif
 
 /* Cold voice weights for admission and core assignment, until the part has a measured render time.
  * WEST's heavy patch runs about 1.2 times the ANALOG reference (tests/cpu_baseline_vg.txt). */
@@ -109,6 +152,9 @@ static const uint8_t ENGINE_ORDER[NENG_SHOWN] = {
     ENGI_WEST,                  /* WEST */
     ENGI_STRING, ENGI_ADD,       /* (0.9.9-snd5) STRING ADD */
     ENGI_INPUT,                  /* (V10.54) the audio input */
+#if FELUCCA_HOST_POWER
+    ENGI_SAMPLE, ENGI_GRAIN_HP,  /* (ports/) SAMPLE GRAIN: after the FM-1's */
+#endif
 #if FELUCCA_FM4
     ENGI_DIGITAL,                /* DIGITAL (retired, FELUCCA_FM4 builds only): after the rest */
 #endif
@@ -124,6 +170,9 @@ static const uint8_t ENGINE_PC_ORDER[NENG_SHOWN] = {
     ENGI_PHASE, ENGI_LOFI, ENGI_VOICE, ENGI_WHEEL, ENGI_WEST, ENGI_DRUM, ENGI_ANIMAL,
     ENGI_STRING, ENGI_ADD,       /* (0.9.9-snd5: after ANIMAL, every number before kept) */
     ENGI_INPUT,                  /* (V10.54) */
+#if FELUCCA_HOST_POWER
+    ENGI_SAMPLE, ENGI_GRAIN_HP,  /* (ports/: after the FM-1's, so PROGRAM CHANGE numbers them as before) */
+#endif
 };
 
 /* the engines one can pick (engine 1 only with FELUCCA_FM4), in ENGINE_ORDER: eng_ok(e), the n-th of them

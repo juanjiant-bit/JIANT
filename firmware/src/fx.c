@@ -2628,6 +2628,9 @@ static inline __attribute__((always_inline)) void mix_part(track_t *t, uint32_t 
         if ((duck_g0 < 32767 || duck_g1 < 32767) && ENGINES[t->engine] != &ENG_DRUM)   /* DUCK: the kick's */
             lq = duck_ramp(l0 >> 8, mp_lvl[ti] >> 8, &dl);
         track_dist(t, b, n);
+#if FELUCCA_HOST_POWER
+        smp_track_tap(ti, b, n);                        /* (ports/) the recorder's track source */
+#endif
         int32_t pm0 = 32768, pm1 = 32768;               /* (0.6.48: drum_mix's; pf.mg counts only while muting) */
         if ((pf.mute >> (t - trk)) & 1u) {
             pm0 = pf.mg[ti];
@@ -2870,6 +2873,11 @@ static uint32_t mc_cost(const track_t *t)               /* a part's share of the
 #if FELUCCA_DUAL_CORE
 #define MC_TICKS() fm1_mc_ticks()
 #define MC_VW 24u                                        /* a voice-weight unit in ticks (~1 us) */
+#elif FELUCCA_HOST_POWER                                 /* (ports/) the computer's clock (felucca_web.c JIANT_REAL_LOAD):
+                                                         * each part's real time, the admission's prediction on it */
+static uint32_t fm1_ticks(void);
+#define MC_TICKS() fm1_ticks()
+#define MC_VW 1u
 #else
 #define MC_TICKS() 0u
 #define MC_VW 1u

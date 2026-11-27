@@ -33,6 +33,14 @@ enum { ED_VM_READ = 80 };   /* (V10.10) read-only: 256 B of the stock VM (0xE700
  * readings | 1024 driven), v14 each, -1 none */
 enum { ED_VEL = 81 };
 
+#if FELUCCA_HOST_POWER
+/* (ports/) INFO's 'D' tag: which device answers, so the editor can say so (an FM-1 and an SMK-37 send none: their
+ * binaries stay as they were): 3 a computer, 4 the MPC Sample app (ports/core jiant_editor_host). 'H': bit 0 SAMPLE
+ * (engine 4), bit 1 GRAIN (engine 9), bit 2 DRUM-X's sample layer, bit 3 the values beyond EDIT's eight that DESC
+ * names by the track's engine (engines.c hp_xdesc, through params.c track_desc) */
+static uint8_t ed_board = 3u;
+#define ED_HP_CAPS 15u
+#endif
 static uint8_t ed_out[600];
 static uint32_t ed_n;
 
@@ -536,6 +544,11 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
                                                          * build's (the web installer checks it after an update) */
         ed_b(0x43); ed_b(2); ed_b(ED_PROTO_MAJOR); ed_b(ED_PROTO_MINOR);   /* (V10.6z3) 'C': the protocol's version (the
                                                          * stability contract); before 'Y', which the web editor reads last */
+#if FELUCCA_HOST_POWER
+        ed_b(0x44); ed_b(1); ed_b(ed_board);   /* 'D': the device answering (no tag: an FM-1) */
+        ed_b(0x48); ed_b(2); ed_b(ED_HP_CAPS); ed_b(SMP_NSLOT);   /* 'H': a big CPU's engines (ports/): SAMPLE, GRAIN, DRUM-X's
+                                                                     * samples and their values beyond EDIT; the slots */
+#endif
         ed_b(0x59); ed_b(1); ed_b(LYR_LEN - 1u);   /* (JIANT 0.8.5) 'Y': LYRIC (cmd 39), a track's lyric, at most 63 bytes */
         break;
     case ED_GET:

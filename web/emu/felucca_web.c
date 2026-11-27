@@ -46,7 +46,24 @@ static unsigned char web_mo_tap;
 /* ------------------------------------------------------------ the clock --- */
 #define FM1_TICKS_PER_US 24u             /* TIMER4: 24 MHz */
 static uint32_t web_ticks;
+#ifdef JIANT_REAL_LOAD
+/* (ports/core) the device clock with this computer's own time in it: between two milliseconds of audio it runs on with
+ * the real microseconds spent since the last one began (jiant_host_us, ports/core), never backwards. The audio ISR's
+ * load (audio.c shed_check: the render's ticks against a half's time) is then the real load of this CPU, and the
+ * overload guard and the half rate act on it, as on the FM-1. Without it (the browser, the host tests) the clock is
+ * the audio's alone and the load is always 0 */
+uint32_t jiant_host_us(void);
+static uint32_t web_real_at, web_tick_seen;
+static uint32_t fm1_ticks(void)
+{
+    uint32_t t = web_ticks + (jiant_host_us() - web_real_at) * FM1_TICKS_PER_US;
+    if ((int32_t)(t - web_tick_seen) > 0)
+        web_tick_seen = t;
+    return web_tick_seen;
+}
+#else
 static uint32_t fm1_ticks(void) { return web_ticks; }
+#endif
 
 /* ------------------------------------------------------ audio (ALNK0) --- */
 static uint32_t web_half;                /* the half the next render fills */
@@ -82,7 +99,11 @@ static void web_stem_tap(uint32_t n)
 }
 /* audio.c stays V23's byte for byte (the CI's check): the tap rides on its mix_block call (a function-like macro
  * does not expand inside itself, so it still calls fx.c's) */
+#if FELUCCA_HOST_POWER                                    /* (ports/) the input, the LIVE buffers, the recorder (smp_slots.c) */
+#define mix_block(o, n) (mix_block(o, n), smp_audio_block(o, n), fx_stems ? web_stem_tap(n) : (void)0)
+#else
 #define mix_block(o, n) (mix_block(o, n), fx_stems ? web_stem_tap(n) : (void)0)
+#endif
 #include "../../firmware/src/audio.c"
 #undef mix_block
 
@@ -332,6 +353,9 @@ static void web_ms(void)
 {
     fm1_ms++;
     web_ticks += 1000u * FM1_TICKS_PER_US;
+#ifdef JIANT_REAL_LOAD
+    web_real_at = jiant_host_us();
+#endif
     web_samples_due += FS;
     if (web_stems_on && !fx_stems)                        /* (studio) the stems on while Studio records them (the menu's */
         fx_stems = 1;                                     /* USB setting sets it back each frame) */

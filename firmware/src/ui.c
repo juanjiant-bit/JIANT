@@ -616,6 +616,12 @@ static uint32_t layer_btn(void);
  * LANES 2 a DRUM track's (its lane levels); SOUND / SOUND 2 a DRUM track's (DRUM-X: ui_dx.c) */
 static int page_visible(uint32_t i)
 {
+#if FELUCCA_HOST_POWER
+    if (i >= HP_PAGE0 && i < NPAGES)                    /* (ports/) SAMPLE's TRIG REC, GRAIN's TRAVEL SOURCE PITCH, DRUM-X's
+                                                         * SAMPLES (params.c) */
+        return i < HP_PAGE0 + 2u ? trk_engp(TSEL) == &ENG_SAMPLE : i < HP_PAGE0 + 5u ? trk_engp(TSEL) == &ENG_GRAIN
+                                                                                       : trk_eng(TSEL) == ENGI_DRUM;
+#endif
     if (!PAGES[i].title[0])                             /* (deadcode) a page gone from every chain: its row kept, no title
                                                          * (params.c PAGES: TIMELINE, SEQ's SONG, KEYS, STRETCH, G.COMP, STAGE,
                                                          * PHRASES, BAR, SYSTEM 2, MUTATE, CHANCE, KIT 3, KIT 4, STEREO, LEVELS,
@@ -1549,7 +1555,7 @@ static void apply_preset_to(track_t *t, uint32_t pi)
         return;
     }
 #endif
-    if (trk_eng(t) == ENGI_SAMPLE && pi == SMP_SET_PERC) {   /* SAMPLE preset 4 was PERC (retired, a stored */
+    if (!FELUCCA_HOST_POWER && trk_eng(t) == ENGI_SAMPLE && pi == SMP_SET_PERC) {   /* SAMPLE preset 4 was PERC (retired, a stored */
         set_engine_of(t, ENGI_DRUM);                  /* number: the editor's PRESET, a favourite): DRUM's kit */
         return;                                       /* (core.h drum_from_perc) */
     }
@@ -1603,6 +1609,9 @@ static void apply_preset_to(track_t *t, uint32_t pi)
         preset_mods(t, pr);                           /* (V10.6i) its movement: LFO, ENV 2, MOD, FILTER */
     }
     fm6_track_loaded(t);                              /* FM6: the preset's patch (its SLOT) */
+#if FELUCCA_HOST_POWER
+    hp_preset_x(t, e, pi);                            /* (ports/) SAMPLE GRAIN: their extra values (engines.c) */
+#endif
     load_end(t);
 }
 

@@ -1951,6 +1951,10 @@ static VX_SEG void vx_input(const track_t *t, const int32_t *A, int32_t en_home)
     }
 }
 
+#if FELUCCA_HOST_POWER
+#include "ui_smpvis.c"           /* (ports/) SAMPLE's and GRAIN's picture */
+static void vx_smp_f(const track_t *t, const int32_t *A, int32_t en_home) { (void)en_home; vx_smp(t, A); }
+#endif
 /* ------------------------------------------------------------------------------------------------ the glue --- */
 /* the engine's own creature in the rectangle x y w h (px: EDIT's left panel 8 14 108 112, HOME's middle 146 x 112, or a
  * whole panel: each fits itself to it), en_home: HOME's level for the track (-1: its own); 0 when the engine has none
@@ -1961,7 +1965,11 @@ static int32_t vx_fit(int32_t w, int32_t h, int32_t uw, int32_t uh)   /* a unit'
 }
 typedef struct { const engine_t *e; void (*f)(const track_t *, const int32_t *, int32_t); } vxe_t;
 static const vxe_t VX_F[] = {{&ENG_ANALOG, vx_analog}, {&ENG_WHEEL, vx_wheel}, {&ENG_WEST, vx_west}, {&ENG_PHASE, vx_phase},
-                             {&ENG_LOFI, vx_lofi}, {&ENG_STRING, vx_string}};   /* (0.9.9-snd5; V10.7.13+: ADD's gone, room for
+                             {&ENG_LOFI, vx_lofi}, {&ENG_STRING, vx_string},
+#if FELUCCA_HOST_POWER
+                             {&ENG_SAMPLE, vx_smp_f}, {&ENG_GRAIN, vx_smp_f},   /* (ports/) the slot's waveform, the playheads */
+#endif
+};   /* (0.9.9-snd5; V10.7.13+: ADD's gone, room for
                                                          * FORM MY LOOP: it draws the being) */
 static int vx_draw(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h, int32_t en_home)
 {
