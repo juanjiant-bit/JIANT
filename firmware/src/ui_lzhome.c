@@ -492,7 +492,7 @@ static void vis_fig(int32_t cx, int32_t cy, int32_t R, uint32_t sd)
     for (i = 0; i < 2u; i++) {
         uint32_t g = vq.ing[i], sp = vq.t * 6u + (uint32_t)VQ_SN * 40u, d = (uint32_t)vis_v[0];   /* (turning; a snare: a jolt) */
         n = i ? 1u : vq.op[0] == 3u ? 4u : vq.op[0] == 1u ? 2u + d / 25u : 3u + d / 14u;
-        vq.bud = hi ? 700u + i * 300u : 1800u + i * 900u;   /* (the points a strip may draw: the first picture 2/3) */
+        vq.bud = hi ? 700u - i * 400u : 1800u - i * 900u;   /* (the points a strip may draw: the first picture 2/3) */
         vq.sy = VIS_CY[g] * 16;
         for (j = 0; j < n; j++) {                       /* REPEATED: the copies */
             int32_t k = 256 + VQ_KI / 3, a = (int32_t)(i || vq.op[0] == 3u ? sp : sp / 8u), f = 100 - (int32_t)j * 9, h = (int32_t)j * 2 - (int32_t)n + 1;
