@@ -2875,7 +2875,9 @@ static uint32_t mc_cost(const track_t *t)               /* a part's share of the
 #define MC_VW 24u                                        /* a voice-weight unit in ticks (~1 us) */
 #elif FELUCCA_HOST_POWER                                 /* (ports/) the computer's clock (felucca_web.c JIANT_REAL_LOAD):
                                                          * each part's real time, the admission's prediction on it */
+#ifndef fm1_ticks                                        /* (tests/hostsim.c: a macro of its own clock) */
 static uint32_t fm1_ticks(void);
+#endif
 #define MC_TICKS() fm1_ticks()
 #define MC_VW 1u
 #else
