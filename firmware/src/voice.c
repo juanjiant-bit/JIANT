@@ -438,8 +438,12 @@ static struct { volatile uint32_t peak, late, shed; } load_diag;
 #define VPOL 1u
 #endif
 static uint8_t vpol_on = VPOL;                          /* (a test may run the shared budget of before) */
+#if FELUCCA_HOST_POWER
+#define VPOL_ON() 0                                     /* (ports/: a computer's CPU, every part its engine's voices) */
+#else
 #define VPOL_ON() (vpol_on && sys_load != LOAD_ECO)         /* (LOAD ECO, the owner's own choice to spend less: its shared
                                                          * budget of ECO_VOICES as before) */
+#endif
 #define VPOL_VOICES 16u                                 /* the voices the parts may sound together (the hurry's measure) */
 #define VPOL_LINE 2u
 static uint8_t vpol_chord = 0xFF;                       /* the chord part (0xFF: none) */
@@ -478,6 +482,9 @@ static uint32_t vpol_quota(const track_t *t, uint32_t np)   /* a part's voices u
 }
 static uint32_t voice_cap0(void)                        /* the budget as set (LOAD, the extra voices) */
 {
+#if FELUCCA_HOST_POWER
+    return sys_load == LOAD_ECO ? ECO_VOICES : VOICES_ALL;   /* (ports/: every part's voices; LOAD ECO the user's own) */
+#endif
     if (VPOL_ON())
         return VPOL_VOICES;
     return sys_load == LOAD_ECO ? ECO_VOICES :
@@ -730,7 +737,8 @@ static uint32_t load_cost_q8(const track_t *t)          /* a voice more of part 
         uint32_t half = mc_tk[ti] * (HALF_FRAMES / CTL) / nv;
         c = half * 25600u / (HALF_FRAMES * LOAD_FRAME_TICKS);
     } else
-        c = eng_voice_weight(e) * LOAD_W_PCT * 256u;
+        c = eng_voice_weight(e) * LOAD_W_PCT * (FELUCCA_HOST_POWER ? 64u : 256u);   /* (ports/: a computer's CPU, a
+                                                         * quarter of the FM-1's estimate until the part is measured) */
     return load_cores2 ? (c * LOAD_SHARE_Q8) >> 8 : c;
 }
 static void load_take(const track_t *t)                 /* a voice added: into the prediction */

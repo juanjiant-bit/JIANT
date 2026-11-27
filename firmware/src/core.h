@@ -12,6 +12,16 @@
 #define NVOICE 8                 /* slots per part; shared admission budget is separate (voice.c) */
 #define NPART 6                  /* synth parts: tracks 1..6 (JIANT 0.6: was 4) */
 #define NTRK NPART               /* tracks (the formats and the protocol count these): every track is a part */
+/* (JIANT, ports/) FELUCCA_HOST_POWER 1: the firmware on a computer's CPU, not the FM-1's (ports/core sets it: the MPC
+ * Sample). The parts no longer share a budget of voices: each sounds its engine's own (NPART x NVOICE in all, voice.c
+ * voice_cap0; no line parts of two voices, VPOL); GEN no longer makes its pieces lighter for the FM-1's CPU (gen.c
+ * gcpu_fit); the SAMPLE and GRAIN engines, DRUM-X's sample layer and 16 sample slots (smp_slots.c). The overload guard
+ * and the half rate stay, measuring the computer's real time (ports/core: felucca_web.c JIANT_REAL_LOAD): the sound
+ * gives way only if that CPU itself runs short. 0 (the FM-1, the SMK-37, the browser emulator, the host tests): as ever */
+#ifndef FELUCCA_HOST_POWER
+#define FELUCCA_HOST_POWER 0
+#endif
+#define VOICES_ALL (FELUCCA_HOST_POWER ? NPART * NVOICE : NVOICE)   /* the voices all parts may share at most */
 #define NSTEP 64
 #define HALF_FRAMES 128          /* I2S half buffer: 2.9 ms at 44.1 kHz (a key waits 0..1 half, then plays 1 half later).
                                   * Rendered in blocks of CTL samples (felucca_tables.h, tools/gen_tables.py: 64 since 0.9.9
@@ -23,7 +33,7 @@
 #define NENGINES 16              /* the stores' engine numbers 0..15 (engines.c ENGINES[], append-only; 0.8.3: 14 ANIMAL;
                                   * 0.9.9-snd5: STRING and ADD in the retired GRAIN's 8 and SLICE's 13; V10.54: 15 INPUT) */
 #define ENGI_DIGITAL 1u          /* reserved without FELUCCA_FM4: never selectable (eng_ok), its sounds load as FM6 */
-#define NENG_SHOWN (NENGINES - !FELUCCA_FM4 - 3)   /* the engines one can pick: PRESETS, the EDIT layer, the editor,
+#define NENG_SHOWN (NENGINES - !FELUCCA_FM4 - 3 + 2 * !!FELUCCA_HOST_POWER)   /* (ports/: SAMPLE, GRAIN too) */   /* the engines one can pick: PRESETS, the EDIT layer, the editor,
                                                 * in the display order of engines.c ENGINE_ORDER (PHYS 9, and in
                                                 * JIANT SAMPLE 4, GRAIN 8, SLICE 13: retired) */
 /* (JIANT 0.6.71) the second core (hal/fm1_multicore.h; fx.c mix_block hands it some synth tracks). MC_CPU(): the core
@@ -305,8 +315,14 @@ static void params_by_count(int16_t *out, const int16_t *in, uint32_t np, const 
  * 27 KB of RAM went to DRUM-X and the effects). Their numbers stay reserved (engines.c ENG_GONE), never offered; a sound
  * of theirs that arrives -- a project, a user preset, the editor -- plays as ANALOG's first preset (SAMPLE's old PERC
  * set as DRUM first: drum_from_perc) */
+#if FELUCCA_HOST_POWER
+#define ENGI_GRAIN_HP 9u         /* (ports/) GRAIN (eng_grain.c) in PHYS's retired number (GRAIN's own 8 is STRING's) */
+#endif
 static inline int eng_gone(uint32_t e)
 {
+#if FELUCCA_HOST_POWER                   /* (ports/) SAMPLE (4) and GRAIN (9) again, on the samples of smp_slots.c */
+    return e == ENGI_TRIO;
+#endif
     return e == ENGI_PHYS || e == ENGI_SAMPLE || e == ENGI_TRIO;   /* (0.9.9-snd5: GRAIN's 8 and SLICE's 13 are STRING and ADD) */   /* (0.9.9-snd5: GRAIN's 8 and SLICE's 13 are STRING and ADD) */
 }
 /* (JIANT 0.4) a sound stored before 0.4 -> today's E values, in place: LOFI (3) {.., SWP, VIB, ARP, TONE} -> {.., CUT
@@ -397,8 +413,8 @@ static int drum_from_perc(uint32_t engine, int16_t *e)
 {
     static const int16_t KIT[8] = DRUM_KIT_E;
     uint32_t i;
-    if (engine != ENGI_SAMPLE || e[0] != (int16_t)SMP_SET_PERC)
-        return 0;
+    if (FELUCCA_HOST_POWER || engine != ENGI_SAMPLE || e[0] != (int16_t)SMP_SET_PERC)
+        return 0;                                       /* (ports/: SAMPLE is an engine again, its E0 a slot) */
     for (i = 0; i < 8u; i++)
         e[i] = KIT[i];
     return 1;

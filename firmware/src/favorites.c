@@ -20,6 +20,11 @@ static __attribute__((noinline)) void fav_rows_new(void)
 }
 static int favorite_has(uint32_t engine, uint32_t preset)
 {
+#if FELUCCA_HOST_POWER                                  /* (ports/) SAMPLE's and GRAIN's rows are other settings' (vel.c,
+                                                         * cpu_safe.c): their sounds no stars */
+    if (engine == ENGI_SAMPLE || engine == ENGI_GRAIN_HP)
+        return 0;
+#endif
     if (engine == NENGINES)
         return preset < UP_SLOTS && ((favorites.user >> preset) & 1u);
     return engine < NENGINES && engine < 16u && preset < 256u &&
@@ -29,6 +34,10 @@ static int favorite_set(uint32_t engine, uint32_t preset, int on)
 {
     if (engine > NENGINES || (engine == NENGINES ? preset >= UP_SLOTS : engine >= 16u || preset >= 256u))
         return 0;
+#if FELUCCA_HOST_POWER
+    if (engine == ENGI_SAMPLE || engine == ENGI_GRAIN_HP)
+        return 0;
+#endif
     if (favorite_has(engine, preset) == !!on) return 0;
     if (engine == NENGINES) {
         if (on) favorites.user |= 1u << preset;

@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# JIANT FM for the MPC Sample, published (by hand: Actions > ports release > Run workflow, on this branch): the MPC
+# Sample's SD card zip (ports.yml, the same jobs) attached to a GitHub pre-release tagged ports-<ports/RELEASE_VERSION>,
+# its notes ports/RELEASE.md. Nothing else is attached (the plugins are sold separately; the SMK-37 packages are the
+# firmware's own releases). A tag already released keeps its files and only takes ports/RELEASE.md's text again.
+name: ports release
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  version:
+    runs-on: ubuntu-24.04
+    outputs:
+      v: ${{ steps.v.outputs.v }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: echo "v=$(tr -d ' \n' < ports/RELEASE_VERSION)" >> "$GITHUB_OUTPUT"
+  build:
+    needs: version
+    uses: ./.github/workflows/ports.yml
+    with:
+      release_version: ${{ needs.version.outputs.v }}
+  release:
+    needs: [version, build]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: JIANT-FM-MPC-Sample
+          path: dist
+      - name: the pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          V: ${{ needs.version.outputs.v }}
+        run: |
+          TAG="ports-$V"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --notes-file ports/RELEASE.md
+            echo "$TAG already released: its notes taken again"
+            exit 0
+          fi
+          mkdir -p up
+          find dist -name "JIANT-FM-MPC-Sample-$V.zip" -exec cp {} up/ \;   # (the zip alone)
+          find dist -name "*.sha256" -exec cat {} \;
+          ls -l up
+          [ -f "up/JIANT-FM-MPC-Sample-$V.zip" ] || { echo "no MPC Sample zip for $V"; exit 1; }
+          gh release create "$TAG" up/* --target "$GITHUB_SHA" --prerelease \
+            --title "JIANT FM $V for the MPC Sample (preview)" --notes-file ports/RELEASE.md
