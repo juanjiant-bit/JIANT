@@ -51,7 +51,8 @@ static void gx_keys(int32_t x, int32_t y, uint32_t oct, int32_t sp, int32_t wh, 
  * large at the panel's top left (AF_L), its state or hint small under it: one call a page, the same place on each */
 static __attribute__((noinline)) void page_big(const char *a, const char *b)
 {
-    cv_text(6, 2, &AF_L, a, T_TEXT);
+    cv_text(6, 2, large_face_has(a) && text_w(&AF_L, a) <= 228 ? &AF_L : &AF_M, a, T_TEXT);   /* (V10.8.65: a long name,
+                                                         * KEY SPLIT 2, in M) */
     if (b)
         cv_text(8, 34, &AF_X, b, T_DIM);
 }

@@ -2099,8 +2099,9 @@ static void draw_graph(void)
         cv_oy = 0;
         graph_scene();
     } else if (pg->graph == GR_CLAY) {               /* (V10.8.21) SEQ > DRONE CLAY: the output's scope (its telemetry out
-                                                      * for the flash, the owner) */
-        graph_scope(T_THEME);
+                                                      * for the flash, the owner); (V10.8.65) its page's name large over it */
+        page_big(pg->title, 0);
+        scope_at(PANEL_X0, PANEL_W, (int32_t)cv_h / 2 + 14, 26, T_THEME);
         clay_lanes();
     } else if (pg->graph == GR_HARM) {               /* (V10.7.70) SCL > HARMONY: the progression's chords */
         cv_oy = 0;
@@ -2184,8 +2185,12 @@ static void draw_graph(void)
             else if (pg->scope == SC_ENGINE) { cv_oy = 0; graph_being(t); }   /* (JIANT 0.5: the being, was the scope) */
             else {                                   /* the FX, DEST, VOICE, GLOBAL pages: their graphs (else the scope) */
                 cv_oy = 0;
-                if (!graph_tech(t, pg))
-                    graph_scope(c);
+                if (!graph_tech(t, pg)) {             /* (V10.8.65, the owner: "cuánto se puede agrandar el nombre de lo
+                                                      * que hace la página") no picture of its own: its name large, the
+                                                      * scope under it */
+                    page_big(pg->title, 0);
+                    scope_at(PANEL_X0, PANEL_W, (int32_t)cv_h / 2 + 18, 28, c);
+                }
             }
             break;
         }

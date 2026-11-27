@@ -12290,6 +12290,10 @@ static int test_lz_home(void)
           lz_count_is("2/12");
     turn(EN_K1, 3); frame();
     ok &= life_v[0] > 0 && (uint32_t)TSEL->p[ENGINES[TSEL->eng_req]->knob[0]] == c && !strncmp(ui.col[0], "FILTER|", 7);
+    {   /* (V10.8.65) the footer says it is LIFE's knob */
+        char kb[48];
+        ok &= knob_line(kb) && !strncmp(kb, "LIFE FILTER ", 12);
+    }
     life_v[0] = 0;
     turn(EN_SELECT, -1); frame();                                   /* ECO: the HOME knobs */
     turn(EN_K1, 1); frame();
@@ -14307,6 +14311,26 @@ int main(void)
     bad += test_power_on_099();
     bad += test_engine_order_099();
     bad += test_split_scope();                      /* (V10.7.7; last: the frames before it as they were, H2's too) */
+    {   /* (V10.8.65, the owner: a knob's page said with it) LFO's KNOB 1 turned: "LFO RATE ..." on the footer a moment,
+         * then the breadcrumb again; a page with no picture of its own (GLOBAL) draws its name large */
+        uint32_t i, lfo = 0, glo = 0;
+        char kb[48];
+        int ok2 = 1;
+        for (i = 0; i < NPAGES; i++) {
+            if (!strcmp(PAGES[i].title, "LFO")) lfo = i;
+            if (!strcmp(PAGES[i].title, "GLOBAL")) glo = i;
+        }
+        ui.home = 0; ui.menu = 0; ui.confirm = 0; ui.page = (uint8_t)lfo; ui.force = 1; frames(64);
+        turn(EN_K1, 1); frame();
+        ok2 &= knob_line(kb) && !strncmp(kb, "LFO RATE ", 9);
+        frames(3000);
+        ok2 &= !knob_line(kb);
+        ui.page = (uint8_t)glo; ui.force = 1; frames(64);
+        turn(EN_K1, 1); frame();
+        ok2 &= knob_line(kb) && !strncmp(kb, "GLOBAL BPM ", 11);
+        turn(EN_K1, -1); frame();
+        bad += check("V10.8.65 a knob turned: its page's name with it on the footer (LFO RATE, GLOBAL BPM), then gone", ok2);
+    }
 
     if (getenv("UI_SCREEN_DIR")) chain_screens(getenv("UI_SCREEN_DIR"));
     printf(bad ? "ui: %d FAILED\n" : "ui: all passed\n", bad);

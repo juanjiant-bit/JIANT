@@ -258,6 +258,8 @@ static void graph_eco(void)
         eco_at(c, &bx[c], &by[c]);                      /* (codex/anim: between its last two steps) */
         bx[c] >>= 4;
         by[c] >>= 4;
+        if (home_set() && bot > 48)                     /* (V10.8.65) LIFE / MACROS: the beings under the page's large name */
+            by[c] = 40 * 16 + by[c] * (bot - 40) / bot;
     }
     if (home_set() == 1u && life_on) {                        /* (V10.7.62) LIFE: who moves whom, as bright as the mover sounds */
         uint32_t n = trk_live < ECO_N ? trk_live : ECO_N, j;

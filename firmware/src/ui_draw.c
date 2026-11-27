@@ -1119,9 +1119,45 @@ static const char *lz_hint(void)
         if (str_eq(cur_page()->title, LZ_HINT[i])) return LZ_HINT[i + 1u];
     return 0;
 }
+/* (V10.8.65, the owner: "LIFE tiene PAN y no se ve que dice LIFE, la gente no va a entender que está paneando") the knob
+ * just turned said whole on the footer a moment, its page's name first: "LIFE PAN 40", "LFO RATE 1/8" (the cards keep
+ * their short labels); 0: none */
+static __attribute__((noinline)) int knob_line(char *s)
+{
+    const param_desc_t *d;
+    int16_t *vp = 0;
+    const char *u = "";
+    uint32_t n;
+    if (!ui.hot_t || ui.menu || ui.confirm || lock_held())
+        return 0;
+    if (ui.home) {
+        if (!home_life())
+            return 0;
+        d = home_param(ui.hot_col & 3u, &vp);
+        str_cpy(s, "LIFE", 20);
+    } else {
+        d = page_desc(cur_page(), ui.hot_col & 3u, &vp);
+        str_cpy(s, cur_page()->title, 20);
+    }
+    if (!d || !vp || !d->label)
+        return 0;
+    n = str_len(s);
+    s[n++] = ' ';
+    str_cpy(s + n, d->label, 12);
+    n = str_len(s);
+    s[n++] = ' ';
+    param_format(d, *vp, s + n, &u);
+    n = str_len(s);
+    if (u && u[0] && n + str_len(u) + 2u < 40u) {
+        s[n++] = ' ';
+        str_cpy(s + n, u, 8);
+    }
+    return 1;
+}
 static void draw_foot(void)
 {
-    char s[48], ti[20];
+    char s[48], ti[20], kl[48];
+    int kon = knob_line(kl);
     const track_t *t = TSEL;
     uint32_t sig;
     int lz = (int)lz_on(), accw = grid_on() && black_held(GK_ACC);
@@ -1139,6 +1175,7 @@ static void draw_foot(void)
     }
     sig += (uint32_t)accw * 977u + (uint32_t)clip.n * 7919u;   /* (seq2h) the clipboard's [n] */
     sig += lz && lz_hint() ? 31337u : 0u;
+    sig += kon ? str_hash(0x4B4Eu, kl) : 0u;
     if (!ui.force && sig == ui.foot_sig)
         return;
     ui.foot_sig = sig;
@@ -1157,7 +1194,9 @@ static void draw_foot(void)
             GFX_HOOK_ALIGN(0, 0, 240, 0, AL_H | AL_CELLS | AL_N(16), "footer step bars centred");
         (void)foot_strip(12, 1, 0);
     }
-    if (lz && lz_hint()) {                            /* (V10.8.54) OCT+'s gestures said */
+    if (kon)                                          /* (V10.8.65) the knob just turned, with its page's name */
+        cv_free_text(8, ry, &AF_X, kl, T_TEXT, T_BG, 226);
+    else if (lz && lz_hint()) {                       /* (V10.8.54) OCT+'s gestures said */
         khint_t kh = {KC_OCTUP, lz_hint()};
         cv_key_row(8, 232, ry - 2, &kh, 1, 3u, T_BG);
     } else

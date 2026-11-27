@@ -297,6 +297,8 @@ static __attribute__((noinline)) void graph_fx_lz(const track_t *t, const page_t
     } else {
         uint32_t m = fx_mod_of(ui.page), k = fx_mod_k(ui.page);
         fx_dots(fx_mod_n(m), k, FX_MOD[m], pg->title);
+        if (m == 4u)                                     /* (V10.8.65) PUNCH IN: no picture (V10.8.33): its name large */
+            page_big(pg->title, 0);
         fxg_mod(m, 8, 12, 224, 120);
     }
 }
