@@ -1873,7 +1873,7 @@ function visTick(t) {
   vis.live.tick(t);
   const c = vis.cut || (vis.cut = { pos: 0, at: 0, sec: 0, j: 0 }), now = performance.now();
   if (t.section != null && t.section !== c.sec) { c.sec = t.section & 3; c.pos = 0; }
-  else if (t.hits && now - c.at > 150) { if (t.hits & 2) c.pos += 3; else if (t.hits & 1) c.pos += 1; }
+  else if (t.hits && now - c.at > 150) { if (t.hits & 18) c.pos += 3; else if (t.hits & 1) c.pos += 1; }   // (18: a snare, or bit 4 a timbre change)
   const j = (c.pos * (2 * c.sec + 1) + c.sec) & 7;
   if (j !== c.j && vis.song) {
     c.j = j; c.at = now;
