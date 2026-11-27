@@ -12,13 +12,13 @@ enum { B_FX, B_SCL, B_ENV, B_LFO, B_EDIT, B_GLO, B_HOME, B_SAVE, B_ARP, B_SEQ, B
 enum { EN_SELECT, EN_ALGO, EN_PRESET, EN_K1, EN_K2, EN_K3, EN_K4, NE };
 #if BOARD_SMK37
 /* (SMK-37, after Melodee's panel.c) HARDWARE CALIBRATION asks for each FM-1 function by the control that has it by
- * default (PANEL_DEFAULT): the printed button names, and (V10.8 layout, docs/SMK37.md) K5 SELECT, K7 ALGORITHM,
- * K6 PRESETS, K1..K4 for KNOB 1..4 (K8 is MASTER, hal/smk_input.h) */
+ * default (PANEL_DEFAULT): the printed button names, and (Rhythmer's layout, docs/SMK37.md) K2 SELECT, K3 ALGORITHM,
+ * K4 PRESETS, K5..K8 for KNOB 1..4 (K1 is MASTER, hal/smk_input.h) */
 static const char *const B_NAME[NB] = {"FX", "SCALE", "CHORD", "NOTE REPEAT", "PARA", "GLOBE", "PATCH", "BT",
                                         "ARP", "SEQ", "SEQ PLAY", "SEQ REC", "OCTAVE-", "OCTAVE+"};
-static const char *const E_NAME[NE] = {"K5", "K7", "K6", "K1", "K2", "K3", "K4"};
-#define PANEL_MAGIC 0x504E5336u          /* "PNS6" (SMK-37, the V10.8 layout; "PNS5" was K6 SELECT K7 ALGO K8 PRESETS):
-                                          * bump when PANEL_DEFAULT changes */
+static const char *const E_NAME[NE] = {"K2", "K3", "K4", "K5", "K6", "K7", "K8"};
+#define PANEL_MAGIC 0x504E5337u          /* "PNS7" (SMK-37, Rhythmer's layout; "PNS6" was K5 SELECT K6 PRESETS K7 ALGO,
+                                          * "PNS5" K6 SELECT K7 ALGO K8 PRESETS): bump when PANEL_DEFAULT changes */
 #define PANEL_NBTN FM1_NBTN              /* the matrix's buttons (18) and encoders (8): hal/smk_input.h */
 #define PANEL_NENC FM1_NENC
 typedef uint32_t ui_btnmask_t;           /* a mask of button ids (0..17) */
@@ -45,13 +45,13 @@ panel_t panel __attribute__((section(".noinit")));
 /* (SMK-37, Melodee's table; hal/smk_input.h's button ids, confirmed by Melodee on an Elite) the printed SMK label ->
  * the FM-1 function: FX = FX, SCALE = SCL, CHORD = ENV, NOTE REPEAT = LFO, PARA = EDIT, GLOBE = GLO, PATCH = HOME,
  * BT = SAVE, ARP and SEQ as printed, SEQ PLAY = PLAY, SEQ REC = REC, OCTAVE- / + = OCT- / OCT+. KNOB BANK, FADER BANK,
- * < and > are the SMK's own (smk.c smk_input_frame). Knobs (V10.8 layout): K1..K4 = KNOB 1..4, K5 = SELECT,
- * K6 = PRESETS, K7 = ALGORITHM, K8 = MASTER. HARDWARE CALIBRATION (OCTAVE- + OCTAVE+ at power-on) re-teaches all of
- * it but MASTER. */
+ * < and > are the SMK's own (smk.c smk_input_frame). Knobs (Rhythmer's layout; the encoders' order K1..K8 is
+ * genkigenki's, verified on a unit): K1 = MASTER, K2 = SELECT, K3 = ALGORITHM, K4 = PRESETS, K5..K8 = KNOB 1..4.
+ * HARDWARE CALIBRATION (OCTAVE- + OCTAVE+ at power-on) teaches all of it again but MASTER. */
 static const panel_t PANEL_DEFAULT = {
     PANEL_MAGIC,
     {14, 8, 9, 7, 13, 10, 12, 11, 6, 15, 16, 17, 4, 5},
-    {4, 6, 5, 0, 1, 2, 3},
+    {1, 2, 3, 4, 5, 6, 7},
     {1, 1, 1, 1, 1, 1, 1},
 };
 #else

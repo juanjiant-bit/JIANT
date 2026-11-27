@@ -42,11 +42,21 @@ static const uint16_t SCALE_MASK[] = {
 };
 
 #define KB_SILENT 255u
+#if BOARD_SMK37
+#include "smk_map.h"                     /* (SMK-37) the keybed's keys as the key path's (smk_kb_off) */
+#define KB_NK 37u                        /* (SMK-37) the FM-1's 27 keys and the keybed's outer ten (smk_kb.c, smk_map.h) */
+#define KB_BIT(k) ((uint64_t)1u << (k))
+typedef uint64_t kb_bits_t;
+#else
+#define KB_NK 27u
+#define KB_BIT(k) (1u << (k))
+typedef uint32_t kb_bits_t;
+#endif
 static uint32_t kb_prev;
 static volatile uint8_t kb_boot_hold;    /* #137: set from power-on to the end of the splash (main.c): the keys sound nothing,
                                           * and one held across its end stays silent until it is let go and pressed again */
-static uint8_t kb_note[27], kb_trk[27];  /* per key: the note it started and on which track */
-static int8_t kb_oct[27];                /* (0.8.5) .. on a DRUM track, the kit's octave it plays (OCT then: seq.c dxo_on) */
+static uint8_t kb_note[KB_NK], kb_trk[KB_NK];  /* per key: the note it started and on which track */
+static int8_t kb_oct[KB_NK];                /* (0.8.5) .. on a DRUM track, the kit's octave it plays (OCT then: seq.c dxo_on) */
 static volatile uint8_t kb_asleep;       /* MENU > SCREEN OFF (ui.c): the screen dark or waking, a key pressed now only
                                           * wakes it (silent, no layer, its release nothing) */
 static uint8_t last_note = 60;
@@ -134,7 +144,8 @@ static uint32_t mo_key(const track_t *t)   /* a key's note goes out: not with OF
  * its channel and its note-off not yet. A note let go ends there if it went out, whatever MIDI OUT or the ARP are by
  * then (they were asked again at the key-up: a note-on out with no note-off); kb_lt bit k: key k's press latched (LATCH
  * then: a HOLD turned on under a key latched nothing, its key-up left the voice sounding for good) */
-static uint32_t mo_ks[NTRK][4] __attribute__((section(".pool"))), kb_lt __attribute__((section(".pool")));
+static uint32_t mo_ks[NTRK][4] __attribute__((section(".pool")));
+static kb_bits_t kb_lt __attribute__((section(".pool")));
 static void mo_kon(uint32_t i, uint32_t x, uint32_t vel)   /* key note x of track i out (note-on) */
 {
     mo_ks[i % NTRK][(x >> 5) & 3u] |= 1u << (x & 31u);
@@ -251,7 +262,7 @@ static __attribute__((noinline)) void mo_block(uint32_t n)   /* events_block: th
  * track routing one takes it off the pitch (OCT+: no bend, nor its pitch bend out; OCT-: no pitch vibrato, CC1 still) */
 #include "vel_kb.h"                                /* (V10.6z6) the keys' velocity and pressure */
 _Static_assert(VK_NTRK == NTRK, "vel_kb.h VK_NTRK: the tracks");
-static uint8_t kb_on[27];                           /* (below: how many of a key's notes sound) */
+static uint8_t kb_on[KB_NK];                        /* (below: how many of a key's notes sound) */
 static volatile uint8_t kx_g[2] KX_BSS;            /* the keys' gates: tracks (bit i) with OCT- (vibrato), OCT+ (bend) held */
                                                     /* (kx_semi, kx_amt, kx_ph: mod.c, the sources OCT+ / OCT- read them) */
 static uint8_t kx_mo[NTRK][2] KX_BSS;              /* MIDI OUT's last CC1, bend MSB - 64 */
@@ -355,9 +366,19 @@ static uint32_t kb_map(const track_t *t, uint32_t k)
     static const int8_t DEGREE[12] = {0, -1, 1, -1, 2, 3, -1, 4, -1, 5, -1, 6};
     const engine_t *e = ENGINES[eng_idx(t->eng_req)];   /* (the engine it switches to) */
     int32_t n;
+#if BOARD_SMK37
+    if (k >= 27u) {                                     /* (SMK-37) an outer key (smk_map.h): a DRUM track's lanes, */
+        if (drum_track(t))                              /* else its note, C3..E3 / G#5..C6 at OCT 0 */
+            return DRUM_LANE_NOTE[(k - 27u) % NLANE];
+        n = 53 + smk_kb_off(k);
+    } else {
+#endif
     if (e->keys && (n = e->keys(t, k)) >= 0)           /* the engine's own key map (DRUM's GM map, slices) */
         return (uint32_t)n;
     n = 53 + (int32_t)k;
+#if BOARD_SMK37
+    }
+#endif
     if (t->p[P_QUANT] == QN_SNAP || t->p[P_QUANT] == QN_SEQ)   /* SNAP (and SEQ): every key, rounded down */
         return (uint32_t)clamp(scale_snap(t, n + 12 * song.octave), 0, 127);   /* (0.6.81: TRANS as it sounds, voice.c) */
     if (t->p[P_QUANT] == QN_WHITE) {                    /* WHITE: white keys walk the scale, black keys are silent */
@@ -389,8 +410,8 @@ static uint32_t kb_map(const track_t *t, uint32_t k)
 
 /* the notes key k plays (kb_sn: how many, its chord; kb_on: how many of them started, the rest strummed in later) */
 #define KB_CH 4u
-static uint8_t kb_snd[27][KB_CH], kb_sn[27], kb_on[27];
-static uint16_t kb_sdue[27];                    /* (0.6.81) samples to the strum's next note */
+static uint8_t kb_snd[KB_NK][KB_CH], kb_sn[KB_NK], kb_on[KB_NK];
+static uint16_t kb_sdue[KB_NK];                    /* (0.6.81) samples to the strum's next note */
 /* (V10.6z6) key velocity (vel_kb.h KB_VEL: each key's press's, 100 with VELOCITY OFF; its chord, strum, recording and
  * MIDI OUT use it) */
 #define ARP_VEL(t) (vs.arpv[trk_index(t)] ^ 100u)    /* (stored ^ 100: 0, as zeroed, 100) */
@@ -1611,10 +1632,14 @@ static void key_next(uint32_t k, track_t *t)
 static int clay_kb(uint32_t k, track_t *t);   /* (clay.c, V10.8.31: DRONE CLAY ON, KEYS ON: the keys its gestures) */
 static void key_on(uint32_t k, track_t *t)
 {
+#if BOARD_SMK37
+    if (k < 27u && clay_kb(k, t))                   /* (SMK-37: DRONE CLAY has the FM-1's 27 keys) */
+#else
     if (clay_kb(k, t))
+#endif
         return;
     uint32_t n = chord_build(t, kb_note[k], kb_snd[k]), gap = n > 1u ? chord_gap(t) : 0u, i;
-    kb_lt = key_latch(t) ? kb_lt | 1u << k : kb_lt & ~(1u << k);
+    kb_lt = key_latch(t) ? kb_lt | KB_BIT(k) : kb_lt & ~KB_BIT(k);
     if (key_latch(t)) {                             /* LATCH: a new chord lets the last one go */
         uint32_t j;
         if (!t->arp_phys)
@@ -1645,7 +1670,7 @@ static void key_on(uint32_t k, track_t *t)
 static void keys_strum(uint32_t n)
 {
     uint32_t k;
-    for (k = 0; k < 27u; k++) {
+    for (k = 0; k < KB_NK; k++) {
         if (kb_on[k] >= kb_sn[k] || !kb_on[k])
             continue;
         if (kb_sdue[k] > n) {
@@ -1856,7 +1881,12 @@ static __attribute__((noinline)) void scene_follow(track_t *lt, uint32_t note, u
 /* (the keys' block is RAM code: SCENE's call goes through a pointer, out of the direct calls' +-4 MiB reach check;
  * a key event, not every block) */
 static void (*volatile scene_fp)(uint32_t, int) = scene_key;
-static void (*volatile key_off_fp)(uint32_t, track_t *) = key_off;   /* (stuck notes: a key-up's, likewise) */
+#if BOARD_SMK37
+static void smk_key_up(uint32_t k, track_t *t);   /* (smk_kb.c: the pedal holds it) */
+static void (*volatile key_off_fp)(uint32_t, track_t *) = smk_key_up;
+#else
+static void (*volatile key_off_fp)(uint32_t, track_t *) = key_off;
+#endif   /* (stuck notes: a key-up's, likewise) */
 
 #ifdef FM1_INPUT_LAT
 /* the press latency stats (hal/fm1_input.h fm1_in_stat, console `inp`): from the first scan that saw
@@ -1877,16 +1907,17 @@ static __attribute__((noinline)) void kb_lat(uint32_t k)
 #endif
 
 #if BOARD_SMK37
-static void smk_kb_block(void);                   /* (smk.c) */
+static uint32_t smk_kb_block(void);               /* (smk_kb.c) */
 #endif
 static void keyboard_block(void)
 {
-    uint32_t cur = fm1_in.notes & ~vk_hold, ch, k;   /* (V10.6z6: a press waiting for its strike, vel_kb.h: not yet) */
-    uint32_t lay, fx;
 #if BOARD_SMK37
-    smk_kb_block();                               /* (SMK-37, smk.c) the keybed, the wheels and the pedal: MIDI in on the
-                                                   * selected track; the pads' velocities as the white keys' */
+    uint32_t cur = smk_kb_block(), ch, k;         /* (SMK-37, smk_kb.c) the 27 keys (a re-strike let go first), their
+                                                   * velocities; the outer ten, the wheels and the pedal played there */
+#else
+    uint32_t cur = fm1_in.notes & ~vk_hold, ch, k;   /* (V10.6z6: a press waiting for its strike, vel_kb.h: not yet) */
 #endif
+    uint32_t lay, fx;
     keys_strum(CTL);                              /* (0.6.81) the chords' strums */
     ch = cur ^ kb_prev;                           /* keys also sound while entering steps */
     if (!ch)

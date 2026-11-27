@@ -477,8 +477,16 @@ smk_driver_guard() {                              # the RAM driver checks FL_GUA
 }
 run "SMK-37 flash driver: fl_erase4k_ram / fl_prog_ram refuse what FL_GUARD refuses" smk_driver_guard
 $CC -w -DBOARD_SMK37=1 -Ifirmware/hal -o "$OUT/smk_map_test" tests/smk_map_test.c
-run "SMK-37 controls (V10.8 layout): the printed buttons, K1-K8, all 37 keys at every octave, pads, banks, wheels, pedal" \
+run "SMK-37 controls (Rhythmer's layout): the printed buttons, K1-K8, all 37 key ids through the key path, pads PLAY / STEPS, fader banks, wheels, pedal" \
     "$OUT/smk_map_test"
+smk_key_path() {                                  # seq.c's key path holds the 37 keys (KB_NK) and maps the outer ten
+    grep -q '^#define KB_NK 37u' firmware/src/seq.c && grep -q 'n = 53 + smk_kb_off(k);' firmware/src/seq.c &&
+        grep -q 'uint32_t cur = smk_kb_block(), ch, k;' firmware/src/seq.c &&
+        ! grep -n 'kb_[a-z]*\[27\]' firmware/src/seq.c && grep -q 'for (k = 0; k < KB_NK; k++)' firmware/src/midi_control.c &&
+        grep -q 'uint8_t velx\[37\]' firmware/src/vel_kb.h
+}
+run "SMK-37 key path: seq.c's key arrays are 37 keys (KB_NK), the outer ten mapped (smk_kb_off), the 27 from smk_kb_block" \
+    smk_key_path
 smk_ram_only() {                                  # RAM-only unless FELUCCA_SMK_FLASH=1: the store's and the OTA's writes refuse
     grep -q '^#define SMK_MAY_WRITE (FELUCCA_SMK_FLASH && flash_ok)$' firmware/src/storage_hw.c &&
         [ "$(grep -c 'if (!SMK_MAY_WRITE)' firmware/src/storage_hw.c)" = 2 ] &&
@@ -488,12 +496,6 @@ smk_ram_only() {                                  # RAM-only unless FELUCCA_SMK_
 }
 run "SMK-37 RAM-only by default: every store / OTA erase and write refused unless FELUCCA_SMK_FLASH=1; no Bluetooth segment" \
     smk_ram_only
-smk_pages() {                                     # the pads' page shortcuts (smk_map.h) are pages of the chains (ui_lens.c)
-    sed -n '/SMK_PAGES\[8\]/,/^};/p' firmware/src/smk_map.h | grep -o '"[A-Z0-9 ]*"' | while read -r n; do
-        grep -q "NV($n,\|NV([^,]*, $n," firmware/src/ui_lens.c || { echo "no page $n"; return 1; }
-    done
-}
-run "SMK-37 pads 9..16: each page shortcut is a page of its section's chain" smk_pages
 $CC -w -DBOARD_SMK37=1 -Ifirmware/hal -o "$OUT/smk_keys_test" tests/smk_keys_test.c
 run "SMK-37 keybed (hal/smk_input.h, Melodee's test): two contacts, bounces, re-strikes, outer keys, pads, curves" \
     "$OUT/smk_keys_test"

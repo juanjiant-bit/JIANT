@@ -71,6 +71,9 @@ void fm1_timer5_irq(void)
     if (owed & 2u)
         uart_midi_poll();
 #endif
+#if BOARD_SMK37 && FELUCCA_SMK_TRS
+    smk_mo_poll();                              /* (SMK-37) TRS MIDI OUT: a byte when the last has gone */
+#endif
     owed = 0;
 }
 extern void isr_timer5(void);
@@ -348,6 +351,9 @@ static void fm1_main(void)
     usb_start();
 #if FELUCCA_UART
     uart_midi_init();
+#endif
+#if BOARD_SMK37 && FELUCCA_SMK_TRS
+    smk_mo_init();                            /* (SMK-37) TRS MIDI OUT: UART1 TX on PC7 */
 #endif
     boot_leds();
     timer5_start();

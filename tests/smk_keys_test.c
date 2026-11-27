@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Kerem Kilic (Ellic Studio)
  * (JIANT: Melodee's tests/smk_keys_test.c, unchanged but for this line and, for the V10.8 layout, the pad check
- *  reading SMK_PK_GRID and pad_vel; it tests hal/smk_input.h, Melodee's too) */
+ *  reading SMK_PK_GRID and note_vel; it tests hal/smk_input.h, Melodee's too) */
 /* Host test of the SMK-37 velocity keybed (hal/smk_input.h smk__keys, smk__pad, smk_curve, smk_trim_load) against
  * a model of the scan and of the two contacts of a key. The scan is the TIMER5 one (fm1_input_tick): one column
  * every 100 us, the frame (smk__keys) after column 15; the consumer is seq.c's (keyboard_block: the level of
@@ -377,7 +377,7 @@ int main(void)
             smk__pad(p, 30);                                        /* the baseline settles */
         for (j = 0; j < sizeof HIT / sizeof HIT[0]; j++) {
             smk__pad(p, HIT[j]);
-            if (((fm1_in.notes >> n) & 1u) && !prev) { on++; v = fm1_in.pad_vel[n]; }
+            if (((fm1_in.notes >> n) & 1u) && !prev) { on++; v = fm1_in.note_vel[n]; }
             if (!((fm1_in.notes >> n) & 1u) && prev) off++;
             prev = (fm1_in.notes >> n) & 1u;
         }

@@ -1,7 +1,7 @@
 # JIANT FM on the M-VAVE SMK-37 Pro / Elite
 
 **Status: experimental.** The previous SMK-37 build (main, v0.9.18 line) has run on one owner's unit. This one is
-the port of that support to the public firmware **V10.8.48**, with a new control layout the owner approved. Everything
+the port of that support to the public firmware **V10.8.48**, with **Rhythmer's control layout** (below). Everything
 new here was built and checked on the host only: every item marked *untested on hardware* must be checked on a unit.
 
 The SMK-37 has the same JieLi AC791N chip as the FM-1. It also has the same SPL and the same chip key (0x980F)
@@ -14,6 +14,17 @@ with hardware notes at https://github.com/genkigenki/fm1-to-smk37). `hal/smk_inp
 `tests/smk_keys_test.c` are Melodee's files; JIANT's changes in them are marked "(JIANT)". The flash map, the store
 owner tag, the LCD wiring, the pad LEDs and the panel table are adapted from Melodee and keep its attribution lines.
 M-VAVE's open SMK firmware was used for hardware facts only. No M-VAVE SDK binary is linked or copied.
+
+Credits for this layout and its hardware details (all GPL-3.0; adapted, their notices kept in the files' headers):
+- **Rhythmer** by **Jazzy Rhythmer** (https://github.com/JazzyRhythmer/Rhythmer), a fork of JIANT for the FM-1 with an
+  SMK-37 Pro build (0.1.2-smk3 guide, 0.1.2 source): the control layout (K1..K8, the buttons, KNOB BANK's PLAY / STEPS
+  pads, FADER BANK's four banks with the T5 / T6 window and pick-up), all 37 keys through the original key path with
+  the outer ten as extra notes, and the TRS MIDI OUT driver (`smk_map.h`, `smk.c`, `smk_kb.c`, `smk_uart_tx.h`,
+  `smk_midi_out.h`).
+- **genkigenki** (M. Geisler): the SMK-37 board layer (https://github.com/genkigenki/Felucca, branch `smk37`), which
+  `hal/smk_input.h` is, and the porting reference https://github.com/genkigenki/fm1-to-smk37 (`docs/01-hardware.md`:
+  the key matrix, the encoders' order, the pads' rows, the mux addresses, the wheels' measured ranges, the TRS MIDI
+  OUT pin).
 
 ## Build
 
@@ -41,93 +52,136 @@ What the SMK build changes:
 | Bluetooth (`FELUCCA_BT`) | on: the segment at 0xEA000-0xFBFFF | **off** (`#error` if on): those sectors are the SMK's USRFLASH marker, store C and USR. GEN, the lyrics dictionary and the other code the FM-1 keeps in the segment are in the app image instead |
 | USB HOST (`FELUCCA_USB_HOST`) | on | off (the keybed is the keyboard; its flash is needed) |
 | TRS MIDI IN (UART1, PH8) | on | off: PH8 is a key-matrix row on the SMK (`#error` if turned on) |
+| TRS MIDI OUT (`FELUCCA_SMK_TRS`) | none | on: UART1 TX on PC7, following MENU > CONTROL > MIDI OUT |
 | key velocity | `src/vel.c`, `vel_diag.c` (the FM-1's carbon pills) | the HAL's two-contact time and pad peaks (`hal/smk_input.h`); MENU > CONTROL > VELOCITY sets its curve (OFF = 100) |
 | LCD | SPI1 group B, PC7 CS, backlight PA2 | SPI1 group A: PB6 CLK, PB7 DO, PC8 CS, PB5 D/C, no backlight control |
 | input HAL | `hal/fm1_input.h`, `hal/fm1_adc.h` | `hal/smk_input.h` (it stands in for `fm1_adc.h`: PB6 is the LCD clock) |
 | the sound's pinned flash layout | `tools/audio_layout.txt` | `tools/audio_layout_smk37.txt` (its own, both models; `FELUCCA_REPIN=1` records it anew) |
 
 The app slot (0x8EA90 bytes) is the FM-1's. The encrypted region still ends at 0x92FFE inside the SMK's
-0x9D000 app area. The SMK image (V10.8.48 + SMK) is **581072 B of the 584336 B slot: 3264 B free**; RAM .data+.bss
-92740 B of 98304; the pool's spare 11776 B; RAM code 32660 B of 34816. Everything SMK-only is compiled for the SMK
-board only (`firmware/src/smk.c`, `smk_kb.c`, `smk_map.h`, `#if BOARD_SMK37`).
+0x9D000 app area. The SMK image (V10.8.48 + SMK, Rhythmer's layout, TRS MIDI OUT) is **580664 B of the 584336 B
+slot: 3672 B free** (Elite: 580668 B, 3668 B free; the TRS jack costs ~1.2 KB); RAM .data+.bss 92828 B of 98304; the
+pool's spare 11552 B; RAM code 32184 B of 34816. Everything SMK-only is compiled for the SMK board only
+(`firmware/src/smk.c`, `smk_kb.c`, `smk_map.h`, `smk_midi_out.h`, `hal/smk_uart_tx.h`, `#if BOARD_SMK37`).
 
-## The control mapping (V10.8 layout)
+## The control mapping (Rhythmer's layout)
 
-The owner's layout: the keybed always plays, the pads are steps / tracks / shortcuts, the knobs and faders have banks.
-The code: `firmware/src/smk.c` (UI side), `firmware/src/smk_kb.c` (audio side), `firmware/src/smk_map.h` (the rules,
-host-tested), `firmware/src/panel.c` (the buttons and knobs).
+The layout is **Rhythmer's** SMK-37 Pro layout (Rhythmer OS 0.1.2-smk3, a GPL-3.0 fork of JIANT for the FM-1 by
+Jazzy Rhythmer), adapted to V10.8.48. The keybed goes through the FM-1's own key path, the pads are the FM-1's white
+keys or the page's steps, the faders have four banks. The code: `firmware/src/smk.c` (UI side), `firmware/src/smk_kb.c`
+(the keys' block's SMK step: the outer keys, the pedal, the wheels), `firmware/src/smk_map.h` (the rules, host-tested),
+`firmware/src/seq.c` (the FM-1's key path, holding 37 keys on the SMK), `firmware/src/panel.c` (the buttons and knobs).
 
-### Keys, wheels, pedal
-
-| SMK-37 | JIANT |
+| SMK-37 (printed) | JIANT V10.8.48 |
 |---|---|
-| the 37 keys (C3..C6, all of them, both ends) | **always play the selected track**, at the velocity they are struck with. OCT- / OCT+ (-3..+3, both: 0) move the whole keyboard: key 1 is C3 + 12 x OCT, key 37 C6 + 12 x OCT; the window is moved, never folded, so every key stays a note of its own in 0..127. They go in as MIDI in on the selected track's channel (the firmware's own MIDI path: ARP, recording, DRUM-X's MIDI map, MIDI LEARN, the matrix's VEL), and out to MIDI OUT as the FM-1's keys do. A key held while the track or the octave changes ends the note it started. They play chromatically (the FM-1 keys' SCL key maps, QNT WHITE / SNAP and CHORD, are the FM-1 keys'). |
-| PITCH wheel | pitch bend on the selected track (its rest at power-on is the centre, a small dead zone; the track's bend range, RPN 0) |
-| MOD wheel | CC1 on the selected track: the matrix's MOD WHEEL source (0 at its rest) |
-| SUSTAIN pedal | CC64 on the selected track: the notes held while it is down (either polarity: its reading at power-on is "up") |
-| another track picked | the old track's bend, CC1 and pedal let go; the new one gets them |
+| K1 | **MASTER** (a virtual pot: 24 steps a detent, 724 at power-on) |
+| K2 | **SELECT** (the section's pages) |
+| K3 | **ALGORITHM** (the track, as on the FM-1) |
+| K4 | **PRESETS** |
+| K5..K8 | **KNOB 1..4** (the screen's four page knobs) |
+| PATCH | HOME (held ~0.7 s: the MENU, as the FM-1's HOME) |
+| PARA | EDIT |
+| CHORD | ENV |
+| NOTE REPEAT | LFO |
+| SCALE / FX / GLOBE / ARP / SEQ | SCL / FX / GLO / ARP / SEQ |
+| BT | SAVE (not Bluetooth) |
+| SEQ PLAY | PLAY (again: STOP) |
+| SEQ REC | REC |
+| OCTAVE- / OCTAVE+ | OCT- / OCT+: the octave, and back / YES on action pages and dialogs, as on the FM-1 |
+| < / > | the page before / after (one SELECT detent; not in a dialog) |
+| KNOB BANK | the pads **PLAY <-> STEPS** (its LED lit in STEPS; blinking while a change waits for the pads) |
+| FADER BANK | the faders **LEVEL -> PAN -> REVERB -> DELAY** (its LED lit for PAN, REVERB, DELAY) |
+| the 37 keys | all through the FM-1's key path (below) |
+| 16 pads | PLAY: the FM-1's 16 white keys; STEPS: the page's 16 steps (below) |
+| F1..F4 | the bank's value of T1..T4; with T5 or T6 selected F1 / F2 are T5 / T6 (F3, F4 nothing) |
+| PITCH / MOD wheels | pitch bend / modulation (CC1, the matrix's MOD WHEEL) of the selected track |
+| SUSTAIN pedal | sustain (JIANT's; Rhythmer has none) |
+| TRS MIDI OUT (3.5 mm) | what MENU > CONTROL > MIDI OUT sends over USB, also out of the jack, track n on channel n |
+
+### Keys
+
+All 37 keys go through the FM-1's **original key path** (`seq.c` keyboard_block, kb_map, key_on / key_off), with
+velocity: SCL's key maps (QUANT WHITE / SNAP), CHORD, STRUM, ARP, LATCH, KEY SPLIT, recording, DRONE CLAY, MIDI OUT.
+
+- **The central 27 (the 6th to the 32nd key, F3..G5)**, are the FM-1's 27 keys (`fm1_in.notes`): everything the FM-1's keys do
+  they do, on every page: the layers' shortcuts (GLO + G4 UNDO ...), NAME's letters, the DRUM grid, step entry while
+  stopped, SCENE.
+- **The outer ten (C3..E3 and G#5..C6)** play extra notes: MIDI 48..52 and 80..84 at OCT 0 (the keybed is MIDI
+  48..84), moved by OCT, through the same key path (a DRUM track: a lane each). Where the FM-1's keys are the UI's
+  (a layer's button held, NAME, the DRUM grid) and under the splash they are silent.
+- A key struck again before a full lift sounds again (a release, then the new note at its new velocity); a key held
+  while the track or the octave changes ends the note it started.
+- Key ids: the HAL's key k (0 = C3 .. 36 = C6, genkigenki's matrix table, verified in use on an SMK-37 Pro); ids
+  5..31 are the FM-1's keys 0..26, ids 0..4 the key path's keys 27..31 and ids 32..36 keys 32..36 (Rhythmer's
+  order; `smk_map.h` smk_kb_key).
+
+**SUSTAIN pedal**: a key let go while it is down keeps sounding until the pedal is up, or the key is struck again; it
+is also CC64 on the selected track (for notes from MIDI) and to MIDI OUT. Either polarity: its reading at power-on is
+"up". **Wheels**: as MIDI in on the selected track's channel (its bend range, RPN 0), and to MIDI OUT with the keys;
+another track picked: the old one's bend, CC1 and pedal let go.
 
 ### Pads (16, velocity)
 
-Pad n is hardware pad n - 1: **1..8 the top row, 9..16 the bottom row**, left to right. What they do depends on the
-page (`smk_pads_rule`):
+Pad n is hardware pad n - 1: **1..8 the top row, 9..16 the bottom row**, left to right (genkigenki: verified with
+`padtest`). KNOB BANK picks what they are:
 
-| where | the pads |
+| KNOB BANK | the pads |
 |---|---|
-| a layer (a button held: GLO, SEQ, EDIT, FX, SCL, REC, SAVE ...), NAME, SEQ > STEP on a DRUM track (the grid), STEP FX, the song pages | **the FM-1's 16 white keys** F3..G5, pad n the n-th: the layers' shortcuts (GLO + pad 9 = G4 UNDO, SEQ + pad 16 = G5 CLR STEP, SAVE + pad 12 = C5 NAME ...), NAME's letters, the DRUM grid's steps 1..16 (hold + KNOB 1..4: a lock), STEP FX's components. Black-key functions are not on the pads. |
-| the other SEQ pages (STEP, NOTE, PATTERN, EUCLID ... on a melodic track; the non-grid pages on DRUM) | **the 16 steps of the bar shown**: a pad on an empty step writes it (melodic: the keybed's last note at the pad's velocity; DRUM: the lane picked); on a full step it clears it when let go. **Hold a pad + K1..K4**: a parameter lock on that step (as the FM-1's held step; then it is not cleared). The cursor follows the pad. |
-| everywhere else | **1..6** select track T1..T6 (an asleep T5 / T6 says so); **PATCH held + 1..6**: that track's **mute** (no HOME tap, no MENU); **7** UNDO (as GLO + G4); **8** TAP tempo (as GLO's TAP); **9..16** page shortcuts: 9 GLO > MIXER, 10 EDIT > FILTER, 11 ENV > ENV, 12 LFO > MOD (the matrix), 13 FX > DLY, 14 FX > REVERB, 15 HOME > SONG > ARRANGE, 16 HOME > GENERATOR (GEN) |
-| the MENU, a dialog | nothing (dark) |
+| **PLAY** (dark) | **the FM-1's 16 white keys** F3..G5, pad n the n-th: on each page they do what the FM-1's white keys do there (notes, the steps of SEQ's pages, the layers' shortcuts, NAME's letters, the DRUM grid, STEP FX ...), at the velocity they are hit with. |
+| **STEPS** (lit) | **the 16 steps of the SEQ page shown** (the cursor's bar; the DRUM grid: the lane picked): a pad on an empty step writes it (melodic: the keys' last note at the pad's velocity; DRUM: the lane); on a full step it clears it when let go. **Hold a pad + KNOB 1..4 (K5..K8)**: a parameter lock on that step (then it is not cleared). In the MENU, a dialog, a layer or NAME the pads do nothing. |
 
-The pads' LEDs show it: white keys as the FM-1's key LEDs (lit, blinking, the grid's glow); steps in the track's
-colour (the cursor white, the playhead bright, past LEN dark, the first of each four dim); tracks in their colours
-(the selected one bright, a muted one red, an asleep one dark), 7 / 8 dim white, the shortcuts dim blue (the page
-shown bright).
+Switching while a pad is held waits until every pad is let go (no stray note, no half a step). The pads' LEDs: PLAY
+the FM-1 keys' picture (lit white, breathing blinking, the DRUM grid's glow); STEPS the steps in the track's colour,
+the cursor white, **the playhead bright**, past LEN dark.
 
-### Knobs, faders, buttons
+### Faders
 
-| SMK-37 (printed) | JIANT |
-|---|---|
-| K1..K4 | KNOB 1..4 (the page's four cards) |
-| K5 | SELECT (the page chain) |
-| K6 | PRESETS |
-| K7 | ALGORITHM (the track) |
-| K8 | MASTER (a virtual pot: 24 steps a detent, 724 at power-on) |
-| **KNOB BANK** (its LED lit = MACROS) | K1..K8 become 8 fixed macros: **K1..K6 the cutoff of T1..T6** (the engine's own brightness as CC74 finds it, else the FILTER page's CUT), **K7 the delay's MIX**, **K8 the reverb's SIZE**. The screen says the bank, then each value (`T3 CUT 64`). Tap again: the page's knobs (and MASTER) back. |
-| F1..F4, **FADER BANK** A (its LED dark) | the **levels of T1..T4** |
-| F1..F4, FADER BANK B (its LED lit) | **T5 level, T6 level, the selected track's DLY send, its REV send** |
-| faders: pick-up | a fader moves its value only once it meets it (within 2 / 127, or crossing it); until then the screen says `F2 PICK UP: UP` / `DOWN`. A value changed elsewhere (a knob, a load, the other bank) is picked up again. |
-| < / > | the page before / after (one SELECT step) |
-| FX | FX |
-| SCALE | SCL |
-| CHORD | ENV |
-| NOTE REPEAT | LFO |
-| PARA | EDIT |
-| GLOBE | GLO |
-| PATCH | HOME (and the mute modifier for pads 1..6) |
-| BT | SAVE |
-| ARP | ARP |
-| SEQ | SEQ |
-| SEQ PLAY | PLAY |
-| SEQ REC | REC |
-| OCTAVE- / OCTAVE+ | OCT- / OCT+ (the keybed's octave; back / YES on action pages and dialogs, as on the FM-1) |
-
-V10.8.48's twelve FM-1 buttons are the same as before (HOME ENV LFO FX SCL EDIT GLO SAVE ARP SEQ PLAY REC), so the
-printed-button table is the one the owner already uses; only K5..K8 changed (they were K5 MASTER, K6 SELECT,
-K7 ALGORITHM, K8 PRESETS). The panel table's magic is now `PNS6`, so the old calibration is replaced by these defaults
-once.
+FADER BANK cycles **LEVEL -> PAN -> REVERB -> DELAY** (the reverb and delay sends) and the screen says the bank
+(`FADERS PAN T1-T4`). F1..F4 are T1..T4; with T5 or T6 selected, F1 and F2 are T5 and T6 and F3, F4 do nothing.
+**Pick-up**: a fader moves its value only once it meets it (within 2 / 127, or crossing it); until then the screen
+says `F2 PICK UP: UP` / `DOWN`. A bank change, a change of track window, or the value changed elsewhere (a knob, a
+load) arms the pick-up again, so loading a project never jumps to the faders' positions.
 
 Other behaviour:
 - OCTAVE- + OCTAVE+ held at power-on opens HARDWARE CALIBRATION. It asks for each FM-1 function by its printed SMK
-  name, and for the knobs by K5 (SELECT), K7 (ALGORITHM), K6 (PRESETS) and K1..K4. The table's magic is `PNS6`, so an
-  FM-1 table (or the previous SMK layout's) is never taken.
-- OCTAVE- + OCTAVE+ held for 5 s enters UBOOT, as on the FM-1.
-- A key struck again before a full lift sounds again (a release, then the new note at its new velocity).
+  name, and for the knobs by K2 (SELECT), K3 (ALGORITHM), K4 (PRESETS) and K5..K8. The table's magic is now `PNS7`,
+  so an older table (V10.8.48's first SMK layout `PNS6`, the FM-1's) is replaced by these defaults once.
+- OCTAVE- + OCTAVE+ held for 5 s while running enters UBOOT, as on the FM-1 (a different path from the calibration).
 - Button LEDs are on or off. What breathes on the FM-1 blinks at about 1 Hz here. The FM-1's dim idle glow has no
   level on the SMK, so idle buttons are dark, as with MENU > LEDS OFF. MENU > LEDS INV lights the idle buttons, as
-  on the FM-1. SEQ PLAY shows its green LED while playing. KNOB BANK and FADER BANK light for MACROS and B.
+  on the FM-1. SEQ PLAY shows its green LED while playing.
 - The screen texts still name the FM-1's controls (for example HOME, SCL, KNOB 1).
-- MENU > CONTROL's AFTERTOUCH and VEL LEARN do nothing on the SMK (they are the FM-1's carbon pills).
+- MENU > CONTROL's AFTERTOUCH and VEL LEARN do nothing on the SMK (they are the FM-1's carbon pills); VELOCITY sets
+  the keys' and pads' curve.
+
+### TRS MIDI OUT
+
+The 3.5 mm jack is a MIDI OUT (UART1 TX on PC7, 31250 baud; `firmware/hal/smk_uart_tx.h`, `firmware/src/smk_midi_out.h`,
+after Rhythmer's driver; the pin and the register setup are the stock v016's as genkigenki documented them). It follows
+**MENU > CONTROL > MIDI OUT** as USB does: KEYS (the keys, chords, the wheels and the pedal), CLOCK (and the clock with
+START / STOP on the internal tempo), ALL (and the sequencer's and the arp's notes), OFF (the jack silent). Track n is
+channel n. USB MIDI keeps working beside it. SysEx (the editor's, the update's) never goes to the jack. A full queue or
+a UART that stops answering sends CC64 0 / CC120 / CC121 / CC123 on every channel rather than leave a note hanging;
+after four timeouts in a row the jack stops until MIDI OUT is set again. A change of MIDI OUT lets the jack's held
+notes go. Build without it: `FELUCCA_SMK_TRS=0`. *Untested on hardware* (the jack's signal, the adapter's wiring, the
+timing).
+
+## Hardware details from the references
+
+JIANT's SMK board layer (`firmware/hal/smk_input.h`) is genkigenki's (via Melodee); it was compared with genkigenki's
+Felucca `smk37` branch, its porting reference (`docs/01-hardware.md`) and Rhythmer's 0.1.2 source:
+
+| item | genkigenki's status | JIANT |
+|---|---|---|
+| key matrix (37 x 2 contacts, k 0 = C3 .. 36 = C6) | verified in use | identical table; the outer keys' codes were right: the old build's silent ends were its routing (it drained them) |
+| buttons (18), their printed names | verified | identical |
+| encoders K1..K8 order | **verified** | identical (the old note "order to confirm" is gone) |
+| pads: top row = hardware pads 0..7 (mux A) | verified (padtest) | identical |
+| faders: mux C 0..3 -> F2 F3 F4 F1, full scale 1023 | verified | identical |
+| wheels: PITCH mux C 4, rest ~535, travel ~445..640; MOD 5, ~474..629, up = lower | verified | **corrected**: JIANT scaled them on 0..1023 (a full bend needed 1023, so the real travel gave about a sixth of the bend and a quarter of MOD); now a self-calibrating range as genkigenki's and Rhythmer's (`smk_map.h`) |
+| pedal: mux C 6, ~985 with nothing plugged | analysis | kept (either polarity from its power-on reading) |
+| button LEDs, SEQ REC's at 0x1b | verified for the LEDs driven | identical (the table's 17 / 18 order as confirmed on a unit) |
+| TRS MIDI OUT: UART1 TX, PC7, BAUD 383 | analysis | new, as Rhythmer's |
 
 ## Flash: RAM-only by default
 
@@ -198,30 +252,29 @@ steps, as they do on the unmodified V10.8.48 tree; the SMK steps pass when run a
 - `tests/smk_ldr_test.c` checks the SMK update loader on a simulated SMK (and refuses an SMK package with a bt.bin).
 - `tests/ota_test.c`, SMK build: staging at 0xBB000, the model's record, the board check.
 - `tests/smk_pkg_test.py` checks the package: identity, size, region table, no bt.bin, and app.bin.
-- `tests/smk_map_test.c` checks the control mapping: the buttons and knobs; **all 37 key ids through the HAL's queue and
-  `smk_kb.c`, at every octave and on every track: a distinct note each, on the selected track, at its velocity, its
-  release ending it** (also across a track / octave change, a re-strike, the splash); the wheels and the pedal; the
-  pads' rule, numbers and white keys; the banks' targets; the faders' pick-up.
-- A check that every page shortcut of pads 9..16 is a page of its section's chain.
+- `tests/smk_map_test.c` checks the control mapping: the printed buttons and K1..K8 ("PNS7"); **all 37 key ids
+  through the HAL and the key path** (`smk_kb.c` and keyboard_block's loop as seq.c has it): ids 5..31 as the FM-1's
+  keys, the outer ten through the queue, **at OCT -3..+3 on T1..T6 a key_on each of a note of its own (C3 + id + 12
+  OCT, both ends), at its velocity, its release a key_off on the track it started on**; a re-strike (central and
+  outer), a layer / NAME / the DRUM grid / the splash (the outer keys silent), a DRUM track; the pedal's sustain; the
+  wheels on genkigenki's measured ranges; the pads PLAY (white keys) / STEPS (the UI's) and KNOB BANK's change waiting
+  for the pads; FADER BANK's cycle, the T5 / T6 window, the pick-up's context and the pick-up.
+- A check that seq.c's key path holds 37 keys on the SMK (`KB_NK`, the outer ten mapped, the 27 from smk_kb_block).
 - `tests/smk_keys_test.c` is Melodee's keybed test, run on `hal/smk_input.h`.
 
 ## Untested on hardware
 
-Everything that touches the SMK. In particular, new in this V10.8.48 port:
-- **The outer keys.** The previous build played only F3..G5; the 10 outer keys (C3..E3 = key ids 0..4, G#5..C6 = ids
-  32..36) were drained, which is why the owner heard nothing from the first and last keys. They now play. Their matrix
-  codes are Melodee's stock table (`SMK_KEYC`, from M-VAVE's v016 firmware) and were never heard in JIANT: please
-  play C3, C#3, D3, D#3, E3 and G#5, A5, A#5, B5, C6 and report any key that is silent or plays the wrong note.
-- Which mux C address is the PITCH wheel and which the MOD wheel (the HAL reads addresses 4 and 5; JIANT takes 4 as
-  PITCH, 5 as MOD), the wheels' ranges and the pitch wheel's centre, the pedal's address (6) and its reading pressed /
-  released (JIANT takes "far from the power-on reading" as pressed, either polarity; with no pedal plugged it must
-  read steady).
-- The faders' addresses (0..3 -> F2 F3 F4 F1, Melodee's `SMK_FADMUX`) and direction (0 at the bottom assumed).
-- The pads' numbering on the unit (JIANT: 1..8 the top row, 9..16 the bottom, as the HAL's mux A / B) and their
-  colours (WS2812 GRB order, the 250-byte latch).
-- KNOB BANK's and FADER BANK's LEDs (LED ids 0 and 1 assumed to be under those buttons, as Melodee's table says).
-- The encoders' K1..K8 order (Melodee: "K1..K8 order to confirm"); if K5..K8 come out swapped, HARDWARE CALIBRATION
-  re-teaches SELECT, ALGORITHM and PRESETS (not MASTER, which is fixed at encoder 7).
+Everything that touches the SMK. In particular, new in this layout:
+- **The keys through the key path**, the outer ten above all: please play C3, C#3, D3, D#3, E3 and G#5, A5, A#5, B5,
+  C6 (they are MIDI 48..52 and 80..84 at OCT 0) and report any that is silent or plays the wrong note. Their matrix
+  codes are genkigenki's verified table; the path from the queue to key_on is host-tested only.
+- The pads in PLAY (the FM-1's white keys on every page) and STEPS (steps, locks, the playhead on the LEDs); KNOB
+  BANK's LED (LED id 0 under it, as genkigenki's table says) and FADER BANK's.
+- The fader banks PAN / REVERB / DELAY and the T5 / T6 window; the faders' direction (0 at the bottom assumed).
+- The wheels' self-calibration on other units (the ranges are one unit's), the pedal (address 6, either polarity;
+  with no pedal plugged it must read steady) and its sustain.
+- **TRS MIDI OUT**: the jack's signal on PC7, the adapter's wiring (type A in a spec sheet, not measured), the timing,
+  USB MIDI beside it.
 - The image without the Bluetooth segment: GEN, the lyrics dictionary and the rest of the segment's code now run from
   the app image (never on an FM-1 that way).
 - From before: the SMK SPL booting this app (as the previous build did on the owner's unit), the stock updater
@@ -232,10 +285,8 @@ Everything that touches the SMK. In particular, new in this V10.8.48 port:
 
 ## Not done yet
 
-- TRS MIDI out on PC7.
 - The factory velocity curves from USRTRIM (read-only).
 - A boot-stub rescue (OCTAVE- at power-on).
 - SMK models in `tools/fm1_install.py`, including refusing cross-model installs.
 - An SMK mode for the browser emulator (this tree has no `web/emu/devices.html`).
-- The keybed through the FM-1 keys' own path (SCL's key maps, CHORD, KEY SPLIT, step entry while stopped on STEP):
-  the keybed is MIDI in to the firmware, so those stay the FM-1 keys'.
+- The outer ten keys in SCENE and in step entry while stopped (the central 27 have both, as the FM-1's keys).

@@ -287,8 +287,14 @@ struct bt_oq bt_oq;                                     /* (V10.13) MIDI OUT ove
 #ifndef USB_MIDI_TAP
 #define USB_MIDI_TAP 0
 #endif
+#if BOARD_SMK37 && FELUCCA_SMK_TRS && !defined FELUCCA_LOADER
+#include "smk_midi_out.h"                               /* (SMK-37) MIDI OUT out of the TRS jack too */
+#endif
 static void midi_out_event_at(uint32_t pkt, uint32_t due)   /* from the audio ISR; due: fm1_ticks() it goes at, 0 now */
 {
+#if BOARD_SMK37 && FELUCCA_SMK_TRS && !defined FELUCCA_LOADER
+    smk_mo_packet(pkt);                                 /* (at once: the jack has no host to time it) */
+#endif
     if ((usb.config || USB_MIDI_TAP) && mo_w - mo_r < MQ) {
         midi_out_q[mo_w % MQ] = pkt;
         midi_out_due[mo_w % MQ] = due;

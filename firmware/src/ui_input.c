@@ -1862,7 +1862,7 @@ static uint8_t kx_recd KX_BSS;                          /* the selected track's 
 static __attribute__((noinline)) void oct_key(uint32_t b, uint32_t both)
 {
     uint32_t k, m = 0;
-    for (k = 0; k < 27u; k++)
+    for (k = 0; k < KB_NK; k++)
         if (kb_on[k])
             m |= 1u << (kb_trk[k] % NTRK);
     if (kx_semi && m) {

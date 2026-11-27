@@ -1,9 +1,12 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
  * SMK-37 port: Copyright (C) 2026 M. Geisler (genkigenki/makkuro)
- * (JIANT: Melodee's hal/smk_input.h, BOARD_SMK37 builds only; JIANT's additions and changes are marked "(JIANT)":
- *  the V10.8 layout sends all 37 keys through the queue, the pads are white keys only where the UI asks, K8 is MASTER.
- *  Untested on hardware in JIANT: docs/SMK37.md) */
+ * (JIANT: Melodee's hal/smk_input.h, BOARD_SMK37 builds only; JIANT's additions and changes are marked "(JIANT)".
+ *  V10.8.48, Rhythmer's layout (Rhythmer by Jazzy Rhythmer, GPL-3.0; its board layer is genkigenki's
+ *  github.com/genkigenki/Felucca smk37, as this one): keys 5..31 are the FM-1's 27 keys (fm1_in.notes), the 10 outer
+ *  keys go through the queue to seq.c's key path too; the pads are the 16 white keys in PLAY, the UI's in STEPS;
+ *  K1 is MASTER (genkigenki's place). Matrix codes, encoder order, pad rows, mux C addresses and the wheels' raw
+ *  ranges: genkigenki's docs/01-hardware.md (verified on an SMK-37 Pro there). docs/SMK37.md) */
 /* SMK-37 input HAL: velocity keybed, buttons, encoders, button LEDs, pads, faders, wheels.
  * The FM-1 counterpart is fm1_input.h + fm1_adc.h; this header keeps their API (fm1_in, fm1_input_init,
  * fm1_input_tick, fm1_input_scan, fm1_enc_take, fm1_input_edges, fm1_input_note_edges, fm1_led_key) so
@@ -90,7 +93,8 @@ static const uint8_t SMK_KEYC[FM1_NKEY][2] = {
  * 10 GLOBE, 11 BT, 12 PATCH, 13 PARA, 14 FX, 15 SEQ, 16 SEQ PLAY, 17 SEQ REC */
 static const uint8_t SMK_BTNC[FM1_NBTN] = {0x26, 0x76, 0x96, 0x56, 0x66, 0x36, 0x75, 0x65, 0x25,
                                             0x45, 0x15, 0x86, 0x95, 0x55, 0x85, 0x35, 0x16, 0x46};
-/* encoder i: A and B matrix codes (stock table; K1..K8 order to confirm) */
+/* encoder i: A and B matrix codes (stock table; encoder i is the printed K(i+1): verified in this order on an SMK-37
+ * Pro, genkigenki's docs/01-hardware.md 5.4) */
 static const uint8_t SMK_ENCC[FM1_NENC][2] = {{0x97, 0xa7}, {0x37, 0x47}, {0x17, 0x27}, {0xb7, 0xc7},
                                                {0x57, 0x67}, {0x77, 0x87}, {0xd7, 0xe7}, {0xf7, 0x07}};
 /* LED i (= button i): group << 4 | bit in the 595 low half (stock table, its order differs at the end).
@@ -113,9 +117,9 @@ static const uint8_t SMK_WHITE_NOTE[SMK_NPAD] = {0, 2, 4, 6, 7, 9, 11, 12, 14, 1
  * layouts here: KEYS the 16 white keys, low notes on the bottom row; GRID the same as steps 1-8 on the top row and
  * 9-16 below (the FM-1's grids: patterns, NAME, the layers); PIANO C4 .. C5 whites on top, the black keys between
  * them below (C#4 D#4 - F#4 G#4 A#4 - C#5; SCALE held); NONE every pad the UI's */
-/* (JIANT, V10.8 layout: docs/SMK37.md) only GRID and NONE are used: the keybed plays the notes, the pads are the
- * white keys only where the FM-1 gives its keys to the UI (a layer, NAME, the DRUM grid, STEP FX, the song pages:
- * firmware/src/smk.c smk_pads_mode); everywhere else every pad is the UI's (steps, tracks, page shortcuts) */
+/* (JIANT, Rhythmer's layout: docs/SMK37.md) only GRID and NONE are used: PLAY (KNOB BANK dark) GRID, pad n the
+ * FM-1's n-th white key, 1..8 the top row (hardware pads 0..7, mux A: verified with padtest, genkigenki); STEPS (KNOB
+ * BANK lit) NONE, every pad the UI's: the page's 16 steps (firmware/src/smk.c) */
 static const int8_t SMK_PK_GRID[SMK_NPAD] = {0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18, 19, 21, 23, 24, 26};
 static const int8_t SMK_PK_NONE[SMK_NPAD] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 static const int8_t *volatile smk_pad_key = SMK_PK_NONE;
@@ -159,7 +163,7 @@ static volatile struct {
     uint32_t notes_retrig;       /* note keys struck again while down (their bit in notes stays set): seq.c restarts them */
     uint64_t keys;               /* all 37 keybed keys: bit k = key k (0 = lowest C), set while its note sounds */
     uint8_t key_vel[FM1_NKEY];   /* MIDI velocity 1..127 of each key's last press */
-    uint8_t pad_vel[27];         /* (JIANT) a pad's velocity, by the white key it pressed (seq.c: kb_velx) */
+    uint8_t note_vel[27];        /* (JIANT) note key n's last press's velocity, a key's or a pad's (seq.c: kb_velx) */
     uint8_t raw[FM1_NCOL];       /* last frame, rows packed, 1 = closed */
     uint8_t cnt[FM1_NBTN];       /* button debounce */
     uint8_t ks_stab[FM1_NKEY];   /* the contacts' settled state: 0 open, 1 contact 1, 3 both */
@@ -182,7 +186,8 @@ static volatile struct {
     uint32_t frames;
 } fm1_in;
 
-/* key events beyond the FM-1's 27 (keybed keys 0..4 and 32..36): key << 8 | velocity (0 = release) */
+/* key events beyond the FM-1's 27 (keybed keys 0..4 and 32..36): key << 8 | velocity (0 = release); a re-strike
+ * is a release and a press (JIANT: smk.c smk_kb_block plays them through seq.c's key path) */
 #define SMK_EXTQ 32u
 static volatile uint16_t smk_extq[SMK_EXTQ];
 static volatile uint8_t smk_extq_w, smk_extq_r;
@@ -361,13 +366,26 @@ static void smk__extq(uint32_t k, uint32_t vel)
     smk_extq_w = (uint8_t)((w + 1u) % SMK_EXTQ);
 }
 
-/* (JIANT, V10.8 layout) every one of the 37 keys goes to the queue: the audio block plays it on the selected track
- * (firmware/src/smk.c smk_kb_block); none is an FM-1 key any more (fm1_in.notes: the pads alone) */
+/* keys 5..31 (F3..G5) are the FM-1's 27 note keys (bits 0..26 of fm1_in.notes, with the pads as white keys): the
+ * keys' block (seq.c keyboard_block) and the UI (fm1_input_note_edges) take them as the FM-1's; the 10 outer keys
+ * (0..4 C3..E3, 32..36 G#5..C6) go to the queue (smk.c smk_kb_block: seq.c's key path, extra notes) */
 static void smk__key_event(uint32_t k, uint32_t vel)     /* vel 0 = release */
 {
     if (vel)
         fm1_in.key_vel[k] = (uint8_t)vel;
-    smk__extq(k, vel);
+    if (k - SMK_KEY_F3 < 27u) {
+        uint32_t n = k - SMK_KEY_F3, bit = 1u << n;
+        if (vel) {
+            fm1_in.note_vel[n] = (uint8_t)vel;
+            fm1_in.knotes |= bit;
+            fm1_in.notes_pressed |= bit;
+        } else {
+            fm1_in.knotes &= ~bit;
+        }
+        fm1_in.notes = fm1_in.knotes | fm1_in.pnotes;
+    } else {
+        smk__extq(k, vel);
+    }
     if (vel)
         fm1_in.keys |= (uint64_t)1u << k;
     else
@@ -380,8 +398,10 @@ static void smk__strike(uint32_t k, uint32_t now, uint32_t again)
 {
     uint32_t T = 10u + (now - fm1_in.ks_t1[k]) / (100u * FM1_TICKS_PER_US);   /* stock 0.1 ms frames */
     uint32_t x = T <= 0x3FEu ? 0x3FFu - T : 1u, v = smk_curve(smk_trim_key[k], x), vel = smk_vel7(v);
-    if (again)                                        /* struck again while down: end it, then the new note */
-        smk__key_event(k, 0);                         /* (both through the queue) */
+    if (again && k - SMK_KEY_F3 < 27u)                /* struck again while down: a note key's bit stays set, */
+        fm1_in.notes_retrig |= 1u << (k - SMK_KEY_F3); /* seq.c lets it go and strikes it again; */
+    else if (again)
+        smk__key_event(k, 0);                         /* an outer key: a release and a press in the queue */
     smk__key_event(k, vel);
     smk__log(k | (again ? 0x40u : 0u), vel, T, v);
 }
@@ -546,13 +566,13 @@ static void smk__padq(uint32_t pad, uint32_t vel)     /* a pad hit (vel) or rele
     n = (uint32_t)n0;
     bit = 1u << n;
     if (vel) {
-        fm1_in.pad_vel[n] = (uint8_t)vel;
+        fm1_in.note_vel[n] = (uint8_t)vel;
         fm1_in.pnotes |= bit;
         fm1_in.notes_pressed |= bit;
     } else {
         fm1_in.pnotes &= ~bit;
     }
-    fm1_in.notes = fm1_in.pnotes;
+    fm1_in.notes = fm1_in.knotes | fm1_in.pnotes;
 }
 
 static void smk__pad(uint32_t p, uint32_t raw)
@@ -758,12 +778,12 @@ static void fm1_led_key(uint32_t id, int on)
         fm1_led[id] = (uint8_t)(on != 0);
 }
 
-/* fm1_adc.h stand-ins for main.c: the battery comes from mux C; the FM-1's MASTER pot is knob K5 here, as a
+/* fm1_adc.h stand-ins for main.c: the battery comes from mux C; the FM-1's MASTER pot is knob K1 here, as a
  * virtual pot (0..1023, 24 a detent; starts at 724: master_q12 2048, the level the firmware starts with) */
 enum { FM1_ADC_BATT = 3, FM1_ADC_MASTER = 4 };
-#define SMK_ENC_MASTER 7u          /* (JIANT, V10.8 layout) K8: K1..K4 the page's knobs, K5 SELECT, K6 PRESETS, K7 ALGORITHM */
+#define SMK_ENC_MASTER 0u          /* K1, where the FM-1 has its MASTER pot (top left; Rhythmer's layout: K2 SELECT,
+                                    * K3 ALGORITHM, K4 PRESETS, K5..K8 the page's four knobs, panel.c) */
 static int32_t smk_master = 724;
-static uint8_t smk_kbank;          /* (JIANT) KNOB BANK: 1 = K1..K8 the macros (smk.c); K8 is not the MASTER then */
 static void fm1_adc_init(void) {}
 static int32_t fm1_enc_take(uint32_t e);
 static int32_t fm1_adc_read(uint32_t ch)
@@ -771,8 +791,7 @@ static int32_t fm1_adc_read(uint32_t ch)
     if (ch == FM1_ADC_BATT)
         return fm1_in.batt ? (int32_t)fm1_in.batt : -1;
     if (ch == FM1_ADC_MASTER) {
-        if (!smk_kbank)
-            smk_master += fm1_enc_take(SMK_ENC_MASTER) * 24;
+        smk_master += fm1_enc_take(SMK_ENC_MASTER) * 24;
         smk_master = smk_master < 0 ? 0 : smk_master > 1023 ? 1023 : smk_master;
         return smk_master;
     }

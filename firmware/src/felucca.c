@@ -54,6 +54,12 @@
 #define FELUCCA_BT 1             /* (V10.12) MENU > SYSTEM > BLUETOOTH: bt.c, bt_hw.c, the segment firmware/bt/bt_seg.c */
 #endif
 #endif
+#ifndef FELUCCA_SMK_TRS
+#define FELUCCA_SMK_TRS BOARD_SMK37  /* (SMK-37) TRS MIDI OUT on the 3.5 mm jack (UART1 TX, PC7: src/smk_midi_out.h) */
+#endif
+#if FELUCCA_SMK_TRS && !BOARD_SMK37
+#error "FELUCCA_SMK_TRS is the SMK-37's jack (PC7 is the FM-1's LCD chip select)"
+#endif
 #if BOARD_SMK37 && FELUCCA_BT
 #error "SMK-37: the Bluetooth segment would land on the SMK's USRFLASH / USR; FELUCCA_BT must be 0"
 #endif
