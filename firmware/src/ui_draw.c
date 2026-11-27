@@ -2226,6 +2226,9 @@ static void ui_draw(void)
                                                          * (V10.8.57) HOME > VISUAL too: a knob turned or OCT+'s banner a
                                                          * line at the foot a moment */
         uint32_t s, v = scrn.st == SCR_VIS;
+        if (song.cpu_q8 > 166u && anim_fr % (song.cpu_q8 > 205u ? 3u : 2u))   /* (V10.8.67) the sound busy: the picture
+                                                         * every other frame (past 80 %: every third), the UI yields first */
+            return;
         for (s = 0; s < 2u; s++) {
             cv_begin(240, 120, T_BG);
             if (bt_hw_seg())

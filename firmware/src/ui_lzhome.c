@@ -281,29 +281,33 @@ static void graph_eco(void)
                                                          * page's name large, its state under it */
         page_big(home_set() == 1u ? "LIFE" : "MACROS", home_set() == 1u ? (life_on ? "ON" : "OFF") : "HOME+SELECT DICE");
 }
-/* (V10.8.60 prototype, the owner: "no inventar tres dibujos y repetirlos: usar la estética que ya tiene el sistema";
- * "tomá comportamientos, cómo se mueven los gusanitos ... pueden aparecer enormes en toda la pantalla, ANIMAL y VOICE
- * integrados y deformados, morph entre cosas") HOME > VISUAL and the saver: the song's own creatures (each track's
- * engine draws its being, vx_draw: VOICE's tract, ANIMAL's morph, DRUM-X's kit, FM6's colony, ANALOG, PHASE, MATH,
- * STRING, WEST; never WHEEL's drawbars) drawn huge, one to three, through one field (og_wf: every line and node they draw
- * passes through vis_wp): WHEEL's worms' wave travelling down them, a twist, the lobes breathing, a melt, a fold (a
- * mirror, four ways), the scope's thread joining them; a kick thumps and jumps it, a snare pulls the rows apart, the
- * hats shiver it, a note sends a wave down it; the main being morphs into another track's (both drawn through the same
- * field, crossfading, the field at its wildest half way) on a section's change, every twelfth kick, or ten seconds
- * still. The seed (vis_song: the song's) picks the beings, their places and sizes, the field's terms and the motion.
- * KNOB 1 DENSITY (how many beings), 2 WOBBLE (the field), 3 PALETTE (MIXED: the beings' own colours), 4 REACT */
+/* (V10.8.67, the owner: "No quiero que copies las visuales de BYTE, tratemos de darle onda a las nuestras con poco. Usaría
+ * las gráficas de FX, ENVELOPE, LFO, las de HOME, ANIMAL haciendo el morph, pero deformadas, repetidas, rotas") HOME >
+ * VISUAL and the saver: the system's own pictures, drawn by their own functions (FX's DELAY REVERB CHORUS DIST MASTER,
+ * ENV's curve, the LFO, HOME's ECO, a track's being, ANIMAL's creature morphing), every line, box and node of them
+ * through one map (gfx.c cv_vm, ui_organic.c og_wf; their words and lone pixels left out):
+ *   DEFORMED  a warp, a twist, polar (the picture wound into a ring), a fold
+ *   REPEATED  a kaleidoscope, a stutter, a trail, tiles: copies turned, moved, smaller, fading
+ *   BROKEN    strips slipping, gaps, scanline tears, blocks out of place
+ * Each segment drawn swims on its own oscillator: a kick scatters them and they gather, a snare turns the copies, the
+ * hats shiver them, a note runs down the segments as a ripple; still at rest, the sound brings it. The song (vis_song:
+ * GEN's seed, genre, energy; the section) picks two pictures and the three operators; a section, every twelfth kick or
+ * ten seconds the second picture changes, fading in. KNOB 1 DENSITY (the copies), 2 WOBBLE (the deformation), 3 PALETTE
+ * (MIXED: the pictures' own colours, lighter), 4 REACT */
 #define VQ_KI vq.e[0]
 #define VQ_SN vq.e[1]
 #define VQ_HA vq.e[2]
 #define VQ_ME vq.e[3]
+enum { VI_ENV, VI_LFO, VI_DLY, VI_REV, VI_CHO, VI_DST, VI_MST, VI_ECO, VI_BEING, VI_ANIMAL, VI_N };
+static const uint8_t VIS_CY[VI_N] = {62, 50, 60, 60, 60, 60, 60, 64, 90, 90};   /* (each picture's middle, its own rows) */
 static struct {
-    uint32_t fr, r, t, sd, ms;
-    int32_t lv, jx, jy, e[4], ow, wx, wy, tw, wv, br, ml, m;
-    uint8_t mo, fo, pa, pb, nk, sec, np, no;
+    uint32_t fr, r, t, sd, ms, n, bs, tt, np, bud;
+    int32_t lv, e[4], nh[16], sy, k, cs, sn, ox, oy, dx, dy, am, ba, wb, fd, fi, m, cj;
+    uint8_t ing[2], op[3], nk, gap, pa;
     uint16_t sg[NTRK];
-} vq __attribute__((section(".bss.tape")));
+} vq VX_POOL;
 static VX_SEG uint32_t vr(void) { return vx_rnd(&vq.r); }
-/* a track whose engine draws a being worth fusing (WHEEL's drawbars, WEST's labelled circuit, the inputs' meters left out) */
+/* a track whose engine draws a being worth drawing (WHEEL's drawbars, WEST's labelled circuit, the inputs' meters left out) */
 static VX_SEG int vis_ok(uint32_t k)
 {
     const track_t *t = &trk[k % NTRK];
@@ -311,57 +315,90 @@ static VX_SEG int vis_ok(uint32_t k)
     return trk_eng(t) == ENGI_DRUM || trk_eng(t) == ENGI_FM6 || e == &ENG_ANALOG ||
            (e == &ENG_PHASE || e == &ENG_LOFI || e == &ENG_STRING || e == &ENG_FORMANT || e == &ENG_ANIMAL);
 }
-static VX_SEG uint32_t vis_pick(uint32_t from)          /* the next track from `from` with a being (NTRK: none) */
+static VX_SEG uint32_t vis_pick(uint32_t from)          /* the next track from `from` with a being (0: none) */
 {
     uint32_t i;
     for (i = 0; i < NTRK; i++)
         if (vis_ok(from + i))
             return (from + i) % NTRK;
-    return NTRK;
+    return 0;
 }
-/* the field: a point (Q4, the strip's) bent; c the line's colour (0: a point only) by PALETTE */
 static const uint16_t VIS_PL[4][2] = {{0x041F, 0xFC60}, {0x07E8, 0xF800}, {0x8200, 0xFD20}, {0x4208, 0xFFFF}};
-static VX_SEG void vis_wp(int32_t *p, uint16_t *c)
+/* the map: a point (Q4, the picture's own) to the strip's; c the segment's colour (0: a point after its first) */
+static VX_SEG void vis_mp(int32_t *p, uint16_t *c)
 {
-    int32_t x = p[0] - vq.wx, y = p[1] + vq.ow - vq.wy, r2, a, s, k = 256 + (VQ_KI >> (vq.mo == 2u ? 0 : 1));
-    uint32_t t = vq.t, v = (uint32_t)vis_v[2];
-    if (c && v) {                                       /* PALETTE: the line's brightness through the palette (MIXED: its own) */
-        uint32_t l = ((*c >> 11) + ((*c >> 6) & 31u) + (*c & 31u)) * 256u / 93u;
-        *c = v == 1u ? vk_heat((int32_t)l) : ux_mix(0, VIS_PL[(v - 2u) & 3u][l > 140u], (int32_t)l);
+    int32_t x = (p[0] - 120 * 16) * vq.k >> 8, y = (p[1] - vq.sy) * vq.k >> 8, a, r;
+    uint32_t tm = vq.t - vq.tt, h, v = (uint32_t)vis_v[2];
+    if (++vq.np > vq.bud) {                             /* (past the frame's budget of points: left out) */
+        p[0] = p[1] = -4000;
+        return;
     }
-    if (vq.fo) {                                        /* the fold: a mirror, or four */
-        if (x < 0) x = -x;
-        if (vq.fo == 2u && y < 0) y = -y;
+    if (c) {                                            /* a segment: its own swim (a note's ripple down them), its colour */
+        h = ++vq.n * 2654435761u;                       /* (its place swims with its neighbours'; a kick scatters each its
+                                                         * own way, then they gather; a note's ripple runs down the rows) */
+        a = vq.am + vq.nh[(vq.fr - ((uint32_t)p[1] >> 8)) & 15u];
+        vq.dx = (og_sin((uint32_t)p[1] * 48u + tm * 90u) * a >> 15) + (((int32_t)(h >> 24) - 128) * VQ_KI >> 8);
+        vq.dy = (og_cos((uint32_t)p[0] * 40u + tm * 70u) * a >> 15) + (((int32_t)(h >> 16 & 255u) - 128) * VQ_KI >> 8);
+        vq.gap = vq.op[2] == 1u && ((h ^ vq.bs) >> 24) < (uint32_t)vq.ba / 2u;   /* (at most half) */
+        r = (int32_t)(((*c >> 11) + ((*c >> 6) & 31u) + (*c & 31u)) * 275u >> 8);   /* (0..100) */
+        r += (100 - r) * r >> 7;                        /* (lighter: the middles lifted, the dark kept dark) */
+        a = clamp(r + vq.cj, 0, 100);                   /* (each copy a step along the palette) */
+        *c = ux_mix(T_BG, !v ? ux_mix(*c, 0xFFFFu, 25) : v == 1u ? vk_heat(a * 653 >> 8) :
+                              ux_mix(VIS_PL[(v - 2u) & 3u][0], VIS_PL[(v - 2u) & 3u][1], a), r < 12 ? 0 : vq.fd);
     }
-    y += vq.wv * og_sin((uint32_t)x * 36u - t * 500u) >> 15;   /* WHEEL's worms: a wave travelling down the body */
-    x += vq.wv * og_sin((uint32_t)y * 28u - t * 380u) >> 15;
-    x += (VQ_ME >> 1) * og_sin((uint32_t)y * 90u - t * 1800u) >> 14;   /* a note: a ripple running through it */
-    r2 = (x >> 4) * (x >> 4) + (y >> 4) * (y >> 4);     /* (px squared) */
-    a = vq.tw * r2 >> 6;                                /* the twist, more out from the middle */
-    if (vq.mo == 1u) a += (int32_t)(t * 9u);            /* (turning) */
-    s = 4096 + (vq.br * og_sin((uint32_t)(x * 14 + y * 11) + t * 300u) >> 15);   /* the lobes breathing */
-    s = s * k >> 8;
-    {
-        int32_t cs = og_cos((uint32_t)a), sn = og_sin((uint32_t)a), nx = (x * cs - y * sn) >> 15, ny = (x * sn + y * cs) >> 15;
-        x = nx * s >> 12; y = ny * s >> 12;
+    if (vq.gap) {                                       /* BROKEN, gaps: the segment gone */
+        p[0] = p[1] = -4000;
+        return;
     }
-    if (y > 0) y += (vq.ml * ((32768 + og_sin((uint32_t)x * 50u + t * 200u)) >> 8) >> 8) * (y >> 4) >> 6;   /* the melt, dripping */
-    if (((y + vq.wy) >> 8) & 1) x += VQ_SN * 2;         /* a snare: the rows pulled apart */
-    y += VQ_HA * og_sin((uint32_t)x * 160u + t * 4000u) >> 16;   /* the hats: a shiver */
-    p[0] = x + vq.wx + vq.jx;
-    p[1] = y + vq.wy + vq.jy - vq.ow;
+    x += vq.dx; y += vq.dy;
+    switch (vq.op[1]) {                                 /* DEFORMED */
+    case 0:                                             /* a warp */
+        y += vq.wb * og_sin((uint32_t)x * 30u - tm * 400u) >> 14;
+        x += vq.wb * og_sin((uint32_t)y * 24u + tm * 300u) >> 14;
+        break;
+    case 1:                                             /* a twist, more out from the middle */
+        a = vq.wb * ((x >> 4) * (x >> 4) + (y >> 4) * (y >> 4)) >> 8;
+        r = og_cos((uint32_t)a) ; a = og_sin((uint32_t)a);
+        h = (uint32_t)((x * r - y * a) >> 15); y = (x * a + y * r) >> 15; x = (int32_t)h;
+        break;
+    case 2:                                             /* polar: across the turn, its rows the radius */
+        a = x * 17 + (int32_t)(tm * 20u);
+        r = 80 * 16 + y + (vq.wb * og_sin((uint32_t)x * 60u) >> 13);
+        x = og_cos((uint32_t)a) * r >> 15; y = og_sin((uint32_t)a) * r >> 15;
+        break;
+    default:                                            /* a fold: what passes 96 px out folded back, over and over */
+        a = (int32_t)((uint32_t)(x + 960 * 16) % 3072u) - 1536; x = (a < 0 ? -a : a) * 2 - 1536;
+        a = (int32_t)((uint32_t)(y + 960 * 16) % 3072u) - 1536; y = (a < 0 ? -a : a) * 2 - 1536;
+        x += vq.wb * og_sin((uint32_t)y * 40u + tm * 250u) >> 15;
+    }
+    a = (x * vq.cs - y * vq.sn) >> 15; y = (x * vq.sn + y * vq.cs) >> 15;   /* REPEATED: the copy turned and moved */
+    x = a + vq.ox; y += vq.oy;
+    y += VQ_HA * og_sin((uint32_t)x * 160u + tm * 4000u) >> 16;   /* the hats: a shiver */
+    h = vq.bs;
+    switch (vq.op[2]) {                                 /* BROKEN */
+    case 0:                                             /* strips slipping (16 px) */
+        x += ((int32_t)((((uint32_t)(y + 64000) >> 8) * 0x9E3779B1u ^ h) >> 26) - 32) * vq.ba >> 5;
+        break;
+    case 2:                                             /* scanline tears (4 px) */
+        h ^= ((uint32_t)(y + 64000) >> 6) * 0x9E3779B1u;
+        if ((h >> 28) < 2u) x += ((int32_t)(h >> 12 & 255u) - 128) * vq.ba >> 5;
+        break;
+    case 3:                                             /* blocks out of place (32 px) */
+        h ^= ((uint32_t)(x + 64000) >> 9) * 73856093u ^ ((uint32_t)(y + 64000) >> 9) * 19349663u;
+        if (!(h & 7u)) { x += ((int32_t)(h >> 8 & 63u) - 32) * vq.ba >> 4; y += ((int32_t)(h >> 16 & 63u) - 32) * vq.ba >> 5; }
+    }
+    p[0] = x + 120 * 16;
+    p[1] = y + vq.m;
 }
-/* (once a frame) the level, the hits, the time, the morph */
-static VX_SEG void vis_tick(void)
+/* (once a frame) the level, the hits, the time, the next picture */
+static void vis_tick(void)
 {
-    int32_t lv;
     uint32_t k;
     if (vq.fr == anim_fr)
         return;
-    lv = bg_energy() * vis_v[3] >> 7;
+    vq.lv = bg_energy() * vis_v[3] >> 7;
     vq.fr = anim_fr;
-    vq.lv = lv;
-    vq.t += 2u + (uint32_t)lv / 24u;
+    vq.t += 2u + (uint32_t)vq.lv / 24u;
     for (k = 0; k < NTRK; k++) {                        /* the hits: a track's new note (the sequencer, the keys, MIDI) */
         const track_t *tr = &trk[k];
         uint32_t n = tr->seq_n ? tr->seq_notes[0] : tr->nheld ? tr->held[0] : 0u, r;
@@ -369,115 +406,121 @@ static VX_SEG void vis_tick(void)
         if (n && g != vq.sg[k]) {
             r = tr->engine != ENGI_DRUM ? 3u : n < 37u ? 0u : n < 41u ? 1u : 2u;   /* (GM's keys) a kick, a snare, hats; a note */
             vq.e[r] = 255 * vis_v[3] / 60;
-            vq.no = (uint8_t)n;
-            if (!r) {                                   /* a kick: the scene jumps (motion 3 far); every twelfth a morph */
-                r = vr();
-                vq.jx = ((int32_t)(r & 511u) - 256) << (vq.mo == 3u);
-                vq.jy = ((int32_t)(r >> 9 & 255u) - 128) << (vq.mo == 3u);
-                if (++vq.nk >= 12u) { vq.nk = 0; vq.ms = 0; }
-            }
+            if (r < 2u) vq.bs = vr();                   /* (a kick, a snare: the breaks elsewhere) */
+            if (!r && ++vq.nk >= 12u) { vq.nk = 0; vq.ms = 0; }   /* (every twelfth kick: the next picture) */
         }
         vq.sg[k] = g;
     }
     for (k = 0; k < 4u; k++)
         vq.e[k] -= vq.e[k] >> 2;
-    vq.jx -= vq.jx >> 3; vq.jy -= vq.jy >> 3;
-    if (vq.m) {                                         /* a morph running: the next being comes in */
-        vq.m += 6;
-        if (vq.m >= 256) { vq.m = 0; vq.pa = vq.pb; }
-    } else if (fm1_ms - vq.ms > 10000u || !vq.ms) {     /* (a section, twelve kicks or ten seconds: the next) */
-        uint32_t b = vis_pick(vq.pa + 1u + vr() % 3u);
+    vq.nh[vq.fr & 15u] = VQ_ME / 2;
+    vq.am = vq.lv + VQ_KI / 2;
+    vq.ba = clamp((vq.lv / 3 + VQ_KI / 2 + VQ_SN) * (2 + (int32_t)(vq.sd & 3u)) / 3, 0, 255);
+    if (vq.fi < 100)                                    /* (the second picture fading in) */
+        vq.fi += 5;
+    if (fm1_ms - vq.ms > 10000u || !vq.ms) {            /* (a section, twelve kicks or ten seconds: the next) */
         vq.ms = fm1_ms | 1u;
-        if (b < NTRK && b != vq.pa) { vq.pb = (uint8_t)b; vq.m = 1; }
+        vq.ing[1] = (uint8_t)((vq.ing[1] + 1u + vr() % (VI_N - 2u)) % VI_N);
+        if (vq.ing[1] == vq.ing[0]) vq.ing[1] = (uint8_t)((vq.ing[1] + 1u) % VI_N);
+        vq.fi = 0;
     }
 }
-/* a being: track k's, its middle (px, the screen's) and size, at strength al */
-static VX_SEG void vis_being(uint32_t k, int32_t x, int32_t y, int32_t w, int32_t al)
+/* picture i, track t's (its own coordinates) */
+static void vis_ing(uint32_t i, const track_t *t)
 {
-    if (k >= NTRK || al <= 0)
-        return;
-    og_wa = al;
-    vx_draw(&trk[k], x - w / 2, y - w * 3 / 8 - (vq.ow >> 4), w, w * 3 / 4, -1);
-}
-/* (V10.8.61, the owner: "ANIMAL y VOICE integrados y deformados") a ghost: VOICE's tract (g 1) or ANIMAL's morph (g 2) drawn
- * from track k's parameters whatever its engine, fused into the scene through the same field (vx_draw's frames) */
-static VX_SEG void vis_ghost(uint32_t k, uint32_t g, int32_t x, int32_t y, int32_t w, int32_t al)
-{
-    int32_t cx = x * 16, cy = y * 16 - vq.ow, h = w * 3 / 4, s;
-    if (k >= NTRK || al <= 0)
-        return;
-    og_wa = al;
-    if (g == 1u) {
-        s = vx_fit(w, h, 80, 62);
-        vx_voice(&trk[k], cx + 5 * s / 4, cy - 37 * s / 16, s, -1);
-    } else
-        vx_animal(&trk[k], cx, cy, vx_fit(w, h, 103, 78), -1);
-}
-/* the scope's thread: from (x0 y0) to (x1 y1) (px), the output's last samples across it */
-static VX_SEG void vis_thread(int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t amp)
-{
-    uint32_t i;
-    int32_t px = 0, py = 0, nx = -(y1 - y0), ny = x1 - x0, d = (nx < 0 ? -nx : nx) + (ny < 0 ? -ny : ny) + 1;
-    og_wa = 220;
-    for (i = 0; i <= 48u; i++) {
-        int32_t v = scope_buf[(scope_w - 192u + i * 4u) & (SCOPE_N - 1u)] * amp / 32768;
-        int32_t x = (x0 + (x1 - x0) * (int32_t)i / 48 + v * nx / d) * 16, y = (y0 + (y1 - y0) * (int32_t)i / 48 + v * ny / d) * 16 - vq.ow;
-        if (i) og_line_a(px, py, x, y, vk_heat(96 + vq.lv / 2 + (v < 0 ? -v : v)), 256);
-        px = x; py = y;
+    switch (i) {
+    case VI_ENV: {
+        const page_t *o = page_over;
+        uint32_t k;
+        for (k = 0; k + 1u < NPAGES && PAGES[k].graph != GR_ADSR; k++) {}
+        page_over = &PAGES[k];
+        graph_adsr(t, 0);
+        page_over = o;
+        break;
+    }
+    case VI_LFO: graph_lfo(t, 0); break;
+    case VI_DLY: fxg_delay(0, 0, 240, 120); break;
+    case VI_REV: fxg_reverb(0, 0, 240, 120); break;
+    case VI_CHO: fxg_chorus(0, 0, 240, 120); break;
+    case VI_DST: fxg_dist(t, 60, 0, 120, 120); break;
+    case VI_MST: fxg_master(0, 0, 240, 120); break;
+    case VI_ECO: graph_eco(); break;
+    case VI_BEING: vx_draw(t, 0, 0, 240, 180, -1); break;
+    default: {                                          /* ANIMAL's creature: insect, bird, mammal and back (a note: faster) */
+        int16_t w0 = vxs.w[0], w1 = vxs.w[1], w2 = vxs.w[2];
+        vxs.w[0] = (int16_t)(128 + (og_sin(vq.t * 40u + (uint32_t)VQ_ME * 64u) >> 8));
+        vxs.w[1] = 1; vxs.w[2] = (int16_t)anim_fr;
+        vx_animal(t, 120 * 16, 90 * 16, vx_fit(240, 180, 103, 78), -1);
+        vxs.w[0] = w0; vxs.w[1] = w1; vxs.w[2] = w2;
+    }
     }
 }
 static uint32_t vis_song(void);   /* (gen.c) */
 static void vis_fig(int32_t cx, int32_t cy, int32_t R, uint32_t sd)
 {
-    uint32_t b, i, n;
-    int32_t X[3], Y[3], W[3], m;
+    uint32_t b, i, j, n, hi;
+    int32_t o = cv_oy;
+    const track_t *t;
+    (void)cx; (void)R;
     if (!vis_seed) {                                    /* (the first time: the knobs' defaults, a seed) */
         vis_v[0] = 50; vis_v[1] = 50; vis_v[3] = 70;
         vis_seed = 1791;
     }
-    (void)R;
-    if (sd != vq.sd && !((sd ^ vq.sd) & 0xFFFFFFu) && vq.sd) {   /* a section (A..D): the same scene, the next being */
+    if (sd != vq.sd) {                                  /* a song (OCT+, the saver): its pictures, its operators; a section
+                                                         * (A..D): the same, the second picture and the deformation the next */
+        int sec = vq.sd && !((sd ^ vq.sd) & 0xFFFFFFu);
+        vq.r = sd * 2654435761u | 1u;
+        b = vr() ^ vr() ^ vr();                         /* (the seeds' neighbours apart) */
+        if (!sec) {
+            vq.ing[0] = (uint8_t)(b % VI_N);
+            vq.ing[1] = (uint8_t)((vq.ing[0] + 1u + (b >> 4) % (VI_N - 1u)) % VI_N);
+            for (i = 0; i < 3u; i++) vq.op[i] = (uint8_t)(vr() >> 13 & 3u);
+            vq.pa = (uint8_t)vis_pick(vr());
+        } else
+            vq.op[1] = (uint8_t)((vq.op[1] + 1u) & 3u);
         vq.sd = sd;
         vq.ms = 0;
-    } else if (sd != vq.sd) {                           /* a new scene (a song, OCT+, the saver): its beings, its field */
-        vq.sd = sd;
-        vq.r = sd * 2654435761u | 1u;
-        vq.mo = (uint8_t)(sd & 3u);
-        vq.pa = (uint8_t)vis_pick(vr());
-        vq.m = 0; vq.ms = fm1_ms | 1u;
     }
     vis_tick();
-    vq.ow = (120 - (cy >> 4)) * 16;
-    vq.r = vq.sd * 2654435761u | 1u;                    /* (the scene's numbers, the same each frame and strip) */
-    b = vr();
-    vq.fo = (uint8_t)(b % 5u < 2u ? b % 5u + 1u : 0u);
-    vq.tw = ((int32_t)(b >> 4 & 15u) - 7) * (1 + vis_v[1] / 40);
-    vq.wv = ((int32_t)(b >> 8 & 7u) + 2) * (8 + vis_v[1] / 5) + vq.lv / 4;
-    vq.br = ((int32_t)(b >> 11 & 7u)) * (20 + vis_v[1]) + VQ_KI * 2;
-    vq.ml = (b >> 18 & 1u) ? (int32_t)(b >> 14 & 15u) * (2 + vis_v[1] / 10) : 0;
-    m = vq.m ? vq.m : 0;
-    vq.wv += m * (256 - m) >> 8;                        /* (a morph: the field at its wildest half way) */
-    vq.tw += m * (256 - m) >> 12;
-    n = 1u + (uint32_t)vis_v[0] / 40u;                  /* DENSITY: one to three beings */
-    for (i = 0; i < 3u; i++) {
-        uint32_t q = vr();
-        X[i] = 120 + ((int32_t)(q & 127u) - 64) * (i ? 2 : 1);
-        Y[i] = 120 + ((int32_t)(q >> 7 & 127u) - 64) * (i ? 2 : 1);
-        W[i] = (i ? 120 : 220) + (int32_t)(q >> 14 & 127u) * (i ? 1 : 2) + vq.lv / 2;   /* (huge: the main one past the screen) */
+    t = &trk[vq.pa];
+    hi = song.cpu_q8 > 166u;                            /* (the sound busy: the picture yields; ui_draw.c drew it less often) */
+    vq.wb = (16 + vis_v[1] * 2) * (vq.op[1] == 1u ? 1 : 3) / 4 + vq.lv / 4;
+    vq.m = cy + 30000 * 16;                             /* (the strip's rows, past cv_oy: their own words and pixels gone) */
+    vq.np = 0;
+    cv_oy = -30000;
+    og_wf = cv_vm = vis_mp;
+    for (i = 0; i < 2u; i++) {
+        uint32_t g = vq.ing[i], sp = vq.t * 6u + (uint32_t)VQ_SN * 40u, d = (uint32_t)vis_v[0];   /* (turning; a snare: a jolt) */
+        n = i ? 1u : vq.op[0] == 3u ? 4u : vq.op[0] == 1u ? 2u + d / 25u : 3u + d / 14u;
+        vq.bud = hi ? 700u + i * 300u : 1800u + i * 900u;   /* (the points a strip may draw: the first picture 2/3) */
+        vq.sy = VIS_CY[g] * 16;
+        for (j = 0; j < n; j++) {                       /* REPEATED: the copies */
+            int32_t k = 256 + VQ_KI / 3, a = (int32_t)(i || vq.op[0] == 3u ? sp : sp / 8u), f = 100 - (int32_t)j * 9, h = (int32_t)j * 2 - (int32_t)n + 1;
+                                                        /* (the first picture turning slower; h: the copy from the middle) */
+            vq.ox = vq.oy = 0; vq.tt = 0;
+            vq.n = i * 977u;                            /* (each copy's segments the same swim) */
+            vq.cj = (int32_t)j * 70 / (int32_t)n - 20;
+            switch (i ? 9u : vq.op[0]) {
+            case 9: break;                              /* (the second picture: as it is) */
+            case 0: a += (int32_t)(j * 65536u / n); f = 100; break;   /* a kaleidoscope */
+            case 1: vq.ox = h * (8 * 16 + VQ_KI / 2); vq.oy = h * 4 * 16; break;   /* a stutter */
+            case 2: vq.tt = j * 10u; vq.oy = h * 3 * 16; k = k * (256 - (int32_t)j * 12) >> 8; break;   /* a trail */
+            default: k /= 2; vq.ox = (j & 1u ? 60 : -60) * 16; vq.oy = (j & 2u ? 60 : -60) * 16; a = (int32_t)(j * 16384u);   /* tiles */
+            }
+            vq.k = k * (i ? 200 : 256) >> 8;
+            vq.cs = og_cos((uint32_t)a); vq.sn = og_sin((uint32_t)a);
+            vq.fd = i ? vq.fi : f;
+            og_wa = vq.fd * 256 / 100;
+            vis_ing(g, t);
+            if (!j && vq.np && n > 1u && vq.np * n > vq.bud)   /* (as many copies as the budget holds, all whole) */
+                n = clamp(vq.bud / vq.np, 1, n);
+            if (hi && vq.op[2] == 2u) vq.op[2] = 0;     /* (busy: no tears) */
+        }
+        vq.np = 0;
     }
-    vq.wx = X[0] * 16; vq.wy = Y[0] * 16;
-    og_wf = vis_wp;
-    if (b >> 20 & 1u)                                /* the scope's thread, one being to the next or across */
-        vis_thread(n > 1u ? X[1] : -20, n > 1u ? Y[1] : Y[0] + 60, n > 1u ? X[0] : 260, n > 1u ? Y[0] : Y[0] - 60, 40 + vq.lv / 3);
-    for (i = 1; i < n; i++)                             /* the others: the next tracks' beings */
-        vis_being(vis_pick(vq.pa + i + (b >> 22)), X[i], Y[i], W[i], 160);
-    if (b % 3u == 0u)                                   /* (a scene in three) VOICE or ANIMAL fused in, breathing in and out */
-        vis_ghost(vq.pa, 1u + (b >> 24 & 1u), X[1], Y[1], W[1] + 60, 120 + (og_sin(vq.t * 90u) >> 8));
-    vis_being(vq.pa, X[0], Y[0], W[0], m ? 256 - m : 256);   /* the main one, and the one it becomes */
-    if (m)
-        vis_being(vq.pb, X[0], Y[0], W[0] * (192 + m / 4) / 256, m);
-    og_wf = 0;
+    og_wf = cv_vm = 0;
     og_wa = 256;
+    cv_oy = o;
 }
 /* BEING: the track's being large, its HOME knobs as organs at the corners */
 static const int16_t ORG_X[4] = {30, 210, 30, 210}, ORG_Y[4] = {28, 28, 116, 116};

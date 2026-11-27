@@ -13,7 +13,10 @@ static void gx_col(int32_t x, int32_t yb, int32_t cw, int32_t h, int32_t v, uint
 {
     int32_t r, nr = h / 6, on = clamp(v, 0, 1000) * nr / 1000;
     for (r = 0; r < nr; r++)
-        cv_rect(x, yb - (r + 1) * 6, cw, 5, r < on ? (c ? c : heat_col(60 + r * 190 / (nr ? nr : 1))) : T_SURF);
+        if (cv_vm)                                      /* (V10.8.67) HOME > VISUAL: the cell a line, through its map */
+            cv_line(x, yb - (r + 1) * 6 + 2, x + cw - 1, yb - (r + 1) * 6 + 2, r < on ? (c ? c : heat_col(60 + r * 190 / (nr ? nr : 1))) : T_SURF);
+        else
+            cv_rect(x, yb - (r + 1) * 6, cw, 5, r < on ? (c ? c : heat_col(60 + r * 190 / (nr ? nr : 1))) : T_SURF);
 }
 static void gx_sine(int32_t x, int32_t mid, int32_t w, int32_t a, uint32_t k, uint32_t ph, uint16_t c, int32_t lo, int32_t hi)
 {

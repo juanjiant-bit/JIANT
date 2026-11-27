@@ -86,6 +86,8 @@ static uint32_t cv_w, cv_h;
 static uint16_t cv_bg;           /* what cv_begin cleared the canvas to */
 static uint8_t cv_scroll;        /* 1: drawing a scrolled view (its text may run past the canvas) */
 static int32_t cv_oy;            /* y offset for graph drawing */
+static void (*cv_vm)(int32_t *p, uint16_t *c) __attribute__((section(".pool")));   /* (V10.8.67, in the pool) HOME > VISUAL's map (ui_lzhome.c vis_mp): while set, every line
+                                                  * and box drawn passes through it (Q4 points; the colour once a line) */
 static int16_t cv_cy0, cv_cy1;   /* text clip: canvas rows cv_cy0 .. cv_cy1 - 1 (cv_begin: the whole canvas) */
 static uint8_t cv_flip;          /* cv_alpha_hc: the cell mirrored left <-> right (the header's metronome, ui_draw.c) */
 static uint8_t cv_turn;          /* cv_alpha_hc: the cell turned a quarter left (cv_text_up) */
@@ -432,6 +434,21 @@ static void cv_line(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint16_t c)
     int32_t dx = x1 > x0 ? x1 - x0 : x0 - x1, sx = x0 < x1 ? 1 : -1;
     int32_t dy = y1 > y0 ? y0 - y1 : y1 - y0, sy = y0 < y1 ? 1 : -1;
     int32_t err = dx + dy, guard = 2000;
+    if (cv_vm) {                            /* (V10.8.67) VIS: the line through the map, in pieces of ~10 px */
+        void (*m)(int32_t *, uint16_t *) = cv_vm;
+        int32_t p[2] = {x0 * 16, y0 * 16}, q[2], i, n = (dx - dy) / 10 + 1, sx_ = n > 1 ? (x1 - x0) * 16 / n : (x1 - x0) * 16,
+                sy_ = n > 1 ? (y1 - y0) * 16 / n : (y1 - y0) * 16;   /* (one division a long line, none a point) */
+        cv_vm = 0;
+        m(p, &c);
+        for (i = 1; i <= n; i++) {
+            q[0] = i == n ? x1 * 16 : x0 * 16 + sx_ * i; q[1] = i == n ? y1 * 16 : y0 * 16 + sy_ * i;
+            m(q, 0);
+            cv_line(p[0] >> 4, p[1] >> 4, q[0] >> 4, q[1] >> 4, c);
+            p[0] = q[0]; p[1] = q[1];
+        }
+        cv_vm = m;
+        return;
+    }
     while (guard--) {                       /* bounded: a line is never longer than 480 px */
         int32_t e2 = 2 * err;               /* both tests use the same error value */
         cv_pset(x0, y0, c);
