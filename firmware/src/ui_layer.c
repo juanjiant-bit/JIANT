@@ -998,9 +998,11 @@ static uint32_t layer_leds(uint32_t *br)
  * the accent, a muted track KEY, unavailable its name DIM, its note under it; KNOBS the four as gauges in their knobs'
  * colours over the layer's keys (the keycaps' words); STATE what is on, as chips. (Until 0.8.8: cells with note names,
  * the Felucca map.) The keys and knobs do what they did: only the drawing is new */
-static const char *const PF_NAME[PF_M1] = {"RPT 1/8", "RPT 1/16", "RPT 1/32", "REVERSE", "FREEZE",   /* the audio ones
+static const char PF_NAME[] =   /* (V10.8.69: packed, str_nth) */ /* the audio ones
                                                          * (perform.c; V10.7.59: REVERSE FREEZE, were LPF HPF) */
-    "OCT-", "OCT+", "1/2 TEMPO", "DEC-", "DEC+", "STUT 1/8", "STUT 1/16", "ATK+", "ARP", "RANDOM"};   /* the MIDI ones (pfx.c) */
+    "RPT 1/8\0" "RPT 1/16\0" "RPT 1/32\0" "REVERSE\0" "FREEZE\0" "OCT-\0" "OCT+\0" "1/2 TEMPO\0" "DEC-\0"
+    "DEC+\0" "STUT 1/8\0" "STUT 1/16\0" "ATK+\0" "ARP\0" "RANDOM";
+  /* the MIDI ones (pfx.c) */
 static const char W_NOTE[16] = {'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G'};
 static const char B_NOTE[11] = {'F', 'G', 'A', 'C', 'D', 'F', 'G', 'A', 'C', 'D', 'F'};   /* black keys 1..11: F# G# .. F#5 */
 static const uint8_t PK_BLK[11] = {1, 2, 3, 5, 6, 8, 9, 10, 12, 13, 15};   /* a black key: left of white key n */
@@ -1258,7 +1260,7 @@ static const char PD_NM[PD_N][9] = {"M1", "M2", "M3", "M4", "CUT", "FILTER", "PI
 static void pk_name(uint32_t e, uint32_t o, char *nm)
 {
     static const char *const BN[5] = {"LOOP 3", "PITCH UP", "PITCH DN", "TAPE STOP", "STRETCH"};
-    str_cpy(nm, e < PF_M1 ? PF_NAME[e] : e < PF_M1 + NTRK ? "MUTE T1" : e == PF_STR ? BN[4] : e >= PF_LP3 && e <= PF_TAPE ?
+    str_cpy(nm, e < PF_M1 ? str_nth(PF_NAME, e) : e < PF_M1 + NTRK ? "MUTE T1" : e == PF_STR ? BN[4] : e >= PF_LP3 && e <= PF_TAPE ?
             BN[e - PF_LP3] : e == PF_CLR ? "CLR AUTO" : e == PK_MOD ? PD_NM[PK_DST(o)] : "-", 12);
     if (e >= PF_M1 && e < PF_M1 + NTRK) nm[6] = (char)('1' + e - PF_M1);
 }
@@ -1568,7 +1570,7 @@ static __attribute__((noinline)) void layer_state(uint32_t l)
         lst_chip("LOCK", 0, fx_lock);
         lst_chip("FX LATCH", perf_latch_on ? "ON" : "OFF", perf_latch_on);
         for (e = 0; e < PF_M1; e++)
-            lst_chip(PF_NAME[e], 0, (held >> e) & 1u);
+            lst_chip(str_nth(PF_NAME, e), 0, (held >> e) & 1u);
         for (e = 0; e < 5u; e++)
             lst_chip(BN[e], 0, (held >> BE[e]) & 1u);
     } else if (l == LAYER_GLO) {                        /* the tracks, the DRUM groups, UNDO */

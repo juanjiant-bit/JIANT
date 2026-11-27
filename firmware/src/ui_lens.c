@@ -33,7 +33,8 @@ static uint32_t pd_cur(void) { return pd_of_fam(PAGES[ui.page].fam); }
 
 /* ------------------------------------------------------------------------------------------- the chains --- */
 enum { SEC_HOME, SEC_EDIT, SEC_SEQ, SEC_FX, SEC_GLO, SEC_ENV, SEC_LFO, SEC_SCL, SEC_ARP, SEC_SAVE, SEC_N };
-static const char *const SEC_NAME[SEC_N] = {"HOME", "EDIT", "SEQ", "FX", "GLO", "ENV", "LFO", "SCL", "ARP", "SAVE"};
+static const char SEC_NAME[] =   /* (V10.8.69: packed, str_nth) */
+    "HOME\0" "EDIT\0" "SEQ\0" "FX\0" "GLO\0" "ENV\0" "LFO\0" "SCL\0" "ARP\0" "SAVE";
 static const uint8_t SEC_FAM[SEC_N] = {FAM_HOME, FAM_EDIT, FAM_SEQ, FAM_FX, FAM_GLO, FAM_ENV, FAM_LFO, FAM_SCL, FAM_ARP,
                                        FAM_SAVE};
 typedef struct { const char *t, *nm; uint8_t g, lv; } nv_t;   /* PAGES title (HOME: 0), the name shown (0: t), group, level */

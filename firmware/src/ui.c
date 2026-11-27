@@ -956,10 +956,12 @@ static void rate_name(const track_t *t, uint32_t n, char *b)
 /* (0.9.9-seq2d) SEQ > COMP / COMP 2: the step's C1 / C2 as ACTION LENGTH CONDITION VALUE (core.h CA_* CC_*) */
 /* (gen3) the names short, each read whole on its card: the value's M where it fits with its unit (COMP's 49 px), else S
  * (ui_test test_comp_cards: every value of every knob, every page) */
-static const char *const CA_NAMES[CA_N + 1u] = {"OFF", "ARP", "SEQ", "OCT+", "OCT-", "RATCHET", "STUTTER", "MUTE", "TRANS",
-                                                "RANDOM", "FILL", "RAMP", "SOUND", "BEND", "SHIFT", "CHORD", "TRIG"};
-static const char *const CC_NAMES[CC_NM] = {"ALWAYS", "25%", "50%", "75%", "1ST", "!1ST", "FILL", "!FILL", "PRE",
-                                            "!PRE", "NEI", "!NEI", "ELSE"};
+static const char CA_NAMES[] =   /* (V10.8.69: packed, str_nth; was a table of pointers) */
+    "OFF\0" "ARP\0" "SEQ\0" "OCT+\0" "OCT-\0" "RATCHET\0" "STUTTER\0" "MUTE\0" "TRANS\0" "RANDOM\0" "FILL\0"
+    "RAMP\0" "SOUND\0" "BEND\0" "SHIFT\0" "CHORD\0" "TRIG";
+static const char CC_NAMES[] =   /* (V10.8.69: packed, str_nth; was a table of pointers) */
+    "ALWAYS\0" "25%\0" "50%\0" "75%\0" "1ST\0" "!1ST\0" "FILL\0" "!FILL\0" "PRE\0" "!PRE\0" "NEI\0" "!NEI\0"
+    "ELSE";
 #define CCL_NM 135u                                     /* N:M, M 2..16, N 1..M */
 #define CCL_N (CC_NM + 2u * CCL_NM)                     /* KNOB 3's list: the thirteen, the N:Ms, the !N:Ms */
 /* the COMP pages one after another: COMP (the step's C1), COMP 2 (its C2): which this is (0..1) */
@@ -998,7 +1000,7 @@ static void cond_at(uint32_t i, uint32_t *c, uint32_t *nm)
 static void cond_name(uint32_t c, uint32_t nm, char *b)
 {
     uint32_t k = 0;
-    if (c < CC_NM) { str_cpy(b, CC_NAMES[c], 8); return; }
+    if (c < CC_NM) { str_cpy(b, str_nth(CC_NAMES, c), 8); return; }
     if (c == CC_NNM) b[k++] = '!';
     fmt_int(b + k, (int32_t)CNM_N(nm));
     k = str_len(b); b[k++] = ':';

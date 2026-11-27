@@ -81,7 +81,7 @@ static int ed_menu_handle(uint32_t cmd, const uint8_t *a, uint32_t n)
         ed_v((int32_t)menu_get(row));
         ed_v(0);
         ed_v((int32_t)k - 1);
-        ed_str(MI_NAME[row], 12);
+        ed_str(str_nth(MI_NAME, row), 12);
         for (i = 0; i < k; i++)
             ed_str(menu_vname(row, i), 12);
         ed_b(MI_TAB[row]);                             /* (after the names: an older editor stops before it) */

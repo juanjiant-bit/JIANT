@@ -284,7 +284,7 @@ int main(void)
     setup();
     VEL_SET = VEL_SET2 = 0;
     ck("6. MENU > CONTROL: VELOCITY, VEL MIN, AFTERTOUCH, VEL LEARN; an older setting NORMAL, 20, 5 (V10.7.23: OFF 1..10, MID = 5), ON",
-       MI_TAB[MI_VEL] == MTAB_CONTROL && MI_TAB[MI_VLEARN] == MTAB_CONTROL && str_eq(MI_NAME[MI_VEL], "VELOCITY") &&
+       MI_TAB[MI_VEL] == MTAB_CONTROL && MI_TAB[MI_VLEARN] == MTAB_CONTROL && str_eq(str_nth(MI_NAME, MI_VEL), "VELOCITY") &&
        str_eq(menu_vname(MI_VEL, menu_get(MI_VEL)), "NORMAL") && str_eq(menu_vname(MI_VELMIN, menu_get(MI_VELMIN)), "20") &&
        str_eq(menu_vname(MI_AT, menu_get(MI_AT)), "5") && str_eq(menu_vname(MI_VLEARN, menu_get(MI_VLEARN)), "ON") &&
        menu_n(MI_VEL) == 4u && menu_n(MI_VELMIN) == 8u && menu_n(MI_AT) == 11u && menu_n(MI_VLEARN) == 3u);

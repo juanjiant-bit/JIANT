@@ -185,7 +185,7 @@ static void check_cache(void)
     sing_init();
     for (k = 0; k < LYB_N; k++) {
         char word[20];
-        const char *q = k < LYB_SCAT ? ly_word(&LY_BANK[1], k, word) : k < LYB_N - 1u ? SCAT_EN[k - LYB_SCAT] : VOCABLE[1];
+        const char *q = k < LYB_SCAT ? ly_word(&LY_BANK[1], k, word) : k < LYB_N - 1u ? str_nth(SCAT_EN, k - LYB_SCAT) : VOCABLE[1];
         if (!lyb_at[k]) miss++;
         else {
             bad_b += !entry_is(&lyb_ph[lyb_at[k] - 1u], q, 64u);

@@ -974,11 +974,11 @@ static const uint8_t GC_LEN[3][3] = {{0, 48, 40}, {0, 24, 20}, {40, 28, 22}};   
 static const uint8_t GMIX[][3] = {
     GMX(2, 7, -2, 0, 6, 0),   /* MINIMAL TECHNO (V10.8.68: kept, not BYTE's 15 dB down: the owner's minimal its sub over the drums) (V10.8.41: the drums 3 dB up, the line that turns over them heard) */
     GMX(-3, 0, 0, 0, 7, 6),   /* HARD TECHNO (V10.7.2: the bass +1.5 dB, V10.6z10's basses ~1.8 under) */
-    GMX(-3, 3, 3, 7, 4, 6),   /* HARD BASS (V10.8.68: its bass 6 dB down) (V10.8.36: the arp +6 dB, 22 under the drums) */
+    GMX(-3, 7, 3, 7, 4, 6),   /* HARD BASS (V10.8.69: its bass back, the kit's punch back) (V10.8.36: the arp +6 dB, 22 under the drums) */
     GMX(-1, 2, 1, 0, 7, 0),   /* HOUSE */
     GMX(-2, 4, 2, 0, 7, 0),   /* DEEP HOUSE (V10.7.2: the bass +1.5, z10's ~1.2 under) */
     GMX(-3, 1, -1, 0, 7, 0),   /* TECH HOUSE (V10.7.2: the bass +1.5, z10's ~1.6 under) */
-    GMX(-3, 0, 1, 0, 7, 5),   /* TRIBAL (V10.8.68: the bass down, over the lighter kit by 7.6 dB; its level was at the top) */
+    GMX(-3, 4, 1, 0, 7, 5),   /* TRIBAL */
     GMX(0, -3, 0, 6, 3, -2),   /* CUMBIA (the bass under the drums) (V10.8.41: the keyboard up front) (V10.8.36: the arp +4.5 dB, 21 under) */
     GMX(-1, 2, -5, 7, 6, 4),   /* REGGAETON (V10.8.41: the 808, the arp and the hook up) (V10.8.36: the hook +6 dB, 19 under the drums) (V10.7.8, the owner's reference: the drums up front, the 808 up, the pad, the hook
                                                          * and the arp under them, the pad under the arp) */
@@ -990,7 +990,7 @@ static const uint8_t GMIX[][3] = {
     GMX(-3, 0, 0, 3, 3, 4),   /* IDM AMBIENT */
     GMX(4, -3, 0, 2, 5, 3),   /* IDM WEIRD (V10.8.41: the drums 6 dB up) */
     GMX(-3, -1, 5, 7, 7, 5),   /* KRAUT */
-    GMX(-3, -3, 0, 7, 7, 0),   /* EBM (V10.8.68: its sub 15 dB down, the lighter kit; its level at the top) (the owner's dark techno / industrial reference: its sub's rumble up; the
+    GMX(-3, 7, 0, 7, 7, 0),   /* EBM (the owner's dark techno / industrial reference: its sub's rumble up; the
                                                          * other throws' FAT BASS as it was, at the level's top already) */
     GMX(0, 0, 4, 3, 2, 3),   /* NEO CLASSIC */
     GMX(0, -5, -2, 4, -2, 1),   /* ELECTRO METAL (V10.8.36: the arp +4.5 dB, 21 under; V10.8.48: the bass down, its peak at the limit: its level was at the top) */

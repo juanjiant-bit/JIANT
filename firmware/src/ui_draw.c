@@ -935,8 +935,8 @@ static void draw_tabs(void)
 /* (0.9.2, rule 6) the footer's breadcrumb, as the mock-up's: small, DIM, from x 6, its parts apart by " . ": SECTION .
  * GROUP . page ("FX . DELAY . DLY 2"; the menu "MENU . DISPLAY . COLOR", a layer "FX . MAP"), the group THEME, the page
  * TEXT (`last`: a flash TEXT; the DRUM grid with ACC held: ACCENT, "ACCENT"); its place n/N in the chain at the right */
-static const char *const FAM_CRUMB[FAM_COUNT] = {"HOME", "ENV", "LFO", "FX", "SCL", "EDIT", "GLO", "SAVE", "ARP", "SEQ",
-                                                 "GLO"};
+static const char FAM_CRUMB[] =   /* (V10.8.69: packed, str_nth) */
+    "HOME\0" "ENV\0" "LFO\0" "FX\0" "SCL\0" "EDIT\0" "GLO\0" "SAVE\0" "ARP\0" "SEQ\0" "GLO";
 static __attribute__((noinline)) void foot_crumbs(char *b, uint32_t n)   /* b holds n (48) */
 {
     char ti[24];
@@ -947,7 +947,7 @@ static __attribute__((noinline)) void foot_crumbs(char *b, uint32_t n)   /* b ho
     }
     if (!lz_on()) {
         page_title(ti);
-        str_cpy(b, FAM_CRUMB[cur_page()->fam % FAM_COUNT], n);
+        str_cpy(b, str_nth(FAM_CRUMB, cur_page()->fam % FAM_COUNT), n);
         str_cpy(b + str_len(b), " \xB7 ", 4);
         str_cpy(b + str_len(b), ti, 20);
         return;
@@ -957,7 +957,7 @@ static __attribute__((noinline)) void foot_crumbs(char *b, uint32_t n)   /* b ho
         str_cpy(b, "MENU \xB7 ", n);
         str_cpy(b + str_len(b), MTAB_NAME[menu_tab()], 12);
         str_cpy(b + str_len(b), " \xB7 ", 4);
-        str_cpy(b + str_len(b), MI_NAME[ui.menu_sel % MI_COUNT], 16);
+        str_cpy(b + str_len(b), str_nth(MI_NAME, ui.menu_sel % MI_COUNT), 16);
         return;
     }
     if (f == LZ_LAYER) {
@@ -970,7 +970,7 @@ static __attribute__((noinline)) void foot_crumbs(char *b, uint32_t n)   /* b ho
         uint8_t cnt[8], gi[8];
         uint32_t g, p, i, m;
         (void)nav_groups(cnt, gi, &g, &p, &i, &m);
-        str_cpy(b, SEC_NAME[nav_sec()], n);
+        str_cpy(b, str_nth(SEC_NAME, nav_sec()), n);
         str_cpy(b + str_len(b), " \xB7 ", 4);
         str_cpy(b + str_len(b), nav_group_name(gi[g]), 16);
         str_cpy(b + str_len(b), " \xB7 ", 4);
@@ -1105,9 +1105,10 @@ static __attribute__((noinline)) void draw_crumbs(int32_t y, uint16_t fg, uint16
 }
 /* (V10.8.54, the owner: "que cada función diga lo que hace") a lens page with OCT+ gestures: its footer says them, 1.5 s
  * on entering the page and while OCT+ is held, in place of the breadcrumb. Its page's title, then what OCT+ does */
-static const char *const LZ_HINT[] = {"EDIT 1", "HOLD: K4 GAIN", "FILTER", "HOLD: K2 KEY TRK", "REVERB", "HOLD: K4 GATE",
-    "DLY", "HOLD: K4 GATE", "EUCLID", "MUTATE \xB7 HOLD: K4 EVERY", "PRESETS", "KEEP",
-    "SCENE", "DICE", "PUNCH IN", "EDITOR", "TRACK GEN", "MAKE", "ARRANGE", "ADD ROW", "TAKE", "GO", "SYSTEM", "OPEN"};
+static const char LZ_HINT[] =   /* (V10.8.69: packed, str_nth; was a table of pointers) */
+    "EDIT 1\0" "HOLD: K4 GAIN\0" "FILTER\0" "HOLD: K2 KEY TRK\0" "REVERB\0" "HOLD: K4 GATE\0" "DLY\0"
+    "HOLD: K4 GATE\0" "EUCLID\0" "MUTATE \xB7 HOLD: K4 EVERY\0" "PRESETS\0" "KEEP\0" "SCENE\0" "DICE\0"
+    "PUNCH IN\0" "EDITOR\0" "TRACK GEN\0" "MAKE\0" "ARRANGE\0" "ADD ROW\0" "TAKE\0" "GO\0" "SYSTEM\0" "OPEN";
 static const char *lz_hint(void)
 {
     uint32_t i;
@@ -1115,8 +1116,8 @@ static const char *lz_hint(void)
         return 0;
     if (ui.home)                                       /* (V10.8.56) HOME > VISUAL: OCT+ a new figure */
         return home_vis() ? "NEW FIGURE" : 0;
-    for (i = 0; i < NELEM(LZ_HINT); i += 2u)
-        if (str_eq(cur_page()->title, LZ_HINT[i])) return LZ_HINT[i + 1u];
+    for (i = 0; i < 24u; i += 2u)
+        if (str_eq(cur_page()->title, str_nth(LZ_HINT, i))) return str_nth(LZ_HINT, i + 1u);
     return 0;
 }
 /* (V10.8.65, the owner: "LIFE tiene PAN y no se ve que dice LIFE, la gente no va a entender que está paneando") the knob
@@ -1237,7 +1238,7 @@ static __attribute__((noinline)) void comp_columns(void)
         const step_t *cs = &TSEL->step[ui.cursor];
         uint32_t a = comp_view(), k = comp_slot(), c = CO_COND(k ? cs->comp2 : cs->comp), l = cs->clen[k & 1u];
         char lb[10], un[8];
-        text_column(0, k ? "ACTION 2" : "ACTION", CA_NAMES[a], a ? VAL(0u) : T_DIM);
+        text_column(0, k ? "ACTION 2" : "ACTION", str_nth(CA_NAMES, a), a ? VAL(0u) : T_DIM);
         if (a) {
             fmt_int(val, (int32_t)(l < CL_MAX ? l + 1u : 1u));
             hot_unit_column(1, "LENGTH", val, a == CA_RAMP && (comp_arg(cs) & CV_RAMP_BARS) ? "BAR" : "ST");
@@ -1402,7 +1403,7 @@ static void draw_columns(void)
         text_column(2, "BARS", val, VAL(2u));
         v = row_var(row, song.sel % NTRK);
         val[0] = 'T'; val[1] = (char)('1' + song.sel % NTRK); str_cpy(val + 2, " VAR", 5);
-        text_column(3, val, RV_NAME[v < RV_N ? v : 0], v ? VAL(3u) : T_DIM);
+        text_column(3, val, str_nth(RV_NAME, v < RV_N ? v : 0), v ? VAL(3u) : T_DIM);
         return;
     }
     if (cur_page()->graph == GR_SONG) {
@@ -2117,7 +2118,7 @@ static void dlg_crumb(const char *a, const char *b)     /* "SAVE . NOTICE . CONF
 {
     int32_t x;
     cv_begin(240, LZ_FOOT_H, T_BG);
-    x = cv_text(6, CRUMB_Y, &AF_X, SEC_NAME[nav_sec()], T_DIM);
+    x = cv_text(6, CRUMB_Y, &AF_X, str_nth(SEC_NAME, nav_sec()), T_DIM);
     x = cv_text(x, CRUMB_Y, &AF_X, " \xB7 ", T_DIM);
     x = cv_text(x, CRUMB_Y, &AF_X, a, T_THEME);
     x = cv_text(x, CRUMB_Y, &AF_X, " \xB7 ", T_DIM);

@@ -317,7 +317,7 @@ static __attribute__((noinline)) void graph_tl(void)
             cv_rect(195, y + 1, 1, 10, T_SURF);
             cv_rect(196, y + 1, 39, 10, T_ACCENT);
             GFX_HOOK_ALIGN(196, y + 1, 235, y + 11, AL_HV, "timeline variation chip");
-            cv_text_in(196, y + 1 + CAP_IN(X, 10), 39, &AF_X, RV_NAME[v < RV_N ? v : 0], T_INK, T_ACCENT);
+            cv_text_in(196, y + 1 + CAP_IN(X, 10), 39, &AF_X, str_nth(RV_NAME, v < RV_N ? v : 0), T_INK, T_ACCENT);
         }
     }
     cv_text(4, 128, &AF_X, "KEYS: F3-D4 MUTE \xB7 F4-B4 FROM", T_MID);

@@ -10,10 +10,10 @@
 enum { B_FX, B_SCL, B_ENV, B_LFO, B_EDIT, B_GLO, B_HOME, B_SAVE, B_ARP, B_SEQ, B_PLAY, B_REC,
        B_OCTDN, B_OCTUP, NB };
 enum { EN_SELECT, EN_ALGO, EN_PRESET, EN_K1, EN_K2, EN_K3, EN_K4, NE };
-static const char *const B_NAME[NB] = {"FX", "SCL", "ENV", "LFO", "EDIT", "GLO", "HOME", "SAVE",
-                                        "ARP", "SEQ", "PLAY", "REC", "OCT-", "OCT+"};
-static const char *const E_NAME[NE] = {"SELECT", "ALGORITHM", "PRESETS", "KNOB 1", "KNOB 2",
-                                        "KNOB 3", "KNOB 4"};
+static const char B_NAME[] =   /* (V10.8.69: packed, str_nth) */
+    "FX\0" "SCL\0" "ENV\0" "LFO\0" "EDIT\0" "GLO\0" "HOME\0" "SAVE\0" "ARP\0" "SEQ\0" "PLAY\0" "REC\0" "OCT-\0" "OCT+";
+static const char E_NAME[] =   /* (V10.8.69: packed, str_nth) */
+    "SELECT\0" "ALGORITHM\0" "PRESETS\0" "KNOB 1\0" "KNOB 2\0" "KNOB 3\0" "KNOB 4";
 #define PANEL_MAGIC 0x50414E35u          /* "PAN5": bump when PANEL_DEFAULT changes */
 
 typedef struct {

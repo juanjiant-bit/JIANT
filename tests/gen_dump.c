@@ -148,7 +148,7 @@ int main(int argc, char **argv)
                     else if (!mu && gs.role[t2] == RL_TEX && t2 == gs.trk_of[RL_TEX]) printf(" (TEX)");
                     if (row_src(k, t2, chain_config.row[k].slot) != chain_config.row[k].slot)
                         printf("<%c", 'A' + row_src(k, t2, chain_config.row[k].slot));
-                    if (row_var(k, t2)) printf("[%s]", RV_NAME[row_var(k, t2)]);
+                    if (row_var(k, t2)) printf("[%s]", str_nth(RV_NAME, row_var(k, t2)));
                 }
                 if (sc->mute >> 4) printf("  drum groups out: %s%s%s%s", sc->mute & 0x10u ? "K" : "", sc->mute & 0x20u ? "S" : "",
                                           sc->mute & 0x40u ? "H" : "", sc->mute & 0x80u ? "P" : "");

@@ -53,8 +53,9 @@ typedef struct {                              /* the song index (flash: OBJ_SONG
 /* (add15-beta4) a row's variation of a track (ARRANGE 2's VAR): what its steps become when the row goes in (song_main.c
  * row_vary), MUTE the track silent for the row */
 enum { RV_NONE, RV_MUTE, RV_THIN, RV_FILL, RV_HALF, RV_REV, RV_SHIFT, RV_OCTU, RV_OCTD, RV_MUT1, RV_N = RV_MUT1 + 4 };
-static const char *const RV_NAME[RV_N] = {"--", "MUTE", "THIN", "FILL", "HALF", "REV", "SHIFT", "OCT+", "OCT-",
-                                          "VAR 1", "VAR 2", "VAR 3", "VAR 4"};
+static const char RV_NAME[] =   /* (V10.8.69: packed, str_nth) */
+    "--\0" "MUTE\0" "THIN\0" "FILL\0" "HALF\0" "REV\0" "SHIFT\0" "OCT+\0" "OCT-\0" "VAR 1\0" "VAR 2\0"
+    "VAR 3\0" "VAR 4";
 static void song_idx_touch(void);             /* song_main.c: the index changed, into flash soon */
 /* the state now as a scene (main loop: KNOB 4 on SONG; ISR: SONG REC) */
 static void scene_capture(scene_t *s)

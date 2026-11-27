@@ -15,12 +15,12 @@ enum { MI_COLOR, MI_SCOPE, MI_LARGE, MI_ANIM, MI_LEDS, MI_SCROFF, MI_SAVER, MI_H
                                                                                              * CLOCK in SYSTEM; codex/coherence: INIT SYSTEM gone,
                                                                                              * SAVE > TOOLS > CLEAR PROJECT the one place) */
 #define MI_VALUES MI_PANEL
-static const char *const MI_NAME[MI_COUNT] = {"COLOR", "SCOPE", "LARGE", "ANIM", "LEDS", "SCREEN OFF", "SAVER", "HELP", "PRESETS", "PANEL", "HOLD", "KNOB ACCEL", "FX LATCH", "BPM LOCK",
-                                              "SCALE LEDS", "MIDI OUT", "MIDI MAP", "LEARN",
-                                              "VELOCITY", "VEL MIN", "AFTERTOUCH", "VEL LEARN",
-                                              "SPEAKER EQ", "USB LEVEL", "CLICK", "CLICK LEVEL", "COUNT-IN", "TRACKS", "LOAD",
-                                              "OCT BEND", "USB",
-                                              "RESTORE LAST", "CPU CORES", "CPU CLOCK", "BLUETOOTH", "CALIBRATION", "ABOUT"};
+static const char MI_NAME[] =   /* (V10.8.69: packed, str_nth; was a table of pointers) */
+    "COLOR\0" "SCOPE\0" "LARGE\0" "ANIM\0" "LEDS\0" "SCREEN OFF\0" "SAVER\0" "HELP\0" "PRESETS\0" "PANEL\0"
+    "HOLD\0" "KNOB ACCEL\0" "FX LATCH\0" "BPM LOCK\0" "SCALE LEDS\0" "MIDI OUT\0" "MIDI MAP\0" "LEARN\0"
+    "VELOCITY\0" "VEL MIN\0" "AFTERTOUCH\0" "VEL LEARN\0" "SPEAKER EQ\0" "USB LEVEL\0" "CLICK\0"
+    "CLICK LEVEL\0" "COUNT-IN\0" "TRACKS\0" "LOAD\0" "OCT BEND\0" "USB\0" "RESTORE LAST\0" "CPU CORES\0"
+    "CPU CLOCK\0" "BLUETOOTH\0" "CALIBRATION\0" "ABOUT";
 /* 1.0.5: the MENU's tabs (ui_menu.c: ALGORITHM steps between them, PRESETS among one tab's rows; the editor gets a
  * row's tab after its MENU_DESC reply). A tab's rows follow each other in MI order (tests/ui_test.c checks it); at
  * most MTAB_ROWS each (the page does not scroll: ui_menu.c fits them). A new row joins a tab here, a new tab is

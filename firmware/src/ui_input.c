@@ -2477,13 +2477,17 @@ static void ui_input_frame(void);
 /* (V10.8.22, the owner) MOD: while a slot's SRC or DEST turns, its route in full ("LFO > FILTER CUTOFF"), the engine's own
  * names for E1..E8; always (HELP OFF too), the message's 40 frames */
 static uint8_t mxn_s;                                   /* the slot turned + 1 (0: none) */
-static const char *const MX_SRC_FULL[MS_N] = {"OFF", "LFO", "ENVELOPE", "VELOCITY", "KEY TRACK", "RANDOM", "MOD WHEEL",
-    "AFTERTOUCH", "EXPRESSION", "MACRO 1", "MACRO 2", "MACRO 3", "MACRO 4", "MOD SEQUENCE", "NOISE", "PROXIMITY", "ENVELOPE 2",
-    "INPUT LEVEL", "T1 LEVEL", "T2 LEVEL", "T3 LEVEL", "T4 LEVEL", "T5 LEVEL", "T6 LEVEL", "OCT+ KEY", "OCT- KEY"};
-static const char *const MX_DST_FULL[MD_N] = {"OFF", "PITCH", "FILTER CUTOFF", "SHAPE", "AMP", "PAN", "DIST SEND",
-    "CHORUS SEND", "DELAY SEND", "REVERB SEND", "LFO RATE", "VIBRATO", 0, 0, 0, 0, 0, 0, 0, 0, "MASTER CLIP", "MASTER PUNCH",
-    "DELAY TIME", "DELAY FEEDBACK", "DELAY TONE", "DELAY MIX", "REVERB SIZE", "REVERB DAMP", "CHORUS RATE", "CHORUS DEPTH",
-    "FX FILTER", "LEVEL", "MACRO 1", "MACRO 2", "MACRO 3", "MACRO 4"};
+static const char MX_SRC_FULL[] =   /* (V10.8.69: packed, str_nth; was a table of pointers) */
+    "OFF\0" "LFO\0" "ENVELOPE\0" "VELOCITY\0" "KEY TRACK\0" "RANDOM\0" "MOD WHEEL\0" "AFTERTOUCH\0"
+    "EXPRESSION\0" "MACRO 1\0" "MACRO 2\0" "MACRO 3\0" "MACRO 4\0" "MOD SEQUENCE\0" "NOISE\0" "PROXIMITY\0"
+    "ENVELOPE 2\0" "INPUT LEVEL\0" "T1 LEVEL\0" "T2 LEVEL\0" "T3 LEVEL\0" "T4 LEVEL\0" "T5 LEVEL\0"
+    "T6 LEVEL\0" "OCT+ KEY\0" "OCT- KEY";
+static const char MX_DST_FULL[] =   /* (V10.8.69: packed, str_nth; was a table of pointers) */
+    "OFF\0" "PITCH\0" "FILTER CUTOFF\0" "SHAPE\0" "AMP\0" "PAN\0" "DIST SEND\0" "CHORUS SEND\0" "DELAY SEND\0"
+    "REVERB SEND\0" "LFO RATE\0" "VIBRATO\0" "\0" "\0" "\0" "\0" "\0" "\0" "\0" "\0" "MASTER CLIP\0"
+    "MASTER PUNCH\0" "DELAY TIME\0" "DELAY FEEDBACK\0" "DELAY TONE\0" "DELAY MIX\0" "REVERB SIZE\0"
+    "REVERB DAMP\0" "CHORUS RATE\0" "CHORUS DEPTH\0" "FX FILTER\0" "LEVEL\0" "MACRO 1\0" "MACRO 2\0"
+    "MACRO 3\0" "MACRO 4";
 static void mx_banner(void)
 {
     uint32_t s = mxn_s - 1u, src, dst;
@@ -2493,12 +2497,12 @@ static void mx_banner(void)
     if (s >= 4u) return;
     src = (uint32_t)clamp(TSEL->p[P_M1SRC + 3u * s], 0, MS_N - 1);
     dst = (uint32_t)clamp(TSEL->p[P_M1DST + 3u * s], 0, MD_N - 1);
-    dn = MX_DST_FULL[dst];
-    if (!dn) {                                          /* E1..E8: the engine's own label */
+    dn = str_nth(MX_DST_FULL, dst);
+    if (!*dn) {                                          /* E1..E8: the engine's own label */
         const param_desc_t *d = track_desc(TSEL, P_E0 + (dst - 12u));
         dn = d && d->label && d->label[0] != '-' ? d->label : N_MDST[dst];
     }
-    str_cpy(b, MX_SRC_FULL[src], sizeof b);
+    str_cpy(b, str_nth(MX_SRC_FULL, src), sizeof b);
     str_cpy(b + str_len(b), " > ", sizeof b - str_len(b));
     str_cpy(b + str_len(b), dn, sizeof b - str_len(b));
     ui_say(b, "");
@@ -3239,7 +3243,7 @@ static void panel_setup(void)
     fm1_input_edges(0);
     for (i = 0; i < NB; i++) {
         uint32_t p = 0, id;
-        setup_show("PRESS", B_NAME[i]);
+        setup_show("PRESS", str_nth(B_NAME, i));
         t0 = fm1_ms;
         while (!(p & ~used)) {
             fm1_wdt_feed();
@@ -3257,7 +3261,7 @@ static void panel_setup(void)
     for (i = 0; i < NE; i++) {
         uint32_t e;
         int32_t st = 0;
-        setup_show("TURN RIGHT", E_NAME[i]);
+        setup_show("TURN RIGHT", str_nth(E_NAME, i));
         for (e = 0; e < 7u; e++)
             fm1_enc_take(e);
         t0 = fm1_ms;

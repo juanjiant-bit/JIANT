@@ -210,7 +210,7 @@ static const char *menu_short(uint32_t row)          /* a card's label: the row'
     for (k = 0; k < NELEM(SH); k++)
         if (SH[k].row == row)
             return SH[k].s;
-    return MI_NAME[row];
+    return str_nth(MI_NAME, row);
 }
 static void menu_cards(void)
 {
@@ -276,7 +276,7 @@ static __attribute__((noinline)) void menu_panel(void)
             if (row == ui.menu_sel)
                 cv_rect(8, y, 3, h, T_ACCENT);
             GFX_HOOK_ALIGN(0, y, 0, y + h, AL_V, "menu row name centred up/down");
-            cv_text_on(16, y + ty, font, MI_NAME[row], T_TEXT, bg);
+            cv_text_on(16, y + ty, font, str_nth(MI_NAME, row), T_TEXT, bg);
             menu_val(row, v);
             cv_text_r(in ? 216 : 226, y + ty, font, v, T_TEXT, bg);
             if (in) {
@@ -291,7 +291,7 @@ static __attribute__((noinline)) void menu_panel(void)
         char b[32];
         str_cpy(b, MTAB_NAME[t], 32);
         str_cpy(b + str_len(b), " > ", 32 - str_len(b));
-        str_cpy(b + str_len(b), MI_NAME[row], 32 - str_len(b));
+        str_cpy(b + str_len(b), str_nth(MI_NAME, row), 32 - str_len(b));
         cv_text(10, 6 - AF_X_CAP_Y, &AF_X, b, T_THEME);
         if (!nv)
             return;

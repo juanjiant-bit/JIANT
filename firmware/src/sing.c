@@ -562,18 +562,29 @@ static uint32_t sy_word(uint32_t lang, const char *w, uint32_t n, uint8_t *out, 
 /* --------------------------------------------------------------------------------------- the generator --- */
 /* a phrase: templates of categories (N V A D P C: the banks' rows), filled from the theme with words that fit the
  * syllables left; a phrase as long as the pattern's notes; the last word fits exactly (or a vocable) */
-static const char *const TPL_ES[] = {"DNA", "VDN", "DNV", "PDN", "CDNV", "DNPDN", "VPDN", "NV", "PDNA"};
-static const char *const TPL_EN[] = {"CVDN", "DAN", "PDAN", "DNPDN", "CV", "VDN", "PDN", "DNPAN"};
-static const char *const TPL_JA[] = {"NPV", "ANPV", "NPN", "NPNPV", "AN", "NPAN"};
-static const char *const SCAT_ES[] = {"la", "le", "li", "lo", "lu", "na", "ne", "no", "ma", "me", "mo", "pa", "pe", "po",
-                                      "ta", "te", "to", "ba", "bo", "da", "do", "ra", "ri", "sa", "so", "ya", "yo", "cha",
-                                      "fa", "ga", "go", "lan", "son", "tin", "bal", "mar", "sol", "dum", "pam"};
-static const char *const SCAT_EN[] = {"doo", "bee", "dah", "bop", "wah", "dum", "dat", "dot", "day", "shoo", "la", "na",
-                                      "yeah", "oh"};
-static const char *const SCAT_JA[] = {"ra", "ri", "ru", "re", "ro", "na", "ni", "nu", "ne", "no", "ta", "te", "to", "ka",
-                                      "ki", "ku", "ke", "ko", "sa", "shi", "su", "se", "so", "ma", "mi", "mu", "me", "mo",
-                                      "ha", "hi", "fu", "he", "ho", "ya", "yu", "yo", "wa", "pa", "pi", "pu", "pe", "po",
-                                      "n"};
+#define NTPL_ES 9u
+static const char TPL_ES[] =   /* (V10.8.69: packed, str_nth) */
+    "DNA\0" "VDN\0" "DNV\0" "PDN\0" "CDNV\0" "DNPDN\0" "VPDN\0" "NV\0" "PDNA";
+#define NTPL_EN 8u
+static const char TPL_EN[] =   /* (V10.8.69: packed, str_nth) */
+    "CVDN\0" "DAN\0" "PDAN\0" "DNPDN\0" "CV\0" "VDN\0" "PDN\0" "DNPAN";
+#define NTPL_JA 6u
+static const char TPL_JA[] =   /* (V10.8.69: packed, str_nth) */
+    "NPV\0" "ANPV\0" "NPN\0" "NPNPV\0" "AN\0" "NPAN";
+#define NSCAT_ES 39u
+static const char SCAT_ES[] =   /* (V10.8.69: packed, str_nth) */
+    "la\0" "le\0" "li\0" "lo\0" "lu\0" "na\0" "ne\0" "no\0" "ma\0" "me\0" "mo\0" "pa\0" "pe\0" "po\0" "ta\0"
+    "te\0" "to\0" "ba\0" "bo\0" "da\0" "do\0" "ra\0" "ri\0" "sa\0" "so\0" "ya\0" "yo\0" "cha\0" "fa\0" "ga\0"
+    "go\0" "lan\0" "son\0" "tin\0" "bal\0" "mar\0" "sol\0" "dum\0" "pam";
+#define NSCAT_EN 14u
+static const char SCAT_EN[] =   /* (V10.8.69: packed, str_nth) */
+    "doo\0" "bee\0" "dah\0" "bop\0" "wah\0" "dum\0" "dat\0" "dot\0" "day\0" "shoo\0" "la\0" "na\0" "yeah\0"
+    "oh";
+#define NSCAT_JA 43u
+static const char SCAT_JA[] =   /* (V10.8.69: packed, str_nth) */
+    "ra\0" "ri\0" "ru\0" "re\0" "ro\0" "na\0" "ni\0" "nu\0" "ne\0" "no\0" "ta\0" "te\0" "to\0" "ka\0" "ki\0"
+    "ku\0" "ke\0" "ko\0" "sa\0" "shi\0" "su\0" "se\0" "so\0" "ma\0" "mi\0" "mu\0" "me\0" "mo\0" "ha\0" "hi\0"
+    "fu\0" "he\0" "ho\0" "ya\0" "yu\0" "yo\0" "wa\0" "pa\0" "pi\0" "pu\0" "pe\0" "po\0" "n";
 static uint32_t sy_rnd(uint32_t *r)
 {
     uint32_t x = *r ? *r : 0x9E3779B9u;
@@ -714,7 +725,7 @@ static uint32_t sy_norm_lang(uint32_t lang, const char *s, uint32_t n, char *d, 
  * pool, so sing[] and the RAM region keep their layout, and the audio code its code). */
 #define LYB_NONE 0xFFFFu
 #define LYB_SCAT LY_EN_NW                                /* SCAT_EN's from here, then the vocable */
-#define LYB_N (LY_EN_NW + NELEM(SCAT_EN) + 1u)
+#define LYB_N (LY_EN_NW + NSCAT_EN + 1u)
 #define LYB_PH 1856u                                     /* (2 + n a word: tests/voice_test.c checks they all fit) */
 #define LYC_N 192u
 static const char *const VOCABLE[3] = {"la", "oh", "ra"};   /* ES EN JA: what is sung when no word fits */
@@ -764,7 +775,7 @@ static void sing_init(void)
     lyb_ok = 0;
     for (k = 0; k < LYB_N; k++) {
         char word[20];
-        const char *q = k < LYB_SCAT ? ly_word(&LY_BANK[1], k, word) : k < LYB_N - 1u ? SCAT_EN[k - LYB_SCAT] : VOCABLE[1];
+        const char *q = k < LYB_SCAT ? ly_word(&LY_BANK[1], k, word) : k < LYB_N - 1u ? str_nth(SCAT_EN, k - LYB_SCAT) : VOCABLE[1];
         uint32_t m = sy_entry(q, 64u, &lyb_ph[o], LYB_PH - o);
         lyb_at[k] = (uint16_t)(m ? o + 1u : 0u);
         o += m;
@@ -839,7 +850,7 @@ static uint32_t sy_gen_word(const track_t *t, sing_t *s, uint32_t lang, uint32_t
         uint32_t pick=theme*2u+(sy_rnd(&s->rng)&1u);
         if(theme==TH_ANY) pick=sy_rnd(&s->rng)&15u;
         if(!ly_en_ok) q="la";
-        else if(lyr>LYR_NW) q=SCAT_ES[sy_rnd(&s->rng)%NELEM(SCAT_ES)];
+        else if(lyr>LYR_NW) q=str_nth(SCAT_ES, sy_rnd(&s->rng)%NSCAT_ES);
         else while(pick--) while(*q++);
         str_cpy(s->w,q,sizeof s->w);
         s->prem--;
@@ -856,13 +867,13 @@ static uint32_t sy_gen_word(const track_t *t, sing_t *s, uint32_t lang, uint32_t
         s->tps = 0;
     }
     if (lyr > LYR_NW) {                                  /* scat: 1 .. 3 syllables (English: one) */
-        const char *const *L = lang == LG_ES ? SCAT_ES : lang == LG_EN ? SCAT_EN : SCAT_JA;
-        uint32_t nl = lang == LG_ES ? NELEM(SCAT_ES) : lang == LG_EN ? NELEM(SCAT_EN) : NELEM(SCAT_JA);
+        const char *L = lang == LG_ES ? SCAT_ES : lang == LG_EN ? SCAT_EN : SCAT_JA;
+        uint32_t nl = lang == LG_ES ? NSCAT_ES : lang == LG_EN ? NSCAT_EN : NSCAT_JA;
         uint32_t ns = lang == LG_EN ? 1u : 1u + sy_rnd(&s->rng) % 3u, k, m = 0;
         if (ns > s->prem) ns = s->prem;
         for (k = 0; k < ns; k++) {
             uint32_t r = sy_rnd(&s->rng) % nl;
-            const char *q = L[r];
+            const char *q = str_nth(L, r);
             if (!k && q[0] == 'n' && !q[1]) q = "na";    /* (no word starts with the moraic n) */
             if (lang == LG_EN && ns == 1u)
                 src = LYB_SCAT + r;
@@ -874,14 +885,14 @@ static uint32_t sy_gen_word(const track_t *t, sing_t *s, uint32_t lang, uint32_t
         return src;
     }
     for (tries = 0; tries < 10u && j < 0; tries++) {
-        const char *const *T = lang == LG_ES ? TPL_ES : lang == LG_EN ? TPL_EN : TPL_JA;
-        uint32_t nt = lang == LG_ES ? NELEM(TPL_ES) : lang == LG_EN ? NELEM(TPL_EN) : NELEM(TPL_JA), cat, th;
+        const char *T = lang == LG_ES ? TPL_ES : lang == LG_EN ? TPL_EN : TPL_JA;
+        uint32_t nt = lang == LG_ES ? NTPL_ES : lang == LG_EN ? NTPL_EN : NTPL_JA, cat, th;
         const char *q;
-        if (s->tpl == 0xFFu || !T[s->tpl % nt][s->tps]) {
+        if (s->tpl == 0xFFu || !str_nth(T, s->tpl % nt)[s->tps]) {
             s->tpl = (uint8_t)(sy_rnd(&s->rng) % nt);
             s->tps = 0;
         }
-        q = T[s->tpl % nt];
+        q = str_nth(T, s->tpl % nt);
         switch (q[s->tps++]) {
         case 'N': cat = 0; break;
         case 'V': cat = 1; break;

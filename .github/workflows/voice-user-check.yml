@@ -78,6 +78,8 @@ jobs:
           build/song-check/key-trk | tee build/song-check/key-trk.log
           cc -O1 -w -Ibuild/gen -Ifirmware/src tests/west_test.c -lm -o build/song-check/west
           build/song-check/west | tee build/song-check/west.log
+          cc -O1 -w -fsanitize=address,bounds tests/usb_host_desc_test.c -o build/song-check/usbhost
+          build/song-check/usbhost | tee build/song-check/usbhost.log
           for test in audio perform upreset; do
             cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/${test}_test.c -lm -o build/song-check/$test
             build/song-check/$test | tee build/song-check/$test.log

@@ -45,6 +45,13 @@ static unsigned str_len(const char *s)
         n++;
     return n;
 }
+/* (V10.8.69) the n-th of a packed list of names ("A\0B\0C"): a table of pointers' 4 B a name saved */
+static __attribute__((noinline)) const char *str_nth(const char *p, unsigned n)
+{
+    while (n--)
+        while (*p++) {}
+    return p;
+}
 
 static void str_cpy(char *d, const char *s, unsigned max)
 {
