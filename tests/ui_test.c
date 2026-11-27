@@ -12279,6 +12279,26 @@ static int test_lz_home(void)
         bad += check("V10.8.56 HOME > VISUAL: BEING's second page, KNOB 1 DENSITY, OCT+ a new figure (VISUAL #n), it moves; V10.8.57 the whole screen", ok);
         ok = 1;
     }
+    {   /* (V10.8.59) VISUAL from the song: two GEN pieces' seeds two scenes, the same seed the same; a new note a hit */
+        uint8_t dr = song_draft;
+        uint16_t ps = gp.seed;
+        uint32_t h1, h2, h3, ki;
+        int okv = 1;
+        song_draft = 1;
+        gp.seed = 1111; h1 = vis_song();
+        gp.seed = 2222; h2 = vis_song();
+        gp.seed = 1111; h3 = vis_song();
+        okv &= h1 != h2 && h1 == h3;
+        song_draft = dr; gp.seed = ps;
+        memset(vq.e, 0, sizeof vq.e);
+        anim_fr++; vis_tick();
+        trk[0].seq_notes[0] = 64; trk[0].seq_n = 1; trk[0].seq_idx++;
+        anim_fr++; vis_tick();                          /* (once a frame) */
+        ki = (uint32_t)(VQ_KI + VQ_SN + VQ_HA + VQ_ME);
+        okv &= ki > 100u;
+        trk[0].seq_n = 0;
+        bad += check("V10.8.59 VISUAL: the song's seed (two GEN seeds two scenes, the same seed the same); a new note on a track a hit", okv);
+    }
     fm1_ms += 1000u;
     turn(EN_SELECT, 5); frame();                                    /* GEN 1 (V10.8.2: past the song's three; V10.8.56: VISUAL) */
     ok &= gen_on() && gen_page() == 0u && home_level() == 2u && lz_on() && lz_tab_lit(3) && lz_crumb_is("HOME \xB7 GENERATOR \xB7 GENERATOR 1") &&

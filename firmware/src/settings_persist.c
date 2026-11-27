@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* Shared PER4 layout: each feature updates only its own fields, preserving
  * the other feature's saved preferences when either is built independently.
- * PER1/PER2 are upstream; PER3 added bold; PER4 added favorites.
+ * PER1/PER2 are upstream; PER3 added bold; PER4 added favorites (V10.8.59: PER1/PER2 no longer read).
  * palette: UI_PAL_TAG + index; an old id (below 20, earlier firmware) is migrated on import.
  * bold: no longer used (one font weight); kept as it was saved, unless it holds the HOLD setting (panel.c).
  * zoom: no longer used (the large readout); kept as it was saved, unless it holds the LEDS setting (panel.c).
@@ -39,18 +39,10 @@ static __attribute__((noinline)) void settings_fix15(uint8_t *f)
 }
 static int settings_import(persist_t *p, int n)
 {
+    /* (V10.8.59, the owner's pick for VISUAL's room) PER4 and PER3 are read: PER1 and PER2 (Felucca's first) are no
+     * longer migrated (their global settings start from the defaults once) */
     int current = n == (int)sizeof *p && p->magic == PERSIST_MAGIC;
-    int old3 = n == (int)(sizeof *p - sizeof p->favorites) && p->magic == 0x50455233u;
-    int old2 = n == (int)(sizeof *p - sizeof p->favorites - sizeof p->bold) && p->magic == 0x50455232u;
-    int old1 = n == (int)(8u + sizeof(panel_t)) && p->magic == 0x50455231u;
-    if (!(current || old3 || old2 || old1)) return 0;
-    if (old1) {
-        panel_t old;
-        memcpy(&old, (uint8_t *)p + 8, sizeof old);
-        p->panel = old;
-        p->lowcut = p->zoom = 0;
-    }
-    if (old1 || old2) p->bold = 0;
+    if (!current && !(n == (int)(sizeof *p - sizeof p->favorites) && p->magic == 0x50455233u)) return 0;
     if (!current) memset(&p->favorites, 0, sizeof p->favorites);
     p->favorites.factory[15][20] = 0;             /* SKIN (JIANT 0.8.9 .. V10.7.22; 3 was AIR, 1 BOTTOM, 2 HUD; retired V10.7.23):
                                                     * COLORS, the one skin (0, as older firmware reads it) */

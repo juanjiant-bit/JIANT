@@ -159,9 +159,7 @@ static __attribute__((noinline)) void graph_harm(void)
         cv_rect(x, 2, w - 6, 72, c);
         if (off) str_cpy(b, "-", 2); else chord_nm(b, pc, d, (uint32_t)t->p[P_ROOT]);
         cv_text_in(x, 12, w - 6, text_w(&AF_L, b) <= w - 8 && large_face_has(b) ? &AF_L : &AF_M, b, ink, c);
-        if (!off) cv_text_in(x, 44, w - 6, &AF_X, RN7[d], ink, c);
-        str_cpy(b, "BAR ", 8); fmt_int(b + 4, (int32_t)i + 1);
-        cv_text_in(x, 58, w - 6, &AF_X, b, ink, c);
+        if (!off) cv_text_in(x, 50, w - 6, &AF_X, RN7[d], ink, c);   /* (V10.8.59: "BAR n" gone, the order says it) */
     }
     cv_rect(8, 82, 218, 3, T_RAISE);
     if (now < n) cv_rect(8, 82, 218 * (int32_t)(now + 1u) / (int32_t)n, 3, T_ACCENT);

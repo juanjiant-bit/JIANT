@@ -102,13 +102,11 @@ int main(void)
     assert(settings_import(&p, sizeof p - sizeof p.favorites) == 2);
     assert(p.bold == 1 && !p.favorites.user && !p.favorites.filter);
     settings_export(&p); assert(p.bold == 1); /* favorites-only preserves PER3 font */
-    p = original; p.magic = 0x50455232u;
-    assert(settings_import(&p, sizeof p - sizeof p.favorites - sizeof p.bold) == 2);
-    assert(!p.bold && !p.favorites.user && settings.zoom && panel.enc[0] == 3);
+    p = original; p.magic = 0x50455232u;                   /* (V10.8.59) PER2 and PER1 no longer read */
+    assert(settings_import(&p, sizeof p - sizeof p.favorites - sizeof p.bold) == 0);
     p = original; p.magic = 0x50455231u;
     memcpy((uint8_t *)&p + 8, &PANEL_DEFAULT, sizeof(panel_t));
-    assert(settings_import(&p, 8 + sizeof(panel_t)) == 2);
-    assert(!p.bold && !p.zoom && !p.lowcut && !p.favorites.user && panel.magic == PANEL_MAGIC);
+    assert(settings_import(&p, 8 + sizeof(panel_t)) == 0);
     {   /* HOLD: in the retired bold field; older records (bold 0 / 1) are 0.4 s, and stay as saved */
         p = original; p.bold = 0;
         assert(settings_import(&p, sizeof p) == 1 && settings_hold == HOLD_DEF && HOLD_MS[settings_hold] == 400u);
@@ -123,10 +121,6 @@ int main(void)
         settings_export(&p);
         assert(p.bold == 0u && settings_import(&p, sizeof p) == 1 && settings_hold == HOLD_DEF);
         assert(!hold_stored_ok(2u) && !hold_stored_ok(HOLD_TAG + 4u) && hold_stored_ok(HOLD_TAG | 2u));
-        p = original; p.magic = 0x50455231u;
-        memcpy((uint8_t *)&p + 8, &PANEL_DEFAULT, sizeof(panel_t));
-        settings_hold = 2;
-        assert(settings_import(&p, 8 + sizeof(panel_t)) == 2 && settings_hold == HOLD_DEF);
     }
     {   /* LEDS: in the retired zoom field; older records (zoom 0 / 1) are DIM, and stay as saved; idempotent */
         persist_t q;
@@ -164,10 +158,6 @@ int main(void)
             settings_export(&p);
             assert(p.zoom == 0u);
         }
-        p = original; p.magic = 0x50455231u;           /* PER1: no zoom field, DIM */
-        memcpy((uint8_t *)&p + 8, &PANEL_DEFAULT, sizeof(panel_t));
-        settings_leds = LEDS_INV;
-        assert(settings_import(&p, 8 + sizeof(panel_t)) == 2 && settings_leds == LEDS_DIM);
     }
 #ifdef FELUCCA_FAVORITES
     {   /* 1.1 CLICK / CLICK LEVEL / COUNT-IN (ui.c ui_rec_prefs, favorites.factory[15][28]): 0 in every older record
@@ -200,5 +190,5 @@ int main(void)
 #endif
     assert(settings_import(&p, 3) == 0 && settings_import(&p, -1) == 0);
     assert(settings_import(&p, sizeof p - 1) == 0);
-    puts("Settings: PER1/PER2/PER3 migration, palette ids, calibration, HOLD, LEDS, CLICK / COUNT-IN and independent feature preservation passed.");
+    puts("Settings: PER3 migration (PER1/PER2 refused), palette ids, calibration, HOLD, LEDS, CLICK / COUNT-IN and independent feature preservation passed.");
 }
