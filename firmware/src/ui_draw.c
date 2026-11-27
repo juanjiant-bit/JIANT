@@ -2190,7 +2190,7 @@ static void ui_draw(void)
         for (s = 0; s < 2u; s++) {
             cv_begin(240, 120, T_BG);
             if (bt_hw_seg())
-                vis_fig(120 * 16, (120 - (int32_t)s * 120) * 16, 104 * 16, vis_seed + (v ? fm1_ms / 30000u : 0u));   /* (the saver: another every 30 s) */
+                vis_fig(120 * 16, (120 - (int32_t)s * 120) * 16, 104 * 16, vis_song() + (v ? fm1_ms / 30000u : 0u));   /* (the saver: another every 30 s) */
             if (s && !v && (ui.hot_t || ui.msg_t)) {   /* (the knob: its name and value) */
                 char b[24];
                 const char *u;

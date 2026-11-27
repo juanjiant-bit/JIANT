@@ -3757,6 +3757,19 @@ static void gen_panel(void)
  * new sounds (sec_apply: a sound the player changed is held), SAVE keeps them, GLO + G4 undoes it. The emulator's RADIO
  * (web_gen_resound) also gives the four stored parts the new sounds. gen_rs_prep: the roles and the genre (0: nothing to
  * resound); gen_rs_apply: the sounds on the tracks (GEN's state as it was after) */
+/* (V10.8.59, the owner: "por cada canción que se genera, una visual bastante diferente") HOME > VISUAL's seed: OCT+'s
+ * (vis_seed) and the song's: GEN's piece (its seed and genre; MOOD and ENERGY the motion: calm a drift, dance a zoom on
+ * the beat) or the player's (the tracks' engines and sounds, the tempo); the section playing in the top byte (A..D:
+ * the same family, varied) */
+static uint32_t vis_song(void)
+{
+    uint32_t h = vis_seed, k;
+    for (k = 0; k < NTRK; k++)
+        h = h * 31u + trk[k].preset;
+    if (song_draft)
+        h = (vis_seed + gp.seed + gs.gi * 9973u) << 2 | (grd.mood < -15 ? 0u : gs.energy > 66u ? 2u : gp.seed & 3u);
+    return (h & 0xFFFFFFu) | (uint32_t)(chain.running ? chain.config.row[chain.row & 15u].slot & 3u : 0u) << 24;
+}
 static struct { uint8_t role[NTRK]; int16_t gi; uint16_t seed; } gen_rs __attribute__((section(".pool")));   /* (in the pool: no global of
                                                          * the RAM region moves) the roles, the genre (-1 EXPLORE), the seed */
 #define rs_role gen_rs.role

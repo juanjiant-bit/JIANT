@@ -291,53 +291,68 @@ static void graph_eco(void)
 /* (V10.8.58, the owner: "veamos qué se puede hacer con menos espacio") a role's colours by PALETTE: core, ground,
  * links, data; MIXED one of three duos a scene (a blue ground and orange links, green and red, violet and yellow),
  * THERMAL the heat ramp, the rest their own (data included) */
-static const uint16_t VIS_PC[8][4] = {{0, 0, 0, 0xFFFF}, {0xFB62, 0x2B7F, 0xFB62, 0xFFFF},
-                                      {0xF185, 0x3F2B, 0xF185, 0xFFFF}, {0xFD40, 0xFAC0, 0xFD40, 0xFD40},
-                                      {0xFFFF, 0x9CF3, 0xFFFF, 0xFFFF}, {0, 0x2B7F, 0xFB62, 0xFFFF},
-                                      {0, 0x3F2B, 0xF185, 0xFFFF}, {0, 0x6A5C, 0xFE60, 0x07FF}};
+#define VQ_KI vq.e[0]
+#define VQ_SN vq.e[1]
+#define VQ_HA vq.e[2]
+#define VQ_ME vq.e[3]
 #define VIS_H ((int8_t *)&vxs.wv[128])                  /* the output's history, 16 x 16 (LOFI's half of vxs.wv: it fills it
                                                          * again each frame it draws) */
+/* (V10.8.59, the owner: "por cada canción una visual bastante diferente, muy audio reactiva: que cambie la forma, la
+ * posición por cada golpe"; "todas deformadas y fusionadas con este motor") the hits: ki a kick (the scene thumps and
+ * jumps), sn a snare (the strips glitch apart), ha the hats (sparks), me a melodic note (the field's lobes jump; no the
+ * note), each falling back; jx jy the scene's offset, eased back; mo the scene's motion (0 a drift, 1 turning, 2 a
+ * zoom on the beat, 3 big jumps); ps the MIXED duo's step (every fourth kick) */
 static struct {
     uint32_t fr, r, t, sd;
-    int32_t lv, sp, pe, bx, by, k, px, py, oy;
-    uint8_t hr, na;
+    int32_t lv, bx, by, k, px, py, oy, jx, jy, am, e[4];   /* e: ki sn ha me */
+    uint8_t hr, na, mo, no, kc, ps;
+    uint16_t sg[NTRK];
     int16_t ax[8], ay[8];
 } vq __attribute__((section(".bss.tape")));
-/* a role's colour: 0 the core (4 its ring), 1 the ground, 2 the links, 3 the data; h 0..256 */
+/* a role's colour: 0 the core (4 its ring), 1 the ground, 2 the links, 3 the data; h 0..256. (V10.8.59) the heat ramp's
+ * hues: MIXED a duo from the seed (stepping every fourth kick), THERMAL the ramp itself, the rest their own; the data
+ * white but on AMBER and MONO's grey ground */
+static const uint8_t VIS_HU[6] = {0, 0, 120, 30, 170, 0};
 static VX_SEG uint16_t vc(uint32_t role, int32_t h)
 {
     uint32_t p = (uint32_t)vis_v[2] % 6u;
     uint16_t c;
-    if (!p) p = 6u + (vq.sd >> 3) % 3u;
     h = clamp(h, 0, 256);
     role &= 3u;
-    if (role < 3u && (p == 1u || (p >= 6u && !role)))
-        return vk_heat(h);
-    c = VIS_PC[p - 1u][role];
+    c = p == 1u ? vk_heat(h) : p == 5u ? (role == 1u ? 0x9CF3 : 0xFFFF) : role == 3u && p != 4u ? 0xFFFF :
+        vk_heat((int32_t)(((p ? VIS_HU[p] : (vq.sd >> 3) * 37u) + role * 90u) & 255u));
     return h < 96 ? ux_mix(0, c, 60) : c;
 }
-static VX_SEG void vp(uint32_t i, int32_t x, int32_t y, uint16_t c, int32_t a)   /* a polyline's point (i 0: the first) */
+/* a polyline's point (i 0: the first), through the scene's field: every layer bent by the same two waves (vq.am: WOBBLE,
+ * a note, a kick, the level; REACT), thumped bigger by a kick (twice in motion 2), jumped (jx jy), the strips pulled
+ * apart by a snare: the layers fused, never stamps */
+static VX_SEG void vp(uint32_t i, int32_t x, int32_t y, uint16_t c, int32_t a)
 {
-    x = vq.bx + (x * vq.k >> 8); y = vq.by + (y * vq.k >> 8);
+    int32_t k = vq.k + ((vq.k * VQ_KI >> 10) << (vq.mo == 2u));
+    x += vq.am * og_sin((uint32_t)y * (60u + (vq.sd & 63u)) + (vq.t << 4)) >> 15;
+    y += vq.am * og_sin((uint32_t)x * (70u + (vq.sd >> 6 & 63u)) - (vq.t << 4)) >> 16;
+    x = vq.bx + vq.jx + (x * k >> 8) + ((y & 64) ? VQ_SN : -VQ_SN) / 2;
+    y = vq.by + vq.jy + (y * k >> 8);
     if (i && a) og_line_a(vq.px, vq.py, x, y, c, a);
     vq.px = x; vq.py = y;
 }
 static VX_SEG void vm(void)            /* the point just drawn, marked for the data: a few, apart, on the screen */
 {
     int32_t x = vq.px >> 4, y = vq.py >> 4, n = vq.na;   /* (y on the screen: the strips draw the same points) */
-    if (n >= 2 + vis_v[0] / 34 || x < 16 || x > 176 || y + vq.oy < 14 || y + vq.oy > 226 ||
+    if (n >= 2 + (vis_v[0] >> 5) || x < 16 || x > 176 || y + vq.oy < 14 || y + vq.oy > 226 ||
         (n && (uint32_t)(x - vq.ax[n - 1] + 52) < 104u && (uint32_t)(y - vq.ay[n - 1] + 40) < 80u)) return;
     vq.ax[n] = (int16_t)x; vq.ay[n] = (int16_t)y; vq.na++;
 }
 static VX_SEG uint32_t vr(void) { return vx_rnd(&vq.r); }
-static VX_SEG void vring(int32_t x, int32_t y, int32_t r, uint16_t c, uint32_t dash)   /* wobbling, maybe dashed */
+static VX_SEG void vpo(uint32_t i, int32_t x, int32_t y, int32_t r, uint32_t a, uint16_t c, int32_t al)   /* polar */
+{
+    vp(i, x + (r * og_cos(a) >> 15), y + (r * og_sin(a) >> 15), c, al);
+}
+static VX_SEG void vring(int32_t x, int32_t y, int32_t r, uint16_t c, uint32_t dash)   /* (the field bends it), maybe dashed */
 {
     uint32_t i;
-    for (i = 0; i <= 40u; i++) {
-        uint32_t a = i * 1639u;
-        int32_t rr = r + (r * og_sin(a * 3u + vq.t * 40u) >> 15) * (vis_v[1] + vq.lv / 4) / 700;
-        vp(i, x + (rr * og_cos(a) >> 15), y + (rr * og_sin(a) >> 15), c, dash && (i & 1u) ? 0 : 256);
-    }
+    for (i = 0; i <= 40u; i++)
+        vpo(i, x, y, r, i * 1639u, c, dash && (i & 1u) ? 0 : 256);
 }
 static VX_SEG void vtxt(char *b, uint16_t c) { cv_text((vq.px >> 4) + 3, (vq.py >> 4) - 9, &AF_X, b, c); }
 static VX_SEG int32_t vh(uint32_t row, uint32_t col) { return VIS_H[((vq.hr - row) & 15u) * 16u + (col & 15u)]; }
@@ -345,7 +360,7 @@ static VX_SEG int32_t vh(uint32_t row, uint32_t col) { return VIS_H[((vq.hr - ro
  * 2 stars flying out of a vanishing point, streaks on the beat; 3 a rain of glyphs, the heads bright */
 static VX_SEG void vis_ground(uint32_t kind)
 {
-    uint32_t n = 8u + (uint32_t)vis_v[0] / 14u, i, j, d;
+    uint32_t n = 8u + ((uint32_t)vis_v[0] >> 4), i, j, d;
     int32_t S = 360 / (int32_t)n, h;
     if (kind >= 2u) {
         for (i = 0; i < (kind == 2u ? 4u : 2u) * n; i++) {
@@ -353,9 +368,8 @@ static VX_SEG void vis_ground(uint32_t kind)
             if (kind == 2u) {
                 z &= 255u;
                 h = (int32_t)(z * z >> 7);
-                vp(0, h * og_cos(a) >> 15, -150 + (h * og_sin(a) >> 15), 0, 0);
-                h += 6 + vq.sp / 3;
-                vp(1, h * og_cos(a) >> 15, -150 + (h * og_sin(a) >> 15), vc(1u, (int32_t)z), 256);
+                vpo(0, 0, -150, h, a, 0, 0);
+                vpo(1, 0, -150, h + 6 + (VQ_KI >> 2), a, vc(1u, (int32_t)z), 256);
             } else
                 for (j = 0; j < 6u; j++) {
                     char c2[2] = {(char)((j + a + (z >> 6)) % 10u + (j & 1u ? 'A' : '0')), 0};
@@ -369,9 +383,9 @@ static VX_SEG void vis_ground(uint32_t kind)
         for (i = 0; i < n; i++)
             for (j = 0; j < n; j++) {
                 uint32_t a = d ? j : i, b = d ? i : j;
-                h = vh(b * 16u / n, a * 16u / n) * (2 + vis_v[1] / 25);
+                h = vh(b * 16u / n, a * 16u / n) * (2 + (vis_v[1] >> 5));
                 vp(j, ((int32_t)a - (int32_t)b) * S, ((int32_t)a + (int32_t)b) * S / 2 - S * (int32_t)n / 2 - h, vc(1u, h * 2), 220);
-                if (!d && !kind && (a * 7u + b * 13u + vq.sd) % 11u == 0u) {
+                if (!d && !kind && !((a * 7u + b * 13u + vq.sd) & 7u)) {
                     char c2[2] = {(char)('0' + (uint32_t)h / 12u % 10u), 0};
                     vtxt(c2, 0xFFFF);
                     vm();
@@ -385,19 +399,19 @@ static const int8_t VIS_HD[] = {0, -86, 20, -84, 38, -77, 50, -64, 57, -50, 60, 
  * 1 a scanned head (crown, temples, cheekbones, jaw, neck; a thermal fill of scan lines by the tracks' levels, the eye
  * sockets);
  * never one shape at several sizes */
-static VX_SEG void vis_core(uint32_t k)
+static void vis_core(uint32_t k)
 {
-    uint32_t i, n = 8u + (uint32_t)vis_v[0] / 8u, s;
+    uint32_t i, n = 8u + ((uint32_t)vis_v[0] >> 3), s;
     int32_t x, y;
     if (!k) {
         vring(0, 0, 230, vc(3u, 256), 1);
-        vring(0, 0, 150 + vq.sp / 4, vc(4u, 230), 0);
+        vring(0, 0, 150 + (VQ_KI >> 3), vc(4u, 230), 0);
         for (i = 0; i < n; i++) {                       /* spokes from the hub, a node where they cross the skull */
             uint32_t a = i * 65536u / n + vq.sd;
-            vp(0, 14 * og_cos(a) >> 15, 14 * og_sin(a) >> 15, 0, 0);
-            vp(1, 150 * og_cos(a) >> 15, 150 * og_sin(a) >> 15, vc(2u, 220), 256);
+            vpo(0, 0, 0, 14, a, 0, 0);
+            vpo(1, 0, 0, 150, a, vc(2u, 220), 256);
             cv_rect((vq.px >> 4) - 1, (vq.py >> 4) - 1, 3, 3, 0xFFFF);
-            vp(1, 262 * og_cos(a) >> 15, 262 * og_sin(a) >> 15, vc(2u, 160), 180);
+            vpo(1, 0, 0, 262, a, vc(2u, 160), 180);
             cv_rect((vq.px >> 4) - 2, (vq.py >> 4) - 2, 5, 5, vc(2u, 256));
             if (i & 1u) vm();
         }
@@ -409,7 +423,7 @@ static VX_SEG void vis_core(uint32_t k)
     for (i = 1; i < sizeof VIS_HD / 2u; i++) {          /* scan lines, hot where the tracks sound */
         x = 2 * VIS_HD[2u * i] - 4; y = 2 * VIS_HD[2u * i + 1u];
         vp(0, -x, y, 0, 0);
-        vp(1, x, y, vc(0u, trk[i % NTRK].peak * 256 / 7000 + vq.lv / 3), 140);
+        vp(1, x, y, vc(0u, (trk[i % NTRK].peak >> 5) + (vq.lv >> 2)), 140);
     }
     for (i = 0; i < 2u; i++) {                          /* the eye sockets */
         vring(i ? 44 : -44, -24, 15 + vq.lv / 32, vc(3u, 256), 0);
@@ -423,11 +437,30 @@ static VX_SEG void vis_tick(void)
     uint32_t k;
     if (vq.fr == anim_fr)
         return;
-    lv = bg_energy() * vis_v[3] / 100;
+    lv = bg_energy() * vis_v[3] >> 7;
     vq.fr = anim_fr;
-    vq.sp = vq.sp * 7 / 8 > (lv - vq.pe) * 3 ? vq.sp * 7 / 8 : (lv - vq.pe) * 3;
-    vq.pe = vq.lv = lv;
+    vq.lv = lv;
     vq.t += 6u + (uint32_t)lv / 16u;
+    for (k = 0; k < NTRK; k++) {                        /* the hits: a track's new note (the sequencer, the keys, MIDI) */
+        const track_t *tr = &trk[k];
+        uint32_t n = tr->seq_n ? tr->seq_notes[0] : tr->nheld ? tr->held[0] : 0u, r;
+        uint16_t g = (uint16_t)(tr->seq_idx * 16u + tr->nheld + tr->rat_left);
+        if (n && g != vq.sg[k]) {
+            r = tr->engine != ENGI_DRUM ? 3u : n < 37u ? 0u : n < 41u ? 1u : 2u;   /* (GM's keys) a kick, a snare, hats; a note */
+            vq.e[r] = 255;
+            vq.no = (uint8_t)n;
+            if (!r) {                                   /* a kick: the scene jumps (motion 3 far), every fourth the duo steps */
+                r = vr();
+                vq.jx = ((int32_t)(r & 511u) - 256) << (vq.mo == 3u);
+                vq.jy = ((int32_t)(r >> 9 & 255u) - 128) << (vq.mo == 3u);
+            }
+        }
+        vq.sg[k] = g;
+    }
+    for (k = 0; k < 4u; k++)
+        vq.e[k] -= vq.e[k] >> 2;
+    vq.jx -= vq.jx >> 2; vq.jy -= vq.jy >> 2;
+    vq.am = (vis_v[1] + (VQ_ME >> 1) + (VQ_KI >> (vq.mo == 3u ? 1 : 2)) + (lv >> 2)) * vis_v[3] >> 6 << (vq.mo == 1u);
     if (!(anim_fr & 3u)) {
         vq.hr = (uint8_t)((vq.hr + 1u) & 15u);
         for (k = 0; k < 16u; k++) {
@@ -436,6 +469,7 @@ static VX_SEG void vis_tick(void)
         }
     }
 }
+static uint32_t vis_song(void);   /* (gen.c) */
 static void vis_fig(int32_t cx, int32_t cy, int32_t R, uint32_t sd)
 {
     uint32_t i, b, sx;
@@ -448,6 +482,8 @@ static void vis_fig(int32_t cx, int32_t cy, int32_t R, uint32_t sd)
     vq.sd = sd; vq.na = 0; vq.oy = 120 - (cy >> 4);
     vq.r = sd * 2654435761u | 1u;
     b = vr();
+    vq.mo = (uint8_t)(sd & 3u);
+    b ^= (sd >> 24) * 0x9E3779B8u & ~0x80013u;          /* (a section A..D: the same family, its ground and core kept) */
     sx = b & 4u;                                        /* the core's third (left or right); the links on the other */
     vq.bx = cx;                                         /* the ground low, its height and size from the seed */
     vq.by = cy + (110 + (int32_t)(b >> 10 & 3u) * 18) * R / 256; vq.k = (170 + (int32_t)(b >> 12 & 3u) * 24) * R / 256;
