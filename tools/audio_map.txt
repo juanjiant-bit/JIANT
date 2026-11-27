@@ -914,8 +914,8 @@ lock_held 198 text cur_page grid_on key_black key_place live_rec_sel name_on tse
 lock_id 84 text lock_page_ok motion_param trk_engp tsel_p
 lock_page_ok 68 text motion_param
 lofi_byte 1366 text
-lofi_byte_render 1038 text lofi_byte lofi_mut lofi_sync
-lofi_desc 84 text *
+lofi_byte_render 1260 text lofi_byte lofi_mut lofi_sync
+lofi_desc 106 text *
 lofi_float 3452 text mul64_sh15
 lofi_float_render 964 text lofi_float lofi_mut lofi_sync
 lofi_mut 126 text
@@ -1189,7 +1189,7 @@ panel_setup 538 text cv_begin cv_blit cv_text draw_text_box fm1_delay_ms fm1_enc
 panic_block 316 text midi_out_event_at midi_silence_track mo_flush_of mo_koff pfx_hush
 param_desc_of 36 text
 param_fit 42 text
-param_format 786 text desc_unit fmt_fix fmt_int name_of str_cpy vcons_q6
+param_format 818 text desc_unit fmt_fix fmt_int name_of str_cpy vcons_q6
 param_kept 52 text
 param_store_def 18 text param_desc_of
 param_turn 372 text enum_order enum_rank enum_skip name_of

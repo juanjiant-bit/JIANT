@@ -207,6 +207,8 @@ jobs:
           build/song-check/math-morph | tee build/song-check/math-morph.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/math_timelock_test.c -lm -o build/song-check/math-timelock   # (V10.8.62) MATH WAVE SYNC
           build/song-check/math-timelock | tee build/song-check/math-timelock.log
+          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/loopq_test.c -lm -o build/song-check/loopq   # (V10.8.66) MATH LOOP in WAVE SYNC
+          build/song-check/loopq | tee build/song-check/loopq.log
           cc -O1 -w -Wno-implicit-function-declaration -Ifirmware/src -Ifirmware/hal tests/lcd_panel_test.c -o build/song-check/lcd-panel   # (V10.8.63) MENU > PANEL A / B
           build/song-check/lcd-panel | tee build/song-check/lcd-panel.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/dx_math_test.c -lm -o build/song-check/dx-math

@@ -525,6 +525,11 @@ static void param_format(const param_desc_t *d, int32_t v, char *val, const char
         fmt_named = 1;
         return;
     }
+    if (d == &LOFI_LOOPQ && v <= 8) {                   /* (V10.8.66) MATH's LOOP in WAVE SYNC: the song's division */
+        str_cpy(val, N_LOOPQ[v < 0 ? 0 : v], 6);
+        fmt_named = 1;
+        return;
+    }
     if (d == &TP[P_LPHASE] && v < 0) {                  /* (0.6.51) the LFO's PHASE FREE */
         str_cpy(val, "FREE", 6);
         fmt_named = 1;

@@ -267,17 +267,38 @@ static __attribute__((noinline)) void lofi_byte_render(track_t *t, voice_t *v, i
                                                          * the tempo (at 120 BPM as C4's own), the fast
                                                          * ones (the pitch) the note's: every key the same pattern, in
                                                          * time, transposed; stopped, the bar free at the BPM */
+    uint32_t vsh = VH_SH(), lw = 0u, wn = 0u, iw = ~0u, s2 = 0u;   /* (V10.8.66) LOOP's window (lw on, wn its number,
+                                                         * iw the sample the next starts at, s2 the slow base from there) */
     if (lk) {
+        uint32_t lq = (uint32_t)p[P_E7] - 1u;
+        if (lq < 8u) {                                  /* (V10.8.66, JIANT BYTE 68b546c9's loopq) WAVE SYNC's LOOP
+                                                         * 1 .. 8: 4 BAR 2 BAR 1 BAR 1/2 1/4 1/8 1/16 1/32, a window of
+                                                         * the song's time (8192 a beat: 2^17 .. 2^10, a mask), aligned
+                                                         * to the transport; the note's t and its hold from 0 at each
+                                                         * window's start (9 .. 127: the window of t as ever) */
+            uint32_t sh = 17u - lq, d = (1u << sh) - (sb & ((1u << sh) - 1u)), rb = sr << vsh;
+            lw = 1u;
+            lm = 0xFFFFFFFFu;
+            wn = sb >> sh;
+            sb &= (1u << sh) - 1u;
+            if (d <= (n * rb) >> 16)                    /* (the next window in this block: its first sample) */
+                iw = ((d << 16) + rb - 1u) / rb;
+            if (v->ph[1] != wn)                         /* (a new window since the last block: the note's t from 0) */
+                tt = tf = 0u, cnt = 0;
+        }
         mul = lofi_motion(p[P_E4] & 127);
         sb = (sb >> 7) * 43u + ((sb & 127u) * 43u >> 7);   /* (x 0.336: at 120 BPM the rhythm as C4's today with */
         sr = sr * 43u >> 7;                             /* MOTION 0, its slow time's own rounding included) */
     }
     hold *= 1 + (p[P_E5] >> 3);                         /* (0.5.4) GRIT: each sample held up to 16 x longer */
-    uint32_t vsh = VH_SH();                             /* (V10.7.56) at half the rate: the hold half as many samples, */
     int32_t sk = vsh ? 3 : 2;                           /* the two smoothing poles squared (1/2 -> 3/4 a sample), SYNC's */
     hold = (hold + (int32_t)vsh) >> vsh;                /* step twice */
     sr <<= vsh;
+    if (iw < n)
+        s2 = 0u - ((iw * sr) >> 16);
     for (i = 0; i < n; i++) {
+        if (i == iw)                                     /* (V10.8.66: the song's next window, the note's t from 0) */
+            sb = s2, tt = tf = 0u, cnt = 0;
         if (--cnt <= 0) {
             uint32_t te;
             if (sy)                                      /* (SYNC: the slow bits at the bar's position) */
@@ -306,7 +327,7 @@ static __attribute__((noinline)) void lofi_byte_render(track_t *t, voice_t *v, i
     v->ph[2] = (uint32_t)l2;
     v->s[0] = held;
     v->s[1] = cnt;
-    v->ph[1] = ts;
+    v->ph[1] = lw ? wn + (iw < n) : ts;                 /* (V10.8.66: LOOP's window number; ts dead in SYNC) */
     v->s[2] = (int32_t)tt;
     v->s[4] = ic1;
     v->s[5] = ic2;
@@ -372,10 +393,15 @@ static __attribute__((noinline)) void lofi_float_render(track_t *t, voice_t *v, 
     v->ph[1] = ts;
 }
 
+/* (V10.8.66) LOOP with WAVE SYNC: 1 .. 8 the song's divisions by name (params.c param_format), 9 .. 127 its % */
+static const char *const N_LOOPQ[] = {"OFF", "4 BAR", "2 BAR", "1 BAR", "1/2", "1/4", "1/8", "1/16", "1/32"};
+static const param_desc_t LOFI_LOOPQ = {"LOOP", F_PCT, 0, 127, 0, 0};
 static const param_desc_t *lofi_desc(const track_t *t, uint32_t k)
 {
     if (k == 4u)                                        /* (the knobs' ranges past edit[]'s, as before) */
         return &LOFI_MOTN;
+    if (k == 7u && t->p[P_E1] == RW_BLOCK)              /* (V10.8.66: LOOP in SYNC, the song's divisions) */
+        return &LOFI_LOOPQ;
     if (t->p[P_E1] != RW_FLOAT)
         return k == 2u ? &LOFI_ALGO : 0;
     return k == 0u ? &LOFI_FALGB : k == 2u ? &LOFI_FALGO : k == 5u ? &LOFI_FDCY : k == 6u ? &LOFI_FMRPH : 0;
