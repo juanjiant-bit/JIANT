@@ -1323,7 +1323,8 @@ int main(void)
         printf("gen: the drums' share at most %.1f %% (%s); the mix %.1f dBFS RMS on average, the leveler's gain off its range %u times\n",
                100 * worst, wn, rms_db / n, lev_bad);
         bad += gcheck("(0.9.9-gen3) every genre x 2: the drums in front, 97 % of the parts' energy at most (p3), the leveler in its range, the mix loud",
-                      !over && !lev_bad && rms_db / n >= -21.0);   /* (V10.8.51: a genre's headroom, GTRIM: no piece over
+                      !over && !lev_bad && rms_db / n >= -22.5);   /* (V10.8.68, BYTE 77f2b602: the kits shorter and a third as
+                                                         * driven: -22.0 measured, -22.5 asked, was -21.0) */   /* (V10.8.51: a genre's headroom, GTRIM: no piece over
                                                          * -1 dBFS before the master, the limiter no longer squashing it: the
                                                          * mix -20.5 measured, -21.0 asked, was -16.0 asked) */   /* (V10.8.41, the owner: the basses under the drums in ten
                                                          * genres, jazz's cymbals down: -15.6 on average, was -15.5 asked;
@@ -1404,7 +1405,8 @@ int main(void)
         printf("gen: the mix pass: %u electronic pieces, the bass over 10 dB under the drums %u, a melodic part over 25 dB under %u, a part 3 dB over the drums %u, lists moved %u, MINIMAL's sub under 6 dB over %u\n",
                n, bass_bad, mel_bad, front_bad, list_bad, sub_bad);
         bad += gcheck("(the GENE mix pass) the electronic genres x 3: the bass and the melodic parts heard, the drums in front (MINIMAL's sub over them), the presets' lists kept",
-                      n >= 30u && bass_bad <= 2u && mel_bad <= 2u && front_bad <= 4u && !list_bad && !sub_bad);   /* (V10.7.56: 3, was 2: no voice taken from a pad any more, IDM GLITCH's +3.3 dB;
+                      n >= 30u && bass_bad <= 2u && mel_bad <= 2u && front_bad <= 8u && !list_bad && !sub_bad);   /* (V10.8.68, BYTE 77f2b602's lighter kits: 8 parts 3 dB
+                                                         * over them, was 4: 4 asked, now 8) */   /* (V10.7.56: 3, was 2: no voice taken from a pad any more, IDM GLITCH's +3.3 dB;
                                                          * V10.8.48: the envelopes by role, a bass's sustain 68 % at most: two
                                                          * basses ~11 dB under (WEST's, DEEP HOUSE's), EBM's sequenced bass over:
                                                          * 2 and 4, were 1 and 3) */
@@ -1648,7 +1650,8 @@ int main(void)
                         }
                     }
                 } else if (gi == 1u) {
-                    heavy += !rom && d->p[P_DIST] >= 40 && b->p[P_DIST] >= 30;
+                    heavy += !rom && d->p[P_DIST] >= 16 && b->p[P_DIST] >= 30;   /* (V10.8.68, BYTE's "too much distortion": the
+                                                         * heavy kits' DIST 16 .. 30, was 40 .. 60) */
                     if (gs.act[RL_ARP]) {
                         const track_t *ar = &trk[gs.trk_of[RL_ARP]];
                         for (p = 0; p < (uint32_t)ar->p[P_SLEN] && ar->step[p].time != ST_NOTE; p++) {}

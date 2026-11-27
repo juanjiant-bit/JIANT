@@ -25,7 +25,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAMDATA = {"SINE_Q", "DIV_DEN"}
 HOSTMAP = {"mix_part": "mix_part_m0", "mix_part_m": "mix_part_m", "fx_run": "fx_run0"}
 NAMES = {"101": "GEN EXPLORE s123 + CLOUD, delay, chorus", "102": "GEN EXPLORE s7 DANCE", "103": "GEN genre 7 s42",
-         "104": "GEN genre 12 s2024 DANCE", "105": "GEN EXPLORE s999", "0c": "CPU TEST's song, TRACKS 4"}
+         "104": "GEN genre 12 s2024 DANCE", "105": "GEN EXPLORE s999", "106": "GEN EXPLORE s321 CALM", "107": "GEN genre 3 s77 DANCE",
+         "108": "GEN NEO CLASSIC s5 CALM", "0c": "CPU TEST's song, TRACKS 4"}
 
 
 def sh(*a, **k):

@@ -31,7 +31,7 @@ int main(void)
     ui_power_on();
     {   /* (V10.8.40) MOOD MID: the pieces V10.8.39's, byte for byte (from power-on: the tracks' values and steps, the
          * song's, the kit; a checksum of 8 seeds in EXPLORE, RANDOM and HOUSE; V10.8.39's own, the same tool) */
-        static const uint32_t MID[3] = {0xee6fe401u, 0x8fd7e736u, 0x5a231927u};   /* (V10.8.51: a genre's headroom, GTRIM; V10.8.48: the envelopes by role, the filter types; V10.8.47: JAZZ's hats; V10.8.46 recorded again: a part never still; V10.8.45: the envelopes' rules; V10.8.42 too; V10.8.41: the generator rewritten genre by genre:
+        static const uint32_t MID[3] = {0xc0d93e12u, 0xcbe5be06u, 0x3c5eb14fu};   /* (V10.8.68 recorded again: JIANT BYTE 09ec6b57 / 77f2b602's generator, the kits shorter and less driven, EXPLORE's field and voices; V10.8.51: a genre's headroom, GTRIM; V10.8.48: the envelopes by role, the filter types; V10.8.47: JAZZ's hats; V10.8.46 recorded again: a part never still; V10.8.45: the envelopes' rules; V10.8.42 too; V10.8.41: the generator rewritten genre by genre:
          * this version's own pieces, recorded with GEN_MID=1; a change to the generator records them again) */
         uint32_t md, hs = 0, r, i;
         for (r = 1; r <= NGENRE; r++) if (str_eq(GENRE[r - 1u].name, "HOUSE")) hs = r;
@@ -235,7 +235,10 @@ int main(void)
                     grd.mood = 50; gen_make(); t = &trk[gs.trk_of[RL_DRUM]];
                     len = (uint32_t)clamp(t->p[P_SLEN], 1, NSTEP);
                     for (i = 0, k1 = 0; i < len; i += 4u) { kb += t->step[i].time == ST_NOTE && (t->step[i].hit & 1u); if (!(i & 15u)) k1 += t->step[i].time == ST_NOTE && (t->step[i].hit & 1u); }
-                    okd &= gs.act[RL_DRUM] && (ghalf() ? k1 == (len + 15u) / 16u : kb == (len + 3u) / 4u) && t->p[P_LN0] == 127 && (md == 1u || t->p[P_LEVEL] > lv0);
+                    okd &= gs.act[RL_DRUM] && (ghalf() ? k1 == (len + 15u) / 16u : kb == (len + 3u) / 4u) && t->p[P_LN0] > 0;   /* (V10.8.68, BYTE 77f2b602:
+                                                         * DANCE's drums under the rest: no longer its kick at 127, the drum
+                                                         * track over MID's) */
+                    (void)lv0;
                     grd.mood = 25; gen_make(); t = &trk[gs.trk_of[RL_DRUM]];
                     len = (uint32_t)clamp(t->p[P_SLEN], 1, NSTEP);
                     for (i = 0, k1 = 0; i < len; i += 8u) { k2 += t->step[i].time == ST_NOTE && (t->step[i].hit & 1u); if (!(i & 15u)) k1 += t->step[i].time == ST_NOTE && (t->step[i].hit & 1u); }
@@ -247,7 +250,7 @@ int main(void)
             bad += check("MOOD CALM -25: the kick, the snare, the kit's decay and filter under MID's, still there", okq);
             bad += check("MOOD CALM -50: every piece's kit silent but a low, short, dark closed hat (EXPLORE, RANDOM, HOUSE)", okc);
             bad += check("MOOD DANCE +25: every piece its drums, the kick on the bar's first and third beats (a half-time's, a break's: its one)", okh);
-            bad += check("MOOD DANCE +50: a kick on every beat (a half-time's, a break's: the bar's one), its level whole, the drums over MID's", okd);
+            bad += check("MOOD DANCE +50: a kick on every beat (a half-time's, a break's: the bar's one), heard", okd);
         }
     }
     printf(bad ? "gen-entry: %d FAILED\n" : "gen-entry: all ok\n", bad);

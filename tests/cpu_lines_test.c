@@ -5,7 +5,7 @@
  * than its instructions. Run under valgrind's lackey: each block of the scene between two stores to cl_mark, core 1's
  * work (mc_job) between two to cl_c1, each part (fx.c mix_part_t) between two to cl_part[k].
  *   cpu_lines_test SCENE NBLK      (SCENE hex: 101 GEN EXPLORE s123 ENERGY 85 with CLOUD, the delay and the chorus;
- *                                   102 .. 105 other GEN songs; 0c SAVE > TOOLS 6 CPU TEST's song (TRACKS 4))
+ *                                   102 .. 108 other GEN songs; 0c SAVE > TOOLS 6 CPU TEST's song (TRACKS 4))
  * CL_COST="c0,..,c5,fx" (us): each part's cost as the FM-1 measures it (mc_tk, mc_fx_tk), for the device's split */
 #include <stdint.h>
 #define UI_TEST_NO_MAIN 1
@@ -49,9 +49,10 @@ static uint32_t scene(uint32_t mask, uint32_t nblk)
     blk = 0;
     ui_power_on(); go_home(); frames(4);
     if (mask >= 0x100u) {                                /* GEN songs, TRACKS 6 */
-        static const struct { uint8_t g; uint16_t s; uint8_t e; int8_t m; } GS[6] = {
-            {0, 123, 85, 0}, {0, 123, 85, 0}, {0, 7, 90, 50}, {7, 42, 85, 0}, {12, 2024, 85, 50}, {0, 999, 100, 0}};
-        uint32_t k, gi = (mask & 0xFFu) < 6u ? mask & 0xFFu : 0u;
+        static const struct { uint8_t g; uint16_t s; uint8_t e; int8_t m; } GS[9] = {
+            {0, 123, 85, 0}, {0, 123, 85, 0}, {0, 7, 90, 50}, {7, 42, 85, 0}, {12, 2024, 85, 50}, {0, 999, 100, 0},
+            {0, 321, 80, -50}, {3, 77, 95, 60}, {19, 5, 60, -40}};   /* (V10.8.68) 106 EXPLORE CALM, 107 DANCE, 108 NEO CLASSIC CALM */
+        uint32_t k, gi = (mask & 0xFFu) < 9u ? mask & 0xFFu : 0u;
         ui_rec_prefs |= PREF_SIX >> 8; rp_apply();
         gp.genre = GS[gi].g ? GS[gi].g : GEN_EXPLORE; gp.seed = GS[gi].s; gp.energy = GS[gi].e; gp.form = 1;
         grd.mood = GS[gi].m;

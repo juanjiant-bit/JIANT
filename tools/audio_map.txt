@@ -483,7 +483,7 @@ fm1_irq_off 4 text
 fm1_irq_on 6 text
 fm1_lcd_wait 48 text
 fm1_led_dim_level 40 text
-fm1_main 9442 text ! autosave_poll autosave_sig bg_energy boot_splash bt_get bt_hw_seg bt_prox_tick bt_set bt_start chain_defaults chain_valid cpu_clock cpu_lost cv_begin cv_blit cv_text dbg_boot dlg_on draw_confirm draw_text_box ed_service fav_rows_new favorite_set fl_far fm1__sr_bits fm1_adc_read fm1_delay_ms fm1_enter_uboot fm1_guard_enable fm1_guard_lock_top fm1_led_dim_level fm1_mc_hold fm1_wdt_feed fm6_init fvb_boot fxg_chorus fxg_delay fxg_dist fxg_master fxg_reverb graph_adsr graph_eco graph_lfo home_param home_vis irq_save jam_load lcd_init lcd_panel_apply lcd_panel_is_b lcd_power lcd_sync ly_word macro_dice master_lvl master_poll memcpy memset mx_defaults name_on og_cos og_sin ota_crc16 ota_erase ota_fread ota_jl_enc ota_memeq ota_prog ota_rd16 ota_rd32 ota_read ota_reply_identity ota_show ota_take ota_unstage ota_wr16 ota_wr32 palette_to_stored panel_init panel_setup param_format power_sound_of proj_bound proj_fetch proj_import project_restore_runtime scr_fill scr_get scr_holes scr_wake scr_wake_now seg_missing seq_counting settings_import settings_init settings_poll settings_save song_index_load song_mode_restore song_poll splash_at split_cut split_track st_load steps_sig str_cpy str_len sy_entry track_defaults track_defaults_steps uh_task ui_draw_body ui_input ui_leds ui_message up_bank_check up_used upf_empty upf_valid usb_detach usb_serial_apply usb_start vc_io vis_new vis_pick vr vx_animal vx_draw
+fm1_main 9474 text ! autosave_poll autosave_sig bg_energy boot_splash bt_get bt_hw_seg bt_prox_tick bt_set bt_start chain_defaults chain_valid cpu_clock cpu_lost cv_begin cv_blit cv_text dbg_boot dlg_on draw_confirm draw_text_box ed_service fav_rows_new favorite_set fl_far fm1__sr_bits fm1_adc_read fm1_delay_ms fm1_enter_uboot fm1_guard_enable fm1_guard_lock_top fm1_led_dim_level fm1_mc_hold fm1_wdt_feed fm6_init fvb_boot fxg_chorus fxg_delay fxg_dist fxg_master fxg_reverb graph_adsr graph_eco graph_lfo home_param home_vis irq_save jam_load lcd_init lcd_panel_apply lcd_panel_is_b lcd_power lcd_sync ly_word macro_dice master_lvl master_poll memcpy memset mx_defaults name_on og_cos og_sin ota_crc16 ota_erase ota_fread ota_jl_enc ota_memeq ota_prog ota_rd16 ota_rd32 ota_read ota_reply_identity ota_show ota_take ota_unstage ota_wr16 ota_wr32 palette_to_stored panel_init panel_setup param_format power_sound_of proj_bound proj_fetch proj_import project_restore_runtime scr_fill scr_get scr_holes scr_wake scr_wake_now seg_missing seq_counting settings_import settings_init settings_poll settings_save song_index_load song_mode_restore song_poll splash_at split_cut split_track st_load steps_sig str_cpy str_len sy_entry track_defaults track_defaults_steps uh_task ui_draw_body ui_input ui_leds ui_message up_bank_check up_used upf_empty upf_valid usb_detach usb_serial_apply usb_start vc_io vis_new vis_pick vr vx_animal vx_draw
 fm1_mc_hold 120 text
 fm1_mc_park 96 text fm1_mc_hold
 fm1_p33_read 68 text fm1__p33_xfer
@@ -641,11 +641,11 @@ gen_drums_m 112 text gdrum_hit gen_drums
 gen_evolve 158 text
 gen_fxs 210 bt clamp gfxs_own grr
 gen_genre_next 44 text
-gen_kit 1826 text gch gclub gkit_math glatin grr memcpy memset
+gen_kit 1824 text gch gclub gkit_math glatin grr memcpy memset
 gen_knob_bt 344 bt accel clamp gen_amt_turn gen_genre_next
 gen_lead 4422 bt euclid gch gchord gen_riff gl_add gl_cad gl_ct gl_near gl_pal gl_write gnd gpickw gr grr gseed
-gen_make 8134 text chain_defaults dhold dlen dlevel gch gclear_all gclub gdna gdrum_clear_region gdrum_hit gen_drums_m gen_evolve gen_fxs gen_kit gen_mix gen_pick gen_post gen_role gen_scale_page gen_sound gform gkick_of glane_rat glatin gls_hash gls_prep gmot gmut_take gmute gnd gnote gplan gr grow grr gseed gtile gtriad_ok gwobble gx_engine gx_genre gx_prog gx_sound load_begin load_end macro_dice memcmp memcpy memset motion_clear motion_set_event pfx_lane_put rng section_load section_store set_engine_of steps_sig system_init
-gen_mix 1236 text gclub grr
+gen_make 8368 text chain_defaults dhold dlen dlevel gch gclear_all gclub gdna gdrum_clear_region gdrum_hit gen_drums_m gen_evolve gen_fxs gen_kit gen_mix gen_pick gen_post gen_role gen_scale_page gen_sound gform gkick_of glane_rat glatin gls_hash gls_prep gmot gmut_take gmute gnd gnote gplan gr grow grr gseed gtile gtriad_ok gwobble gx_engine gx_genre gx_prog gx_sound load_begin load_end macro_dice memcmp memcpy memset motion_clear motion_set_event pfx_lane_put rng section_load section_store set_engine_of steps_sig system_init
+gen_mix 1316 text gclub gmix_more grr
 gen_new_seed 246 text rng
 gen_on 20 text
 gen_pads 1710 bt clamp dhold gch gchord gchord_at gchord_root_pc gci gclub gnote gr grr gseed gvo_mode
@@ -662,7 +662,7 @@ gen_scale_page 380 text
 gen_sig 124 text
 gen_sound 2364 text apply_preset_to gch gnear gnever gpickw gr grg grr semi_pick set_engine_of track_desc trk_engp
 gen_texture 174 text dhold gch gchord gnote gseed gtone
-gen_tick 358 text gen_new_seed gen_press gst_put
+gen_tick 376 text gen_new_seed gen_press gst_put
 gen_value 480 text
 gform 52 text
 gfxs_own 96 text grr
@@ -704,6 +704,7 @@ glyph 68 text glyph_at
 glyph_at 58 text
 gm_level 66 text gz_get
 gminor 20 text
+gmix_more 216 bt clamp gch grr
 gmot 50 text motion_set_event
 gmut_take 38 text
 gmute 26 text
@@ -1393,7 +1394,7 @@ scale_mask 32 text
 scale_snap 52 text scale_mask
 scale_steps 112 text scale_mask scale_snap
 scene_drum_tick 272 text div_samples trk_note_off trk_note_on
-scene_follow 156 text * sc_track scene_follow_off
+scene_follow 156 text sc_track scene_follow_off
 scene_follow_off 82 text input_off mo_koff
 scene_key 322 text input_off kb_map midi_local_held mo_koff sc_track
 scn_notes 280 text chord_build_mode

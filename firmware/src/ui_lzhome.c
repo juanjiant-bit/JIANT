@@ -393,17 +393,19 @@ static VX_SEG void vis_mp(int32_t *p, uint16_t *c)
 /* (once a frame) the level, the hits, the time, the next picture */
 static void vis_tick(void)
 {
-    uint32_t k;
+    uint32_t k, cold = anim_fr - vq.fr > 8u;             /* (V10.8.68) back on the page (VISUAL or the saver): nothing of it ran
+                                                         * while away; its hits taken as they are, the pictures kept, whole */
     if (vq.fr == anim_fr)
         return;
     vq.lv = bg_energy() * vis_v[3] >> 7;
     vq.fr = anim_fr;
+    if (cold) { vq.ms = fm1_ms | 1u; vq.fi = 100; }
     vq.t += 2u + (uint32_t)vq.lv / 24u;
     for (k = 0; k < NTRK; k++) {                        /* the hits: a track's new note (the sequencer, the keys, MIDI) */
         const track_t *tr = &trk[k];
         uint32_t n = tr->seq_n ? tr->seq_notes[0] : tr->nheld ? tr->held[0] : 0u, r;
         uint16_t g = (uint16_t)(tr->seq_idx * 16u + tr->nheld + tr->rat_left);
-        if (n && g != vq.sg[k]) {
+        if (n && g != vq.sg[k] && !cold) {
             r = tr->engine != ENGI_DRUM ? 3u : n < 37u ? 0u : n < 41u ? 1u : 2u;   /* (GM's keys) a kick, a snare, hats; a note */
             vq.e[r] = 255 * vis_v[3] / 60;
             if (r < 2u) vq.bs = vr();                   /* (a kick, a snare: the breaks elsewhere) */

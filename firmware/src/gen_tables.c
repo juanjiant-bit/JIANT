@@ -972,13 +972,13 @@ static const uint8_t GC_LEN[3][3] = {{0, 48, 40}, {0, 24, 20}, {40, 28, 22}};   
  * up (tests/gen_test.c: the mix pass) */
 #define GMX(d, b, p, l, a, t) {(uint8_t)(((d) & 15) | ((b) & 15) << 4), (uint8_t)(((p) & 15) | ((l) & 15) << 4), (uint8_t)(((a) & 15) | ((t) & 15) << 4)}
 static const uint8_t GMIX[][3] = {
-    GMX(2, 7, -2, 0, 6, 0),   /* MINIMAL TECHNO (V10.8.41: the drums 3 dB up, the line that turns over them heard) */
+    GMX(2, 7, -2, 0, 6, 0),   /* MINIMAL TECHNO (V10.8.68: kept, not BYTE's 15 dB down: the owner's minimal its sub over the drums) (V10.8.41: the drums 3 dB up, the line that turns over them heard) */
     GMX(-3, 0, 0, 0, 7, 6),   /* HARD TECHNO (V10.7.2: the bass +1.5 dB, V10.6z10's basses ~1.8 under) */
-    GMX(-3, 7, 3, 7, 4, 6),   /* HARD BASS (V10.8.36: the arp +6 dB, 22 under the drums) */
+    GMX(-3, 3, 3, 7, 4, 6),   /* HARD BASS (V10.8.68: its bass 6 dB down) (V10.8.36: the arp +6 dB, 22 under the drums) */
     GMX(-1, 2, 1, 0, 7, 0),   /* HOUSE */
     GMX(-2, 4, 2, 0, 7, 0),   /* DEEP HOUSE (V10.7.2: the bass +1.5, z10's ~1.2 under) */
     GMX(-3, 1, -1, 0, 7, 0),   /* TECH HOUSE (V10.7.2: the bass +1.5, z10's ~1.6 under) */
-    GMX(-3, 4, 1, 0, 7, 5),   /* TRIBAL */
+    GMX(-3, 0, 1, 0, 7, 5),   /* TRIBAL (V10.8.68: the bass down, over the lighter kit by 7.6 dB; its level was at the top) */
     GMX(0, -3, 0, 6, 3, -2),   /* CUMBIA (the bass under the drums) (V10.8.41: the keyboard up front) (V10.8.36: the arp +4.5 dB, 21 under) */
     GMX(-1, 2, -5, 7, 6, 4),   /* REGGAETON (V10.8.41: the 808, the arp and the hook up) (V10.8.36: the hook +6 dB, 19 under the drums) (V10.7.8, the owner's reference: the drums up front, the 808 up, the pad, the hook
                                                          * and the arp under them, the pad under the arp) */
@@ -990,14 +990,14 @@ static const uint8_t GMIX[][3] = {
     GMX(-3, 0, 0, 3, 3, 4),   /* IDM AMBIENT */
     GMX(4, -3, 0, 2, 5, 3),   /* IDM WEIRD (V10.8.41: the drums 6 dB up) */
     GMX(-3, -1, 5, 7, 7, 5),   /* KRAUT */
-    GMX(-3, 7, 0, 7, 7, 0),   /* EBM (the owner's dark techno / industrial reference: its sub's rumble up; the
+    GMX(-3, -3, 0, 7, 7, 0),   /* EBM (V10.8.68: its sub 15 dB down, the lighter kit; its level at the top) (the owner's dark techno / industrial reference: its sub's rumble up; the
                                                          * other throws' FAT BASS as it was, at the level's top already) */
     GMX(0, 0, 4, 3, 2, 3),   /* NEO CLASSIC */
     GMX(0, -5, -2, 4, -2, 1),   /* ELECTRO METAL (V10.8.36: the arp +4.5 dB, 21 under; V10.8.48: the bass down, its peak at the limit: its level was at the top) */
     GMX(0, -3, 0, 3, 0, 1),   /* TECHNO ROCK */
     GMX(-1, 1, -3, 2, 2, 3),   /* DREAM POP (V10.8.41: the bass under the drums) (V10.8.36: the voice +4.5 dB, 23 under the drums) */
-    GMX(-4, 0, -2, 7, 7, 4),   /* PHONK (V10.7.2: the drums -1.5, z10's DNA ~2 dB over the parts) */
-    GMX(-3, 2, -3, 7, 7, 4),   /* BAILE FUNK (V10.8.36: the arp +4.5 dB) (V10.7.8: the 808 4.5 dB up, the chops under) */
+    GMX(-4, -2, -2, 7, 7, 4),   /* PHONK (V10.8.68: its 808 3 dB down) (V10.7.2: the drums -1.5, z10's DNA ~2 dB over the parts) */
+    GMX(-3, 0, -3, 7, 7, 4),   /* BAILE FUNK (V10.8.68: its 808 3 dB down) (V10.8.36: the arp +4.5 dB) (V10.7.8: the 808 4.5 dB up, the chops under) */
     GMX(0, -4, 0, 1, 0, -2),   /* JAZZ (V10.8.41: the bass 2 dB down; V10.8.48: its decay longer, another 3 down) */
     GMX(-3, -5, -1, 7, 5, 4),   /* HIP HOP */
     GMX(2, 5, -3, 6, 4, 3),   /* (V10.7.63) DUBSTEP (V10.8.41: its drums clean now, 6 dB up): the wobble up front (V10.8.36: the lead and the arp +6 dB) */
@@ -1131,17 +1131,17 @@ static const uint8_t GSUB_TR[] = {
 /* its keys: the SCALE page's modes of seven, the exotic ones likeliest (LOC too: its tonic chord a diminished one the
  * plan never takes, the other six degrees do) */
 static const uint8_t GX_SCALE[9] = {SC_MAJ, SC_MIN, SC_DOR, SC_MIX, SC_HARM, SC_PHRY, SC_LYD, 10u /* LOC */, SC_MEL};
-static const uint8_t GX_SCALE_W[9] = {2, 16, 10, 3, 16, 18, 8, 9, 14};   /* (V10.8.41, the owner: "EXPLORE darker": the minor modes) */
+static const uint8_t GX_SCALE_W[9] = {2, 16, 12, 3, 16, 18, 8, 2, 14};   /* (V10.8.68, BYTE's: LOC seldom; V10.8.41, the owner: "EXPLORE darker": the minor modes) */
 /* the lead's degrees over the mode: all seven, the pentatonics, hexatonics, a gapped one, an odd five */
 static const uint8_t GX_PAL[8] = {0x7Fu, 0x5Du, 0x37u, 0x6Fu, 0x3Bu, 0x77u, 0x2Du, 0x5Bu};
 /* the recipes a role may take (beyond its usual ones: a plucked bass, a bell lead, an organ texture ..) */
 static const uint8_t GX_BASS[14] = {SR_SUB, SR_ACID, SR_REESE, SR_FMBASS, SR_ROCKBASS, SR_HOOK, SR_WOW, SR_EBMBASS, SR_PLUCK, SR_CHIP, SR_GTR,
                                     SR_808, SR_UPRIGHT, SR_TECHBASS};
-static const uint8_t GX_PADS[13] = {SR_PAD, SR_STRINGS, SR_PIANO, SR_ORGAN, SR_EP, SR_STAB, SR_DUBCHORD, SR_HOOVER, SR_WALL, SR_GTR, SR_KEYS, SR_BELL, SR_DRONE};   /* (V10.6n:
+static const uint8_t GX_PADS[13] = {SR_PAD, SR_STRINGS, SR_PIANO, SR_ORGAN, SR_EP, SR_PAD, SR_DUBCHORD, SR_STRINGS, SR_WALL, SR_DRONE, SR_KEYS, SR_BELL, SR_DRONE};   /* (V10.8.68, BYTE's: more pads, STAB HOOVER out; V10.6n:
                                                          * no VOICE on the chords) */
 static const uint8_t GX_ARPS[8] = {SR_PLUCK, SR_BELL, SR_CHIP, SR_KEYS, SR_SINEKEY, SR_EP, SR_GTR, SR_STAB};
-static const uint8_t GX_LEADS[8] = {SR_LEAD, SR_VOXLEAD, SR_CHIP, SR_HOOVER, SR_BELL, SR_PLUCK, SR_WOW, SR_ORGAN};
-static const uint8_t GX_TEX[8] = {SR_NOISE, SR_TEXTURE, SR_DRONE, SR_CHOIR, SR_PAD, SR_ORGAN, SR_BELL, SR_STRINGS};
+static const uint8_t GX_LEADS[8] = {SR_LEAD, SR_VOXLEAD, SR_LEAD, SR_EP, SR_BELL, SR_PLUCK, SR_WOW, SR_ORGAN};   /* (V10.8.68, BYTE's) */
+static const uint8_t GX_TEX[8] = {SR_DRONE, SR_TEXTURE, SR_DRONE, SR_CHOIR, SR_PAD, SR_ORGAN, SR_BELL, SR_STRINGS};   /* (V10.8.68, BYTE's) */
 /* how often a role keeps the cycle (V10.6n: else half of it or a quarter, over one chord: gen.c gen_make) */
 static const uint8_t GX_KEEP[RL_N] = {60, 70, 80, 45, 45, 50};
 /* (the fix of V10.6n's: every loop on the bar) the lead's, the arp's, the texture's loop off the bar half the time:
@@ -1150,7 +1150,7 @@ static const uint8_t GX_LEN[10] = {12, 20, 24, 28, 36, 40, 44, 52, 56, 60};
 /* the step components it scatters (gen.c gx_comps): their weights on a melodic track */
 static const uint8_t GX_COMP[10] = {CP_RAND, CP_OCT, CP_BEND, CP_ECHO, CP_PULSE, CP_WALK, CP_CLIMB, CP_ARPQ, CP_ARPN,
                                     CP_TONAL};
-static const uint8_t GX_COMP_W[10] = {6, 14, 8, 14, 8, 6, 4, 10, 8, 8};   /* (V10.6l, the owner: no JUMP, no REV: steps
+static const uint8_t GX_COMP_W[10] = {2, 12, 3, 16, 6, 4, 4, 18, 16, 8};   /* (V10.8.68, BYTE's: RAND BEND seldom, arpeggios and echoes first) */   /* (V10.6l, the owner: no JUMP, no REV: steps
                                                          * thrown about are not music, V10.6v: gone; less RAND and WALK) */
 /* a DRUM-X sound's own way on a step (LM_X2 .. LM_FLAM) */
 static const uint8_t GX_LM_W[LM_N] = {0, 30, 14, 4, 20, 22, 10};
