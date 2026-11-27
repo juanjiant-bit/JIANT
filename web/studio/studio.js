@@ -1858,7 +1858,7 @@ const visSay = (x) => { $("visstat").textContent = x; };
 function visSong(o) {                                           // { seed, recipe, genre, energy, engines, section, palette?, mix?, deform?, react? }
   const key = [o.seed, o.recipe, o.genre, o.energy, o.engines].join(",");
   if (key !== vis.lastSong || !vis.R) {
-    vis.lastSong = key; vis.R = visRecipe(o.seed >>> 0, o.genre | 0, o.energy | 0, o.engines | 0, ((o.recipe | 0) + vis.rec) & 255);
+    vis.lastSong = key; vis.song = o; vis.cuts = {}; vis.cut = null; vis.R = visRecipe(o.seed >>> 0, o.genre | 0, o.energy | 0, o.engines | 0, ((o.recipe | 0) + vis.rec) & 255);
     vis.live = new VisLive(); vis.eng.set(vis.live, vis.R);
     if (!vis.knobs.user) { $("vismix").value = Math.round(vis.R.mix * 100); $("visreact").value = Math.round(vis.R.react * 100); }
     const C = vis.R.c;
@@ -1866,7 +1866,22 @@ function visSong(o) {                                           // { seed, recip
   }
   if (o.section != null && vis.live) vis.live.tick({ section: o.section });
 }
-function visTick(t) { if (vis.live) vis.live.tick(t); }
+/* cuts (VISGEN.md "Cuts"): a set of eight recipes per song (recipe bytes + 0..7); a kick moves one on, a snare three,
+   a new section back to the first; the one drawn j = (pos * (2 sec + 1) + sec) & 7; at most a cut every 150 ms */
+function visTick(t) {
+  if (!vis.live) return;
+  vis.live.tick(t);
+  const c = vis.cut || (vis.cut = { pos: 0, at: 0, sec: 0, j: 0 }), now = performance.now();
+  if (t.section != null && t.section !== c.sec) { c.sec = t.section & 3; c.pos = 0; }
+  else if (t.hits && now - c.at > 150) { if (t.hits & 2) c.pos += 3; else if (t.hits & 1) c.pos += 1; }
+  const j = (c.pos * (2 * c.sec + 1) + c.sec) & 7;
+  if (j !== c.j && vis.song) {
+    c.j = j; c.at = now;
+    const o = vis.song; vis.cuts = vis.cuts || {};
+    const key = `${vis.lastSong}:${j}`, R = vis.cuts[key] || (vis.cuts[key] = visRecipe(o.seed >>> 0, o.genre | 0, o.energy | 0, o.engines | 0, ((o.recipe | 0) + vis.rec + j) & 255));
+    vis.eng.rec = R;
+  }
+}
 /* JIANT BYTE over USB */
 function visPush(f, link) {
   if (!vis.on || link !== vis.link) return;
