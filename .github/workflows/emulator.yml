@@ -49,9 +49,12 @@ jobs:
               cp web/emu/transfer-api.h /tmp/emusrc/web/emu/transfer-api.h
               cat web/emu/transfer-api.h >> /tmp/emusrc/web/emu/felucca_web.c
             fi
+            # (V10.8.72) the pin is the public release (web/STABLE): no "(preview)" mark, and its SOURCE_COMMIT
+            PV=1; [ "$P" = "$(tr -d ' \n' < web/STABLE)" ] && PV=0
             if (cd /tmp/emusrc && python3 -c "import sys; sys.path.insert(0, 'tools'); import build; build.generate()" \
-                && sh web/emu/build.sh); then
+                && EMU_PREVIEW=$PV sh web/emu/build.sh); then
               rm -rf build/emu; mkdir -p build; cp -r /tmp/emusrc/build/emu build/emu
+              printf '%s\n' "$P" > build/emu/SOURCE_COMMIT
               echo "emulator: web/EMULATOR ${P::7}"
             else
               echo "Pinned emulator ${P::7} did not build"; exit 1
@@ -236,7 +239,7 @@ jobs:
         run: |
           mkdir -p build/pages/emu
           # (ports) devices.html beside what it loads (worklet.js, felucca.wasm, felucca_hp.wasm, fonts, index.html)
-          for f in index.html worklet.js fm1backup.js transfer.js transfer-ui.js felucca.wasm devices.html felucca_hp.wasm fonts; do
+          for f in index.html worklet.js fm1backup.js transfer.js transfer-ui.js felucca.wasm devices.html felucca_hp.wasm fonts SOURCE_COMMIT; do
             if [ -e "build/emu/$f" ]; then mv "build/emu/$f" build/pages/emu/; fi
           done
           # (the owner: "the public emulator with the version picker too") the public pin's page over emu-v's versions
