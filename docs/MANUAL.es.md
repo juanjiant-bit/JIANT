@@ -303,7 +303,8 @@ Todo lo que cambió desde la V10.6c, la última versión pública, en una lista;
   versión anterior (V10.6c) y guardalos de nuevo ahí.
 - **Proyectos más viejos retirados** (después de V10.7.13, lugar para FORM MY LOOP de GENE): los proyectos y backups
   guardados en los formatos FUN7 a FUNB (Felucca 1.0 / 1.1 y JIANT hasta 0.5) ya no se leen; al encender, un proyecto
-  así muestra **OLD PROJECT: NOT READ** y su slot queda vacío (la flash lo conserva hasta que guardes encima). El editor
+  así muestra **OLD PROJECT: NOT READ** (desde la V10.8.51: **OLD PROJECT: OPEN IN STUDIO**, ver
+  [Proyectos viejos](#proyectos-viejos-y-ajustes-viejos-v10851-v10859)) y su slot queda vacío (la flash lo conserva hasta que guardes encima). El editor
   web no los convierte: abrilos en V10.7.13 o anterior y guardalos de nuevo ahí (así quedan en el formato de hoy).
   También se fueron: las conversiones de presets de usuario viejos (SAMPLE PERC, TRIO, los chips de LOFI, valores de
   0.3 / 0.4: un preset así carga como estaba guardado, y si es de un motor retirado suena como ANALOG), la pista de un
@@ -2144,7 +2145,13 @@ blancas son los pasos del compás que se ve** (el compás del cursor, como en la
 - **PEGAR**: mantené una tecla de paso y **tocá REC**: el portapapeles cae desde ese paso, dando la vuelta dentro de LEN
   (4 pasos pegados en el 14 con LEN 16: 14 15 16 1).
 
-La pantalla dice **COPIED n STEPS** / **PASTED n STEPS**, y el pie muestra **[n]** mientras el portapapeles tiene algo.
+- **SELECCIONAR un rango** (V10.8.51): mantené dos o más teclas de paso: esos pasos quedan como la selección de la
+  pista para [SEQ EDIT](#seq-edit-seq-mantenido-v10853) (**SEL 5-8**).
+- **BORRAR un rango** (V10.8.50): mantené las teclas de paso y tocá **EDIT**: se borran todos los pasos entre la
+  primera y la última tecla (notas, componentes, locks), en un punto de UNDO.
+
+La pantalla dice qué pasos (V10.8.50): **COPY 5-8**, **PASTE 9-12**, **DUP 9-12**, **CLEAR 6-7**. El pie muestra **[n]**
+mientras el portapapeles tiene algo.
 Qué se copia: cada paso entero (notas, largo / TIEs, acento, slide, ratchet, MICRO, chance, los dos componentes con su
 LENGTH y N:M; en una pista DRUM los golpes, acentos y modos de sus carriles) y los parameter locks de esos pasos. El
 portapapeles queda al cambiar de pista, compás o sección: elegí otra pista y pegá. **DRUM <-> melódico** se rechaza
@@ -2155,23 +2162,27 @@ para grabar** las teclas escriben (o graban) notas, así que copiar y pegar espe
 DRUM las teclas blancas siguen siendo los pasos (una tecla apretada en un paso vacío para copiar o pegar no deja su golpe
 ahí). En el roll las teclas mantenidas siguen sonando sus notas.
 
-**Una secuencia entera**: mantené **SEQ** (SEQ TOOLS, en cualquier página de SEQ) y apretá **E5 COPY SEQ**: los pasos
-1 a LEN de la pista van al mismo portapapeles. **F5 PASTE SEQ** (apagada mientras el portapapeles está vacío)
-reemplaza toda la secuencia de la pista elegida por lo copiado, desde el paso 1, con el LEN de la copia (**NOTHING
-COPIED** si no hay nada). Sirve en otra pista o después de cambiar de parte; DRUM ↔ melódico se rechaza como arriba;
-UNDO lo deshace.
+**Una secuencia entera**: mantené **SEQ** (SEQ EDIT, en cualquier página de SEQ) sin pasos seleccionados (antes **G3**
+si hay) y apretá **E5 COPY**: los pasos 1 a LEN de la pista van al mismo portapapeles. **F5 PASTE** reemplaza toda la
+secuencia de la pista elegida por lo copiado, desde el paso 1, con el LEN de la copia (**NOTHING COPIED** si no hay
+nada). Sirve en otra pista o después de cambiar de parte; DRUM ↔ melódico se rechaza como arriba; UNDO lo deshace. Con
+pasos seleccionados, E5 copia esos pasos y F5 pega en el primer paso de la selección.
+
+**Duplicar** (V10.8.50): en SEQ EDIT, **C5 DUP** pega la selección (sin selección: toda la pista) justo después de sí
+misma y alarga LEN para que entre (64 como mucho: **NO ROOM**).
 
 **Una parte en otra** (A → B): mantené **SAVE**, apretá **F3** (PLAY A; sonando entra en el compás siguiente) y,
 cuando ya suena A, **D4** (**SAVE B**): B queda con lo que tenía A. Parado, SAVE › PART SLOTS lo hace con nombres:
 PLAY/EDIT A y después SAVE en B ([12](#copiar)).
 
 **Una fila de ARRANGE**: en HOME › ARRANGE, **KNOB 1** a la fila y **OCT+**: una copia justo después, elegida (16
-filas como mucho).
+filas como mucho). La pantalla dice **ROW DUPLICATED** (V10.8.52; **ROW ADDED** en un tema vacío).
 
 | Para copiar | Gesto |
 | --- | --- |
 | Pasos (dos teclas: un rango; las teclas 1 y 16: el compás) | teclas de paso mantenidas + girar **SELECT**; pegar: un paso mantenido + **REC** |
-| La secuencia entera de una pista | SEQ mantenido + **E5 COPY SEQ**; pegar: SEQ mantenido + **F5 PASTE SEQ** |
+| La secuencia entera de una pista | SEQ mantenido + **E5 COPY** (sin selección); pegar: SEQ mantenido + **F5 PASTE** |
+| Pasos justo después de sí mismos | SEQ mantenido + **C5 DUP** |
 | La parte A en la parte B | SAVE mantenido + **F3** (PLAY A), después SAVE mantenido + **D4** (SAVE B) |
 | Una fila de ARRANGE | **OCT+** en ARRANGE |
 
@@ -2241,12 +2252,14 @@ su propio paso (MICRO 0), sea cual sea REC GRID. Parado, el arpegio arranca desd
 
 | Para borrar | Hacé |
 | --- | --- |
-| Los pasos y la automatización de la pista seleccionada | **REC mantenido + F3**, o SAVE > TOOLS > CLEAR SEQ, o SEQ TOOLS F3 |
+| Los pasos y la automatización de la pista seleccionada | **REC mantenido + F3**, o SAVE > TOOLS > CLEAR SEQ |
+| Los pasos de la pista seleccionada (o solo los seleccionados) | **F3 CLEAR** de SEQ EDIT (SEQ mantenido) |
 | Los pasos y la automatización de las seis pistas, y el carril de punch-in | **SEQ mantenido + REC**, después OCT+ |
-| **Todo** (NEW PROJECT): cada pista con su sonido de encendido (V10.7.11: T1 DRUM-X ACOUSTIC, T2 ANALOG PLUCK, T3 PHASE INIT SAW, T4 FM6 FM BASS, T5 VOICE CHANT, T6 ANIMAL WHISTLE, seco), sin pasos ni automatización; mezcla, efectos, tempo y SLICER por defecto; el arreglo vacío, las macros en 0, el kit DRUM-X de fábrica. Quedan los proyectos guardados, los presets de usuario, el MENU, CLOCK, TUNE y MIDI | **MENU > SYSTEM > INIT SYSTEM** o **SAVE > TOOLS > 5 NEW PROJECT**, después OCT+ (UNDO devuelve la música) |
+| **Todo** (NEW PROJECT): cada pista con su sonido de encendido (V10.7.11: T1 DRUM-X ACOUSTIC, T2 ANALOG PLUCK, T3 PHASE INIT SAW, T4 FM6 FM BASS, T5 VOICE CHANT, T6 ANIMAL WHISTLE, seco), sin pasos ni automatización; mezcla, efectos, tempo y SLICER por defecto; el arreglo vacío, las macros en 0, el kit DRUM-X de fábrica. Quedan los proyectos guardados, los presets de usuario, el MENU, CLOCK, TUNE y MIDI | **SAVE > TOOLS**, TARGET PROJECT, ACTION **CLEAR** (CLEAR PROJECT?), después OCT+ (UNDO devuelve la música) |
 | *(no borra)* Una canción de prueba pesada, para medir la CPU en el equipo y escuchar si hay clics (cada pista viva con acordes de cuatro notas, dos componentes por paso y glides largos, el kit con todos los carriles, todos los FX, 160 BPM) | **SAVE > TOOLS > 6 CPU TEST**, OCT+, después PLAY (UNDO devuelve tu música) |
 | Solo la automatización de una parte en la pista seleccionada | **REC mantenido + FX / EDIT / ENV / LFO / SCL / ARP / GLO** |
-| La automatización de la pista, conservando los pasos | SEQ TOOLS **F4 CLR AUTO**, o SEQ > AUTOMATION > CLEAR |
+| La automatización de la pista, conservando los pasos | **F4 CLR AUTO** de SEQ EDIT (con pasos seleccionados: solo la de ellos), o SEQ > AUTOMATION > CLEAR |
+| Algunos pasos | teclas de paso mantenidas + **EDIT** (V10.8.50) |
 
 Al borrar una pista aparece **T3 CLEARED** con **SEQ+REC: ALL TRACKS** debajo, como recordatorio de la combinación
 para todas las pistas.
@@ -2834,12 +2847,24 @@ siendo la capa REC (CLICK, REC Q, A3 …), y un toque de REC sigue armando la gr
 **UNDO cubre**: DICE ALL, un sonido tirado a los dados, una pista borrada (REC F3, TOOLS CLEAR SEQ), CLEAR ALL
 SEQUENCES (SEQ + REC), NEW PROJECT, INIT y RECALL (capa EDIT o TOOLS), borrar la automatización
 (SEQ > AUTOMATION) y una sección cargada con **SAVE › PART SLOTS › LOAD**. Restaura la música tal como estaba: sonidos,
-pasos, automatización, el kit, el carril de punch-in, las macros, el tempo y los efectos globales.
+pasos, automatización, el kit, el carril de punch-in, las macros, el tempo y los efectos globales. También cubre cada
+acción de **SEQ EDIT** y un rango borrado con teclas de paso + EDIT (V10.8.49–V10.8.53), un **RESOUND** (V10.8.54),
+**DICE MACROS** (V10.8.64) y una parte guardada encima con la capa SAVE, SAVE + C4–F4 o SAVE + OCT+ (V10.8.52: GLO +
+G4 devuelve lo que tenía la parte; otra vez: la vuelve a guardar).
 
 **UNDO no cubre**: saltos de sección, cadenas rápidas y RECALL desde la capa SAVE, cambiar de proyecto con KNOB 1 de
-la capa SAVE, CLEAR SONG, borrar una fila, SONG REC, nada de lo guardado (secciones, presets de usuario), cargas de
-presets de usuario, sonidos elegidos con PRESETS, acciones de SEQ TOOLS, ni giros comunes de perilla. No está
+la capa SAVE, CLEAR SONG, borrar una fila, SONG REC, los demás guardados (SAVE › PART SLOTS, SAVE › PROJECTS, presets
+de usuario), cargas de presets de usuario, sonidos elegidos con PRESETS, ni giros comunes de perilla. No está
 disponible mientras suena un tema (**SONG PLAYS: STOP IT TO EDIT**). Guarda un solo paso, en RAM: se pierde al apagar.
+
+### RESOUND (GLO mantenido + A4, V10.8.54)
+
+Para un tema que te gusta con sonidos que no: mantené **GLO** y apretá **A4**. Cada pista que toca una parte recibe un
+**sonido nuevo para su rol**: un bajo, un bajo; los acordes, un sonido de acordes; la batería, otro kit. Las notas, los
+pasos, el patrón y el tema quedan; las partes siguientes conservan los sonidos nuevos y la música sigue sonando. En un
+tema generado los sonidos salen de su género; en un tema tuyo, de un género cercano a su tempo. Cada vez es una tirada
+nueva (la pantalla dice **RESOUND #1234**); **GLO + G4** devuelve los sonidos (un punto de UNDO). Si no hay nada para
+cambiar: **NOTHING TO RESOUND**. El mapa de GLO nombra a A4 **RESOUND** (V10.8.71).
 
 ---
 
@@ -2864,7 +2889,10 @@ sonidos de la pista, como en todos lados.
 - El pie dice **FX · DELAY · DLY 2  7/20**; el encabezado muestra la pista, **T1**, en naranja.
 - Los dibujos siguen a los valores (un giro los redibuja) y, mientras suena o reproduce, al sonido (0.8.5, FX en
   vivo): los ecos se inflan con el nivel y un pulso corre por ellos, la cola de la reverb se infla y una línea la
-  recorre, las ondas del chorus corren a RATE, el slicer enmarca el paso que suena, el medidor de MASTER sigue la
+  recorre, las ondas del chorus corren a RATE (V10.8.53: el **DELAY** dibuja cada eco como una **columna** de celdas
+  de calor, la primera tan alta como MIX, cada una más baja según FEEDBK, tan separadas como TIME, la que suena en
+  amarillo, con **1/8 · 5 ECHOES** arriba; la REVERB su cola en columnas de celdas; el CHORUS dos senoides), el slicer
+  enmarca el paso que suena, el medidor de MASTER sigue la
   salida, el nivel de DIST es un punto en su curva, el punto de AUTO PAN oscila.
   Detenido y en silencio quedan quietos (los dibuja solo la pantalla; nada del tiempo del audio).
 
@@ -3277,13 +3305,23 @@ Mantené SAVE y apretá **C4–F4** (**SAVE A–D**; la pantalla dice **SAVED A*
 del proyecto actual, u **OCT+** (SAVE) para guardar en la sección que está sonando. Esto funciona **mientras suena**, sin poner nombre. El guardado queda en **RAM al
 instante y pasa a la flash cuando parás**. Si apagás antes de parar, se pierde — así que pará antes de apagar.
 
+**Guardar encima de una parte** (V10.8.52): si la parte ya tiene música, la pantalla primero pregunta **OVERWRITE
+A?**, con **UNDO: GLO + G4** abajo. **OCT+** guarda, **OCT−** deja la parte como estaba. Pregunta una vez por cada
+parte, hasta que se abra otro proyecto. Después de guardar, **GLO + G4** devuelve lo que tenía la parte; apretalo otra
+vez para guardar de nuevo. Una parte vacía se guarda directo.
+
 ### Copiar
 
 - **Una sección a otra letra**: abrila con PLAY/EDIT y guardala (SAVE) en la otra letra (SAVE › PART SLOTS); o,
   sonando, mantené SAVE y apretá F3 (PLAY A) y después D4 (SAVE B). Ver [Copiar, pegar y duplicar](#copiar-pegar-y-duplicar).
 - **El tema entero a otro proyecto** ("guardar como"): parado, SAVE › PROJECTS, **KNOB 1** al otro proyecto (no se
-  abre), **KNOB 4** SAVE, **OCT+** (ver [SAVE SONG AS](#save-song-as-save--project)). En la pantalla NAME, **KNOB 3**
-  elige SONG (todo) o LOOP (solo la música de ahora).
+  abre), **KNOB 4** SAVE, **OCT+** (ver [SAVE SONG AS](#save-song-as-save--project)). Un proyecto con música pregunta
+  antes **OVERWRITE PROJECT n?**. En la pantalla NAME, **KNOB 3** elige SONG (todo) o LOOP (solo la música de ahora);
+  la pantalla dice **SAVED SONG n** (o **SAVED LOOP n**).
+- **Un borrador del generador** (V10.8.52): guardado así, el borrador **termina**: el proyecto n queda como el
+  proyecto abierto desde ahí, así que SAVE + C4, las escrituras en la flash y el autoguardado van ahí, y **RESTORE
+  LAST** trae este tema de vuelta después de apagar. (Antes de la V10.8.52 seguía siendo un borrador y RESTORE LAST
+  devolvía la música de antes del generador.)
 
 ### Cambiar de proyecto
 
@@ -3327,6 +3365,19 @@ encender), así que **SAVE, OCT+, OCT+** guarda el sonido de la pista selecciona
 - **No** guarda el **kit DRUM-X** (ese vive en las secciones del proyecto).
 - Cargar uno carga solo el sonido.
 - Tus presets de usuario también aparecen al recorrer con PRESETS, después de los sonidos de fábrica.
+
+### Proyectos viejos y ajustes viejos (V10.8.51, V10.8.59)
+
+- **Los proyectos guardados antes de la V10.7** (de antes del bus del SLICER, con los componentes de paso de antes de
+  la 0.9.9, un motor retirado como SAMPLE, PHYS, GRAIN o SLICE, o la vieja parte de batería GM) **ya no se convierten al
+  cargarlos** (V10.8.51). Cargar uno dice **OLD PROJECT: OPEN IN STUDIO** (LOAD ya no dice EMPTY SLOT para ellos). El
+  proyecto **nunca se borra ni se pisa al cargarlo**: queda en la flash como estaba. Abrilo con el conversor de **JIANT
+  Studio**, que lo carga y lo guarda en el formato de hoy; o hacé antes un respaldo completo.
+- Los formatos muy viejos (FUN7 a FUNB: Felucca 1.0 / 1.1 y JIANT hasta la 0.5) dicen lo mismo, pero el conversor de
+  Studio tampoco los lee: abrilos en la V10.7.13 o anterior y guardalos de nuevo ahí.
+- **Ajustes** (V10.8.59): los primeros formatos de ajustes, PER1 y PER2 (los de Felucca, de antes de JIANT 0.6), ya
+  no se migran. Si tu FM-1 todavía los tenía, los ajustes globales (el MENU) arrancan una vez con sus valores de
+  fábrica; volvé a ponerlos. Los formatos posteriores (PER3, PER4) se leen como siempre.
 
 ### Preguntas frecuentes sobre guardar
 
@@ -3406,19 +3457,21 @@ la pista seleccionada.
 SYSTEM; frena en la primera y en la última), **ALGORITHM** salta a la pestaña siguiente / anterior (a su primera fila),
 **cualquier perilla** u **OCT+ / OCT−** cambia el valor; PRESETS acá no hace nada. HOME lo cierra (en ese momento se
 guarda la configuración). La pantalla muestra las filas de la pestaña, las cuatro de la fila elegida como tarjetas
-(ROWS 1–4 / ROWS 5–6; DISPLAY: ROWS 5–8; CONTROL también ROWS 9–12, las cuatro de las teclas) con el número de su perilla; las pestañas arriba, el pie **MENU · DISPLAY ·
-SKIN  2/26**. El encabezado dice MENU · DISPLAY.
+(ROWS 1–4, ROWS 5–8, ROWS 9–12) con el número de su perilla; las pestañas arriba, el pie **MENU · DISPLAY ·
+SCOPE  2/37**. El encabezado dice MENU · DISPLAY.
 
 | Pestaña | Fila | Valores |
 | --- | --- | --- |
 | DISPLAY | COLOR | GREY, GREEN, AMBER, ICE, VIOLET, ROSE, PAPER, HI-CON, NIGHT, MONO, **JIANT** (por defecto) |
-| DISPLAY | SKIN | **AIR** (de fábrica en los ajustes nuevos), COLORS, BOTTOM, HUD — (0.8.9; AIR 0.9.7) ver [Pieles](#pieles-air-colors-bottom-hud-089-air-097) |
 | DISPLAY | SCOPE | **OFF** (de fábrica), ON — (0.9.7) las páginas EDIT de un motor: OFF la criatura en todo el panel, centrada, el nombre de la página y el del sonido chiquitos en sus esquinas; ON la criatura a la izquierda, la carta SCOPE y las fichas como antes. Los ajustes guardados antes de 0.9.7 cargan OFF |
-| DISPLAY | STYLE | FLAT, LINE |
 | DISPLAY | LARGE | OFF, ON (etiquetas y valores grandes) |
 | DISPLAY | ANIM | ON, OFF (los valores saltan directo; la firma de encendido aparece entera) |
 | DISPLAY | LEDS | OFF, DIM LO, **DIM HI** (por defecto), INV — (0.7.3) los LEDs del brillo de reposo se turnan cuadro a cuadro, así el brillo ya no zumba por el parlante cuando la música para |
 | DISPLAY | SCREEN OFF | **NEVER** (por defecto), 5 MIN, 15 MIN, 30 MIN, 60 MIN |
+| DISPLAY | SAVER | OFF, 1 MIN, **3 MIN** (de fábrica), 5 MIN, 10 MIN — (V10.8.56) el protector de pantalla: una figura de VISUAL después de ese tiempo sin tocar el panel; ver [VISUAL y SAVER](#visual-y-saver-v10856v10867) |
+| DISPLAY | HELP | ON, OFF — (V10.7.60) qué hace una perilla, en el encabezado, donde no es obvio, y la línea de ayuda de JAM y TAKE |
+| DISPLAY | PRESETS | **SCROLL** (la perilla PRESETS recorre los sonidos), MENU (la lista se abre al girar) — (V10.7.81) |
+| DISPLAY | PANEL | **AUTO** (de fábrica), A, B — (V10.8.63) cómo se configura la pantalla; ver [PANEL](#panel-las-pantallas-de-fines-de-2026-v10863) |
 | CONTROL | HOLD | 0.3 s, **0.4 s** (por defecto), 0.5 s, 0.6 s — cuánto tarda un botón mantenido en abrir su capa |
 | CONTROL | KNOB ACCEL | **ON** (por defecto), OFF |
 | CONTROL | FX LATCH | **OFF** (por defecto desde 0.6.64), ON |
@@ -3445,11 +3498,10 @@ SKIN  2/26**. El encabezado dice MENU · DISPLAY.
 | SYSTEM | CPU CLOCK | **360 MHZ** (por defecto), 320 MHZ — desde el próximo arranque |
 | SYSTEM | BLUETOOTH | **OFF**, ON (MIDI por Bluetooth: ADV, después CONN), AIR (solo escucha: PROX y SWARM) — OCT+ en la fila abre la página PROX (FAR / NEAR); ver [Bluetooth](#midi-por-bluetooth-y-prox-v1013v1020) |
 | SYSTEM | CALIBRATION | OCT+ abre HARDWARE CALIBRATION (enseñarle cada botón y perilla) |
-| SYSTEM | INIT SYSTEM | OCT+ pregunta, y después todo vuelve a cero para una canción nueva (como SAVE > TOOLS > NEW PROJECT; UNDO devuelve la música) |
-| SYSTEM | ABOUT | OCT+ abre: versión, código QR, AUDIO LOAD (NOW, PEAK, LATE, SHED desde el encendido, los núcleos, las voces y el tiempo de cada pista), **LAST CRASH** (se conserva al apagar) y créditos (se desplaza con SELECT, OCT− vuelve). V10.8.45 sacó las líneas del reloj y los rieles de la CPU y las líneas hexadecimales de un cuelgue desde el encendido |
+| SYSTEM | ABOUT | OCT+ abre: versión, código QR, **LAST CRASH** (se conserva al apagar) y créditos (se desplaza con SELECT, OCT− vuelve). V10.8.45 sacó las líneas del reloj y los rieles de la CPU y las líneas hexadecimales de un cuelgue desde el encendido; V10.8.49 las líneas AUDIO LOAD (el número del encabezado muestra la carga) |
 
-Si escuchás clicks, abrí ABOUT y mirá **LATE** (bloques de audio que llegaron tarde) y **SHED** (voces que la
-protección desvaneció): una foto de esa pantalla ayuda cuando reportás un problema.
+INIT SYSTEM ya no está en el MENU: lo hace **SAVE › TOOLS › CLEAR PROJECT**. Si escuchás clicks, mirá el número de
+carga del encabezado y el **LAST CRASH** de ABOUT: una foto de esa pantalla ayuda cuando reportás un problema.
 
 ---
 
