@@ -2047,9 +2047,28 @@ async function peTrack(L, k) {
     const eng = {}; for (let id = pe.pe0; id < pe.pcount; id++) { try { eng[id] = parseDesc(await L.link.request(5, [0, id], 800)); } catch (_) {} }
     const D = await L.link.request(29, [k], 900), vals = {};
     for (let id = 0; id < pe.pcount; id++) vals[id] = v14(D, 3 + id * 2);
-    pe.params[k] = { eng, vals };
+    const spec = await peSpecials(L, k);
+    pe.params[k] = { eng, vals, spec };
   } finally { try { await L.link.request(27, [pe.sel], 900); } catch (_) {} pe.busy = false; }
   peSay("");
+}
+/* a track's special ids (INFO caps bit 4; FM 1.4, BYTE v1.1b4): values beside the parameters, no P_* slot. FM: id
+   P_COUNT + k, DESC 0 id, TRACK_PARAM track id. BYTE: the page id less 0x80, DESC 2 w, TRACK_PARAM 64 + track w.
+   Firmware without them does not answer: a short timeout, and the first silence ends the probe */
+const PE_SPEC = { fm: [0, 1, 2, 3], byte: [0x50, 0x51, 0x52, 0x53, 0x6d, 0x6e, 0x6f] };
+const peSpecArgs = (k, id) => (state.fw === "byte" ? [64 + k, id] : [k, id]);
+async function peSpecials(L, k) {
+  if (pe.desc.noSpec) return {};
+  const ids = state.fw === "byte" ? PE_SPEC.byte : PE_SPEC.fm.map((j) => pe.pcount + j), out = {};
+  const descs = pe.desc.spec || (pe.desc.spec = {});
+  for (const id of ids) {
+    try {
+      if (!descs[id]) descs[id] = parseDesc(await L.link.request(5, [state.fw === "byte" ? 2 : 0, id], 500));
+      const a = await L.link.request(31, peSpecArgs(k, id), 500, (r) => r[1] === id);
+      out[id] = { d: descs[id], v: v14(a, 2) };
+    } catch (_) { if (!Object.keys(out).length && !Object.keys(descs).length) pe.desc.noSpec = true; break; }
+  }
+  return out;
 }
 function peSound(body, L) {
   body.replaceChildren();
@@ -2060,8 +2079,8 @@ function peSound(body, L) {
   pe.tracks.forEach((tr, k) => { const b = el("button", "btn" + (k === pe.trk ? "" : " ghost"), `T${k + 1} · ${tr.engine}`); b.type = "button"; b.onclick = async () => { pe.trk = k; if (!pe.params[k]) await peTrack(L, k); renderPe(); }; bar.append(b); });
   body.append(bar);
   const P = pe.params[pe.trk]; if (!P) { body.append(el("p", "dim", tp("peReading"))); return; }
-  const knob = (id, d) => {
-    const v = P.vals[id], box = el("div", "pek" + (v !== d.def ? " chg" : "")), lab = el("label"), out = el("b"), show = (x) => { out.textContent = d.names && d.names.length ? (d.names[x - d.min] ?? x) : `${x}${d.unit ? " " + d.unit : ""}`; };
+  const knob = (id, d, spec) => {
+    const v = spec ? P.spec[id].v : P.vals[id], box = el("div", "pek" + (v !== d.def ? " chg" : "")), lab = el("label"), out = el("b"), show = (x) => { out.textContent = d.names && d.names.length ? (d.names[x - d.min] ?? x) : `${x}${d.unit ? " " + d.unit : ""}`; };
     lab.append(document.createTextNode(d.label), out); show(v);
     let ctl;
     if (d.names && d.names.length && d.max - d.min < 40) { ctl = el("select"); d.names.forEach((n, i) => { const o = el("option", null, n); o.value = d.min + i; ctl.append(o); }); ctl.value = v; }
@@ -2069,8 +2088,8 @@ function peSound(body, L) {
     ctl.setAttribute("aria-label", d.label);
     let tm = 0;
     ctl.addEventListener("input", () => {
-      const x = +ctl.value; show(x); P.vals[id] = x; box.classList.toggle("chg", x !== d.def);
-      clearTimeout(tm); tm = setTimeout(() => L.link.request(31, [pe.trk, id, (x + 8192) & 127, (x + 8192) >> 7], 800).catch(() => peSay(tp("peFail"))), 30);
+      const x = +ctl.value; show(x); if (spec) P.spec[id].v = x; else P.vals[id] = x; box.classList.toggle("chg", x !== d.def);
+      clearTimeout(tm); tm = setTimeout(() => L.link.request(31, [...(spec ? peSpecArgs(pe.trk, id) : [pe.trk, id]), (x + 8192) & 127, (x + 8192) >> 7], 800).catch(() => peSay(tp("peFail"))), 30);
     });
     box.append(lab, ctl); return box;
   };
@@ -2094,6 +2113,10 @@ function peSound(body, L) {
   cb.type = "checkbox"; cb.checked = !!pe.onlyChanged; cb.onchange = () => { pe.onlyChanged = cb.checked; renderPe(); };
   only.append(cb, document.createTextNode(" " + tp("peOnlyChanged"))); body.append(only);
   group(`${pe.tracks[pe.trk].engine}`, Object.keys(P.eng).map(Number), P.eng);
+  const S = P.spec || {}, sg = (title, ids) => { const g = el("div", "pegrid"); for (const id of ids) if (S[id] && S[id].d.label && (!pe.onlyChanged || S[id].v !== S[id].d.def)) g.append(knob(id, S[id].d, true)); if (g.children.length) body.append(el("p", "pegrp", title), g); };
+  const sk = Object.keys(S).map(Number);
+  sg("FX › OTT", sk.filter((id) => state.fw === "byte" ? id >= 0x50 && id <= 0x53 : id >= pe.pcount));
+  sg("EDIT · NOISE · CRUSH · LIFE", sk.filter((id) => state.fw === "byte" && id >= 0x6d));
   group(tp("peTrackParams"), Object.keys(C).map(Number).filter((id) => !pe.onlyChanged || (C[id] && P.vals[id] !== C[id].def)), C);
 }
 /* ---- a control for a described parameter (DESC): a slider or a list; set calls back as it moves */
@@ -2215,7 +2238,10 @@ async function peGen(body) {
   if (r.state && !pe.genOrig) pe.genOrig = r.state.slice();
   pe.genNow = r.state || null;
   const G = pe.genres || [], name = (g) => (g === -1 ? "EXPLORE" : g === -2 ? "RANDOM" : G[g] || String(g));
-  const changed = pe.genOrig && pe.genNow && pe.genOrig.some((v, k) => v !== pe.genNow[k]);
+  /* BYTE v1.1b4's 44 ints: [19] the regenerations' count (−1: more than 8), then that many {kind, index, salt}; the
+     entries past them are leftovers, not compared */
+  const genUsed = (st) => (st.length > 19 ? st.slice(0, 20 + 3 * Math.max(0, Math.min(8, st[19] < 0 ? 8 : st[19]))) : st);
+  const changed = pe.genOrig && pe.genNow && (() => { const a = genUsed(pe.genOrig), b = genUsed(pe.genNow); return a.length !== b.length || a.some((v, k) => v !== b[k]); })();
   body.append(el("p", "pegrp", tp("peGenNow")), el("p", "", `${name(i[1])} · ${t("rdSeed")} ${i[2]} · MOOD ${i[3] > 0 ? "+" : ""}${i[3]} · ENERGY ${i[4]} · ${RD_FORMS[i[5]] || "?"}`));
   const act = async (cmd, arg) => { await e.gen(cmd, arg); renderPe(); };
   const row = el("div", "emuctl"), gsel = el("select"), mood = el("input"), nb = el("button", "btn", tp("peGenNew"));
