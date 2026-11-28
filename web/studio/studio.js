@@ -98,6 +98,16 @@ const TEXT = {
     visSrc: "Fuente", visSrcUsb: "%s por USB (la receta del equipo)", visSrcEmu: "El emulador", visStart: "▶ Empezar", visStop: "Parar", visPal: "PALETA", visNew: "Otra receta",
     visNoEmu: "Prendé el emulador (pestaña Emulador) y volvé a empezar.", visOld: "El equipo no respondió: los visuales por USB necesitan JIANT BYTE con VIS.", visNone: "VIS no disponible en esta versión de JIANT BYTE. Probá con el emulador o con cualquier aparato MIDI.", visNoneEmu: "VIS no disponible en esta versión de JIANT BYTE: Studio dibuja con lo que suena el emulador.",
     tourV_visT: "Visuales", tourV_vis: "Visuales generativos que se mueven con la música, para proyectar.", tourV_visH: "Con BYTE, el emulador o cualquier MIDI.",
+    vPe: "Proyecto", peTitle: "El proyecto entero", peLead: "Todo el proyecto en grande: SONG, SEQ, SONIDO, MOD · MIX y GEN. Guardalo en un archivo, mandalo al FM-1 o traelo. Funciona con el FM-1 por USB y con el emulador. Hoy anda SONIDO; las otras pestañas llegan a medida que el firmware suma lo que necesitan.",
+    peUnnamed: "SIN NOMBRE", peImport: "Abrir .%s", peExport: "Guardar .%s", peSend: "Enviar al FM-1", peFetch: "Traer del FM-1", peSound: "SONIDO",
+    peSoon_song: "SONG llega con el firmware que guarda las secciones de cada canción (mutes, patrón, FILL, mutación y automatización): las secciones sobre las 6 pistas, para arrastrar y estirar.",
+    peSoon_seq: "SEQ llega con el largo de nota, la probabilidad y el micro-timing en el firmware: un piano roll por pista.",
+    peSoon_mod: "MOD · MIX llega en la próxima entrega: la matriz completa con montos ±200 %, niveles, paneo, envíos y efectos.",
+    peSoon_gen: "GEN llega cuando el emulador pueda regenerar una pista o una sección: género, semilla, MOOD, ENERGY, y lo que cambiaste respecto del original.",
+    peNoDev: "Conectá el FM-1 o prendé el emulador.", peAsk: "Leé las pistas del proyecto que está sonando.", peRead: "Leer el proyecto", peReading: "Leyendo…", peFail: "No se pudo completar", peTrackParams: "Pista (comunes)", peOnlyChanged: "Ver solo las que cambiaron (las otras están en su valor de fábrica)",
+    peSaved: "Archivo guardado.", peLoaded: "Abierto: %s. Tocá «Enviar al FM-1» para cargarlo.", peBadFile: "Ese archivo no es un proyecto de Studio.", peNoFile: "Primero abrí un archivo de proyecto.",
+    peSendConfirm: "Se va a reemplazar la música de %n por «%s». Antes queda un backup completo en este navegador. ¿Seguir?", peSending: "Enviando… ", peSent: "Listo: el proyecto está en el FM-1.", peBefore: "Antes de enviar un proyecto",
+    tourV_peT: "Proyecto", tourV_pe: "El proyecto entero en grande: guardarlo, enviarlo y editar todo el sonido.", tourV_peH: "Hoy anda SONIDO; el resto llega con el firmware.",
     vAn: "Análisis", anTitle: "Análisis: los datos exactos", anLead: "Lee del FM-1 o del emulador todo lo que tiene: cada pista con su motor, preset, nivel y cada parámetro con su nombre y valor (y cuáles cambiaron), los globales y los efectos, los pasos, la canción y el generador. Con el emulador escucha además unos segundos: nivel, picos, cuánto sostiene cada pista y su espectro. Bajá el archivo o copiá el resumen y pasalo tal cual.",
     anGo: "Analizar", anSteps: "Incluir los pasos", anAudio: "Escuchar 8 s del emulador", anFrom: "De: %s (elige la pista de a una un instante y vuelve a la tuya)", anNoDev: "Conectá el FM-1 o prendé el emulador.",
     anDone: "Listo.", anFail: "No se pudo leer todo", anJson: "Bajar el archivo (JSON)", anCopy: "Copiar el resumen", anCopied: "Resumen copiado.", anNoCopy: "No se pudo copiar: seleccioná el texto.",
@@ -296,6 +306,16 @@ const TEXT = {
     visSrc: "Source", visSrcUsb: "%s over USB (the device's recipe)", visSrcEmu: "The emulator", visStart: "▶ Start", visStop: "Stop", visPal: "PALETTE", visNew: "Another recipe",
     visNoEmu: "Switch the emulator on (Emulator tab) and start again.", visOld: "The device did not answer: visuals over USB need JIANT BYTE with VIS.", visNone: "VIS is not available in this JIANT BYTE version. Try the emulator or any MIDI device.", visNoneEmu: "VIS is not available in this JIANT BYTE version: Studio draws from what the emulator plays.",
     tourV_visT: "Visuals", tourV_vis: "Generative visuals moving with the music, to project.", tourV_visH: "With BYTE, the emulator or any MIDI device.",
+    vPe: "Project", peTitle: "The whole project", peLead: "The whole project, big: SONG, SEQ, SOUND, MOD · MIX and GEN. Keep it in a file, send it to the FM-1 or fetch it. Works with the FM-1 over USB and with the emulator. SOUND works today; the other tabs arrive as the firmware adds what they need.",
+    peUnnamed: "UNTITLED", peImport: "Open .%s", peExport: "Save .%s", peSend: "Send to the FM-1", peFetch: "Fetch from the FM-1", peSound: "SOUND",
+    peSoon_song: "SONG arrives with the firmware that keeps each song's sections (mutes, pattern, FILL, mutation and automation): the sections over the 6 tracks, to drag and stretch.",
+    peSoon_seq: "SEQ arrives with note length, probability and micro-timing in the firmware: a piano roll per track.",
+    peSoon_mod: "MOD · MIX arrives in the next delivery: the full matrix with ±200 % amounts, levels, pan, sends and effects.",
+    peSoon_gen: "GEN arrives when the emulator can regenerate one track or one section: genre, seed, MOOD, ENERGY, and what you changed from the original.",
+    peNoDev: "Connect the FM-1 or switch the emulator on.", peAsk: "Read the tracks of the project playing.", peRead: "Read the project", peReading: "Reading…", peFail: "Could not complete", peTrackParams: "Track (common)", peOnlyChanged: "Show only the changed ones (the rest are at their defaults)",
+    peSaved: "File saved.", peLoaded: "Opened: %s. Press “Send to the FM-1” to load it.", peBadFile: "That file is not a Studio project.", peNoFile: "Open a project file first.",
+    peSendConfirm: "The music on %n will be replaced by “%s”. A full backup is kept in this browser first. Go on?", peSending: "Sending… ", peSent: "Done: the project is on the FM-1.", peBefore: "Before sending a project",
+    tourV_peT: "Project", tourV_pe: "The whole project, big: keep it, send it and edit all of its sound.", tourV_peH: "SOUND works today; the rest comes with the firmware.",
     vAn: "Analysis", anTitle: "Analysis: the exact data", anLead: "Reads everything the FM-1 or the emulator holds: each track with its engine, preset, level and every parameter by name and value (and which ones changed), the globals and effects, the steps, the song and the generator. From the emulator it also listens for a few seconds: level, peaks, how long each track sustains and its spectrum. Download the file or copy the summary and pass it on as it is.",
     anGo: "Analyze", anSteps: "Include the steps", anAudio: "Listen to 8 s of the emulator", anFrom: "From: %s (selects each track for an instant and goes back to yours)", anNoDev: "Connect the FM-1 or switch the emulator on.",
     anDone: "Done.", anFail: "Not everything could be read", anJson: "Download the file (JSON)", anCopy: "Copy the summary", anCopied: "Summary copied.", anNoCopy: "Could not copy: select the text.",
@@ -596,7 +616,7 @@ try {
   window.navShow = () => { const b = nv.querySelector('[aria-current="page"]'); if (b) nv.scrollTo({ left: b.offsetLeft - (nv.clientWidth - b.offsetWidth) / 2, behavior: "smooth" }); edges(); };
   setTimeout(edges, 50);
 }
-const VIEWS = ["home", "install", "editor", "screen", "emu", "rec", "proj", "wt", "radio", "an", "vis", "learn", "docs", "rescue", "ports"];
+const VIEWS = ["home", "install", "editor", "screen", "emu", "rec", "proj", "pe", "wt", "radio", "an", "vis", "learn", "docs", "rescue", "ports"];
 function go(view, push = true) {
   if (!VIEWS.includes(view)) view = "home";
   state.view = view;
@@ -1982,6 +2002,119 @@ $("visnew").onclick = () => { vis.rec = (vis.rec + 1) & 255; vis.lastSong = ""; 
 $("visfull").onclick = () => { const st = $("visstage"); document.fullscreenElement ? document.exitFullscreen() : st.requestFullscreen && st.requestFullscreen().catch(() => {}); };
 for (const id of ["vismix", "visreact"]) $(id).addEventListener("input", () => { vis.knobs.user = true; });
 $("vispal").replaceChildren(...VP_NAMES.map((n, i) => { const o = document.createElement("option"); o.value = i; o.textContent = n; return o; }));
+/* ------------------------------------------------------------------------------------------- project editor */
+/* the whole project (the approved mock-up: SONG SEQ SOUND MOD·MIX GEN): a file (.b1t3 on JIANT BYTE, .jfm on JIANT
+ * FM) holding the device's objects (BACKUP 65-67, as a full backup) with the project's name and the generator's state;
+ * sent to the FM-1 or fetched from it (a copy of what was there kept in this browser first); SOUND live: every
+ * parameter of each track by name (TRACK 27, TRACK_DUMP 29, DESC 5 with that track selected for a moment), set as it
+ * moves (TRACK_PARAM 31). SONG, SEQ, MOD·MIX and GEN come as the firmware adds what they need */
+const pe = { tab: "sound", trk: 0, info: null, tracks: [], params: {}, desc: {}, busy: false, name: "" };
+const PE_TABS = [["song", "SONG"], ["seq", "SEQ"], ["sound", "peSound"], ["mod", "MOD · MIX"], ["gen", "GEN"]];
+const peSay = (x) => { $("pestat").textContent = x; };
+function peExt() { return state.fw === "byte" ? "b1t3" : "jfm"; }
+function renderPe() {
+  if (!$("pebody")) return;
+  const L = projLink();
+  $("pename").value = pe.name || ""; $("pename").placeholder = t("peUnnamed");
+  $("petags").textContent = pe.info ? `${pe.info.version}${pe.gen ? " · " + pe.gen : ""}` : L ? L.name : t("bkNoDev");
+  for (const id of ["peexport", "pesend", "pefetch"]) $(id).disabled = !L || pe.busy;
+  $("peexport").textContent = t("peExport").replace("%s", peExt()); $("peimport").textContent = t("peImport").replace("%s", peExt());
+  $("petabs").replaceChildren(...PE_TABS.map(([k, n]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = TEXT[lang][n] ? t(n) : n; b.setAttribute("aria-pressed", String(pe.tab === k)); b.onclick = () => { pe.tab = k; renderPe(); }; return b; }));
+  const body = $("pebody");
+  if (pe.tab !== "sound") { body.innerHTML = ""; const p = document.createElement("p"); p.className = "dim"; p.textContent = t("peSoon_" + pe.tab); body.append(p); return; }
+  peSound(body, L);
+}
+async function peLoad(L) {                                       // the tracks, and each one's parameters by name
+  const a = await L.link.request(1, [], 900); pe.info = parseInfo(a);
+  const ia = a, nm = []; let i = 0; while (ia[i]) i++; i++;
+  pe.pcount = ia[i + 1]; pe.pe0 = ia[i + 4];
+  const T = await L.link.request(27, [], 900), sel = T[0], n = T[1];
+  pe.tracks = Array.from({ length: n }, (_, k) => ({ engine: pe.info.engines[T[2 + k * 6]] || "?", preset: T[3 + k * 6] }));
+  pe.sel = sel;
+}
+async function peTrack(L, k) {
+  peSay(t("peReading"));
+  pe.busy = true;
+  try {
+    const common = pe.desc.common || (pe.desc.common = {});
+    if (!Object.keys(common).length) for (let id = 0; id < pe.pe0; id++) { try { common[id] = parseDesc(await L.link.request(5, [0, id], 800)); } catch (_) {} }
+    await L.link.request(27, [k], 900);
+    const eng = {}; for (let id = pe.pe0; id < pe.pcount; id++) { try { eng[id] = parseDesc(await L.link.request(5, [0, id], 800)); } catch (_) {} }
+    const D = await L.link.request(29, [k], 900), vals = {};
+    for (let id = 0; id < pe.pcount; id++) vals[id] = v14(D, 3 + id * 2);
+    pe.params[k] = { eng, vals };
+  } finally { try { await L.link.request(27, [pe.sel], 900); } catch (_) {} pe.busy = false; }
+  peSay("");
+}
+function peSound(body, L) {
+  body.replaceChildren();
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  if (!L) { body.append(el("p", "dim", t("peNoDev"))); return; }
+  if (!pe.tracks.length) { const b = el("button", "btn", t("peRead")); b.type = "button"; b.onclick = async () => { try { await peLoad(L); await peTrack(L, pe.trk); } catch (e) { peSay(t("peFail")); } renderPe(); }; body.append(el("p", "dim", t("peAsk")), b); return; }
+  const bar = el("div", "petrk");
+  pe.tracks.forEach((tr, k) => { const b = el("button", "btn" + (k === pe.trk ? "" : " ghost"), `T${k + 1} · ${tr.engine}`); b.type = "button"; b.onclick = async () => { pe.trk = k; if (!pe.params[k]) await peTrack(L, k); renderPe(); }; bar.append(b); });
+  body.append(bar);
+  const P = pe.params[pe.trk]; if (!P) { body.append(el("p", "dim", t("peReading"))); return; }
+  const knob = (id, d) => {
+    const v = P.vals[id], box = el("div", "pek" + (v !== d.def ? " chg" : "")), lab = el("label"), out = el("b"), show = (x) => { out.textContent = d.names && d.names.length ? (d.names[x - d.min] ?? x) : `${x}${d.unit ? " " + d.unit : ""}`; };
+    lab.append(document.createTextNode(d.label), out); show(v);
+    let ctl;
+    if (d.names && d.names.length && d.max - d.min < 40) { ctl = el("select"); d.names.forEach((n, i) => { const o = el("option", null, n); o.value = d.min + i; ctl.append(o); }); ctl.value = v; }
+    else { ctl = el("input"); ctl.type = "range"; ctl.min = d.min; ctl.max = d.max; ctl.value = v; }
+    ctl.setAttribute("aria-label", d.label);
+    let tm = 0;
+    ctl.addEventListener("input", () => {
+      const x = +ctl.value; show(x); P.vals[id] = x; box.classList.toggle("chg", x !== d.def);
+      clearTimeout(tm); tm = setTimeout(() => L.link.request(31, [pe.trk, id, (x + 8192) & 127, (x + 8192) >> 7], 800).catch(() => peSay(t("peFail"))), 30);
+    });
+    box.append(lab, ctl); return box;
+  };
+  const group = (title, ids, src) => { const g = el("div", "pegrid"); for (const id of ids) { const d = src[id]; if (d && d.label && d.label !== "-") g.append(knob(id, d)); } if (g.children.length) body.append(el("p", "pegrp", title), g); };
+  const C = pe.desc.common, only = el("label", "chk"), cb = el("input");
+  cb.type = "checkbox"; cb.checked = !!pe.onlyChanged; cb.onchange = () => { pe.onlyChanged = cb.checked; renderPe(); };
+  only.append(cb, document.createTextNode(" " + t("peOnlyChanged"))); body.append(only);
+  group(`${pe.tracks[pe.trk].engine}`, Object.keys(P.eng).map(Number), P.eng);
+  group(t("peTrackParams"), Object.keys(C).map(Number).filter((id) => !pe.onlyChanged || (C[id] && P.vals[id] !== C[id].def)), C);
+}
+/* the project file: the device's objects (a full backup) with the name and the generator */
+async function peCapture(L) {
+  return captureBackup(bkRequest(L.link), L.name, (d, n) => { $("peprog").hidden = false; $("pebar").style.width = `${Math.round(d / n * 100)}%`; peSay(t("bkWorking") + `${Math.round(d / n * 100)} %`); });
+}
+$("peexport").onclick = async () => {
+  const L = projLink(); if (!L) return;
+  await exclusive(async () => {
+    try {
+      const backup = await peCapture(L), e = emuApi(), g = e && e.gen ? await e.gen(null, 0).catch(() => null) : null, gi = g && rdInfo(g.info);
+      const file = { format: state.fw === "byte" ? "jiant-b1t3" : "jiant-fm-project", version: 1, firmware: L.name, created: new Date().toISOString(), name: $("pename").value || t("peUnnamed"),
+        gen: gi ? { genre: gi[1], seed: gi[2], mood: gi[3], energy: gi[4], form: gi[5] } : null, web: {}, backup };
+      download(new Blob([JSON.stringify(file)], { type: "application/json" }), `${(file.name || "project").replace(/[^\w-]+/g, "_")}.${peExt()}`);
+      peSay(t("peSaved"));
+    } catch (err) { peSay(t("peFail") + ` (${err.message})`); }
+    $("peprog").hidden = true;
+  });
+};
+$("peimport").onclick = () => $("pefile").click();
+$("pefile").onchange = async () => {
+  const f = $("pefile").files[0]; $("pefile").value = ""; if (!f) return;
+  try { const file = JSON.parse(await f.text()); if (!file.backup) throw new Error("format"); readBackup(file.backup); pe.file = file; pe.name = file.name || ""; peSay(t("peLoaded").replace("%s", file.name || f.name)); }
+  catch (_) { peSay(t("peBadFile")); }
+  renderPe();
+};
+$("pesend").onclick = async () => {
+  const L = projLink(); if (!L || !pe.file) { peSay(t("peNoFile")); return; }
+  if (!confirm(t("peSendConfirm").replace("%s", pe.file.name || "").replace("%n", L.name))) return;
+  await exclusive(async () => {
+    try {
+      const before = await peCapture(L), now = new Date();
+      await bkDb.put({ name: `${t("peBefore")} · ${L.name} · ${stamp(now)}`, created: now.toISOString(), fw: state.fw, firmware: L.name, summary: bkSummary(before), file: before });
+      await restoreBackup(bkRequest(L.link), pe.file.backup, (d, n) => { $("pebar").style.width = `${Math.round(d / n * 100)}%`; peSay(t("peSending") + `${Math.round(d / n * 100)} %`); });
+      pe.params = {}; pe.tracks = []; peSay(t("peSent"));
+    } catch (err) { peSay(t("peFail") + ` (${err.message})`); }
+    $("peprog").hidden = true; renderPe();
+  });
+};
+$("pefetch").onclick = async () => { pe.params = {}; pe.tracks = []; pe.desc = {}; const L = projLink(); if (!L) return; try { await peLoad(L); await peTrack(L, pe.trk); } catch (_) { peSay(t("peFail")); } renderPe(); };
+$("pename").addEventListener("input", () => { pe.name = $("pename").value; });
 /* ------------------------------------------------------------------------------------------- how it works */
 /* each firmware's ideas (learn-fm.json, learn-byte.json): sectors (the concept, the engines, the sequencers, the
  * effects, the modulators, the generators, the songs), each item its statement, how it works, where it is on the
@@ -2109,7 +2242,7 @@ const TOUR = [
   { k: "Target", sel: "#targetseg" },
   { k: "Dev", sel: "#devchip", view: "home" },
   { k: "Find", sel: "#find", view: "home" },
-  ...["install", "editor", "screen", "emu", "rec", "proj", "wt", "radio", "an", "vis", "learn", "docs", "rescue", "ports"].map((v) => ({ k: "V_" + v, sel: `nav.views [data-go="${v}"]` })),
+  ...["install", "editor", "screen", "emu", "rec", "proj", "pe", "wt", "radio", "an", "vis", "learn", "docs", "rescue", "ports"].map((v) => ({ k: "V_" + v, sel: `nav.views [data-go="${v}"]` })),
   { k: "Lang", sel: "#lang" },
   { k: "End", sel: "#tourbtn" },
 ];
@@ -2615,6 +2748,7 @@ function render() {
   if (state.view === "proj") { renderProj(); renderPj(); $("cvcard").hidden = state.fw !== "fm"; }
   if (state.view === "wt") renderWtDev();
   if (state.view === "an") renderAn();
+  if (state.view === "pe") renderPe();
   if (state.view === "vis") { visSources(); if (!vis.on) $("visgo").textContent = t("visStart"); }
   if (state.view === "radio" || rd.vis) renderRadio();
   document.querySelector('nav.views [data-go="wt"]').hidden = state.fw !== "byte";
@@ -2754,6 +2888,7 @@ function mockAccess() {
     const e14 = (v) => [(v + 8192) & 127, (v + 8192) >> 7];
     if (f.cmd === 4) { deliver(frame(4, [0, 0, ...Array.from({ length: 140 }, (_, i) => e14(i % 7 ? 64 : 0)).flat()])); return; }   // DUMP: the engine, the preset, 100 + 40 values
     if (f.cmd === 29) { deliver(frame(29, [f.a[0], 0, f.a[0], ...Array.from({ length: 100 }, (_, i) => e14(i === 3 ? 90 : 64)).flat()])); return; }   // TRACK_DUMP
+    if (f.cmd === 31) { deliver(frame(31, f.a.slice(0, 4))); return; }   // TRACK_PARAM: set, echoed
     if (f.cmd === 30) { const [t, i] = f.a, on = i % 4 === 0; deliver(frame(30, [t, i, on ? 1 : 0, on ? 36 + t : 0, 0, 0, 0, 2, 0, 100])); return; }   // TRACK_STEP
     if (f.cmd === 95) { const P = window.__pj = window.__pj || [["NIGHT", 15, 1], ["", 3, 0], ["", 0, 0], ["DUB", 1, 2], ["", 0, 0], ["", 0, 0]];
       deliver(frame(95, [0, 6, ...P.flatMap(([nm, parts, fl], n) => [n, parts, fl, ...Array.from({ length: 12 }, (_, i) => nm.charCodeAt(i) || 0)])])); return; }
