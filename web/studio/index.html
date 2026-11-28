@@ -330,6 +330,9 @@
   .pj .parts { display: flex; gap: 4px; } .pj .parts span { width: 28px; height: 24px; display: grid; place-items: center; font: 12px/1 var(--mono); border: var(--border) solid var(--line); color: var(--dim); }
   .pj .parts span.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
   .pj .tag { font: 10px/1 var(--mono); letter-spacing: .12em; padding: 3px 6px; border: 1px solid var(--hud); color: var(--hud); }
+  .pjloophead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 10px; } .pjloophead p { margin: 0; flex: 1 1 260px; }
+  .pj .loop { display: flex; flex-wrap: wrap; gap: 6px; } .pj .loop input { flex: 1 1 110px; } .pj .loop input.note { flex-basis: 100%; text-transform: none; }
+  .pj .loop select { background: var(--panel); border: var(--border) solid var(--line); color: var(--fg); padding: 6px; font: 13px/1 var(--mono); } .pj .loop .btn { min-height: 34px; padding: 5px 10px; font-size: 13px; }
   .pj .acts { display: flex; flex-wrap: wrap; gap: 6px; } .pj .acts .btn { min-height: 34px; padding: 5px 10px; font-size: 13px; }
   .rdonair { display: inline-flex; align-items: center; gap: 8px; font: 11px/1 var(--mono); letter-spacing: .24em; color: #ff4a5a; border: 1px solid #ff4a5a; padding: 5px 10px; margin: 0 0 6px; }
   .rdonair i { width: 8px; height: 8px; border-radius: 50%; background: #ff4a5a; box-shadow: 0 0 10px #ff4a5a; animation: blink 1.2s steps(2) infinite; }
@@ -713,7 +716,8 @@
     <div class="card" id="pjcard">
       <div class="viewhead" style="margin-bottom:6px"><div><h2 data-t="pjTitle"></h2><p class="dim" id="pjhelp"></p></div><button class="btn ghost" id="pjread" type="button" data-t="pjRead"></button></div>
       <p class="projstat" id="pjstat" role="status"></p>
-      <div class="pjgrid" id="pjgrid"></div><input id="pjfile" type="file" accept=".json,application/json" hidden>
+      <div class="pjloophead"><p class="dim" id="pjloophelp" data-t="pjLoopHelp" hidden></p><button class="btn" id="pjloopall" type="button" data-t="pjLoopAll" hidden></button></div>
+      <div class="pjgrid" id="pjgrid"></div><input id="pjfile" type="file" accept=".json,application/json" hidden><datalist id="pjgenres"></datalist>
     </div>
     <div class="card">
       <div class="viewhead" style="margin-bottom:6px"><div><h2 data-t="slotsTitle"></h2><p class="dim" id="slotshelp"></p></div><button class="btn ghost" id="slotsread" type="button" data-t="slotsRead"></button></div>
@@ -789,7 +793,7 @@
         <div class="rdask" id="rdask" hidden><p id="rdpartsq"></p><div class="rdparts" id="rdparts"></div><button class="btn" id="rdnext" type="button" data-t="rdNext"></button></div>
         <div class="rdvote" id="rdvote"><button class="rdbig up" id="rdup" type="button" aria-label="+1"><svg class="ret" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="47"/><circle class="d" cx="50" cy="50" r="41"/><path d="M50 0v8M50 92v8M0 50h8M92 50h8"/></svg><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10v10H4V10h3zM7 10l4-7c1.5 0 2.6 1.1 2.3 2.7L12.7 9H19c1.2 0 2.1 1.1 1.8 2.3l-1.3 6.9c-.2 1.1-1.1 1.8-2.1 1.8H7"/></svg><span>+1</span></button><button class="rdbig down" id="rddown" type="button" aria-label="−1"><svg class="ret" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="47"/><circle class="d" cx="50" cy="50" r="41"/><path d="M50 0v8M50 92v8M0 50h8M92 50h8"/></svg><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="transform:rotate(180deg)"><path d="M7 10v10H4V10h3zM7 10l4-7c1.5 0 2.6 1.1 2.3 2.7L12.7 9H19c1.2 0 2.1 1.1 1.8 2.3l-1.3 6.9c-.2 1.1-1.1 1.8-2.1 1.8H7"/></svg><span>−1</span></button><button class="rdbig sound" id="rdsound" type="button" aria-label="sound" hidden><svg class="ret" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="47"/><circle class="d" cx="50" cy="50" r="41"/><path d="M50 0v8M50 92v8M0 50h8M92 50h8"/></svg><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h3l3-7 4 14 3-9 2 2h3"/></svg><span>SOUND</span></button><button class="rdbig skip" id="rdskip" type="button" aria-label="skip"><svg class="ret" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="47"/><circle class="d" cx="50" cy="50" r="41"/><path d="M50 0v8M50 92v8M0 50h8M92 50h8"/></svg><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6l7 6-7 6zM12 6l7 6-7 6zM21 6v12"/></svg><span>SKIP</span></button></div>
         <div class="rdctl"><label><span data-t="rdGenre"></span> <select id="rdgenre"></select></label>
-          <label><span data-t="rdMood"></span> <input id="rdmood" type="range" min="-50" max="50" value="0"></label><span id="rdcount"></span><button class="btn ghost rdstop" id="rdundo" type="button" data-t="rdUndo" hidden></button><button class="btn ghost rdstop" id="rdstop" type="button" data-t="rdStop"></button></div>
+          <label><span data-t="rdMood"></span> <input id="rdmood" type="range" min="-50" max="50" value="0"></label><span id="rdcount"></span><button class="btn ghost rdstop" id="rdsaveloop" type="button" data-t="rdSaveLoop"></button><button class="btn ghost rdstop" id="rdundo" type="button" data-t="rdUndo" hidden></button><button class="btn ghost rdstop" id="rdstop" type="button" data-t="rdStop"></button></div>
       </div>
     </div>
     <p class="dim rdpriv" data-t="rdPrivacy"></p>

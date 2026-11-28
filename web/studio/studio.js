@@ -84,6 +84,10 @@ const TEXT = {
     cEmuOn: "Usando el emulador (encendido).", cEmuOff: "Usando el emulador (apagado).", cFind: "Buscar mi FM-1", cUseEmu: "Usar el emulador", cUseFm1: "Usar mi FM-1", cOpenEmu: "Abrir el emulador",
     pjTitle: "Biblioteca de proyectos", pjRead: "Leer los proyectos", pjAsk: "Leé los proyectos del FM-1: sus nombres y qué partes A–D tienen.", pjHelp: "Escribí un nombre y tocá Enter: cambia en el FM-1 al instante. Antes de pisar o borrar, se baja una copia de lo que había.",
     pjOld: "El FM-1 no respondió: la biblioteca necesita JIANT FM V10.8.54 o posterior, o una versión de JIANT BYTE que la tenga (en camino).", pjUnnamed: "sin nombre", pjName: "Nombre del proyecto", pjOpen: "ABIERTO",
+    pjLoopGenre: "Género", pjLoopMood: "MOOD", pjLoopNote: "nota (opcional)", pjLoopOne: "Exportar loop", pjLoopAll: "Exportar todos como loops",
+    pjLoopHelp: "Para el generador: poné a cada proyecto un género y un MOOD (se recuerdan en este navegador) y bajá uno o todos en un archivo jiant-loops para mandárselo a Claude. El proyecto abierto sale como está guardado: hacé SAVE antes.",
+    pjLoopNone: "No hay proyectos con contenido para exportar.", pjLoopUntagged: "Listo. Sin género: %s (se exportaron igual).", pjLoopDone: "Listo: %n loops en el archivo.",
+    rdSaveLoop: "Guardar como loop", rdSavedLoop: "Guardado: %s (género, MOOD y semilla: el emulador la vuelve a hacer igual).",
     pjCopy: "Copiar a…", pjMove: "Mover a…", pjExport: "Exportar", pjImport: "Importar acá", pjDelete: "Borrar", pjParts: "Nombrar partes",
     pjCopyTo: "¿A qué proyecto copiar el %s? (1–6)", pjMoveTo: "¿A qué proyecto mover el %s? (1–6)", pjBadTarget: "Ese destino no sirve: elegí otro proyecto, del 1 al 6.",
     pjOverwrite: "El proyecto %s («%n») tiene contenido y se va a pisar. Antes se baja una copia. ¿Seguir?", pjDelConfirm: "¿Borrar el proyecto %s («%n»)? Antes se baja una copia.",
@@ -292,6 +296,10 @@ const TEXT = {
     cEmuOn: "Using the emulator (on).", cEmuOff: "Using the emulator (off).", cFind: "Find my FM-1", cUseEmu: "Use the emulator", cUseFm1: "Use my FM-1", cOpenEmu: "Open the emulator",
     pjTitle: "Project library", pjRead: "Read the projects", pjAsk: "Read the FM-1's projects: their names and which parts A–D they hold.", pjHelp: "Type a name and press Enter: it changes on the FM-1 at once. Before anything is overwritten or deleted, a copy of it is downloaded.",
     pjOld: "The FM-1 did not answer: the library needs JIANT FM V10.8.54 or later, or a JIANT BYTE version with it (on its way).", pjUnnamed: "untitled", pjName: "Project name", pjOpen: "OPEN",
+    pjLoopGenre: "Genre", pjLoopMood: "MOOD", pjLoopNote: "note (optional)", pjLoopOne: "Export loop", pjLoopAll: "Export all as loops",
+    pjLoopHelp: "For the generator: give each project a genre and a MOOD (remembered in this browser) and download one or all of them in a jiant-loops file to hand to Claude. The open project goes out as saved: SAVE it first.",
+    pjLoopNone: "No project holds music to export.", pjLoopUntagged: "Done. No genre: %s (exported all the same).", pjLoopDone: "Done: %n loops in the file.",
+    rdSaveLoop: "Save as loop", rdSavedLoop: "Saved: %s (genre, MOOD and seed: the emulator makes it again exactly).",
     pjCopy: "Copy to…", pjMove: "Move to…", pjExport: "Export", pjImport: "Import here", pjDelete: "Delete", pjParts: "Name parts",
     pjCopyTo: "Copy project %s to which project? (1–6)", pjMoveTo: "Move project %s to which project? (1–6)", pjBadTarget: "That target does not work: pick another project, 1 to 6.",
     pjOverwrite: "Project %s (“%n”) holds music and will be overwritten. A copy is downloaded first. Go on?", pjDelConfirm: "Delete project %s (“%n”)? A copy is downloaded first.",
@@ -1395,12 +1403,17 @@ async function pjRead() {
     if (a[0]) throw new Error(t(PJ_RC[a[0]] || "pjRc1"));
     const n = a[1], list = [];
     for (let i = 0; i < n; i++) { const b = 2 + i * 15; list.push({ n: a[b], parts: a[b + 1], open: !!(a[b + 2] & 1), gen: !!(a[b + 2] & 2), name: String.fromCharCode(...a.slice(b + 3, b + 15).filter((c) => c)) }); }
-    pj.list = list; pjSay("");
+    pj.list = list; pjSay(""); pjGenres();
   } catch (e) { pj.list = null; pjSay(e.message === "timeout" ? t("pjOld") : e.message); }
   renderPj();
 }
 /* a project's four parts as backup objects (their sizes from the backup list) */
 async function pjExport(p, quiet) {
+  const file = await pjFile(p);
+  download(new Blob([JSON.stringify(file)], { type: "application/json" }), `${quiet ? "before-" : ""}jiant-project-${p.n + 1}-${(p.name || "untitled").replace(/[^\w-]+/g, "_")}.json`);
+  return file;
+}
+async function pjFile(p) {
   const L = projLink(), req = bkRequest(L.link);
   const man = bkManifestAll(await req([65, []], { timeout: 8000, retries: 1 })), objs = [];
   for (let k = 0; k < 4; k++) {
@@ -1416,9 +1429,36 @@ async function pjExport(p, quiet) {
     let s = ""; for (const b of bytes) s += String.fromCharCode(b);
     objs.push({ k, size: o.size, crc: bkCrc(bytes), data: btoa(s) });
   }
-  const file = { format: "jiant-project", version: 1, firmware: L.name, created: new Date().toISOString(), name: p.name, parts: objs };
-  download(new Blob([JSON.stringify(file)], { type: "application/json" }), `${quiet ? "before-" : ""}jiant-project-${p.n + 1}-${(p.name || "untitled").replace(/[^\w-]+/g, "_")}.json`);
-  return file;
+  return { format: "jiant-project", version: 1, firmware: L.name, created: new Date().toISOString(), name: p.name, parts: objs };
+}
+/* loops for the generator: each project tagged by hand (a genre, a MOOD -50 CALM .. 0 MID .. +50 DANCE as RADIO's, a
+   note; kept in this browser by slot), one or all of them in one jiant-loops file (each loop its jiant-project file,
+   importable as it is); RADIO's pieces join as their generator state (version, genre, seed, mood: the emulator makes
+   them again) */
+const LOOP_MOODS = [[-50, "CALM"], [-25, "−25"], [0, "MID"], [25, "+25"], [50, "DANCE"]];
+const loopTags = { get() { try { return JSON.parse(localStorage.getItem("jiant.loopTags") || "{}"); } catch (_) { return {}; } },
+  set(n, v) { const a = this.get(); a[n] = { ...(a[n] || {}), ...v }; try { localStorage.setItem("jiant.loopTags", JSON.stringify(a)); } catch (_) {} } };
+async function loopFirmware() { try { const L = projLink(); return parseInfo(await L.link.request(CMD.INFO, [], 900)).version; } catch (_) { return projLink() ? projLink().name : ""; } }
+function loopDownload(loops, firmware, tag) {
+  const file = { format: "jiant-loops", version: 1, device: state.fw === "byte" ? "BYTE" : "FM", firmware, created: new Date().toISOString(), loops };
+  const d = new Date(), stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}-${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}`;
+  const name = `jiant-loops-${tag.replace(/[^\w-]+/g, "_")}-${stamp}.json`;
+  download(new Blob([JSON.stringify(file, null, 1)], { type: "application/json" }), name);
+  return name;
+}
+async function pjLoops(ps) {
+  ps = ps.filter((p) => p.parts);
+  if (!ps.length) { pjSay(t("pjLoopNone")); return; }
+  const tags = loopTags.get(), loops = [];
+  for (const p of ps) {
+    pjSay(`${t("pjSaving")} ${p.n + 1}/${ps.length > 1 ? 6 : 1}`);
+    const tg = tags[p.n] || {};
+    loops.push({ source: "project", slot: p.n + 1, name: p.name, genre: tg.genre || "", mood: tg.mood ?? 0, note: tg.note || "", generated: p.gen, open: p.open, project: await pjFile(p) });
+  }
+  const one = ps.length === 1 ? ps[0] : null, tg = one && tags[one.n];
+  loopDownload(loops, await loopFirmware(), one ? `${one.n + 1}-${(tg && tg.genre) || one.name || "loop"}` : "all");
+  const untagged = loops.filter((l) => !l.genre).map((l) => l.slot);
+  pjSay(untagged.length ? t("pjLoopUntagged").replace("%s", untagged.join(", ")) : t("pjLoopDone").replace("%n", loops.length));
 }
 async function pjDo(f) {
   if (pj.busy) return; pj.busy = true; renderPj();
@@ -1493,9 +1533,26 @@ function renderPj() {
         const a = await projLink().link.request(96, [p.n, k, ...[...v].map((ch) => ch.charCodeAt(0)), 0], 2000).catch(() => null);
         pjSay(a && !a[2] ? t("pjRenamed").replace("%s", `${p.n + 1}${"ABCD"[k]} ${v}`) : t(PJ_RC[a ? a[2] : 1] || "pjRc1"));
       }, empty));
-    c.append(top, parts, acts);
+    const tg = loopTags.get()[p.n] || {}, lp = el("div", "loop"), genre = el("input"), mood = el("select"), note = el("input");
+    genre.setAttribute("list", "pjgenres"); genre.value = tg.genre || ""; genre.placeholder = t("pjLoopGenre"); genre.setAttribute("aria-label", t("pjLoopGenre"));
+    genre.onchange = () => loopTags.set(p.n, { genre: genre.value.trim().toUpperCase() });
+    mood.setAttribute("aria-label", t("pjLoopMood"));
+    mood.append(...LOOP_MOODS.map(([v, n]) => { const o = el("option", "", `MOOD ${n}`); o.value = String(v); return o; })); mood.value = String(tg.mood ?? 0);
+    mood.onchange = () => loopTags.set(p.n, { mood: +mood.value });
+    note.className = "note"; note.value = tg.note || ""; note.placeholder = t("pjLoopNote"); note.setAttribute("aria-label", t("pjLoopNote"));
+    note.onchange = () => loopTags.set(p.n, { note: note.value.trim() });
+    lp.append(genre, mood, btn("pjLoopOne", "", () => pjDo(() => pjLoops([p])), empty), note);
+    c.append(top, parts, lp, acts);
     return c;
   }));
+  $("pjloophelp").hidden = $("pjloopall").hidden = !pj.list; $("pjloopall").disabled = !can || !(pj.list || []).some((p) => p.parts);
+  $("pjgenres").replaceChildren(...rd.genres.map((n) => { const o = document.createElement("option"); o.value = n; return o; }));
+}
+$("pjloopall").onclick = () => pjDo(() => pjLoops(pj.list || []));
+/* the generator's genres for the tags (the emulator's; the FM-1's own list arrives with RADIO) */
+async function pjGenres() {
+  if (rd.genres.length) return;
+  try { const G = rdGen(); if (!G) return; const r = await G.gen(null, 0, true); if (r.genres && r.genres.length) { rd.genres = r.genres; renderPj(); } } catch (_) {}
 }
 $("pjread").onclick = () => pjRead();
 async function restore(b) {
@@ -1831,6 +1888,13 @@ $("rdsound").onclick = async () => {                            // another sound
   const G = rdGen(); if (!G || !rd.on) return;
   if (rd.vis) rd.vis.event("next");
   await G.gen(10, Math.floor(Math.random() * 10000)); await rdPoll();
+};
+$("rdsaveloop").onclick = async () => {                          // this piece as a loop: its generator state, enough to make it again
+  if (!rd.info) return;
+  const [, g, seed, mood, energy, form] = rd.info;
+  const loop = { source: "radio", genre: rdGenre(g), mood, energy, seed, form: RD_FORMS[form] || "SONG", ...(rd.rs != null ? { resound: rd.rs } : {}), version: rd.version, listened_s: Math.round((Date.now() - rd.since) / 1000) };
+  const name = loopDownload([loop], rd.version, `radio-${loop.genre}-${seed}`);
+  rdSay(t("rdSavedLoop").replace("%s", name));
 };
 $("rdundo").onclick = async () => { const G = rdGen(); if (!G) return; await G.gen(11, 0); await rdPoll(); };
 $("rdgo").onclick = () => rdStart(); $("rdstop").onclick = () => rdStop();

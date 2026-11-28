@@ -172,14 +172,26 @@ try {
     const downloads = []; q.on("download", (d) => downloads.push(d.suggestedFilename()));
     await q.goto(URL0 + "?mock=1&notour#proj"); await q.waitForTimeout(1500);
     await q.click("#pjread"); await q.waitForTimeout(600);
-    const names = await q.$$eval("#pjgrid .pj input", (x) => x.map((e) => e.value));
-    await q.fill("#pjgrid .pj:nth-child(2) input", "intro"); await q.press("#pjgrid .pj:nth-child(2) input", "Enter"); await q.waitForTimeout(800);
-    const renamed = await q.$eval("#pjgrid .pj:nth-child(2) input", (e) => e.value);
+    const names = await q.$$eval("#pjgrid .pj .top input", (x) => x.map((e) => e.value));
+    await q.fill("#pjgrid .pj:nth-child(2) .top input", "intro"); await q.press("#pjgrid .pj:nth-child(2) .top input", "Enter"); await q.waitForTimeout(800);
+    const renamed = await q.$eval("#pjgrid .pj:nth-child(2) .top input", (e) => e.value);
     await q.click("#pjgrid .pj:nth-child(1) .acts .btn:nth-child(1)"); await q.waitForTimeout(2500);   // copy 1 -> 3 (empty)
     answers.push("2"); await q.click("#pjgrid .pj:nth-child(4) .acts .btn:nth-child(1)"); await q.waitForTimeout(3000);   // copy 4 -> 2 (used: a copy first)
-    const after = await q.$$eval("#pjgrid .pj input", (x) => x.map((e) => e.value));
+    const after = await q.$$eval("#pjgrid .pj .top input", (x) => x.map((e) => e.value));
     ok(names.length === 6 && names[0] === "NIGHT" && renamed === "INTRO" && after[2] === "NIGHT" && after[1] === "DUB" && downloads.some((f) => /^before-jiant-project-2/.test(f)),
       `project library: ${names.length} projects (${names[0]}), renamed (${renamed}), copied 1→3 and 4→2 over a used one (a copy first: ${downloads.join(", ")})`);
+    /* loops for the generator: project 1 tagged (genre, MOOD, note), exported alone and then all six in one file */
+    await q.fill("#pjgrid .pj:nth-child(1) .loop input:not(.note)", "deep house"); await q.press("#pjgrid .pj:nth-child(1) .loop input:not(.note)", "Tab");
+    await q.selectOption("#pjgrid .pj:nth-child(1) .loop select", "-25");
+    await q.fill("#pjgrid .pj:nth-child(1) .loop input.note", "el bajo manda"); await q.press("#pjgrid .pj:nth-child(1) .loop input.note", "Tab");
+    const read = async (d) => JSON.parse((await import("node:fs")).readFileSync(await d.path(), "utf8"));
+    const [d1] = await Promise.all([q.waitForEvent("download", { timeout: 15000 }), q.click("#pjgrid .pj:nth-child(1) .loop .btn")]);
+    const one = await read(d1); await q.waitForTimeout(800);
+    const [d6] = await Promise.all([q.waitForEvent("download", { timeout: 30000 }), q.click("#pjloopall")]);
+    const all = await read(d6), l1 = one.loops[0];
+    ok(one.format === "jiant-loops" && one.loops.length === 1 && l1.genre === "DEEP HOUSE" && l1.mood === -25 && l1.note === "el bajo manda" && l1.project.format === "jiant-project"
+      && /^jiant-loops-1-DEEP_HOUSE-/.test(d1.suggestedFilename()) && all.loops.length >= 2 && all.loops[0].genre === "DEEP HOUSE" && /^jiant-loops-all-/.test(d6.suggestedFilename()),
+      `loops: one (${d1.suggestedFilename()}: ${l1.genre}, MOOD ${l1.mood}), all (${all.loops.length} with music)`);
     await ctx.close();
   }
   /* rescue: the published JIANT FM and JieLi's loader fetched and checked, a board's fm1-rescue.uf2 made */
