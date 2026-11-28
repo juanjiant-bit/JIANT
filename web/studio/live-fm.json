@@ -169,11 +169,11 @@
   "AMT1": {
    "es": {
     "what": "Cuánto y en qué sentido mueve la fuente al destino en la ruta 1 de la matriz MOD.",
-    "how": "En 0 la ruta no hace nada; positivo empuja hacia arriba, negativo hacia abajo. Empezá con poco y subí hasta que se note."
+    "how": "En 0 la ruta no hace nada; positivo empuja hacia arriba, negativo hacia abajo. Empezá con poco y subí hasta que se note. Llega a ±200 %: con 100 % ya recorre todo el rango."
    },
    "en": {
     "what": "How much, and which way, the source moves the target in route 1 of the MOD matrix.",
-    "how": "At 0 the route does nothing; positive pushes up, negative down. Start small and raise it until you hear it."
+    "how": "At 0 the route does nothing; positive pushes up, negative down. Start small and raise it until you hear it. It reaches ±200 %: at 100 % it already sweeps the whole range."
    },
    "learn": "mod-matrix"
   },
@@ -202,11 +202,11 @@
   "AMT2": {
    "es": {
     "what": "Cuánto y en qué sentido mueve la fuente al destino en la ruta 2 de la matriz MOD.",
-    "how": "En 0 la ruta no hace nada; positivo empuja hacia arriba, negativo hacia abajo. Empezá con poco y subí hasta que se note."
+    "how": "En 0 la ruta no hace nada; positivo empuja hacia arriba, negativo hacia abajo. Empezá con poco y subí hasta que se note. Llega a ±200 %: con 100 % ya recorre todo el rango."
    },
    "en": {
     "what": "How much, and which way, the source moves the target in route 2 of the MOD matrix.",
-    "how": "At 0 the route does nothing; positive pushes up, negative down. Start small and raise it until you hear it."
+    "how": "At 0 the route does nothing; positive pushes up, negative down. Start small and raise it until you hear it. It reaches ±200 %: at 100 % it already sweeps the whole range."
    },
    "learn": "mod-matrix"
   },
@@ -235,11 +235,11 @@
   "AMT3": {
    "es": {
     "what": "Cuánto y en qué sentido mueve la fuente al destino en la ruta 3 de la matriz MOD.",
-    "how": "En 0 la ruta no hace nada; positivo empuja hacia arriba, negativo hacia abajo. Empezá con poco y subí hasta que se note."
+    "how": "En 0 la ruta no hace nada; positivo empuja hacia arriba, negativo hacia abajo. Empezá con poco y subí hasta que se note. Llega a ±200 %: con 100 % ya recorre todo el rango."
    },
    "en": {
     "what": "How much, and which way, the source moves the target in route 3 of the MOD matrix.",
-    "how": "At 0 the route does nothing; positive pushes up, negative down. Start small and raise it until you hear it."
+    "how": "At 0 the route does nothing; positive pushes up, negative down. Start small and raise it until you hear it. It reaches ±200 %: at 100 % it already sweeps the whole range."
    },
    "learn": "mod-matrix"
   },
@@ -268,11 +268,11 @@
   "AMT4": {
    "es": {
     "what": "Cuánto y en qué sentido mueve la fuente al destino en la ruta 4 de la matriz MOD.",
-    "how": "En 0 la ruta no hace nada; positivo empuja hacia arriba, negativo hacia abajo. Empezá con poco y subí hasta que se note."
+    "how": "En 0 la ruta no hace nada; positivo empuja hacia arriba, negativo hacia abajo. Empezá con poco y subí hasta que se note. Llega a ±200 %: con 100 % ya recorre todo el rango."
    },
    "en": {
     "what": "How much, and which way, the source moves the target in route 4 of the MOD matrix.",
-    "how": "At 0 the route does nothing; positive pushes up, negative down. Start small and raise it until you hear it."
+    "how": "At 0 the route does nothing; positive pushes up, negative down. Start small and raise it until you hear it. It reaches ±200 %: at 100 % it already sweeps the whole range."
    },
    "learn": "mod-matrix"
   },
@@ -672,11 +672,11 @@
   },
   "DEPTH": {
    "es": {
-    "what": "La profundidad de un efecto que se mece: el AUTO PAN de la pista, el CHORUS o el SLICER; en WHEEL (MORE), la del parlante giratorio del órgano.",
+    "what": "La profundidad de un efecto que se mece: el AUTO PAN de la pista, el CHORUS o el SLICER; en FX › OTT, cuánto comprime (0 lo apaga); en WHEEL (MORE), la del parlante giratorio del órgano.",
     "how": "Bajo, un movimiento sutil; alto, un efecto marcado. Arrancá por la mitad y ajustá de oído."
    },
    "en": {
-    "what": "The depth of a moving effect: the track's AUTO PAN, the CHORUS or the SLICER; on WHEEL (MORE), that of the organ's rotating speaker.",
+    "what": "The depth of a moving effect: the track's AUTO PAN, the CHORUS or the SLICER; on FX › OTT, how much it compresses (0 turns it off); on WHEEL (MORE), that of the organ's rotating speaker.",
     "how": "Low for a subtle motion; high for an obvious effect. Start halfway and adjust by ear."
    }
   },
@@ -894,11 +894,11 @@
   },
   "TIME": {
    "es": {
-    "what": "El tiempo del DELAY: a tempo (1/16, 1/8, con puntillo, tresillos) o libre, en milisegundos y segundos.",
+    "what": "El tiempo del DELAY: a tempo (1/16, 1/8, con puntillo, tresillos) o libre, en milisegundos y segundos. En FX › OTT, qué tan rápido suelta el compresor (el ataque es una fracción de eso).",
     "how": "1/8D es el eco clásico que rellena; tiempos cortos (5–40 ms) dan doblados y sonidos metálicos."
    },
    "en": {
-    "what": "The DELAY time: in tempo (1/16, 1/8, dotted, triplets) or free, in milliseconds and seconds.",
+    "what": "The DELAY time: in tempo (1/16, 1/8, dotted, triplets) or free, in milliseconds and seconds. On FX › OTT, how fast the compressor lets go (the attack a fraction of it).",
     "how": "1/8D is the classic filling echo; short times (5–40 ms) give doubling and metallic sounds."
    },
    "learn": "delay"
@@ -1037,11 +1037,11 @@
   },
   "STEREO": {
    "es": {
-    "what": "El ancho del CHORUS: hacia abajo hasta mono, hacia arriba casi el doble de ancho.",
+    "what": "El ancho del CHORUS: hacia abajo hasta mono, hacia arriba casi el doble de ancho. En HOME › LIFE (KNOB 3, antes PUMP): cuánto se corre cada pista en el estéreo empujada por sus vecinas.",
     "how": "En 0 suena como siempre; subilo para pads enormes, bajalo si el chorus te desarma el centro."
    },
    "en": {
-    "what": "The CHORUS width: down to mono, up to nearly twice as wide.",
+    "what": "The CHORUS width: down to mono, up to nearly twice as wide. On HOME › LIFE (KNOB 3, was PUMP): how far each track drifts across the stereo field, pushed by its neighbours.",
     "how": "At 0 it sounds as usual; raise it for huge pads, lower it if the chorus blurs the centre."
    },
    "learn": "chorus"
@@ -2153,6 +2153,28 @@
     "how": "No need to touch it; on the other engines this same slot is IMAGE."
    },
    "learn": "ext"
+  },
+  "UP/DN": {
+   "es": {
+    "what": "El balance de FX › OTT: hacia − sube menos lo bajito, hacia + aplasta menos lo fuerte.",
+    "how": "En 0 hace las dos cosas por igual; corrélo a − si el ruido de fondo sube demasiado, a + si los golpes pierden punch."
+   },
+   "en": {
+    "what": "FX › OTT's balance: towards − it lifts the quiet parts less, towards + it squashes the loud ones less.",
+    "how": "At 0 it does both equally; move it to − if the background noise comes up too much, to + if the hits lose their punch."
+   },
+   "learn": "ott"
+  },
+  "X-OVER": {
+   "es": {
+    "what": "Dónde FX › OTT separa sus dos bandas, LOW y HIGH: cada una se comprime por su lado.",
+    "how": "Bajo, los graves quedan solos en LOW; más alto, LOW se lleva también los medios. Ponelo entre el cuerpo y el brillo del sonido."
+   },
+   "en": {
+    "what": "Where FX › OTT splits its two bands, LOW and HIGH: each is compressed on its own.",
+    "how": "Low, the bass sits alone in LOW; higher, LOW takes the mids too. Set it between the sound's body and its brightness."
+   },
+   "learn": "ott"
   }
  },
  "engines": {
@@ -2273,23 +2295,23 @@
   "MATH": {
    "WAVE": {
     "es": {
-     "what": "El tipo de fórmula: BYTE (bytebeat, en escalones) o FLOAT (floatbeat, hecho de senos).",
-     "how": "BYTE suena crudo y de chip; FLOAT más suave y musical. Cada uno tiene sus propias fórmulas en ALGO."
+     "what": "El tipo de fórmula: BYTE (bytebeat, en escalones), FLOAT (floatbeat, hecho de senos) o SYNC (BYTE con el ritmo atado al tempo).",
+     "how": "BYTE suena crudo y de chip; FLOAT más suave y musical; SYNC hace que todas las teclas toquen el mismo patrón, transpuesto. Cada uno tiene sus propias fórmulas en ALGO."
     },
     "en": {
-     "what": "The formula type: BYTE (bytebeat, stepped) or FLOAT (floatbeat, made of sines).",
-     "how": "BYTE sounds raw and chiptune-like; FLOAT smoother and more musical. Each has its own formulas in ALGO."
+     "what": "The formula type: BYTE (bytebeat, stepped), FLOAT (floatbeat, made of sines) or SYNC (BYTE with its rhythm locked to the tempo).",
+     "how": "BYTE sounds raw and chiptune-like; FLOAT smoother and more musical; SYNC makes every key play the same pattern, transposed. Each has its own formulas in ALGO."
     },
     "learn": "math"
    },
    "LOOP": {
     "es": {
-     "what": "Encierra la fórmula en un tramo corto que se repite, hasta volverla una nota afinada.",
-     "how": "En 0 la fórmula evoluciona libre; subilo para que el ritmo se vuelva tono. Más alto, ciclos más cortos."
+     "what": "Encierra la fórmula en un tramo corto que se repite, hasta volverla una nota afinada. Con WAVE en SYNC es otra cosa: OFF, 4 BAR … 1/32, la fórmula vuelve a empezar en cada ventana del compás.",
+     "how": "En 0 la fórmula evoluciona libre; subilo para que el ritmo se vuelva tono. Más alto, ciclos más cortos. En SYNC, 1 BAR o 1/2 para un patrón que se repite clavado al tempo."
     },
     "en": {
-     "what": "Holds the formula in a short repeating window, until it becomes a pitched note.",
-     "how": "At 0 the formula evolves freely; raise it so rhythm becomes tone. Higher means shorter cycles."
+     "what": "Holds the formula in a short repeating window, until it becomes a pitched note. With WAVE on SYNC it is something else: OFF, 4 BAR … 1/32, the formula starts again at each window of the bar.",
+     "how": "At 0 the formula evolves freely; raise it so rhythm becomes tone. Higher means shorter cycles. On SYNC, 1 BAR or 1/2 for a pattern that repeats locked to the tempo."
     },
     "learn": "math"
    },

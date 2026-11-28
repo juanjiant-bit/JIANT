@@ -132,7 +132,8 @@ tag of the addition, as before).
 
 - **Framing**: `F0 7D 46 4C cmd args F7`, one reply per request with the same `cmd` (no reply: an unknown command or
   a wrong fixed length), pushes never replies; the encodings v14, u32, pack7, strings.
-- **Command numbers** 1..10, 16..42, 64..77, 80 and (1.1) 81 as listed in this file; 11..15 stay reserved (no reply).
+- **Command numbers** 1..10, 16..42, 64..77, 80, (1.1) 81 and (1.4) 95..97 as listed in this file; 11..15 stay
+  reserved (no reply).
 - **Reply layouts**: every byte stays where it is. New bytes only at the end of a reply, behind a request byte that
   asks for them (as `STEP_GET`'s flag 1, `WATCH`'s bits), or as a new `INFO` tag before `59`.
 - **INFO's prefix**: version string, NENGINES, P_COUNT, G_COUNT, NSTEP, P_E0, NENGINES engine names, NTRK,
@@ -167,6 +168,8 @@ regenerated from `params.c` and compared.
 | 1.0 | V10.6z3 | the contract; `INFO` tag `43 02 01 00`; `WATCH` bits 2..4 and the pushes `TRANSPORT` (40), `PUNCH` (41), `MUTATE` (42); NRPN for every automatable parameter and the globals (`docs/NRPN.md`), sent for knob moves with MIDI OUT ALL |
 | 1.1 | V10.6z5 | `VEL` (81): the velocity diagnostic (below); `INFO` tag `43 02 01 01` |
 | 1.2 | V10.6z7 | `VEL` ops 4 and 5: the keys' velocity, calibration and pressure (below); MENU ids 27..30 (VELOCITY, VEL MIN, AFTERTOUCH, VEL LEARN); `INFO` tag `43 02 01 02` |
+| 1.3 | V10.7.21 | `INFO` tag `58 01 seg` ('X'): the Bluetooth segment, 1 this build's, 2 missing, torn or another build's (the installer checks it after an update); `INFO` tag `43 02 01 03` |
+| 1.4 | V10.8.71 (public: V10.8.72) | a track's special ids P_COUNT + 0..3 (FX › OTT) through `TRACK_PARAM` and `DESC`; `uiCaps` bit 4; the project library `PROJ_LIST` / `PROJ_NAME` / `PROJ_OP` (95..97, since V10.8.54); MENU ids 33 SAVER and 34 PANEL; `INFO` tag `43 02 01 04` (below) |
 
 ## 1.0: performance pushes (40-42)
 
@@ -236,6 +239,50 @@ Bluetooth segment is installed: the code is there; otherwise the reply ends here
 The velocity is continuous: piecewise linear through the three references, half the slope past either end, clamped
 1..127; SOFT `v + v (127 - v) / 254`, HARD `v - v (127 - v) / 254`; VEL MIN scales 1..127 onto MIN..127.
 
+## 1.4: a track's special ids (OTT) and the project library (V10.8.71)
+
+`INFO` says `43 02 01 04`. Everything below is additive: an editor written for 1.3 works unchanged.
+
+**Special ids.** Past the track parameters (0..P_COUNT−1), ids P_COUNT + 0..3 are a track's FX › OTT (the two-band
+compressor from JIANT BYTE, `firmware/src/fx.c` `ott_block`). `uiCaps` bit 4 (`55 01 uiCaps`) says the device has them.
+With P_COUNT 123:
+
+| id | label | fmt | range | default | what |
+| --- | --- | --- | --- | --- | --- |
+| 123 | DEPTH | 1 PCT | 0..100 | 0 | how much; 0 is off (not run: the track bit for bit as without it) |
+| 124 | TIME | 3 TIME | 30..100 | 72 (V10.8.71) | the envelopes' release (the attack about 1/20 of it) |
+| 125 | UP/DN | 2 BIPCT | −64..63 | 0 | the balance: − less upward, + less downward |
+| 126 | X-OVER | 5 CUTOFF | 15..100 | 37 | the split between LOW and HIGH |
+
+V10.8.72 aligns OTT's gain law with JIANT BYTE's and moves TIME's default (56): read the default from `DESC`, never
+from this table.
+
+- `TRACK_PARAM` (31) reads and sets them on any track: `track, id` → `track, id, v14`; `track, id, v14` sets (clamped to
+  the range, as `SET`). An id past P_COUNT + 3 gets no reply.
+- `DESC` (5) describes them with scope 0 (`0, id`), for the selected track; labels and ranges as the table, read them
+  from the device. Firmware before 1.4 gives no reply for these ids.
+- `GET` / `SET` (2, 3), `DUMP` (4), `TRACK_DUMP` (29) and the pushes `CHANGED` / `TRACK_CHANGED` keep to the parameters:
+  an OTT change on the device is not pushed (read it again with `TRACK_PARAM`). OTT is not on NRPN.
+- A project (block `O` `T`) and a user preset keep a track's OTT; a project or preset from before V10.8.71 loads with
+  OTT off. The four special ids stay within 7-bit bytes (P_COUNT + 4 ≤ 127); JIANT BYTE's own numbers (0xD0..) do
+  not apply to JIANT FM.
+
+**The project library** (V10.8.54; JIANT Studio's projects view). No `INFO` tag: firmware without it gives no reply.
+The writes need the transport stopped and the Bluetooth segment installed.
+
+| cmd | Request args | Reply args |
+| --- | --- | --- |
+| 95 PROJ_LIST | — | 0, NSONG (6), then NSONG × (n, parts, flags, name 12 bytes): parts bit k = part A..D stored; flags bit 0 the open project, bit 1 a generator draft (the open one); name: part A's (the project's), ASCII, 0-padded |
+| 96 PROJ_NAME | n, part 0..3, ASCII name (up to 12) | n, part, rc: the part's name (part A's is the project's), written live |
+| 97 PROJ_OP | op (0 COPY, 1 MOVE, 2 DELETE), from, to, force | op, from, to, rc. COPY / MOVE a whole project (its four parts and its rows) onto another, never onto the open one; MOVE never moves the open one; DELETE erases `from` (`to` ignored). An occupied target only with force 1 (back it up first with `BACKUP_GET`) |
+
+rc: 0 done, 1 refused (a bad request, the open project as the target or moved, an empty part), 2 the flash failed or
+no Bluetooth segment (the target as it was), 3 playing (STOP first), 4 the target holds a project (force 0). The
+projects' names travel only here and in part A's own backup object (40 + 4n): there is no backup object for them.
+
+**Since V10.8.48, also:** the MOD matrix's AMT1..AMT4 range is −128..127 (see "the modulation matrix"); MATH's WAVE
+enum gains SYNC (7); LIFE's third knob is STEREO (it was PUMP; LIFE has no editor id). Read `DESC` as always.
+
 ## NRPN (1.0)
 
 Every parameter automation records, and the globals but the transport, routing, loads and engine switch, are set by
@@ -279,7 +326,7 @@ P_COUNT 69): slot k (1..4) is `SRCk`, `DSTk`, `AMTk` at ids 49 + 3 (k − 1) .. 
 | --- | --- | --- |
 | 49, 52, 55, 58 | SRC1..SRC4 | enum: 0 OFF, 1 LFO, 2 ENV, 3 VEL, 4 KEY, 5 RAND, 6 MODW (CC1), 7 AT (channel aftertouch), 8 EXPR (CC11), 9..12 M1..M4 (JIANT: the project's macros, 0..1; LFO held turns them) |
 | 50, 53, 56, 59 | DST1..DST4 | enum (22 names): 0 OFF, 1 PITCH, 2 CUT, 3 SHP, 4 AMP (per voice); 5 PAN, 6 DIST, 7 CHO, 8 DLY, 9 REV, 10 RATE (LFO rate), 11 VIB (LFO pitch depth), 12..19 E1..E8 = `P_E0..P_E7` (per block); 20 CLIP, 21 PNCH (JIANT: the master's G_CLIP / G_PUNCH, the slots of every track adding) |
-| 51, 54, 57, 60 | AMT1..AMT4 | −64..63 (fmt BIPCT) |
+| 51, 54, 57, 60 | AMT1..AMT4 | −128..127 (fmt BIPCT; V10.8.51: −200 .. +198 %, 64 exactly 100 %; −64..63 before) |
 
 `DESC` names E1..E8 as such; the device shows the engine's label of that parameter instead (`DESC` of
 `P_E0 + n`), and so does the editor. A slot with SRC, DST or AMT at 0 does nothing; every default is 0
@@ -353,7 +400,7 @@ at 1..3 and hides 6 5 8: what it sets still plays the right kit, and the device 
 | 2 GET | scope, id | scope, id, v14 |
 | 3 SET | scope, id, v14 | scope, id, v14 (the value after clamping). Setting global `G_ENGSEL` (id from DESC label "ENG") changes the engine: its defaults, then its first preset (as on the device) |
 | 4 DUMP | — | engine, preset, then P_COUNT × v14 (the selected track), then G_COUNT × v14 (globals) |
-| 5 DESC | scope, id | scope, id, fmt, min v14, max v14, def v14, label string, unit string, then for an enum (fmt 8) one name string per value (at most 32 since 0.7.0; 24 before it, 16 before the matrix) |
+| 5 DESC | scope, id | scope, id, fmt, min v14, max v14, def v14, label string, unit string, then for an enum (fmt 8) one name string per value (at most 32 since 0.7.0; 24 before it, 16 before the matrix). (1.4) Scope 0 also takes the special ids P_COUNT + 0..3 (the selected track's OTT) |
 | 6 STEP_GET | index 0..NSTEP−1 | index, n (0..4 notes), note0..note3, time (0 NOTE, 1 TIE, 2 REST), flags (1 accent, 2 slide), vel, then (v5) hits (3 bytes, below), then (v7) chance 0..100, then (`52 01`) ratchet 1..4, then (`4F 01`) 8 lane modes 0..6 |
 | 7 STEP_SET | index, n, note0..3, time, flags, vel [, hits (3 bytes, v5) [, chance 0..100 (v7) [, ratchet 1..4 [, 8 lane modes 0..6 (`4F 01`)]]]] | same as STEP_GET (after the write). Without the hits the step keeps its own; without the chance, the ratchet or the lane modes it keeps its own. The chance can only follow the hits, the ratchet the chance, the lane modes the ratchet |
 | 8 PRESET | engine, preset | engine, preset (applies the preset's sound to the selected track and sends; the steps and the track's own parameters stay, see "Sound loads and undo"). For another track, select it with `TRACK` first |
@@ -381,7 +428,7 @@ at 1..3 and hides 6 5 8: what it sets still plays the right kit, and the device 
 
 | cmd (v4) | Request args | Reply args |
 | --- | --- | --- |
-| 31 TRACK_PARAM | track, id (get), or track, id, v14 (set); id = `P_*` (0..P_COUNT−1) | track, id, v14 (the value after clamping, as `SET`). The selection does not change; no push about the editor's own write |
+| 31 TRACK_PARAM | track, id (get), or track, id, v14 (set); id = `P_*` (0..P_COUNT−1), or (1.4) a special id P_COUNT + 0..3 ("1.4" above) | track, id, v14 (the value after clamping, as `SET`). The selection does not change; no push about the editor's own write |
 | 32 TRACK_CHANGED (push) | — | track, id, v14: `P_LEVEL`, `P_PAN` or `P_MUTE` of a track that is not selected changed on the device (only while `WATCH` was sent with bit 1) |
 
 | cmd (1.0) | Request args | Reply args |
@@ -935,8 +982,8 @@ from an experimental firmware is not a SONG or preference capability.
 Command 33 remains SONG. Older editors can ignore the additional INFO bytes.
 
 `uiCaps`: bit 0 palette, bit 1 font weight (retired: firmware since the 1.0 UI has one
-weight and no longer sets it), bit 2 reserved for a MIDI monitor, bit 3 favorites. This build
-advertises 9 (palette and favorites).
+weight and no longer sets it), bit 2 reserved for a MIDI monitor, bit 3 favorites, (1.4) bit 4 a track's special ids
+(OTT, "1.4" above). This build advertises 25 (palette, favorites and the special ids; 9 before 1.4).
 
 | cmd | Request args | Reply args |
 | --- | --- | --- |
@@ -1040,6 +1087,12 @@ V10.6z6 (protocol 1.2) appends index 27..30, the keys' velocity and pressure (CO
 (0 OFF, 1 LOW, 2 MID, 3 HIGH; MID the default), 30 **VEL LEARN** (0 ON, 1 OFF, 2 RESET: setting RESET puts the
 calibration's seeds back, then it learns as ON). A synth track's recording of the keys' pressure joins the
 expression keys' in id 90: 127 − (gates | pressure 0..7 << 2), 96..127 (pressure p plays as p × 18).
+V10.7.60 / V10.7.81 append 31 **HELP** (0 OFF, 1 ON; ON the default) and 32 **PRESETS** (0 SCROLL, 1 MENU; SCROLL the
+default), DISPLAY. V10.8.56 appends 33 **SAVER** (0 OFF, 1 "1 MIN", 2 "3 MIN", 3 "5 MIN", 4 "10 MIN"; 3 MIN the default:
+HOME › VISUAL on the whole screen after that long with no panel input; the first touch only brings the page back) and
+V10.8.63 34 **PANEL** (0 AUTO, 1 A, 2 B; AUTO the default: B only on the late-2026 units' flash; applied at once, no
+reboot), both DISPLAY; count 35. Note the order: index 33 is PANEL (id 34) and index 34 is SAVER (id 33): find a
+setting by its id.
 
 The device's AUDIO tab shows SPEAKER EQ, USB LEVEL, CLICK, CLICK LEVEL, COUNT-IN (index 9, 10, 12, 13, 14).
 CLICK: the metronome while the transport runs: OFF, REC (while a track is armed), ON (always); CLICK LEVEL its

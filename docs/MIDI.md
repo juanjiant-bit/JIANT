@@ -1,8 +1,8 @@
 # JIANT FM and MIDI: a practical guide
 
-[Español](MIDI.es.md) · Firmware **V10.8.48** · Everything here was checked against the V10.8.48 source
+[Español](MIDI.es.md) · Firmware **V10.8.72** · Everything here was checked against the V10.8.71 source
 (`firmware/src/midi_control.c`, `midi_learn.c`, `midi_uart.c`, `midi_clock.c`, `usb.c`, `usb_host.c`, `seq.c`,
-`menu_items.c`, `params.c`). Where something could not be checked in the code it says **unverified**.
+`menu_items.c`, `params.c`); V10.8.72 changes nothing here. Where something could not be checked in the code it says **unverified**.
 
 The full reference stays in the manual, [chapter 14, MIDI and USB](MANUAL.md#14-midi-and-usb). This page is about
 getting things done:
@@ -35,6 +35,9 @@ getting things done:
   - **Power**: the FM-1 does **not** power the port. The keyboard needs its own power supply or battery, or put a
     **powered USB hub** between them.
   - Low-speed USB devices are not supported (the screen says LOW SPEED: NOT SUPPORTED).
+  - (V10.8.69) More keyboards work: an output-only MIDI interface listed before the input one, an interrupt input
+    with interval 0 and any packet size from 4 to 64 bytes are accepted, and a keyboard is tried three times (a bus
+    reset each, a longer pause each) before the screen says NOT USB MIDI.
   - Input only: nothing is sent to the keyboard. While HOST is on there is no USB link to a computer (no editor, no
     MIDI to the computer). HOST is never saved: the FM-1 always powers on as a USB device.
   - More: [USB HOST in the manual](MANUAL.md#usb-host-a-keyboard-or-an-audio-interface-straight-in-v1041-experimental).
@@ -59,7 +62,7 @@ How to find out with what you have:
    check your sender's manual to be safe.
 4. M-VAVE's own documentation for the FM-1, or the adapter that came in its box, may also say which type it is.
 
-The FM-1 has no MIDI activity light for the TRS jack in V10.8.48 (the old GLO › SYSTEM 2 status page was removed in
+The FM-1 has no MIDI activity light for the TRS jack in V10.8.72 (the old GLO › SYSTEM 2 status page was removed in
 V10.8.38), so the test is simply: does a track sound? (With a computer on the USB serial console, the counters
 `uart_rx_bytes`, `uart_rx_msgs` and `uart_rx_drops` show what arrives.)
 
@@ -114,7 +117,7 @@ playing).
 
 ### 4.1 The fixed CC map (always on with MIDI MAP FACTORY or CUSTOM ADD)
 
-Source: `firmware/src/midi_control.c`, `MIDI_CC_MAP` and `MIDI_CC_ENG` (lines 239–262 in V10.8.48).
+Source: `firmware/src/midi_control.c`, `MIDI_CC_MAP` and `MIDI_CC_ENG` (lines 239–262 in V10.8.71).
 
 | CC | Parameter |
 | --- | --- |
@@ -304,7 +307,7 @@ clock out off; if the Circuit leads (FM-1 CLOCK TRS), set MIDI OUT to KEYS or OF
 what it receives, so there is no MIDI loop through the FM-1 itself; a loop can still happen if the Circuit echoes its
 input to its output (check its thru / echo settings).
 
-## 8. What it cannot do (V10.8.48)
+## 8. What it cannot do (V10.8.72)
 
 All checked in the code unless marked otherwise.
 

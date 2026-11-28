@@ -14,9 +14,9 @@ step components you can play live, a song mode you perform and record, a generat
 inside the little keyboard. It is a fork of [Felucca](https://github.com/hugelton/Felucca) 1.1.5.1 by Hügelton
 Instruments (GPL-3.0) and takes its song system from [SLOOP](https://github.com/isod89/sloop-fm1).
 
-> **Current public release: V10.8.48** (not a beta). **Back up your projects before updating**: save a complete
-> backup with the editor or the installer first. If something doesn't work for you, V10.7.81 is still offered in the
-> installer.
+> **Current public release: V10.8.72** (not a beta). **Back up your projects before updating**: save a complete
+> backup with the editor or the installer first. If something doesn't work for you, V10.8.48 is still offered in the
+> installer (classic).
 
 ## ▶ [JIANT Studio](https://juanjiant-bit.github.io/JIANT/studio/): everything in one page
 
@@ -122,6 +122,20 @@ ADD** and **EXT** (the USB audio input, or SWARM: a melody out of the Bluetooth 
   and hints that tell you what to do.
 - **Connections**: USB MIDI and audio (the FM-1 is a sound card: stems for every track, the computer's audio back in),
   MIDI over the TRS jack, Bluetooth MIDI and PROX, USB HOST (experimental).
+
+## What's new in V10.8.72
+
+- **SEQ EDIT** (SEQ held): select steps, pick an ACTION (STRETCH, SQUEEZE, REPEAT, NUDGE, TRANSP, INVERT, STUTTER, ARP,
+  MUTATE, GEN, RANDOM…) and OCT+ does it; F#5 undoes / redoes. It replaces the SEQ TOOLS key map.
+- **FX › OTT** on every track (a two-band compressor from JIANT BYTE: DEPTH, TIME, UP/DN, X-OVER); the generator uses it
+  on the electronic genres.
+- **RESOUND** (GLO + A4): new sounds for the whole song, the notes kept. **SAVE asks** before overwriting a part, and
+  GLO + G4 undoes it.
+- **HOME › MACROS** back (HOME + SELECT dices them), **LIFE STEREO** (was PUMP), **HOME › VISUAL** and **MENU › SAVER**,
+  **MATH WAVE SYNC** with a LOOP locked to the bar, **MENU › DISPLAY › PANEL** for the late-2026 units' screen.
+- The generator takes JIANT BYTE's song plans and per-section automation; less CPU; USB MIDI HOST takes more keyboards.
+- Before updating: projects from before V10.7 open in JIANT Studio (the FM-1 says OLD PROJECT: OPEN IN STUDIO), LIFE PUMP
+  opens as STEREO. Details and compatibility notes: [CHANGELOG.md](CHANGELOG.md).
 
 ## What's new in V10.8.23
 
@@ -303,6 +317,12 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.8.72 — public (2026-11-28)
+- Everything since V10.8.48: SEQ EDIT, FX › OTT, RESOUND, SAVE's OVERWRITE? with its UNDO, HOME › MACROS, LIFE STEREO, HOME › VISUAL and SAVER, MATH WAVE SYNC, PANEL, the generator from JIANT BYTE, Studio's project library. Details: [CHANGELOG.md](CHANGELOG.md).
+
+### V10.8.49 – V10.8.71 — betas (2026-11-26 … 11-28)
+- See V10.8.72 above and [CHANGELOG.md](CHANGELOG.md).
 
 ### V10.8.21 — public (2026-11-23)
 - Everything since V10.7.81: song mode (JAM, TAKE, LOCK, YOU), step components played and recorded on STEP FX, DRONE CLAY, the TRACK / ENGINE bar and track colours, macros as destinations, the redesigned FX / MIXER / ENV / LFO / FOCUS / ARRANGE / SCL screens, the boot and no click at power-on. Details: [CHANGELOG.md](CHANGELOG.md).

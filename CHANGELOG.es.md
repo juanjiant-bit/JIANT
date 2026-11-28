@@ -6,7 +6,9 @@ Firmware personalizado para el M-VAVE FM-1, de Juan Jiant. Primero la versión m
 
 | Versión | Fecha | Estado |
 | --- | --- | --- |
-| **V10.8.48** | 2026-11-25 | **Pública** |
+| **V10.8.72** | 2026-11-28 | **Pública** |
+| V10.8.49 … V10.8.71 | 2026-11-26 … 11-28 | Beta |
+| **V10.8.48** | 2026-11-25 | **Pública** (ahora clásica) |
 | V10.8.43 … V10.8.47 | 2026-11-25 | Beta |
 | **V10.8.42** | 2026-11-25 | **Pública** |
 | V10.8.26 … V10.8.41 | 2026-11-24 | Beta |
@@ -39,7 +41,7 @@ Firmware personalizado para el M-VAVE FM-1, de Juan Jiant. Primero la versión m
 | **V10.6z2** | 2026-11-07 | **Pública** |
 | **V10.6c** | 2026-11-03 | **Pública** (la última pública antes de este ciclo) |
 
-Si venís de la **V10.6c**, leé todo hasta la V10.6c. Si venís de la **V10.6z2**, leé hasta la V10.6z3.
+Si venís de la **V10.8.48**, la V10.8.72 de abajo resume todo lo nuevo. Si venís de la **V10.6c**, leé todo hasta la V10.6c. Si venís de la **V10.6z2**, leé hasta la V10.6z3.
 Antes de instalar, revisá los apartados **Compatibilidad**.
 
 > **Sobre los números de versión.** Antes de la V10.6c las versiones iban V10.1, V10.2 … V10.61. Con la V10.6c arrancó
@@ -48,6 +50,145 @@ Antes de instalar, revisá los apartados **Compatibilidad**.
 > al final.
 
 ---
+
+## V10.8.72 — SEQ EDIT, OTT, RESOUND, VISUAL y un generador de JIANT BYTE (2026-11-28)
+
+Incluye las betas V10.8.49 a V10.8.71. Si venís de V10.8.48, esto es todo lo nuevo.
+
+**Compatibilidad**
+- Los proyectos con LIFE **PUMP** abren con ese valor en **STEREO** (PUMP ya no está). Todas las profundidades de LIFE suenan igual hasta 60 y crecen por encima (unas 2,5 veces en 100): un proyecto con LIFE arriba de 60 suena más fuerte.
+- Los proyectos guardados antes de **V10.7** ya no se convierten en el FM-1: LOAD dice **OLD PROJECT: OPEN IN STUDIO** y el slot queda como estaba (nunca se borra). Abrilo en JIANT Studio, que lo convierte.
+- Los ajustes globales de Felucca anteriores a JIANT 0.6 (**PER1 / PER2**) ya no se migran: los ajustes arrancan por defecto una vez.
+- **SEQ EDIT** reemplaza el mapa de teclas de SEQ TOOLS (SEQ mantenido, abajo): STRETCH, SQUEEZE y REPEAT ahora son ACTIONs, y B3–E4 eligen los compases 1–4.
+- Una ruta de la matriz MOD por debajo de −100 % no abre en V10.8.50 o anteriores. Los proyectos y presets de antes de V10.8.71 abren con OTT apagado.
+- Protocolo del editor **1.4** (OTT por TRACK_PARAM y DESC, la biblioteca de proyectos 95–97): los clientes viejos siguen andando.
+- Hacé un respaldo de tus proyectos antes de actualizar.
+
+**Secuenciador**
+- **SEQ EDIT** (SEQ mantenido en una página de SEQ): el roll con la selección; KNOB 1 START, KNOB 2 END (A3: MOVE / WIDTH), KNOB 3 la ACTION, KNOB 4 su cantidad; **OCT+** (o D5) la hace sobre la selección, o sobre toda la secuencia si no hay ninguna (**OCT−** o G3: ALL STEPS). ACTIONs: STRETCH, SQUEEZE, REPEAT, NUDGE, ROTATE, SHIFT, REVERSE, DUP, COPY, PASTE, CLEAR, CLR AUTO, CLR STEP, VEL RND, NOTE RND, HUMANIZE, TRANSP, OCTAVE, THIN, INVERT, STUTTER, ARP, MUTATE, **GEN** (el generador de la pista solo dentro de la selección, KNOB 4 el género) y **RANDOM** (notas de la escala en una grilla de 1/4 … 1/32; en DRUM, golpes).
+- Teclas en SEQ EDIT: F3 CLEAR · G3 ALL · A3 MOVE · B3–E4 BAR 1–4 · F4 CLR AUTO · G4–B4 CLR / REV / FILL del carril (DRUM) · C5 DUP · D5 DO IT · E5 COPY · F5 PASTE · G5 CLR STEP; negras C#5 / D#5 **NUDGE** < / > (micro-tiempo, 4/64 por toque), **F#5 UNDO / REDO** de la última edición.
+- Teclas de paso mantenidas en el roll eligen un rango; mantenidas + EDIT lo borran. COPY / PASTE / DUP / CLEAR dicen los pasos ("DUP 9-12").
+
+**Efectos y sonido**
+- **FX › OTT**, la cuarta página de FX › TRACK (de JIANT BYTE): un compresor de dos bandas hacia arriba y hacia abajo en cada pista: **DEPTH** (0 apagado: no gasta CPU, la pista como antes), **TIME**, **UP/DN**, **X-OVER**. LOW y HIGH se dibujan con su ganancia; el ECO de HOME marca la pista con OTT prendido. Se guarda con el proyecto y con los presets de usuario.
+- V10.8.72: la ley de OTT como la de JIANT BYTE (unos 10:1 arriba de −16 dB, hasta +30 dB de subida, TIME 56 por defecto), y el generador pone OTT en los géneros electrónicos.
+- **MATH WAVE SYNC**: el ritmo de la fórmula enganchado al tempo, cada tecla el mismo patrón transpuesto; con SYNC, la KNOB 8 es **LOOP** (OFF, 4 BAR … 1/32) y el patrón se repite clavado al compás. Preset nuevo **BYTE SYNC**.
+- **AMOUNT** de la matriz MOD hasta ±200 % (100 % recorre todo el rango). DRUM-X tiene un solo GAIN (el de LEVEL); los kits suenan como antes.
+
+**Temas, sonidos y guardado**
+- **RESOUND** (GLO + A4): sonidos nuevos para cada pista según su rol, con las notas, los pasos y el tema intactos ("RESOUND #seed"); GLO + G4 devuelve los sonidos.
+- **SAVE pregunta antes de pisar** una parte con música (**OVERWRITE A?**: OCT+ sí, OCT− no); **GLO + G4** deshace el guardado. Guardar un borrador del generador lo vuelve ese proyecto; RESTORE LAST lo sigue.
+- El generador toma lo de JIANT BYTE: plantillas de tema por género (de dos a cinco minutos, con fills), cada sección con su automatización (el tono del kit en la subida, redobles, tiros de delay, stabs, pads más lentos en el break), el timbre que se mueve en cada sección, pregunta y respuesta y el corte de EXPLORE, NEO CLASSIC sin batería; ninguna pieza pasa de −1 dBFS antes del master.
+
+**HOME y pantallas**
+- Vuelve **HOME › MACROS** (tercera página de ECOSYSTEM): KNOB 1–4 M1–M4, **HOME + SELECT** DICE MACROS (con UNDO).
+- **LIFE**: la KNOB 3 es **STEREO** (antes PUMP): cada pista se mueve en el campo estéreo según sus vecinas.
+- **HOME › VISUAL** (segunda página de BEING): una imagen a pantalla completa hecha con las propias gráficas de FM (FX, ENV, LFO, ECO, las criaturas, el morph de ANIMAL), deformadas, repetidas y rotas por el tema; KNOB 1 DENSITY, 2 WOBBLE, 3 PALETTE, 4 REACT, OCT+ una nueva. Le cede el lugar al sonido y no gasta nada fuera de su página; V10.8.72 la dibuja más fluida (menos trazos en vez de saltear cuadros). **MENU › DISPLAY › SAVER** (OFF, 1, 3, 5, 10 MIN; 3 por defecto) la muestra después de ese tiempo sin tocar nada.
+- **MENU › DISPLAY › PANEL** (AUTO / A / B) para la pantalla de los FM-1 vendidos desde fines de 2026 (B sin probar en ese equipo); OCT− + SAVE mantenidos al encender fuerzan A.
+- Las páginas sin gráfico muestran su nombre grande (LIFE, MACROS, GLOBAL, KEY SPLIT, LEVEL, PUNCH IN, las de CLAY); al girar una perilla el pie la dice entera con su página ("LIFE STEREO 100 %"). Más carteles (mutes, ROOT, QUANTIZE, RESTART, PROJECT n).
+- Las criaturas redibujadas con un solo motor (el caracol de PHASE y la oruga de MATH como los originales, círculos que ondulan). Se fueron para hacer lugar: la cara de números grandes, las líneas AUDIO LOAD de ABOUT, la curva de RAMP y la curva del EQ.
+
+**Conexiones y CPU**
+- La biblioteca de proyectos de Studio: listar, renombrar en vivo, copiar, mover y borrar proyectos desde JIANT Studio.
+- El USB MIDI HOST acepta más teclados y reintenta la conexión antes de decir NOT USB MIDI.
+- Menos CPU (la técnica de JIANT BYTE: más del sonido en RAM, la tabla del resampler USB a la mitad), con el sonido igual bit a bit.
+
+## V10.8.71 — OTT en cada pista (2026-11-28, beta)
+
+- **FX › OTT** (cuarta página de FX › TRACK, de JIANT BYTE): DEPTH, TIME, UP/DN, X-OVER; en DEPTH 0 no gasta CPU. El ECO de HOME marca la pista con OTT. Protocolo del editor 1.4. El mapa de GLO nombra A4 **RESOUND**.
+
+## V10.8.70 — cada sección con su automatización (2026-11-28, beta)
+
+- El generador, de JIANT BYTE: el tono del kit sube en la subida, redobles hacia el cambio, tiro de delay en la última nota del lead, acordes stab, pads más lentos en el break. Vuelven la pregunta y respuesta y el corte de EXPLORE.
+
+## V10.8.69 — los planes de tema del generador (2026-11-26, beta)
+
+- Plantillas de tema por género, de dos a cinco minutos, con fills; el timbre se mueve en cada sección; las baterías recuperan su fuerza.
+- El USB MIDI HOST acepta más teclados y reintenta la conexión.
+
+## V10.8.68 — el generador de JIANT BYTE (2026-11-26, beta)
+
+- Retocados la mezcla, DANCE y los moods, CALM y EXPLORE; el DJ FILTER de la subida es un pasabajos de barrido; NEO CLASSIC sin batería. VISUAL no gasta nada fuera de su página.
+
+## V10.8.67 — VISUAL con las propias gráficas de FM (2026-11-26, beta)
+
+- VISUAL dibuja FX, ENV, LFO, ECO, la criatura de una pista y el morph de ANIMAL, deformados, repetidos y rotos; con un presupuesto fijo, más liviana cuando el sonido está cargado.
+
+## V10.8.66 — el LOOP de MATH a tempo (2026-11-26, beta)
+
+- Con la WAVE de MATH en SYNC, la KNOB 8 es **LOOP** (OFF, 4 BAR … 1/32): el patrón se repite enganchado al compás.
+
+## V10.8.65 — nombres grandes, la perilla dicha con su página (2026-11-26, beta)
+
+- Las páginas sin gráfico muestran su nombre grande; al girar una perilla el pie la dice con su página ("LIFE STEREO 100 %", "LFO RATE 1.24 HZ").
+
+## V10.8.64 — vuelve HOME › MACROS, LIFE STEREO (2026-11-26, beta)
+
+- **HOME › MACROS** (tercera página de ECOSYSTEM): KNOB 1–4 M1–M4, HOME + SELECT DICE MACROS con UNDO.
+- La KNOB 3 de LIFE es **STEREO** (antes PUMP; el valor de un proyecto pasa a STEREO); todas las profundidades de LIFE curvadas arriba de 60 (unas 2,5 veces en 100).
+
+## V10.8.63 — el panel nuevo de pantalla (2026-11-26, beta)
+
+- **MENU › DISPLAY › PANEL** AUTO / A / B (B para los equipos de fines de 2026, sin probar ahí); OCT− + SAVE mantenidos al encender: A.
+
+## V10.8.62 — MATH WAVE SYNC (2026-11-26, beta)
+
+- **WAVE SYNC** en MATH: el ritmo de la fórmula enganchado al tempo, cada tecla el mismo patrón transpuesto. Preset nuevo **BYTE SYNC**.
+
+## V10.8.61 — VISUAL con las criaturas (2026-11-26, beta)
+
+- VISUAL funde las criaturas del propio tema y las transforma unas en otras; VOICE o ANIMAL en una de cada tres escenas.
+
+## V10.8.60 — menos CPU (2026-11-26, beta)
+
+- La técnica de JIANT BYTE: más del sonido en RAM, la tabla del resampler USB a la mitad; el sonido igual bit a bit.
+
+## V10.8.59 — VISUAL según el tema (2026-11-26, beta)
+
+- Cada tema con su escena, que reacciona a cada golpe. SCL más liviano. Los ajustes globales anteriores a JIANT 0.6 (PER1 / PER2) ya no se migran.
+
+## V10.8.58 — VISUAL compuesta (2026-11-26, beta)
+
+- Los datos aparte, una cabeza de verdad, la seed varía todo, PALETTE pinta todas las capas.
+
+## V10.8.57 — VISUAL a pantalla completa (2026-11-26, beta)
+
+- HOME › VISUAL a pantalla completa; KNOB 1 DENSITY, 2 WOBBLE, 3 PALETTE, 4 REACT; el salvapantallas cambia de imagen cada 30 s.
+
+## V10.8.56 — HOME › VISUAL y SAVER (2026-11-26, beta)
+
+- **HOME › VISUAL** (segunda página de BEING; OCT+ una figura nueva) y **MENU › DISPLAY › SAVER** (OFF, 1, 3, 5, 10 MIN; 3 por defecto).
+
+## V10.8.55 — el caracol y la oruga (2026-11-26, beta)
+
+- El caracol de PHASE y la oruga de MATH como los originales; los círculos de las criaturas ondulan; el kit de DRUM-X más liviano.
+
+## V10.8.54 — RESOUND y la biblioteca de proyectos de Studio (2026-11-26, beta)
+
+- **RESOUND** (GLO + A4): sonidos nuevos para todo el tema, con las notas intactas; GLO + G4 los devuelve.
+- La biblioteca de proyectos de Studio (comandos del editor 95–97: listar, renombrar, copiar, mover, borrar). Más carteles; la ayuda de OCT+ al pie.
+
+## V10.8.53 — SEQ EDIT (2026-11-26, beta)
+
+- **SEQ EDIT** (SEQ mantenido): KNOB 1 / 2 la selección, KNOB 3 la ACTION, KNOB 4 su cantidad, OCT+ la hace, F#5 UNDO / REDO; **GENERATE** (GEN en pantalla) y **RANDOM** entre las acciones.
+- Los gráficos con un solo motor compartido (más livianos); se fue la cara de números grandes, la cuenta regresiva es una línea.
+
+## V10.8.52 — SAVE pregunta antes (2026-11-26, beta)
+
+- **OVERWRITE A?** antes de guardar sobre una parte con música; GLO + G4 deshace el guardado. Un borrador del generador guardado es ese proyecto; RESTORE LAST lo sigue. ARRANGE avisa ROW DUPLICATED.
+
+## V10.8.51 — proyectos viejos a Studio, la matriz a ±200 % (2026-11-26, beta)
+
+- Proyectos de antes de V10.7: **OLD PROJECT: OPEN IN STUDIO** (ya no se convierten en el FM-1).
+- AMOUNT de la matriz MOD de −200 a +198 %; el generador nunca pasa de −1 dBFS; STRETCH / SQUEEZE / REPEAT sobre el rango mantenido.
+
+## V10.8.50 — DUP y borrar un rango (2026-11-26, beta)
+
+- SEQ TOOLS C5 **DUP**; teclas de paso mantenidas + EDIT borran el rango; COPY / PASTE / DUP / CLEAR dicen los pasos.
+
+## V10.8.49 — vuelven STRETCH, SQUEEZE, REPEAT y NUDGE (2026-11-26, beta)
+
+- SEQ TOOLS C4 STRETCH x2, D4 SQUEEZE /2, E4 REPEAT x2; C#5 / D#5 NUDGE < / >. Un solo GAIN en DRUM-X (el de LEVEL). Se fueron las líneas AUDIO LOAD de ABOUT y la curva de RAMP.
 
 ## V10.8.48 — envolventes reales en el generador (2026-11-25)
 

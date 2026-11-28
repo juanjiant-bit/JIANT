@@ -133,6 +133,41 @@
      }
     },
     {
+     "id": "visual",
+     "name": "VISUAL",
+     "tag": {
+      "es": "El tema hecho imagen",
+      "en": "The song as a picture"
+     },
+     "statement": {
+      "es": "El sinte se vuelve un visualizador: toma sus propias gráficas (los efectos, las envolventes, el LFO, el ecosistema, las criaturas, el morph de ANIMAL) y las deforma, las repite y las rompe al ritmo del tema, a pantalla completa.",
+      "en": "The synth becomes a visualizer: it takes its own graphics (the effects, the envelopes, the LFO, the ecosystem, the creatures, ANIMAL's morph) and deforms, repeats and breaks them to the song, full screen."
+     },
+     "how": {
+      "es": [
+       "Cada tema tiene su escena (la semilla y el género del generador, o los sonidos del proyecto); el bombo la sacude, el redoblante la gira, los hats la hacen temblar.",
+       "KNOB 1 DENSITY, KNOB 2 WOBBLE, KNOB 3 PALETTE (MIXED, THERMAL, ORG/BLUE, GRN/RED, AMBER, MONO), KNOB 4 REACT; OCT+ una nueva.",
+       "Le cede el lugar al sonido: con el audio cargado dibuja menos, y fuera de su página no gasta nada. V10.8.72: menos trazos en vez de saltear cuadros, más fluida.",
+       "MENU › DISPLAY › SAVER (OFF, 1, 3, 5, 10 MIN; 3 por defecto) la muestra sola después de ese tiempo sin tocar nada; el primer toque solo vuelve a la página."
+      ],
+      "en": [
+       "Each song has its scene (the generator's seed and genre, or the project's sounds); the kick shakes it, the snare turns it, the hats make it shiver.",
+       "KNOB 1 DENSITY, KNOB 2 WOBBLE, KNOB 3 PALETTE (MIXED, THERMAL, ORG/BLUE, GRN/RED, AMBER, MONO), KNOB 4 REACT; OCT+ a new one.",
+       "It gives way to the sound: with the audio busy it draws less, and off its page it costs nothing. V10.8.72: fewer strokes instead of skipped frames, smoother.",
+       "MENU › DISPLAY › SAVER (OFF, 1, 3, 5, 10 MIN; 3 by default) shows it on its own after that long untouched; the first touch only brings the page back."
+      ]
+     },
+     "where": {
+      "es": "HOME › BEING, segunda página (BEING · VISUAL); MENU › DISPLAY › SAVER",
+      "en": "HOME › BEING, second page (BEING · VISUAL); MENU › DISPLAY › SAVER"
+     },
+     "anim": {
+      "kind": "screen",
+      "params": {}
+     },
+     "since": "V10.8.72"
+    },
+    {
      "id": "keys",
      "name": "F3–G5 · OCT",
      "tag": {
@@ -491,14 +526,14 @@
      },
      "how": {
       "es": [
-       "WAVE elige BYTE (bytebeat, en escalones) o FLOAT (floatbeat, hecho de senos).",
+       "WAVE elige BYTE (bytebeat, en escalones), FLOAT (floatbeat, hecho de senos) o SYNC (BYTE con el ritmo atado al tempo; ver WAVE SYNC).",
        "ALGO elige la fórmula y VARIANT la muta; en BYTE, CHIP es la resolución (4BIT, 4B/2, 8BIT, 1BIT) y BEND pliega el tiempo.",
        "En FLOAT, ALGO B es una segunda fórmula y MORPH pasa de ALGO a ALGO B; FEEDBK ocupa el lugar de GRIT.",
        "MOTION acelera o frena el ritmo de la fórmula y, pasado el tope, lo ata al compás del tema; GRIT la ensucia; LOOP repite un tramo hasta volverlo una nota afinada.",
        "RESTART (en EDIT › MORE) reinicia la fórmula en cada nota."
       ],
       "en": [
-       "WAVE picks BYTE (bytebeat, in steps) or FLOAT (floatbeat, made of sines).",
+       "WAVE picks BYTE (bytebeat, in steps), FLOAT (floatbeat, made of sines) or SYNC (BYTE with its rhythm locked to the tempo; see WAVE SYNC).",
        "ALGO picks the formula and VARIANT mutates it; in BYTE, CHIP is the resolution (4BIT, 4B/2, 8BIT, 1BIT) and BEND folds time.",
        "In FLOAT, ALGO B is a second formula and MORPH moves from ALGO to ALGO B; FEEDBK takes GRIT's place.",
        "MOTION speeds the formula's rhythm up or down and, past the top, locks it to the song's bar; GRIT dirties it; LOOP repeats a stretch until it becomes a tuned note.",
@@ -513,6 +548,41 @@
       "kind": "math",
       "params": {}
      }
+    },
+    {
+     "id": "wave-sync",
+     "name": "WAVE SYNC",
+     "tag": {
+      "es": "MATH a tempo",
+      "en": "MATH in time"
+     },
+     "statement": {
+      "es": "En BYTE cada tecla corre la fórmula a su propia velocidad, así el ritmo cambia de nota a nota. Con WAVE en SYNC el ritmo de la fórmula queda atado al tempo: todas las teclas tocan el mismo patrón, solo transpuesto.",
+      "en": "On BYTE each key runs the formula at its own speed, so the rhythm changes from note to note. With WAVE on SYNC the formula's rhythm is locked to the tempo: every key plays the same pattern, only transposed."
+     },
+     "how": {
+      "es": [
+       "En MATH, WAVE: BYTE, FLOAT o SYNC. SYNC suena como BYTE, con sus pasos lentos (el ritmo, el arpegio) tomados del reloj del tema.",
+       "MOTION sigue siendo su velocidad; parado, el compás corre libre al BPM.",
+       "Con SYNC, la KNOB 8 es LOOP: OFF, 4 BAR, 2 BAR, 1 BAR, 1/2, 1/4, 1/8, 1/16, 1/32. La fórmula vuelve a empezar en cada ventana, así el patrón se repite clavado al compás donde sea que empezó la nota.",
+       "El preset BYTE SYNC (después de BYTEBEAT) lo trae armado."
+      ],
+      "en": [
+       "On MATH, WAVE: BYTE, FLOAT or SYNC. SYNC sounds like BYTE, its slow steps (the rhythm, the arpeggio) taken from the song's clock.",
+       "MOTION is still its speed; stopped, the bar runs free at the BPM.",
+       "With SYNC, KNOB 8 is LOOP: OFF, 4 BAR, 2 BAR, 1 BAR, 1/2, 1/4, 1/8, 1/16, 1/32. The formula starts again at each window, so the pattern repeats bar-exact wherever the note began.",
+       "The BYTE SYNC preset (after BYTEBEAT) comes set up with it."
+      ]
+     },
+     "where": {
+      "es": "Una pista MATH: EDIT 1 WAVE, EDIT 2 KNOB 4 (LOOP); PRESETS › BYTE SYNC",
+      "en": "A MATH track: EDIT 1 WAVE, EDIT 2 KNOB 4 (LOOP); PRESETS › BYTE SYNC"
+     },
+     "anim": {
+      "kind": "bytebeat",
+      "params": {}
+     },
+     "since": "V10.8.72"
     },
     {
      "id": "wheel",
@@ -1470,13 +1540,13 @@
        "Mantené un paso y girá una perilla: ese paso toma su propio valor de ese parámetro.",
        "Las perillas bloquean los cuatro parámetros de la última página de sonido que miraste: las tarjetas los muestran mientras mantenés el paso.",
        "Locks y automatización se ven y se editan uno por uno en SEQ › AUTO LIST.",
-       "SEQ TOOLS F4 (CLR AUTO) borra la automatización y los locks de la pista sin tocar los pasos."
+       "SEQ EDIT (SEQ mantenido) F4 CLR AUTO borra la automatización y los locks de la pista sin tocar los pasos."
       ],
       "en": [
        "Hold a step and turn a knob: that step takes its own value of that parameter.",
        "The knobs lock the four parameters of the sound page you last looked at: the cards show them while the step is held.",
        "Locks and automation are listed and edited one by one on SEQ › AUTO LIST.",
-       "SEQ TOOLS F4 (CLR AUTO) clears the track's automation and locks without touching the steps."
+       "SEQ EDIT (SEQ held) F4 CLR AUTO clears the track's automation and locks without touching the steps."
       ]
      },
      "where": {
@@ -1502,20 +1572,20 @@
      "how": {
       "es": [
        "Pasos: mantené teclas de paso y girá SELECT para copiar (dos teclas: un rango; la 1 y la 16: el compás); mantené un paso y apretá REC para pegar desde ahí, también en otra pista o en otra parte.",
-       "Una secuencia: SEQ mantenido + E5 COPY SEQ; SEQ mantenido + F5 PASTE SEQ la pega entera, desde el paso 1.",
+       "Con SEQ EDIT (SEQ mantenido): E5 COPY copia la selección, o la secuencia entera si no elegiste nada; F5 PASTE la pega; C5 DUP la duplica justo después.",
        "Una parte en otra: mantené SAVE, F3 (PLAY A) y después D4 (SAVE B).",
        "Una fila de ARRANGE: OCT+ agrega una copia justo después. DRUM ↔ melódico no se pega; UNDO deshace un pegado."
       ],
       "en": [
        "Steps: hold step keys and turn SELECT to copy (two keys: a range; 1 and 16: the bar); hold a step and press REC to paste from there, also on another track or in another part.",
-       "A sequence: SEQ held + E5 COPY SEQ; SEQ held + F5 PASTE SEQ pastes it whole, from step 1.",
+       "With SEQ EDIT (SEQ held): E5 COPY copies the selection, or the whole sequence when nothing is selected; F5 PASTE pastes it; C5 DUP duplicates it right after.",
        "One part into another: hold SAVE, F3 (PLAY A), then D4 (SAVE B).",
        "An ARRANGE row: OCT+ adds a copy right after it. DRUM ↔ melodic does not paste; UNDO takes a paste back."
       ]
      },
      "where": {
-      "es": "SEQ (las teclas de paso, SEQ TOOLS), la capa SAVE, HOME › ARRANGE",
-      "en": "SEQ (the step keys, SEQ TOOLS), the SAVE layer, HOME › ARRANGE"
+      "es": "SEQ (las teclas de paso, SEQ EDIT), la capa SAVE, HOME › ARRANGE",
+      "en": "SEQ (the step keys, SEQ EDIT), the SAVE layer, HOME › ARRANGE"
      },
      "anim": {
       "kind": "seq",
@@ -1524,6 +1594,45 @@
       }
      },
      "since": "V10.8.48"
+    },
+    {
+     "id": "seq-edit",
+     "name": "SEQ EDIT",
+     "tag": {
+      "es": "Editar la secuencia por tramos",
+      "en": "Edit the sequence a stretch at a time"
+     },
+     "statement": {
+      "es": "Mantené SEQ y la secuencia se vuelve un taller: elegís un tramo de pasos, una acción y cuánto, y OCT+ la aplica. Estirar, comprimir, repetir, invertir, humanizar o generar adentro de la selección, sin tocar el resto.",
+      "en": "Hold SEQ and the sequence becomes a workshop: pick a stretch of steps, an action and how much, and OCT+ applies it. Stretch, squeeze, repeat, invert, humanize or generate inside the selection, leaving the rest alone."
+     },
+     "how": {
+      "es": [
+       "KNOB 1 START y KNOB 2 END eligen el tramo (A3 los cambia a MOVE y WIDTH); también lo eligen las teclas de paso mantenidas. B3–E4 eligen el compás 1–4 entero.",
+       "KNOB 3 la ACTION: STRETCH, SQUEEZE, REPEAT, NUDGE, ROTATE, SHIFT, REVERSE, DUP, COPY, PASTE, CLEAR, CLR AUTO, CLR STEP, VEL RND, NOTE RND, HUMANIZE, TRANSP, OCTAVE, THIN, INVERT, STUTTER, ARP, MUTATE, GEN y RANDOM; KNOB 4 cuánto (x2, /2, 25 %, el género de GEN, la grilla de RANDOM…).",
+       "OCT+ (o D5) la hace sobre la selección, o sobre toda la secuencia si no hay ninguna; OCT− (o G3) vuelve a ALL STEPS. F#5 deshace y rehace la última; GLO + G4 también.",
+       "Teclas directas: F3 CLEAR, F4 CLR AUTO, C5 DUP, E5 COPY, F5 PASTE, G5 CLR STEP; C#5 / D#5 NUDGE corre las notas 4/64 antes o después; en DRUM, G4 CLR · A4 REV · B4 FILL el carril (negras 1–8 lo eligen).",
+       "GEN escribe con el generador de la pista solo adentro del tramo, otra semilla cada vez (\"GEN TECHNO 5-8 #1791\"); RANDOM tira notas de la escala en una grilla de 1/4 a 1/32 (en DRUM, golpes)."
+      ],
+      "en": [
+       "KNOB 1 START and KNOB 2 END pick the stretch (A3 turns them into MOVE and WIDTH); held step keys pick it too. B3–E4 pick a whole bar 1–4.",
+       "KNOB 3 the ACTION: STRETCH, SQUEEZE, REPEAT, NUDGE, ROTATE, SHIFT, REVERSE, DUP, COPY, PASTE, CLEAR, CLR AUTO, CLR STEP, VEL RND, NOTE RND, HUMANIZE, TRANSP, OCTAVE, THIN, INVERT, STUTTER, ARP, MUTATE, GEN and RANDOM; KNOB 4 how much (x2, /2, 25 %, GEN's genre, RANDOM's grid…).",
+       "OCT+ (or D5) does it on the selection, or on the whole sequence when there is none; OCT− (or G3) goes back to ALL STEPS. F#5 undoes and redoes the last one; GLO + G4 too.",
+       "Direct keys: F3 CLEAR, F4 CLR AUTO, C5 DUP, E5 COPY, F5 PASTE, G5 CLR STEP; C#5 / D#5 NUDGE move the notes 4/64 earlier or later; on DRUM, G4 CLR · A4 REV · B4 FILL the lane (black keys 1–8 pick it).",
+       "GEN writes with the track's generator only inside the stretch, a new seed each time (\"GEN TECHNO 5-8 #1791\"); RANDOM throws notes of the scale on a 1/4 to 1/32 grid (on DRUM, hits)."
+      ]
+     },
+     "where": {
+      "es": "SEQ mantenido en cualquier página de SEQ (reemplaza a SEQ TOOLS)",
+      "en": "SEQ held on any SEQ page (it replaces SEQ TOOLS)"
+     },
+     "anim": {
+      "kind": "seq",
+      "params": {
+       "steps": 16
+      }
+     },
+     "since": "V10.8.72"
     },
     {
      "id": "drum-grid",
@@ -1541,13 +1650,13 @@
        "Las teclas blancas son los 16 pasos de la página; las negras 1–8 eligen el carril (y lo tocan).",
        "Perillas: SEQ (la secuencia A–D), LANE, HIT y ACC; HIT recorre --, ON, x2, x4, x8, SHORT, GHOST, FLAM.",
        "Cada sonido tiene su propio modo en cada paso: un redoble de hi-hat no toca el bombo.",
-       "SEQ TOOLS en el carril elegido: G4 CLR, A4 REV, B4 FILL."
+       "SEQ EDIT (SEQ mantenido) en el carril elegido: G4 CLR, A4 REV, B4 FILL."
       ],
       "en": [
        "The white keys are the page's 16 steps; black keys 1–8 pick the lane (and play it).",
        "Knobs: SEQ (the sequence A–D), LANE, HIT and ACC; HIT walks --, ON, x2, x4, x8, SHORT, GHOST, FLAM.",
        "Each sound has its own mode on each step: a hi-hat roll leaves the kick alone.",
-       "SEQ TOOLS on the chosen lane: G4 CLR, A4 REV, B4 FILL."
+       "SEQ EDIT (SEQ held) on the chosen lane: G4 CLR, A4 REV, B4 FILL."
       ]
      },
      "where": {
@@ -2056,6 +2165,43 @@
       "params": {}
      },
      "since": "0.9.1"
+    },
+    {
+     "id": "ott",
+     "name": "OTT",
+     "tag": {
+      "es": "Lo bajo arriba, lo fuerte aplastado",
+      "en": "The quiet up, the loud squashed"
+     },
+     "statement": {
+      "es": "Un compresor de dos bandas en cada pista, tomado de JIANT BYTE: sube lo que está bajito y aplasta lo que pega fuerte, por separado en graves y agudos. Con poco, densidad; al máximo, ese sonido apretado y brillante de la música electrónica.",
+      "en": "A two-band compressor on every track, taken from JIANT BYTE: it lifts what is quiet and squashes what hits hard, lows and highs apart. A little gives density; all the way, that tight, bright sound of electronic music."
+     },
+     "how": {
+      "es": [
+       "DEPTH: cuánto (0 lo apaga y no gasta procesador: la pista suena exactamente como sin él).",
+       "TIME: qué tan rápido suelta (el ataque es una fracción de eso); UP/DN: hacia − sube menos lo bajo, hacia + aplasta menos lo fuerte.",
+       "X-OVER: dónde se separan las dos bandas, LOW y HIGH; la página dibuja cada una con su nivel y lo que le suma o le saca, en dB.",
+       "En HOME › ECOSYSTEM la pista con OTT lleva su etiqueta. Se guarda con el proyecto y con los sonidos de usuario.",
+       "V10.8.72: la misma ley que JIANT BYTE (unos 10:1 arriba de −16 dB, hasta +30 dB de subida, TIME 56) y el generador lo usa en los géneros electrónicos."
+      ],
+      "en": [
+       "DEPTH: how much (0 turns it off and costs no processor: the track sounds exactly as without it).",
+       "TIME: how fast it lets go (the attack a fraction of it); UP/DN: towards − it lifts the quiet less, towards + it squashes the loud less.",
+       "X-OVER: where the two bands, LOW and HIGH, split; the page draws each with its level and what it adds or takes, in dB.",
+       "On HOME › ECOSYSTEM a track with OTT carries its tag. Saved with the project and with user sounds.",
+       "V10.8.72: the same law as JIANT BYTE (about 10:1 above −16 dB, up to +30 dB of lift, TIME 56), and the generator uses it on the electronic genres."
+      ]
+     },
+     "where": {
+      "es": "FX › TRACK, su cuarta página (después de AUTO PAN)",
+      "en": "FX › TRACK, its fourth page (after AUTO PAN)"
+     },
+     "anim": {
+      "kind": "master",
+      "params": {}
+     },
+     "since": "V10.8.72"
     }
    ]
   },
@@ -2223,24 +2369,59 @@
       "es": [
        "En FX › MACROS, KNOB 1 elige M1–M4, KNOB 2 el destino, KNOB 3 cuánto y KNOB 4 pasa al destino siguiente: hasta 16 rutas en total.",
        "Mantené FX: sus perillas mueven las cuatro macros en vivo.",
+       "En HOME › MACROS (tercera página de ECOSYSTEM) las mismas cuatro, con HOME + SELECT para tirarles DICE.",
        "Cada macro es también un destino de la matriz MOD (después de LEVEL): un LFO o una envolvente pueden mover una macro entera.",
        "Los valores se guardan con el proyecto."
       ],
       "en": [
        "On FX › MACROS, KNOB 1 picks M1–M4, KNOB 2 the destination, KNOB 3 how much and KNOB 4 moves to the next destination: up to 16 routes in all.",
        "Hold FX: its knobs move the four macros live.",
+       "On HOME › MACROS (ECOSYSTEM's third page) the same four, with HOME + SELECT to DICE them.",
        "Each macro is also a destination of the MOD matrix (after LEVEL): an LFO or an envelope can move a whole macro.",
        "The values are saved with the project."
       ]
      },
      "where": {
-      "es": "FX › PUNCH IN › MACROS; las perillas de la capa FX (y las de FX › PUNCH IN) las tocan en vivo",
-      "en": "FX › PUNCH IN › MACROS; the FX layer's knobs (and FX › PUNCH IN's) play them live"
+      "es": "FX › PUNCH IN › MACROS y HOME › MACROS; las perillas de la capa FX (y las de FX › PUNCH IN) las tocan en vivo",
+      "en": "FX › PUNCH IN › MACROS and HOME › MACROS; the FX layer's knobs (and FX › PUNCH IN's) play them live"
      },
      "anim": {
       "kind": "macro",
       "params": {}
      }
+    },
+    {
+     "id": "home-macros",
+     "name": "HOME › MACROS",
+     "tag": {
+      "es": "Las macros a mano, con dado",
+      "en": "The macros at hand, with a dice"
+     },
+     "statement": {
+      "es": "Las cuatro macros también viven en HOME, al lado de LIFE: girás y deformás varias pistas a la vez, y si no sabés adónde ir, un dado les arma valores nuevos.",
+      "en": "The four macros live on HOME too, next to LIFE: turn and deform several tracks at once, and when you don't know where to go, a dice sets new values."
+     },
+     "how": {
+      "es": [
+       "KNOB 1–4 son M1–M4, las mismas que mueve la capa FX (un solo estado).",
+       "HOME + SELECT: DICE MACROS, valores nuevos sobre las pistas que suenan; GLO + G4 lo deshace.",
+       "El nombre MACROS grande arriba y las criaturas debajo; las rutas se arman en FX › MACROS."
+      ],
+      "en": [
+       "KNOB 1–4 are M1–M4, the same ones the FX layer moves (one state).",
+       "HOME + SELECT: DICE MACROS, new values on the tracks that sound; GLO + G4 undoes it.",
+       "The name MACROS large on top and the creatures below; the routes are set on FX › MACROS."
+      ]
+     },
+     "where": {
+      "es": "HOME › ECOSYSTEM, tercera página (ECOSYSTEM · LIFE · MACROS)",
+      "en": "HOME › ECOSYSTEM, third page (ECOSYSTEM · LIFE · MACROS)"
+     },
+     "anim": {
+      "kind": "macro",
+      "params": {}
+     },
+     "since": "V10.8.72"
     },
     {
      "id": "life",
@@ -2255,15 +2436,17 @@
      },
      "how": {
       "es": [
-       "Cuatro perillas de todo el proyecto, no de una pista, de 0 a 100 %: FILTER, TIMBRE, PUMP y FX.",
+       "Cuatro perillas de todo el proyecto, no de una pista, de 0 a 100 %: FILTER, TIMBRE, STEREO y FX.",
        "FILTER: los golpes cierran, las notas abren. TIMBRE: las otras pistas le dan forma al sonido.",
-       "PUMP: los bombos hacen bajar a los sintes. FX: las otras pistas alimentan los envíos.",
+       "STEREO (antes PUMP): cada pista se corre en el estéreo empujada por el sonido de sus vecinas, una para cada lado; en 100, de punta a punta. FX: las otras pistas alimentan los envíos.",
+       "Hasta 60 todo suena como antes; arriba de 60 crece en curva, hasta unas 2,5 veces en 100. Al girar, el pie dice la perilla entera: \"LIFE STEREO 100 %\".",
        "Apagado dice LIFE OFF. Casi no gasta procesador, así podés dejarlo andando."
       ],
       "en": [
-       "Four knobs for the whole project, not one track, 0 to 100 %: FILTER, TIMBRE, PUMP and FX.",
+       "Four knobs for the whole project, not one track, 0 to 100 %: FILTER, TIMBRE, STEREO and FX.",
        "FILTER: hits close, notes open. TIMBRE: the other tracks shape the sound.",
-       "PUMP: the kicks duck the synths. FX: the other tracks feed the sends.",
+       "STEREO (was PUMP): each track drifts across the stereo field pushed by its neighbours' sound, every other one the other way; at 100, side to side. FX: the other tracks feed the sends.",
+       "Up to 60 everything sounds as before; above 60 it grows on a curve, to about 2.5 times at 100. As you turn, the footer says the knob whole: \"LIFE STEREO 100 %\".",
        "Off it says LIFE OFF. It barely uses the processor, so you can leave it running."
       ]
      },
@@ -2605,6 +2788,41 @@
      }
     },
     {
+     "id": "resound",
+     "name": "RESOUND",
+     "tag": {
+      "es": "Otro sonido, la misma canción",
+      "en": "Another sound, the same song"
+     },
+     "statement": {
+      "es": "¿Te gusta el tema pero no cómo suena? RESOUND le da sonidos nuevos a todas las pistas según su rol y deja intactas las notas, los pasos y el arreglo: la música sigue sonando.",
+      "en": "Like the song but not how it sounds? RESOUND gives every track new sounds by its role and keeps the notes, the steps and the arrangement: the music plays on."
+     },
+     "how": {
+      "es": [
+       "GLO mantenido + A4: un bajo recibe un bajo, los acordes un sonido de acordes, la batería otro kit; la pantalla dice \"RESOUND #semilla\".",
+       "En un borrador del generador usa su género; en un tema tuyo deduce el rol de cada pista por lo que toca.",
+       "Las secciones que siguen conservan los sonidos nuevos.",
+       "GLO + G4 devuelve los sonidos de antes; otra vez, vuelve a los nuevos."
+      ],
+      "en": [
+       "GLO held + A4: a bass gets a bass, the chords a chord sound, the drums another kit; the screen says \"RESOUND #seed\".",
+       "On a generator draft it uses its genre; on a song of yours it works out each track's role from what it plays.",
+       "The sections that follow keep the new sounds.",
+       "GLO + G4 brings the previous sounds back; again, the new ones."
+      ]
+     },
+     "where": {
+      "es": "La capa GLO: A4 (G4 deshace)",
+      "en": "The GLO layer: A4 (G4 undoes)"
+     },
+     "anim": {
+      "kind": "dice",
+      "params": {}
+     },
+     "since": "V10.8.72"
+    },
+    {
      "id": "macro-dice",
      "name": "MACRO DICE",
      "tag": {
@@ -2651,12 +2869,12 @@
       "es": [
        "GLO mantenido + G4: UNDO; otra vez, rehacer.",
        "O mantené REC solo y soltalo sin tocar nada más.",
-       "Cubre dados, pistas borradas, NEW PROJECT, INIT, RECALL, una parte cargada, un pegado de pasos y lo que arma el generador."
+       "Cubre dados, RESOUND, un guardado sobre una parte, cada acción de SEQ EDIT, pistas borradas, NEW PROJECT, INIT, RECALL, una parte cargada, un pegado de pasos y lo que arma el generador."
       ],
       "en": [
        "GLO held + G4: UNDO; again, redo.",
        "Or hold REC alone and let it go without touching anything else.",
-       "It covers dice, cleared tracks, NEW PROJECT, INIT, RECALL, a loaded part, a paste of steps and what the generator builds."
+       "It covers dice, RESOUND, a save over a part, each SEQ EDIT action, cleared tracks, NEW PROJECT, INIT, RECALL, a loaded part, a paste of steps and what the generator builds."
       ]
      },
      "where": {
