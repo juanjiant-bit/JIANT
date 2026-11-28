@@ -51,8 +51,6 @@ Las versiones V10.8.49 a V10.8.72 en una lista. Donde un capítulo de abajo toda
 - **Pasos con las teclas** (V10.8.50–V10.8.51): dos o más teclas de paso mantenidas seleccionan esos pasos (**SEL
   5-8**); teclas de paso + **EDIT** los borran; COPY, PASTE, DUP y CLEAR dicen qué pasos (**COPY 5-8**). Ver
   [Copiar, pegar y duplicar](#copiar-pegar-y-duplicar).
-- **REC con el transporte parado solo arma** la pista: PLAY arranca el transporte (en el roll de STEP arma la
-  grabación por pasos).
 
 **Guardar**
 - **OVERWRITE A?** (V10.8.52): SAVE + C4–F4 o SAVE + OCT+ sobre una parte con música pregunta antes (OCT+ sí, OCT− no),
@@ -514,20 +512,13 @@ de Charles Vestal, *Velo*, github.com/charlesvestal/fm1-velocity, GPL-3.0). JIAN
 
 ## 2. La pantalla
 
-### Pieles: AIR, COLORS, BOTTOM, HUD (0.8.9, AIR 0.9.7)
+### El aspecto: COLORS (0.8.9; la única piel desde la V10.7.23)
 
-**MENU > DISPLAY > SKIN** elige cómo se visten las lentes (la maqueta aprobada "skin aireado", opciones 1, 3 y 4; 0.9.7:
-AIR, la opción aprobada); en todas las páginas, todas las paletas, FLAT y LINE. El menú las recorre AIR, COLORS, BOTTOM,
-HUD:
+De la 0.8.9 a la V10.7.22, **MENU › DISPLAY › SKIN** elegía AIR, COLORS, BOTTOM o HUD. Desde la V10.7.23 no hay fila
+SKIN (ni STYLE): **COLORS** es el único aspecto, en todas las páginas y todas las paletas, con las cartas de las
+perillas con borde. Los ajustes guardados con otra piel abren en COLORS.
 
-- **AIR** (0.9.7; la de fábrica de los ajustes nuevos: un FM-1 nuevo o con sus ajustes borrados; los ajustes guardados
-  antes conservan la piel que tenían): el aspecto de HUD en **todas** las páginas, con la **fila de perillas arriba**,
-  justo debajo de las pestañas: sin cartas ni caja de panel, el texto claro con un borde oscuro de 2 px, el medio de la
-  pantalla libre para el dibujo y el pie solo la miga de pan. En HOME los seres nadan por la pantalla entera debajo del
-  encabezado, las pestañas, la fila de perillas y la miga, como en HUD (la fila de perillas se apaga ahí unos segundos
-  después de la última vuelta); todas las capas, diálogos y el menú con la misma ropa. La palabra del grupo va
-  subrayada con una rayita.
-- **COLORS** (los ajustes guardados antes de 0.9.7 sin otra piel elegida cargan con ella): la estructura LENTE con los **colores de la 0.6**.
+- **COLORS**: la estructura LENTE con los **colores de la 0.6**.
   Negro, cartas casi negras redondeadas con una marquita y el nombre de la perilla, **cada perilla con su color** en el
   valor y en la barra (JIANT, 0.9.5 como la 0.6: el color propio de cada parámetro **se mueve con su cantidad**, como
   calor, violeta si es poco, amarillo y crema si es mucho; uno centrado como PAN o DETUNE frío en el medio y caliente en
@@ -535,18 +526,11 @@ HUD:
   la perilla que girás enmarcada en su color; la pestaña del grupo rellena de violeta; el número de la pista en una
   cajita naranja, un ▶ violeta y el BPM grande en violeta en el encabezado; un panel casi negro redondeado; los seres con
   el calor de la 0.6 (púas violetas, anillos rojo y naranja, núcleos crema).
-- **BOTTOM**: las pestañas son las palabras de los grupos (la del grupo en el que estás con una pastillita debajo, un punto por página), sin cartas ni caja de panel: el
-  medio de la pantalla es el dibujo, de borde a borde (los seres de HOME tienen todo el lugar), y las cuatro perillas
-  son una fila fina sobre la miga de pan (marca y nombre, el valor en su color, una barra finita).
-- **HUD**: como BOTTOM, pero en HOME los seres nadan **debajo de todo, por la pantalla entera**: el encabezado, las
-  pestañas, las perillas y la miga flotan encima como texto claro con un borde oscuro de 2 px (0.9.0). Ahí la fila de
-  perillas se apaga a un quinto unos segundos después de la última vuelta de perilla y vuelve con la siguiente o al
-  cambiar de página; en las demás páginas queda encendida. La palabra del grupo va subrayada con una rayita.
+- AIR, BOTTOM y HUD (la fila de perillas arriba o abajo, los seres debajo de todo) se fueron con la fila SKIN.
 
 Los valores (cartas, el BPM del encabezado) vuelven a una sans redondeada (Inter Tight SemiBold), como en la 0.6; los
-nombres, las pestañas y la miga siguen con las letras de píxel de 5 x 7. **MENU > LARGE** deja sus cartas grandes arriba
-en todas las pieles (la piel conserva sus pestañas y sus colores; en AIR quedan donde va su fila de perillas, debajo de
-las pestañas), así LARGE se lee igual en cualquiera.
+nombres, las pestañas y la miga siguen con las letras de píxel de 5 x 7. **MENU > LARGE** deja sus cartas grandes arriba,
+con las pestañas y los colores de COLORS.
 
 Desde la 0.8.5 todas las páginas llevan la piel del diseño que aprobó el dueño (la maqueta HTML "LENTE"):
 
@@ -577,8 +561,7 @@ Desde la 0.8.5 todas las páginas llevan la piel del diseño que aprobó el due�
   una **miga de pan** chica y gris: **SECCIÓN · GRUPO · página** y a la derecha el lugar de la página en la cadena de
   la sección (0.9.2; p. ej. **FX · DELAY · DLY 2  7/20**, **ENV · ENV · ENV DEST  2/3**).
 - **Las pestañas** (0.9.2): debajo del encabezado, los **grupos** de la sección (FX: TRK · BUS · DLY · REV · CHO · SLC ·
-  PCH · MST; SEQ: STEP · PAT · EUCL · HEAD · SFX · AUTO · GEN · CLAY), encendido el del grupo en el que estás (COLORS: relleno violeta;
-  BOTTOM: una pastillita; HUD y AIR: una rayita), y **un punto por página** debajo de cada uno, encendido el de la página que
+  PCH · MST; SEQ: STEP · PAT · EUCL · HEAD · SFX · AUTO · GEN · CLAY), encendido el del grupo en el que estás (relleno violeta), y **un punto por página** debajo de cada uno, encendido el de la página que
   se ve. Las tarjetas debajo, un panel más alto, y el pie es solo la miga de pan.
 
 - **Las letras chicas** (desde la 0.8.5): los nombres de las tarjetas, las pestañas, la miga de pan, las
@@ -605,10 +588,11 @@ propio recuadro, sus pestañas y su ruta: la página sigue a la vista alrededor,
 la página, que sigue dibujándose y moviéndose detrás (el encabezado también lo dice; no sobre los seres de HOME ni el
 mapa de una capa); nada se oscurece. La píldora no tapa el texto de la página: si el pie está escrito (las filas de
 AUTO LIST) se pone en las filas libres más cercanas, y en una página sin filas libres no aparece y
-lo dice solo el encabezado. La **ayuda** de una página (V10.6: la de EUCLID "TURN A KNOB: A PATTERN", la de MOTION y PUNCH
-"REC + PLAY ...") aparece solo si te quedás en la página unos 0,8 s, nunca mientras SELECT pasa por ella, y cada una
-como mucho dos veces en total (se cuentan con los ajustes: tampoco vuelven tras reiniciar). SAVE › TOOLS › INIT SYSTEM
-las reinicia. Tocar un botón de capa no dice nada (ya no están las ayudas "HOLD [X] QUICK"): mantenelo y su capa se
+lo dice solo el encabezado. Las ayudas de una sola vez (la de EUCLID "TURN A KNOB: A PATTERN", la de MOTION y PUNCH
+"REC + PLAY ...", cada una como mucho dos veces) ya no están desde la V10.8.18; en su lugar, una página con gestos de
+OCT+ los dice en su pie (V10.8.54, ver
+[Títulos grandes, el pie de la perilla y los avisos](#títulos-grandes-el-pie-de-la-perilla-y-los-avisos-v10853v10865)).
+Tocar un botón de capa no dice nada (ya no están las ayudas "HOLD [X] QUICK"): mantenelo y su capa se
 muestra sola.
 
 ### Títulos grandes, el pie de la perilla y los avisos (V10.8.53–V10.8.65)
@@ -721,7 +705,7 @@ páginas, sus perillas, sus dibujos y todas las funciones son las mismas, solo c
    no recorre páginas: regla 3; V10.7: EDIT mantenido + PRESETS salta de motor en motor.)
 6. **La pantalla dice dónde estás.** Arriba, las pestañas son los **grupos** de la sección, el actual encendido y un
    puntito por cada una de sus páginas. Abajo: **SECCIÓN · GRUPO · página** y **n/N**, el lugar de la página en la
-   cadena: **FX · DELAY · DLY 2  7/20**. Igual en AIR, COLORS, BOTTOM y HUD, con todas las paletas.
+   cadena: **FX · DELAY · DLY 2  7/20**. Igual con todas las paletas.
 
 - Cada sección recuerda la página donde la dejaste (EDIT una para los sintes y una para FM6 y otra para DRUM); al
   encender SEQ abre en STEP, ENV en ENV, LFO en LFO, SAVE en PROJECTS, las demás en su primera página.

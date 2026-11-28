@@ -51,7 +51,6 @@ The versions V10.8.49 to V10.8.72 in one list. Where a chapter below still descr
 - **Steps by the keys** (V10.8.50–V10.8.51): two or more step keys held select those steps (**SEL 5-8**); step keys
   held + **EDIT** clear them; COPY, PASTE, DUP and CLEAR say which steps (**COPY 5-8**). See
   [Copy, paste and duplicate](#copy-paste-and-duplicate).
-- **REC while stopped only arms** the track: PLAY starts the transport (on STEP's roll it arms step recording).
 
 **Saving**
 - **OVERWRITE A?** (V10.8.52): SAVE + C4–F4 or SAVE + OCT+ over a part with music asks first (OCT+ yes, OCT− no), once
@@ -538,8 +537,7 @@ Since 0.8.5 every page wears the skin of the design the owner approved (the HTML
   **breadcrumb**: **SECTION · GROUP · page** and the page's place in the section's chain at the right (0.9.2; e.g.
   **FX · DELAY · DLY 2  7/20**, **ENV · ENV · ENV DEST  2/3**).
 - **The tabs** (0.9.2): under the header, the section's **groups** (FX: TRK · BUS · DLY · REV · CHO · SLC · PCH · MST;
-  SEQ: STEP · PAT · EUCL · HEAD · SFX · AUTO · GEN · CLAY), the one you are on lit (COLORS: filled violet; BOTTOM: a small pill; HUD and AIR:
-  a dash), and **a dot a page** under each, the page shown lit. The cards under them, a taller panel, and the footer is
+  SEQ: STEP · PAT · EUCL · HEAD · SFX · AUTO · GEN · CLAY), the one you are on lit (filled violet), and **a dot a page** under each, the page shown lit. The cards under them, a taller panel, and the footer is
   the breadcrumb alone.
 
 - **The small letters** (since 0.8.5): the cards' names, the tabs, the breadcrumb, the header's middle words and
@@ -675,7 +673,7 @@ knobs, their pictures and every function are the same, only the way between them
    EDIT held + PRESETS jumps engine to engine.)
 6. **The screen says where you are.** On top, the tabs are the section's **groups**, the one you are on lit and a dot
    for each of its pages. At the foot: **SECTION · GROUP · page** and **n/N**, the page's place in the chain:
-   **FX · DELAY · DLY 2  7/20**. The same in AIR, COLORS, BOTTOM and HUD, every palette.
+   **FX · DELAY · DLY 2  7/20**. The same with every palette.
 
 - Each section remembers the page it was left on (EDIT one for the synths and one each for FM6 and DRUM); at power-on
   SEQ opens on STEP, ENV on ENV, LFO on LFO, SAVE on PROJECTS, the others on their first page.
