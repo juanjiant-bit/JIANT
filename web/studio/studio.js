@@ -75,7 +75,7 @@ const TEXT = {
     rsSafe: "Solo se escribe la zona del firmware (0x4000–0x92FFF), sector por sector, cada uno releído y comparado; la cabecera de arranque y tus datos no se tocan. Sin firmware dentro, la placa queda como un FM-1 Transporter común. Basado en FM-1 Transporter (Hügelton Instruments), MvaveFM1Unbricker (Quixotic7), jl-uboot-tool (kagaimiq) y la guía de GoodPerson42. Usalo con la batería cargada y bajo tu responsabilidad: todavía no se probó en un FM-1 real.",
     rdLiked: "¿Qué te gustó? (opcional)", rdDisliked: "¿Qué no te gustó? (opcional)", rdNext: "Siguiente", rdpDrums: "Batería", rdpBass: "Bajo", rdpChords: "Acordes", rdpLead: "Lead", rdpArp: "Arp", rdpSound: "Sonido/mezcla",
     rdStarting: "Prendiendo…", rdEmuOn: "Prendiendo el emulador…",
-    emuVer: "Versión", emuVerPinned: "La de este sitio (recomendada)", emuVerPublic: "pública", emuVerConfirm: "Cambiar de versión reinicia el emulador (cada versión guarda su propia memoria). ¿Seguir?",
+    emuVer: "Versión", emuVerPinned: "La de este sitio (recomendada)", emuVerPublic: "pública", emuVerBeta: "Beta (lo último, para probar)", emuVerConfirm: "Cambiar de versión reinicia el emulador (cada versión guarda su propia memoria). ¿Seguir?",
     gPlay: "Tocar", gMake: "Crear", gLearn: "Aprender", gDevice: "Equipo",
     pathFm1E: "Tengo un FM-1", pathFm1: "Conectarlo y usarlo", pathFm1T: "Instalar JIANT, editar los sonidos, guardar proyectos, grabar y mirar su pantalla.",
     pathTryE: "No tengo uno", pathTry: "Probarlo sin equipo", pathTryT: "La radio y el emulador: el FM-1 entero en el navegador, sonando ya.",
@@ -283,7 +283,7 @@ const TEXT = {
     rsSafe: "Only the firmware area (0x4000–0x92FFF) is written, sector by sector, each read back and compared; the boot head and your data are not touched. Without a firmware inside, the board is a plain FM-1 Transporter. Built on FM-1 Transporter (Hügelton Instruments), MvaveFM1Unbricker (Quixotic7), jl-uboot-tool (kagaimiq) and GoodPerson42's guide. Use it with a charged battery and at your own risk: it has not been tried on a real FM-1 yet.",
     rdLiked: "What did you like? (optional)", rdDisliked: "What didn't you like? (optional)", rdNext: "Next", rdpDrums: "Drums", rdpBass: "Bass", rdpChords: "Chords", rdpLead: "Lead", rdpArp: "Arp", rdpSound: "Sound/mix",
     rdStarting: "Starting…", rdEmuOn: "Switching the emulator on…",
-    emuVer: "Version", emuVerPinned: "This site's (recommended)", emuVerPublic: "public", emuVerConfirm: "Changing the version restarts the emulator (each version keeps its own memory). Go on?",
+    emuVer: "Version", emuVerPinned: "This site's (recommended)", emuVerPublic: "public", emuVerBeta: "Beta (the latest, to try)", emuVerConfirm: "Changing the version restarts the emulator (each version keeps its own memory). Go on?",
     gPlay: "Play", gMake: "Make", gLearn: "Learn", gDevice: "Device",
     pathFm1E: "I have an FM-1", pathFm1: "Connect it and use it", pathFm1T: "Install JIANT, edit the sounds, keep projects, record and watch its screen.",
     pathTryE: "I don't have one", pathTry: "Try it without one", pathTryT: "The radio and the emulator: the whole FM-1 in the browser, playing now.",
@@ -573,6 +573,7 @@ async function find() {
 }
 /* "JIANT BYTE v0.16", "JIANT FM V10.8.21": the firmware's name once (its INFO says "JIANT BYTE v0.16" or "JIANT V10.8.21") */
 const devName = (d) => `${d.kind === "byte" ? "JIANT BYTE" : "JIANT FM"} ${d.version.replace(/^(JIANT|FELUCCA)\s+/i, "").replace(/^(BYTE|FM)\s+/i, "")}`;
+const tp = (k) => (state.fw === "byte" ? t(k).replace(/el FM-1|the FM-1/g, (m) => m.slice(0, -4) + "JIANT BYTE").replace(/FM-1/g, "JIANT BYTE") : t(k));   // the project editor's texts name the device that is connected
 function letGo() {
   const d = state.dev;
   if (!d) return;
@@ -677,7 +678,7 @@ function loadFrame(k) {
   if (f.fw === state.fw && f.el.src) return;
   f.fw = state.fw;
   const q = k === "editor" && state.target === "emu" ? "?emu=1" : MOCK && k === "editor" ? "?mock=1" : "";
-  f.el.src = k === "emu" && state.emuVer ? `${TOOLS[state.fw].base}emu-v/${state.emuVer}/` : toolUrl(state.fw, f.tool, q);   // another version: its own page (emu-v)
+  f.el.src = k === "emu" && state.emuVer ? (state.emuVer === "beta" ? `${TOOLS[state.fw].base}emu/beta/` : `${TOOLS[state.fw].base}emu-v/${state.emuVer}/`) : toolUrl(state.fw, f.tool, q);   // another version: its own page (emu-v)
 }
 for (const [k, f] of Object.entries(frames)) f.el.addEventListener("load", () => { dress(f.el); if (k === "editor") editorLoaded(); });
 /* the firmware's look inside a tool's frame (same origin only): its colour tokens and type, over the page's own */
@@ -2015,17 +2016,17 @@ function peExt() { return state.fw === "byte" ? "b1t3" : "jfm"; }
 function renderPe() {
   if (!$("pebody")) return;
   const L = projLink();
-  $("pename").value = pe.name || ""; $("pename").placeholder = t("peUnnamed");
+  $("pename").value = pe.name || ""; $("pename").placeholder = tp("peUnnamed");
   $("petags").textContent = pe.info ? `${pe.info.version}${pe.gen ? " · " + pe.gen : ""}` : L ? L.name : t("bkNoDev");
   for (const id of ["peexport", "pesend", "pefetch"]) $(id).disabled = !L || pe.busy;
-  $("peexport").textContent = t("peExport").replace("%s", peExt()); $("peimport").textContent = t("peImport").replace("%s", peExt());
+  $("peexport").textContent = tp("peExport").replace("%s", peExt()); $("peimport").textContent = tp("peImport").replace("%s", peExt());
   $("petabs").replaceChildren(...PE_TABS.map(([k, n]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = TEXT[lang][n] ? t(n) : n; b.setAttribute("aria-pressed", String(pe.tab === k)); b.onclick = () => { pe.tab = k; renderPe(); }; return b; }));
   const body = $("pebody");
   if (pe.tab === "song" && state.fw === "byte") { peSong(body, L); return; }
   if (pe.tab === "seq") { peSeq(body, L); return; }
   if (pe.tab === "mod") { peMod(body, L); return; }
   if (pe.tab === "gen") { peGen(body); return; }
-  if (pe.tab !== "sound") { body.innerHTML = ""; const p = document.createElement("p"); p.className = "dim"; p.textContent = t("peSoon_" + pe.tab); body.append(p); return; }
+  if (pe.tab !== "sound") { body.innerHTML = ""; const p = document.createElement("p"); p.className = "dim"; p.textContent = tp("peSoon_" + pe.tab); body.append(p); return; }
   peSound(body, L);
 }
 async function peLoad(L) {                                       // the tracks, and each one's parameters by name
@@ -2037,7 +2038,7 @@ async function peLoad(L) {                                       // the tracks, 
   pe.sel = sel;
 }
 async function peTrack(L, k) {
-  peSay(t("peReading"));
+  peSay(tp("peReading"));
   pe.busy = true;
   try {
     const common = pe.desc.common || (pe.desc.common = {});
@@ -2053,12 +2054,12 @@ async function peTrack(L, k) {
 function peSound(body, L) {
   body.replaceChildren();
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
-  if (!L) { body.append(el("p", "dim", t("peNoDev"))); return; }
-  if (!pe.tracks.length) { const b = el("button", "btn", t("peRead")); b.type = "button"; b.onclick = async () => { try { await peLoad(L); await peTrack(L, pe.trk); } catch (e) { peSay(t("peFail")); } renderPe(); }; body.append(el("p", "dim", t("peAsk")), b); return; }
+  if (!L) { body.append(el("p", "dim", tp("peNoDev"))); return; }
+  if (!pe.tracks.length) { const b = el("button", "btn", tp("peRead")); b.type = "button"; b.onclick = async () => { try { await peLoad(L); await peTrack(L, pe.trk); } catch (e) { peSay(tp("peFail")); } renderPe(); }; body.append(el("p", "dim", tp("peAsk")), b); return; }
   const bar = el("div", "petrk");
   pe.tracks.forEach((tr, k) => { const b = el("button", "btn" + (k === pe.trk ? "" : " ghost"), `T${k + 1} · ${tr.engine}`); b.type = "button"; b.onclick = async () => { pe.trk = k; if (!pe.params[k]) await peTrack(L, k); renderPe(); }; bar.append(b); });
   body.append(bar);
-  const P = pe.params[pe.trk]; if (!P) { body.append(el("p", "dim", t("peReading"))); return; }
+  const P = pe.params[pe.trk]; if (!P) { body.append(el("p", "dim", tp("peReading"))); return; }
   const knob = (id, d) => {
     const v = P.vals[id], box = el("div", "pek" + (v !== d.def ? " chg" : "")), lab = el("label"), out = el("b"), show = (x) => { out.textContent = d.names && d.names.length ? (d.names[x - d.min] ?? x) : `${x}${d.unit ? " " + d.unit : ""}`; };
     lab.append(document.createTextNode(d.label), out); show(v);
@@ -2069,31 +2070,31 @@ function peSound(body, L) {
     let tm = 0;
     ctl.addEventListener("input", () => {
       const x = +ctl.value; show(x); P.vals[id] = x; box.classList.toggle("chg", x !== d.def);
-      clearTimeout(tm); tm = setTimeout(() => L.link.request(31, [pe.trk, id, (x + 8192) & 127, (x + 8192) >> 7], 800).catch(() => peSay(t("peFail"))), 30);
+      clearTimeout(tm); tm = setTimeout(() => L.link.request(31, [pe.trk, id, (x + 8192) & 127, (x + 8192) >> 7], 800).catch(() => peSay(tp("peFail"))), 30);
     });
     box.append(lab, ctl); return box;
   };
   const group = (title, ids, src) => { const g = el("div", "pegrid"); for (const id of ids) { const d = src[id]; if (d && d.label && d.label !== "-") g.append(knob(id, d)); } if (g.children.length) body.append(el("p", "pegrp", title), g); };
   if (state.fw === "byte") {                                     // BYTE: the track's formula (39 LYRIC: read, written live)
-    const box = el("div"), ta = el("textarea"), send = el("button", "btn", t("peFormulaSend")), msg = el("span", "dim");
+    const box = el("div"), ta = el("textarea"), send = el("button", "btn", tp("peFormulaSend")), msg = el("span", "dim");
     ta.rows = 3; ta.spellcheck = false; ta.maxLength = 255; ta.style.cssText = "width:100%;font:15px/1.4 var(--mono);background:var(--field);color:var(--fg);border:var(--border) solid var(--line);padding:8px";
-    ta.setAttribute("aria-label", t("peFormula")); send.type = "button";
+    ta.setAttribute("aria-label", tp("peFormula")); send.type = "button";
     if (P.formula == null) { L.link.request(39, [pe.trk], 900, (r) => r[0] === pe.trk).then((a) => { P.formula = String.fromCharCode(...a.slice(2).filter((c) => c)); renderPe(); }).catch(() => { P.formula = ""; }); }
     ta.value = P.formula || "";
     send.onclick = async () => {
       const v = ta.value.replace(/[^ -~]/g, "").slice(0, 255);
-      try { const a = await L.link.request(39, [pe.trk, ...[...v].map((c) => c.charCodeAt(0)), 0], 1500, (r) => r[0] === pe.trk); P.formula = v; msg.textContent = a[1] === 1 ? t("peFormulaCut") : t("peFormulaOk"); }
-      catch (_) { msg.textContent = t("peFail"); }
+      try { const a = await L.link.request(39, [pe.trk, ...[...v].map((c) => c.charCodeAt(0)), 0], 1500, (r) => r[0] === pe.trk); P.formula = v; msg.textContent = a[1] === 1 ? tp("peFormulaCut") : tp("peFormulaOk"); }
+      catch (_) { msg.textContent = tp("peFail"); }
     };
     ta.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) send.click(); });
     const row = el("div", "emuctl"); row.append(send, msg);
-    box.append(el("p", "pegrp", t("peFormula")), ta, row); body.append(box);
+    box.append(el("p", "pegrp", tp("peFormula")), ta, row); body.append(box);
   }
   const C = pe.desc.common, only = el("label", "chk"), cb = el("input");
   cb.type = "checkbox"; cb.checked = !!pe.onlyChanged; cb.onchange = () => { pe.onlyChanged = cb.checked; renderPe(); };
-  only.append(cb, document.createTextNode(" " + t("peOnlyChanged"))); body.append(only);
+  only.append(cb, document.createTextNode(" " + tp("peOnlyChanged"))); body.append(only);
   group(`${pe.tracks[pe.trk].engine}`, Object.keys(P.eng).map(Number), P.eng);
-  group(t("peTrackParams"), Object.keys(C).map(Number).filter((id) => !pe.onlyChanged || (C[id] && P.vals[id] !== C[id].def)), C);
+  group(tp("peTrackParams"), Object.keys(C).map(Number).filter((id) => !pe.onlyChanged || (C[id] && P.vals[id] !== C[id].def)), C);
 }
 /* ---- a control for a described parameter (DESC): a slider or a list; set calls back as it moves */
 function peCtl(d, v, set) {
@@ -2117,25 +2118,25 @@ async function peSeqRead(L, k) {
     let a = null;
     if (whole) try { a = await L.link.request(30, [k, i, 2], 700, (r) => r[0] === k && r[1] === i); } catch (_) { whole = false; }
     if (!a) a = await L.link.request(30, [k, i], 700, (r) => r[0] === k && r[1] === i);
-    steps.push(a); peSay(`${t("peReading")} ${i + 1}/${n}`);
+    steps.push(a); peSay(`${tp("peReading")} ${i + 1}/${n}`);
   }
   pe.seq = { k, steps, whole: whole && steps[0].length >= 43 }; peSay("");
 }
 function peSeq(body, L) {
   body.replaceChildren();
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
-  if (!L) { body.append(el("p", "dim", t("peNoDev"))); return; }
-  if (!pe.tracks.length) { body.append(el("p", "dim", t("peAsk"))); const b = el("button", "btn", t("peRead")); b.type = "button"; b.onclick = async () => { try { await peLoad(L); } catch (_) { peSay(t("peFail")); } renderPe(); }; body.append(b); return; }
+  if (!L) { body.append(el("p", "dim", tp("peNoDev"))); return; }
+  if (!pe.tracks.length) { body.append(el("p", "dim", tp("peAsk"))); const b = el("button", "btn", tp("peRead")); b.type = "button"; b.onclick = async () => { try { await peLoad(L); } catch (_) { peSay(tp("peFail")); } renderPe(); }; body.append(b); return; }
   const bar = el("div", "petrk");
-  pe.tracks.forEach((tr, k) => { const b = el("button", "btn" + (pe.seq && pe.seq.k === k ? "" : " ghost"), `T${k + 1} · ${tr.engine}`); b.type = "button"; b.onclick = async () => { try { await exclusive(() => peSeqRead(L, k)); } catch (e) { peSay(t("peFail")); } renderPe(); }; bar.append(b); });
+  pe.tracks.forEach((tr, k) => { const b = el("button", "btn" + (pe.seq && pe.seq.k === k ? "" : " ghost"), `T${k + 1} · ${tr.engine}`); b.type = "button"; b.onclick = async () => { try { await exclusive(() => peSeqRead(L, k)); } catch (e) { peSay(tp("peFail")); } renderPe(); }; bar.append(b); });
   body.append(bar);
-  const Q = pe.seq; if (!Q) { body.append(el("p", "dim", t("peSeqPick"))); return; }
+  const Q = pe.seq; if (!Q) { body.append(el("p", "dim", tp("peSeqPick"))); return; }
   const notes = Q.steps.flatMap((a) => a.slice(3, 3 + a[2])), lo = Math.max(0, Math.min(48, ...notes) - 2), hi = Math.min(127, Math.max(lo + 12, ...notes) + 2), N = Q.steps.length;
   const NN = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
   const write = async (i) => {
     const a = Q.steps[i], len = Q.whole && !a.slice(27, 43).some((v, j) => j % 2 === 1 && v > 1) ? 43 : 23;   // (a legacy LENGTH 255: the 20 bytes left as they are)
     try { const r = await L.link.request(30, a.slice(0, len), 900, (x) => x[0] === Q.k && x[1] === i); Q.steps[i] = len === 43 ? r : [...r.slice(0, 23), ...a.slice(23)]; }
-    catch (_) { peSay(t("peSeqRefused")); }
+    catch (_) { peSay(tp("peSeqRefused")); }
   };
   const wrap = el("div", "sc"), grid = el("div", "grid");
   grid.style.cssText = `display:grid;gap:1px;grid-template-columns:44px repeat(${N},minmax(12px,1fr));min-width:${Math.max(560, N * 14)}px`;
@@ -2174,15 +2175,15 @@ function peSeq(body, L) {
 async function peMod(body, L) {
   body.replaceChildren();
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
-  if (!L) { body.append(el("p", "dim", t("peNoDev"))); return; }
-  if (!pe.tracks.length || !pe.params[pe.trk]) { body.append(el("p", "dim", t("peAsk"))); const b = el("button", "btn", t("peRead")); b.type = "button"; b.onclick = async () => { try { await peLoad(L); await peTrack(L, pe.trk); } catch (_) { peSay(t("peFail")); } renderPe(); }; body.append(b); return; }
+  if (!L) { body.append(el("p", "dim", tp("peNoDev"))); return; }
+  if (!pe.tracks.length || !pe.params[pe.trk]) { body.append(el("p", "dim", tp("peAsk"))); const b = el("button", "btn", tp("peRead")); b.type = "button"; b.onclick = async () => { try { await peLoad(L); await peTrack(L, pe.trk); } catch (_) { peSay(tp("peFail")); } renderPe(); }; body.append(b); return; }
   const P = pe.params[pe.trk], C = pe.desc.common, k = pe.trk;
-  body.append(el("p", "pegrp", `${t("peModMatrix")} · T${k + 1} ${pe.tracks[k].engine}`));
+  body.append(el("p", "pegrp", `${tp("peModMatrix")} · T${k + 1} ${pe.tracks[k].engine}`));
   const slots = {}; for (const [id, d] of Object.entries(C)) { const m = /^(SRC|DEST|AMT)(\d)$/.exec(d.label || ""); if (m) (slots[m[2]] = slots[m[2]] || {})[m[1]] = +id; }
   const g = el("div", "pegrid");
-  for (const n of Object.keys(slots).sort()) for (const f of ["SRC", "DEST", "AMT"]) { const id = slots[n][f]; if (id == null) continue; g.append(peCtl(C[id], P.vals[id], (x) => { P.vals[id] = x; L.link.request(31, [k, id, (x + 8192) & 127, (x + 8192) >> 7], 800).catch(() => peSay(t("peFail"))); })); }
+  for (const n of Object.keys(slots).sort()) for (const f of ["SRC", "DEST", "AMT"]) { const id = slots[n][f]; if (id == null) continue; g.append(peCtl(C[id], P.vals[id], (x) => { P.vals[id] = x; L.link.request(31, [k, id, (x + 8192) & 127, (x + 8192) >> 7], 800).catch(() => peSay(tp("peFail"))); })); }
   body.append(g);
-  body.append(el("p", "pegrp", t("peModMix")));
+  body.append(el("p", "pegrp", tp("peModMix")));
   const mg = el("div", "pegrid");
   for (let tk = 0; tk < pe.tracks.length; tk++) {
     let mx; try { mx = await L.link.request(28, [tk], 800, (r) => r[0] === tk); } catch (_) { continue; }
@@ -2190,14 +2191,14 @@ async function peMod(body, L) {
     mg.append(peCtl({ label: `T${tk + 1} ${pe.tracks[tk].engine}${mute ? " (MUTE)" : ""}`, min: 0, max: 127, def: 100, unit: "", names: [] }, lv, (x) => L.link.request(28, [tk, (x + 8192) & 127, (x + 8192) >> 7, mute], 800).catch(() => {})));
   }
   body.append(mg);
-  body.append(el("p", "pegrp", t("peModFx")));
+  body.append(el("p", "pegrp", tp("peModFx")));
   if (!pe.globals) {
     const G = await L.link.request(4, [], 1500), gd = {};
     for (let id = 0; id < pe.info.gcount; id++) { try { const d = parseDesc(await L.link.request(5, [1, id], 800)); if (d.label && d.label !== "-") gd[id] = { d, v: v14(G, 2 + (pe.pcount + id) * 2) }; } catch (_) {} }
     pe.globals = gd;
   }
   const fg = el("div", "pegrid");
-  for (const [id, { d, v }] of Object.entries(pe.globals)) fg.append(peCtl(d, v, (x) => { pe.globals[id].v = x; L.link.request(3, [1, +id, (x + 8192) & 127, (x + 8192) >> 7], 800).catch(() => peSay(t("peFail"))); }));
+  for (const [id, { d, v }] of Object.entries(pe.globals)) fg.append(peCtl(d, v, (x) => { pe.globals[id].v = x; L.link.request(3, [1, +id, (x + 8192) & 127, (x + 8192) >> 7], 800).catch(() => peSay(tp("peFail"))); }));
   body.append(fg);
 }
 /* ---- GEN (the emulator's generator: jiantEmu.gen; JIANT BYTE's answers carry its whole state, web_gen_state's 19
@@ -2207,32 +2208,32 @@ async function peGen(body) {
   body.replaceChildren();
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const e = emuApi();
-  if (!e || !e.gen) { body.append(el("p", "dim", t("peGenEmu"))); return; }
+  if (!e || !e.gen) { body.append(el("p", "dim", tp("peGenEmu"))); return; }
   const r = await e.gen(null, 0, true).catch(() => null), i = r && rdInfo(r.info);
-  if (!i) { body.append(el("p", "dim", t("peGenOld"))); return; }
+  if (!i) { body.append(el("p", "dim", tp("peGenOld"))); return; }
   if (r.genres) pe.genres = r.genres;
   if (r.state && !pe.genOrig) pe.genOrig = r.state.slice();
   pe.genNow = r.state || null;
   const G = pe.genres || [], name = (g) => (g === -1 ? "EXPLORE" : g === -2 ? "RANDOM" : G[g] || String(g));
   const changed = pe.genOrig && pe.genNow && pe.genOrig.some((v, k) => v !== pe.genNow[k]);
-  body.append(el("p", "pegrp", t("peGenNow")), el("p", "", `${name(i[1])} · ${t("rdSeed")} ${i[2]} · MOOD ${i[3] > 0 ? "+" : ""}${i[3]} · ENERGY ${i[4]} · ${RD_FORMS[i[5]] || "?"}`));
+  body.append(el("p", "pegrp", tp("peGenNow")), el("p", "", `${name(i[1])} · ${t("rdSeed")} ${i[2]} · MOOD ${i[3] > 0 ? "+" : ""}${i[3]} · ENERGY ${i[4]} · ${RD_FORMS[i[5]] || "?"}`));
   const act = async (cmd, arg) => { await e.gen(cmd, arg); renderPe(); };
-  const row = el("div", "emuctl"), gsel = el("select"), mood = el("input"), nb = el("button", "btn", t("peGenNew"));
+  const row = el("div", "emuctl"), gsel = el("select"), mood = el("input"), nb = el("button", "btn", tp("peGenNew"));
   [["-2", "RANDOM"], ["-1", "EXPLORE"], ...G.map((n, k) => [String(k), n])].forEach(([v, n]) => { const o = el("option", null, n); o.value = v; gsel.append(o); }); gsel.value = String(i[1]);
   gsel.onchange = () => act(2, +gsel.value);
   mood.type = "range"; mood.min = -50; mood.max = 50; mood.value = i[3]; mood.setAttribute("aria-label", "MOOD"); mood.onchange = () => act(3, +mood.value);
   nb.type = "button"; nb.onclick = async () => { await e.gen(1, 0); const x = await e.gen(null, 0); pe.genOrig = x && x.state ? x.state.slice() : null; renderPe(); };
   row.append(gsel, el("span", "dim", "MOOD"), mood, nb); body.append(row);
   const salt = () => (Math.random() * 7 + 1) << 4;
-  const trk = el("div", "emuctl"); trk.append(el("span", "dim", t("peGenTrack")));
+  const trk = el("div", "emuctl"); trk.append(el("span", "dim", tp("peGenTrack")));
   for (let k = 0; k < 6; k++) { const b = el("button", "btn ghost", `T${k + 1}`); b.type = "button"; b.onclick = () => act(5, k | salt()); trk.append(b); }
-  const sec = el("div", "emuctl"); sec.append(el("span", "dim", t("peGenSection")));
+  const sec = el("div", "emuctl"); sec.append(el("span", "dim", tp("peGenSection")));
   for (let k = 0; k < 4; k++) { const b = el("button", "btn ghost", "ABCD"[k]); b.type = "button"; b.onclick = () => act(6, k | salt()); sec.append(b); }
   body.append(trk, sec, el("p", "dim", t(r.state ? "peGenHelp" : "peGenHelpNoState")));
   if (pe.genOrig) {
-    const o = el("div", "emuctl"), back = el("button", "btn ghost", t("peGenBack"));
+    const o = el("div", "emuctl"), back = el("button", "btn ghost", tp("peGenBack"));
     back.type = "button"; back.disabled = !changed;
-    back.onclick = async () => { if (!confirm(t("peGenBackConfirm"))) return; const x = await e.gen(null, 0, false, { state: pe.genOrig, regen: true }); peSay(x && x.rc ? t("peFail") : t("peGenBackDone")); renderPe(); };
+    back.onclick = async () => { if (!confirm(tp("peGenBackConfirm"))) return; const x = await e.gen(null, 0, false, { state: pe.genOrig, regen: true }); peSay(x && x.rc ? tp("peFail") : tp("peGenBackDone")); renderPe(); };
     o.append(el("span", changed ? "" : "dim", t(changed ? "peGenChanged" : "peGenSame")), back); body.append(o);
   }
 }
@@ -2255,23 +2256,23 @@ async function peGetObj(req, id) {
 function peSong(body, L) {
   body.replaceChildren();
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
-  if (!L) { body.append(el("p", "dim", t("peNoDev"))); return; }
+  if (!L) { body.append(el("p", "dim", tp("peNoDev"))); return; }
   const S = pe.song;
   if (!S) {
-    const b = el("button", "btn", t("peSongRead")); b.type = "button";
-    b.onclick = async () => { peSay(t("peReading")); try { await exclusive(async () => { const d = await peGetObj(bkRequest(L.link), 10); pe.song = { d, orig: d.slice() }; }); peSay(""); } catch (e) { peSay(t("peFail") + ` (${e.message})`); } renderPe(); };
-    body.append(el("p", "dim", t("peSongAsk")), b); return;
+    const b = el("button", "btn", tp("peSongRead")); b.type = "button";
+    b.onclick = async () => { peSay(tp("peReading")); try { await exclusive(async () => { const d = await peGetObj(bkRequest(L.link), 10); pe.song = { d, orig: d.slice() }; }); peSay(""); } catch (e) { peSay(tp("peFail") + ` (${e.message})`); } renderPe(); };
+    body.append(el("p", "dim", tp("peSongAsk")), b); return;
   }
   const d = S.d, dv = new DataView(d.buffer);
-  if (d.length < 2344 || dv.getUint32(0, true) !== 0x474E4F53 || d[4] !== 4) { body.append(el("p", "dim", t("peSongOld"))); return; }
+  if (d.length < 2344 || dv.getUint32(0, true) !== 0x474E4F53 || d[4] !== 4) { body.append(el("p", "dim", tp("peSongOld"))); return; }
   const n = S.n ?? d[5], rb = 8 + 36 * n, count = d[rb];
-  const sel = el("select"); for (let k = 0; k < 6; k++) { const o = el("option", null, `${t("peSongN")} ${k + 1}`); o.value = k; sel.append(o); } sel.value = n; sel.onchange = () => { S.n = +sel.value; renderPe(); };
+  const sel = el("select"); for (let k = 0; k < 6; k++) { const o = el("option", null, `${tp("peSongN")} ${k + 1}`); o.value = k; sel.append(o); } sel.value = n; sel.onchange = () => { S.n = +sel.value; renderPe(); };
   const top = el("div", "emuctl"); top.append(sel); body.append(top);
-  if (!count) { body.append(el("p", "dim", t("peSongEmpty"))); }
+  if (!count) { body.append(el("p", "dim", tp("peSongEmpty"))); }
   const bars = Array.from({ length: count }, (_, r) => d[rb + 4 + r * 2 + 1] || 1), total = bars.reduce((a, b) => a + b, 0) || 1;
   const wrap = el("div", "sc"), grid = el("div", "grid");
   grid.style.cssText = `display:grid;gap:2px;grid-template-columns:70px ${bars.map((b) => `minmax(${Math.max(36, b * 6)}px,${b}fr)`).join(" ")};min-width:${Math.max(560, total * 8)}px`;
-  grid.append(el("div", "lab", t("peSongSec")));
+  grid.append(el("div", "lab", tp("peSongSec")));
   bars.forEach((b, r) => {
     const h = el("div", "sec"), slot = d[rb + 4 + r * 2], inp = el("input");
     h.style.cssText = `background:${["#ffb21a", "#a77bff", "#3fe0e6", "#ff38b4"][slot & 3]};color:#000;padding:4px 6px;font:11px var(--display);display:flex;gap:4px;align-items:center`;
@@ -2287,7 +2288,7 @@ function peSong(body, L) {
       const so = 296 + 128 * n + 8 * r, muted = tk < 4 ? (d[so + 1] >> tk) & 1 : (d[so] >> (tk - 3)) & 1;
       const src = (dv.getUint32(1320 + 64 * n + 4 * r, true) >>> (tk * 3)) & 7, va = (dv.getUint32(1832 + 64 * n + 4 * r, true) >>> (tk * 4)) & 15;
       const c = el("button", "cell", `${src ? "ABCD"[src - 1] : ""} ${TVAR[va] || ""}`.trim());
-      c.type = "button"; c.title = t("peSongCell");
+      c.type = "button"; c.title = tp("peSongCell");
       c.style.cssText = `height:30px;border:0;font:10px var(--mono);color:#000;background:${muted ? "#1b1628" : TC[tk] + "cc"};cursor:pointer;min-height:0;padding:0 3px`;
       c.onclick = () => {                                        // a mute on or off (the row then holds a scene)
         if (tk < 4) d[so + 1] ^= 1 << tk; else d[so] ^= 1 << (tk - 3);
@@ -2300,13 +2301,13 @@ function peSong(body, L) {
       grid.append(c);
     }
   }
-  wrap.append(grid); body.append(wrap, el("p", "dim", t("peSongHelp")));
-  const acts = el("div", "emuctl"), apply = el("button", "btn", t("peSongApply")), undo = el("button", "btn ghost", t("peSongUndo"));
+  wrap.append(grid); body.append(wrap, el("p", "dim", tp("peSongHelp")));
+  const acts = el("div", "emuctl"), apply = el("button", "btn", tp("peSongApply")), undo = el("button", "btn ghost", tp("peSongUndo"));
   apply.type = undo.type = "button"; apply.disabled = !S.dirty;
   apply.onclick = async () => {
-    if (!confirm(t("peSongConfirm"))) return;
-    try { await exclusive(async () => { await cvPut(bkRequest(L.link), 10, d); }); S.orig = d.slice(); S.dirty = false; peSay(t("peSongDone")); }
-    catch (e) { peSay(t("peFail") + ` (${e.message})`); }
+    if (!confirm(tp("peSongConfirm"))) return;
+    try { await exclusive(async () => { await cvPut(bkRequest(L.link), 10, d); }); S.orig = d.slice(); S.dirty = false; peSay(tp("peSongDone")); }
+    catch (e) { peSay(tp("peFail") + ` (${e.message})`); }
     renderPe();
   };
   undo.onclick = () => { S.d = S.orig.slice(); S.dirty = false; renderPe(); };
@@ -2321,35 +2322,35 @@ $("peexport").onclick = async () => {
   await exclusive(async () => {
     try {
       const backup = await peCapture(L), e = emuApi(), g = e && e.gen ? await e.gen(null, 0).catch(() => null) : null, gi = g && rdInfo(g.info);
-      const file = { format: state.fw === "byte" ? "jiant-b1t3" : "jiant-fm-project", version: 1, firmware: L.name, created: new Date().toISOString(), name: $("pename").value || t("peUnnamed"),
+      const file = { format: state.fw === "byte" ? "jiant-b1t3" : "jiant-fm-project", version: 1, firmware: L.name, created: new Date().toISOString(), name: $("pename").value || tp("peUnnamed"),
         gen: gi ? { genre: gi[1], seed: gi[2], mood: gi[3], energy: gi[4], form: gi[5], state: g.state || null, original: pe.genOrig || null } : null, web: {}, backup };
       download(new Blob([JSON.stringify(file)], { type: "application/json" }), `${(file.name || "project").replace(/[^\w-]+/g, "_")}.${peExt()}`);
-      peSay(t("peSaved"));
-    } catch (err) { peSay(t("peFail") + ` (${err.message})`); }
+      peSay(tp("peSaved"));
+    } catch (err) { peSay(tp("peFail") + ` (${err.message})`); }
     $("peprog").hidden = true;
   });
 };
 $("peimport").onclick = () => $("pefile").click();
 $("pefile").onchange = async () => {
   const f = $("pefile").files[0]; $("pefile").value = ""; if (!f) return;
-  try { const file = JSON.parse(await f.text()); if (!file.backup) throw new Error("format"); readBackup(file.backup); pe.file = file; pe.name = file.name || ""; peSay(t("peLoaded").replace("%s", file.name || f.name)); }
-  catch (_) { peSay(t("peBadFile")); }
+  try { const file = JSON.parse(await f.text()); if (!file.backup) throw new Error("format"); readBackup(file.backup); pe.file = file; pe.name = file.name || ""; peSay(tp("peLoaded").replace("%s", file.name || f.name)); }
+  catch (_) { peSay(tp("peBadFile")); }
   renderPe();
 };
 $("pesend").onclick = async () => {
-  const L = projLink(); if (!L || !pe.file) { peSay(t("peNoFile")); return; }
-  if (!confirm(t("peSendConfirm").replace("%s", pe.file.name || "").replace("%n", L.name))) return;
+  const L = projLink(); if (!L || !pe.file) { peSay(tp("peNoFile")); return; }
+  if (!confirm(tp("peSendConfirm").replace("%s", pe.file.name || "").replace("%n", L.name))) return;
   await exclusive(async () => {
     try {
       const before = await peCapture(L), now = new Date();
-      await bkDb.put({ name: `${t("peBefore")} · ${L.name} · ${stamp(now)}`, created: now.toISOString(), fw: state.fw, firmware: L.name, summary: bkSummary(before), file: before });
-      await restoreBackup(bkRequest(L.link), pe.file.backup, (d, n) => { $("pebar").style.width = `${Math.round(d / n * 100)}%`; peSay(t("peSending") + `${Math.round(d / n * 100)} %`); });
-      pe.params = {}; pe.tracks = []; peSay(t("peSent"));
-    } catch (err) { peSay(t("peFail") + ` (${err.message})`); }
+      await bkDb.put({ name: `${tp("peBefore")} · ${L.name} · ${stamp(now)}`, created: now.toISOString(), fw: state.fw, firmware: L.name, summary: bkSummary(before), file: before });
+      await restoreBackup(bkRequest(L.link), pe.file.backup, (d, n) => { $("pebar").style.width = `${Math.round(d / n * 100)}%`; peSay(tp("peSending") + `${Math.round(d / n * 100)} %`); });
+      pe.params = {}; pe.tracks = []; peSay(tp("peSent"));
+    } catch (err) { peSay(tp("peFail") + ` (${err.message})`); }
     $("peprog").hidden = true; renderPe();
   });
 };
-$("pefetch").onclick = async () => { pe.params = {}; pe.tracks = []; pe.desc = {}; const L = projLink(); if (!L) return; try { await peLoad(L); await peTrack(L, pe.trk); } catch (_) { peSay(t("peFail")); } renderPe(); };
+$("pefetch").onclick = async () => { pe.params = {}; pe.tracks = []; pe.desc = {}; const L = projLink(); if (!L) return; try { await peLoad(L); await peTrack(L, pe.trk); } catch (_) { peSay(tp("peFail")); } renderPe(); };
 $("pename").addEventListener("input", () => { pe.name = $("pename").value; });
 /* ------------------------------------------------------------------------------------------- how it works */
 /* each firmware's ideas (learn-fm.json, learn-byte.json): sectors (the concept, the engines, the sequencers, the
@@ -2909,10 +2910,11 @@ async function emuVersions() {
   const sel = $("emuver"); if (!sel) return;
   if (sel.dataset.fw === state.fw) return; sel.dataset.fw = state.fw;
   let list = null; try { const r = await fetch(`${TOOLS[state.fw].base}emu-v/index.json`, { cache: "no-cache" }); if (r.ok) list = (await r.json()).filter((v) => v.ok); } catch (_) {}
-  $("emuverbox").hidden = !Array.isArray(list) || !list.length;
-  if (!Array.isArray(list)) return;
+  let beta = false; try { const r = await fetch(`${TOOLS[state.fw].base}emu/beta/build.json`, { cache: "no-cache" }); beta = r.ok; } catch (_) {}   // (a firmware's beta emulator beside the public one)
+  list = Array.isArray(list) ? list : [];
+  $("emuverbox").hidden = !list.length && !beta;
   const o = (v, txt) => { const e = document.createElement("option"); e.value = v; e.textContent = txt; return e; };
-  sel.replaceChildren(o("", t("emuVerPinned")), ...list.map((v) => o(v.sha7, v.version + (v.public ? ` · ${t("emuVerPublic")}` : ""))));
+  sel.replaceChildren(o("", t("emuVerPinned")), ...(beta ? [o("beta", t("emuVerBeta"))] : []), ...list.map((v) => o(v.sha7, v.version + (v.public ? ` · ${t("emuVerPublic")}` : ""))));
   sel.value = state.emuVer || "";
 }
 $("emuver").onchange = () => {
