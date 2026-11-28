@@ -139,8 +139,8 @@ static uint32_t drum_oct_note(uint32_t note, int32_t o)
 }
 static const char *drum_oct_name(int32_t o)              /* what OCT does on a DRUM track (ui_input.c) */
 {
-    static const char *const N[7] = {"FLAM", "GHOST", "SHORT", "DRUM-X KIT", "REPEAT 1/2", "REPEAT", "RATCHET x2"};
-    return N[clamp(o, -3, 3) + 3];
+    static const char N[] = "FLAM\0" "GHOST\0" "SHORT\0" "DRUM-X KIT\0" "REPEAT 1/2\0" "REPEAT\0" "RATCHET x2";   /* (V10.8.71: packed, str_nth) */
+    return str_nth(N, (unsigned)(clamp(o, -3, 3) + 3));
 }
 
 /* ----------------------------------------------------- the grid's lanes --- */
@@ -178,14 +178,14 @@ static const char *drum_lane_name(const track_t *t, uint32_t l);
 static const char *drum_oct_label(const track_t *t, int32_t o)
 {
     if(drum_ext(t)) {
-        static const char *const names[7]={"FLAM","FX KIT","KICK / TOM","DRUM-X KIT","FILLS","RATCH SETS","RATCH SETS"};
+        static const char names[] = "FLAM\0" "FX KIT\0" "KICK / TOM\0" "DRUM-X KIT\0" "FILLS\0" "RATCH SETS\0" "RATCH SETS";   /* (V10.8.71: packed, str_nth) */
         static char b[12];
         if (o == -1 && drum_chrom(t) >= 0) {
             str_cpy(b, drum_lane_name(t, (uint32_t)drum_chrom(t)), 6);
-            str_cpy(b + str_len(b), " CHROM", 7);
+            str_cat(b, " CHROM", 7);
             return b;
         }
-        return names[clamp(o,-3,3)+3];
+        return str_nth(names, (unsigned)(clamp(o,-3,3)+3));
     }
     return drum_oct_name(o);
 }

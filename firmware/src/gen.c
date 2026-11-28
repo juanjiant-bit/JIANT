@@ -3952,7 +3952,7 @@ static void gen_panel(void)
         k = str_len(v); v[k++] = '/'; fmt_int(v + k, chain.config.count);
     } else
         str_cpy(v, song_draft ? "DRAFT" : song.playing ? "PLAYING" : chain_config.count ? "SONG READY" : "READY", sizeof v);
-    str_cpy(v + str_len(v), song_draft ? " \xB7 SAVE KEEPS \xB7 OCT+ NEW" : " \xB7 OCT+ NEW \xB7 OCT- BACK", sizeof v - str_len(v));
+    str_cat(v, song_draft ? " \xB7 SAVE KEEPS \xB7 OCT+ NEW" : " \xB7 OCT+ NEW \xB7 OCT- BACK", sizeof v - str_len(v));
     cv_text_in(4, 128, 232, &AF_X, v, song_draft ? T_ACCENT : T_TEXT, T_SURF);
 }
 #include "gen_track.c"

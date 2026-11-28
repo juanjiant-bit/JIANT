@@ -63,6 +63,9 @@ static void str_cpy(char *d, const char *s, unsigned max)
     d[i] = 0;
 }
 
+/* (V10.8.71, flash: one for the UI's 140 appends) s after d's end, the rest within max */
+static __attribute__((noinline)) void str_cat(char *d, const char *s, unsigned max) { str_cpy(d + str_len(d), s, max); }
+
 /* decimal with an optional fixed point: fmt_fix(buf, -63, 1) -> "-6.3" */
 static void fmt_fix(char *b, int32_t v, int decimals)
 {
@@ -83,6 +86,8 @@ static void fmt_fix(char *b, int32_t v, int decimals)
 }
 
 static void fmt_int(char *b, int32_t v) { fmt_fix(b, v, 0); }
+static __attribute__((noinline)) void fmt_cat(char *b, int32_t v) { fmt_int(b + str_len(b), v); }   /* (V10.8.71, flash)
+                                                         * v after b's end */
 static void fmt_frac(char *b, int32_t a, int32_t n) { fmt_int(b, a); b += str_len(b); *b++ = '/'; fmt_int(b, n); }   /* (V10.30) "a/n" */
 
 static uint32_t rng_state = 0x1234567u;

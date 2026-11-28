@@ -45,7 +45,10 @@ SIZE_FILES = ["ui.c", "favorites.c", "menu_items.c", "icons.c", "ui_graph.c", "u
               # (V10.6z6) the velocity diagnostic and the keys' velocity: their main-loop side (the scan's, -Os)
               "vel_diag.c", "vel.c", "cpu_safe.c", "bt_hw.c", "sing_ext.c", "seq_fit.c",
               # (V10.8.53) the pictures' shared engine, the screen mirror, the stopped notes' preview (main loop)
-              "ui_gx.c", "editor_screen.c", "seq_preview.c"]
+              "ui_gx.c", "editor_screen.c", "seq_preview.c",
+              # (V10.8.71, as JIANT BYTE: flash for OTT) DRONE CLAY's pages and composer, their main-loop side (clay_tick,
+              # what the audio runs, an interrupt reaches: -Os, isr_reach)
+              "clay.c", "clay_form.c"]
 ISR_ROOTS = ("fm1_alnk0_irq", "fm1_timer5_irq")      # hal/fm1_isr.S: the audio ISR, the key / LED scan (+ USB poll)
 DEF = re.compile(r"^(?:static|void|int|uint\w*|int\w*|const)\b[^;=(]*?\b([A-Za-z_]\w*)\s*\(", re.M)
 IR_DEF = re.compile(r"^(define [^\n]*?@\"?([\w.]+)\"?\([^\n]*\)(?: unnamed_addr| local_unnamed_addr)?)( #\d+[^\n]*\{)$",
@@ -172,7 +175,14 @@ def main(src, dst):
                   "voice_victim", "shift_prepare_pass", "shift_cond", "sy_seek", "live_heads", "cg_near", "e0_chunk",
                   "step_parts",
                   # (V10.6z8) a section's change: the sounds the player changed
-                  "snd_sig", "snd_own"}
+                  "snd_sig", "snd_own",
+                  # (V10.8.71, flash for OTT) a note's start on its track and its voice, a SCENE key's track: once a
+                  # note, never a sample
+                  "trk_note_on", "voice_start", "sc_track",
+                  # .. a FILL applied, a CLAY strike, a track silenced, the punch-ins let go, a FUGUE head's next step,
+                  # the stopped preview's end, a key let go, a punch key pressed: once an event
+                  "fill_apply", "clay_strike", "midi_silence_track", "pfx_end", "fg_next", "preview_end", "key_off",
+                  "pk_press"}
     names, hit = ((size_names() | cold_ui) - isr) | input_size | event_size, set()
     def mark(m):
         if m.group(2) not in names:

@@ -95,6 +95,7 @@ static const ng_t CG_SEQ[] = {{"STEP", 0}, {"PATTERN", "PAT"}, {"EUCLID", "EUCL"
                                                          * LENGTH RHYTHM TRACK; TRACK GEN, was GENERATE) */
 enum { FXL_TRACK, FXL_BUSES, FXL_EFFECT };
 static const nv_t CE_FX[] = {NV("FX", "SENDS", 0, FXL_TRACK), NV("DIST", 0, 0, FXL_TRACK), NV("AUTO PAN", 0, 0, FXL_TRACK),
+                             NV("OTT", 0, 0, FXL_TRACK),   /* (V10.8.71, JIANT BYTE's) */
                              NV("BUSES", 0, 1, FXL_BUSES), NV("DLY", 0, 2, FXL_EFFECT), NV("DLY 2", 0, 2, FXL_EFFECT),
                              NV("DLY 3", 0, 2, FXL_EFFECT), NV("REVERB", 0, 3, FXL_EFFECT), NV("REVERB 2", 0, 3, FXL_EFFECT),
                              NV("CHORUS", 0, 4, FXL_EFFECT), NV("SLICER", 0, 5, FXL_EFFECT), NV("SL BUS", 0, 5, FXL_EFFECT),
@@ -226,10 +227,11 @@ static uint32_t pd_level(void) { return nav_lv(); }
 static uint32_t save_level(void) { return nav_lv(); }
 static uint32_t home_level(void) { return gen_on() ? 2u : ui.hlv ? 1u : 0u; }
 static uint32_t home_set(void) { return ui.hset[home_level() & 1u]; }   /* (V10.8.64: ECO's 0 1 2, BEING's 0 1) */
-static int home_macros(void) { return ui.home && !ui.menu && home_level() == 0u && home_set() == 2u; }   /* (V10.8.64)
-                                                         * HOME > MACROS back: M1..M4, the FX layer's knobs' own */
-static int home_life(void) { return ui.home && !ui.menu && home_level() == 0u && home_set() == 1u; }   /* (V10.7.62) LIFE */
-static int home_vis(void) { return ui.home && !ui.menu && home_level() == 1u && home_set() == 1u; }   /* (V10.8.56) VISUAL */
+static __attribute__((noinline)) int home_is(uint32_t l, uint32_t k) { return ui.home && !ui.menu && home_level() == l && home_set() == k; }
+                                                         /* (V10.8.71, as JIANT BYTE's home_hlv, flash: one for the three) */
+static int home_macros(void) { return home_is(0u, 2u); }   /* (V10.8.64) HOME > MACROS back: M1..M4, the FX layer's knobs' own */
+static int home_life(void) { return home_is(0u, 1u); }   /* (V10.7.62) LIFE */
+static int home_vis(void) { return home_is(1u, 1u); }   /* (V10.8.56) VISUAL */
 /* the entries shown now (on this track, at this LOAD), in order: their indices in v (NAV_MAX at most: the longest chain,
  * FX's 17 since snd8's TAPE, fits: ui_test checks every chain against it; snd8b's 17th page overran a 16 and crashed
  * FX); how many */

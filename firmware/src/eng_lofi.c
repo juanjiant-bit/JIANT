@@ -394,7 +394,7 @@ static __attribute__((noinline)) void lofi_float_render(track_t *t, voice_t *v, 
 }
 
 /* (V10.8.66) LOOP with WAVE SYNC: 1 .. 8 the song's divisions by name (params.c param_format), 9 .. 127 its % */
-static const char *const N_LOOPQ[] = {"OFF", "4 BAR", "2 BAR", "1 BAR", "1/2", "1/4", "1/8", "1/16", "1/32"};
+static const char N_LOOPQ[] = "OFF\0" "4 BAR\0" "2 BAR\0" "1 BAR\0" "1/2\0" "1/4\0" "1/8\0" "1/16\0" "1/32"; /* (V10.8.71: packed, str_nth; was a table of pointers) */
 static const param_desc_t LOFI_LOOPQ = {"LOOP", F_PCT, 0, 127, 0, 0};
 static const param_desc_t *lofi_desc(const track_t *t, uint32_t k)
 {

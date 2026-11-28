@@ -704,18 +704,20 @@ static uint32_t page_first(uint32_t fam)
  *         large (COMP COMP 2); PHRASES (PRESETS' pattern loader) and SONG read as PATTERN, CHANCE as STEP
  *   SAVE  (V10.2) SONG (TIMELINE ARRANGE PARTS CLIPS), PROJECT (PART SLOTS PROJECTS: the PROJECT page's KNOB 1 the part or
  *         the project), SOUND (USER PRESETS)
- *   FX    TRACK (SENDS DIST AUTO PAN), BUSES, the effects (ui.fxmod: the module shown last, BUSES' tile lit) */
-static int lens_on(void) { return !ui.home && !page_over && PAGES[ui.page].fam == FAM_SEQ; }
-static int save_on(void) { return !ui.home && !page_over && PAGES[ui.page].fam == FAM_SAVE; }
+ *   FX    TRACK (SENDS DIST AUTO PAN OTT), BUSES, the effects (ui.fxmod: the module shown last, BUSES' tile lit) */
+static __attribute__((noinline)) int fam_on(uint32_t f) { return !ui.home && !page_over && PAGES[ui.page].fam == f; }   /* (V10.8.71,
+                                                         * as JIANT BYTE, flash: one for lens_on save_on fx_on) */
+static int lens_on(void) { return fam_on(FAM_SEQ); }
+static int save_on(void) { return fam_on(FAM_SAVE); }
 static void page_entered(void);
 static uint32_t lz_hint_ms __attribute__((section(".pool")));   /* (V10.8.54) the page entered at: its OCT+ hint (ui_draw.c lz_hint) */
 static void page_flash(void);
 #define FX_NMOD 6u
 static const char *const FX_MOD[FX_NMOD] = {"DELAY", "REVERB", "CHORUS", "SLICER", "PUNCH IN", "MASTER"};   /* (snd2: MASTER */
-static const char *const FX_MHEAD[FX_NMOD] = {"DLY", "REVERB", "CHORUS", "SLICER", "PUNCH IN", "MASTER"};   /* last) its first page */
+static const char FX_MHEAD[] = "DLY\0" "REVERB\0" "CHORUS\0" "SLICER\0" "PUNCH IN\0" "MASTER";   /* (V10.8.71: packed, str_nth) */   /* last) its first page */
 static const uint8_t FX_MN[FX_NMOD] = {3, 2, 1, 4, 1, 3};   /* its pages, one after another in PAGES (snd8: MASTER, TAPE; p9 EQ) */
 static int page_visible(uint32_t i);
-static int fx_on(void) { return !ui.home && !page_over && PAGES[ui.page].fam == FAM_FX; }
+static int fx_on(void) { return fam_on(FAM_FX); }
 static uint32_t fx_page(const char *title)
 {
     uint32_t i;
@@ -726,10 +728,10 @@ static uint32_t fx_page(const char *title)
 }
 static int32_t fx_trk_k(uint32_t i)                     /* page i's place among TRACK's pages, -1 none */
 {
-    static const char *const FX_TRK[3] = {"FX", "DIST", "AUTO PAN"};
+    static const char FX_TRK[] = "FX\0" "DIST\0" "AUTO PAN\0" "OTT";   /* (V10.8.71: OTT; packed, str_nth) */
     uint32_t k;
-    for (k = 0; k < 3u; k++)
-        if (PAGES[i].fam == FAM_FX && str_eq(PAGES[i].title, FX_TRK[k]))
+    for (k = 0; k < 4u; k++)
+        if (PAGES[i].fam == FAM_FX && str_eq(PAGES[i].title, str_nth(FX_TRK, (unsigned)(k))))
             return (int32_t)k;
     return -1;
 }
@@ -737,15 +739,15 @@ static uint32_t fx_mod_of(uint32_t i)                   /* an effect page's modu
 {
     uint32_t m, f;
     for (m = 0; m < FX_NMOD; m++) {
-        f = fx_page(FX_MHEAD[m]);
+        f = fx_page(str_nth(FX_MHEAD, (unsigned)(m)));
         if (i >= f && i < f + FX_MN[m])
             return m;
     }
     return ui.fxmod % FX_NMOD;
 }
-static uint32_t fx_mod_k(uint32_t i) { return i - fx_page(FX_MHEAD[fx_mod_of(i)]); }   /* .. its place in it */
+static uint32_t fx_mod_k(uint32_t i) { return i - fx_page(str_nth(FX_MHEAD, (unsigned)(fx_mod_of(i)))); }   /* .. its place in it */
 static uint32_t fx_mod_n(uint32_t m) { return FX_MN[m % FX_NMOD]; }
-static int fx_mod_ok(uint32_t m) { return page_visible(fx_page(FX_MHEAD[m % FX_NMOD])); }   /* (LOAD ECO: no CHORUS, SLICER) */
+static int fx_mod_ok(uint32_t m) { return page_visible(fx_page(str_nth(FX_MHEAD, (unsigned)(m % FX_NMOD)))); }   /* (LOAD ECO: no CHORUS, SLICER) */
 
 /* (0.8.5) a lens page shown (every section's, the menu's, a layer's map): the mock-up's layout, its tabs and breadcrumb */
 static int name_on(void);                               /* (ui_name.c: NAME keeps its own layout) */
@@ -951,7 +953,7 @@ static void rate_name(const track_t *t, uint32_t n, char *b)
     if (base && (n == 1u || n == 2u || n == 4u || n == 8u)) v = base * n;
     else if (base && (n == 3u || n == 6u)) { v = base * n * 2u / 3u; tr = "T"; }
     if (!v || v > 64u) { b[0] = 'x'; fmt_int(b + 1, (int32_t)n); return; }   /* (past 1/64: "x6") */
-    fmt_int(b, (int32_t)v); str_cpy(b + str_len(b), tr, 2);
+    fmt_int(b, (int32_t)v); str_cat(b, tr, 2);
 }
 /* (0.9.9-seq2d) SEQ > COMP / COMP 2: the step's C1 / C2 as ACTION LENGTH CONDITION VALUE (core.h CA_* CC_*) */
 /* (gen3) the names short, each read whole on its card: the value's M where it fits with its unit (COMP's 49 px), else S
@@ -1072,22 +1074,22 @@ static void comp_vname(const track_t *t, const step_t *s, uint32_t a, uint32_t v
         break;
     case CA_RAND: str_cpy(lb, "RANGE", 8); fmt_int(val, (int32_t)(v % 7u) + 1); str_cpy(un, "DEG", 8); break;
     case CA_LOCK: {                                    /* (V10.7.59) FILL: BANK, its name (a kit's / a synth's), STAIR xN */
-        static const char *const DB[8] = {"SNARE", "TOMS", "HATS", "KICK", "CLAPS", "BREAK", "RIM", "MIX"};
-        static const char *const SB[8] = {"ROLL", "UP", "DOWN", "OCTAVE", "TRIPLET", "FADE", "RANDOM", "RISE"};
+        static const char DB[] = "SNARE\0" "TOMS\0" "HATS\0" "KICK\0" "CLAPS\0" "BREAK\0" "RIM\0" "MIX";   /* (V10.8.71: packed, str_nth) */
+        static const char SB[] = "ROLL\0" "UP\0" "DOWN\0" "OCTAVE\0" "TRIPLET\0" "FADE\0" "RANDOM\0" "RISE";   /* (V10.8.71: packed, str_nth) */
         str_cpy(lb, "BANK", 8);
-        if (v < 8u) str_cpy(val, t->engine == ENGI_DRUM ? DB[v] : SB[v], 8);
+        if (v < 8u) str_cpy(val, t->engine == ENGI_DRUM ? str_nth(DB, (unsigned)(v)) : str_nth(SB, (unsigned)(v)), 8);
         else if (v == 8u) str_cpy(val, "RANDOM", 8);
         else { str_cpy(val, "STAIR", 8); un[0] = 'x'; fmt_int(un + 1, (int32_t)(v - 8u)); }
         break;
     }
     case CA_RAMP: {                                    /* (V10.6v) FROM over its CURVE ("KNOB" "EXP"); no LOCK on the step:
                                                          * NO LOCK (it does nothing) */
-        static const char *const CRV[CV_RAMP_NC] = {"LIN", "EXP", "LOG", "S", "STEPS", "ZIGZAG"};
+        static const char CRV[] = "LIN\0" "EXP\0" "LOG\0" "S\0" "STEPS\0" "ZIGZAG";   /* (V10.8.71: packed, str_nth) */
         static const char *const FR[2][3] = {{"KNOB", "HOLD", "PING"}, {"OPP", "OP HOLD", "OP PING"}};   /* (V10.7.62) its
                                                          * END on the label (BACK: FROM alone, as before): the card's
                                                          * value has no room for a unit beside EXP or ZIGZAG */
         str_cpy(lb, !motion_lock_at(t, (uint32_t)(s - t->step) % NSTEP) ? "NO LOCK" : FR[CV_RAMP_OPP(v)][CV_RAMP_END(v) % 3u], 8);
-        str_cpy(val, CRV[CV_RAMP_CURVE(v)], 8);
+        str_cpy(val, str_nth(CRV, (unsigned)(CV_RAMP_CURVE(v))), 8);
         break;
     }
     case CA_SOUND: str_cpy(lb, "HIT", 8); str_cpy(val, HIT[v % 3u], 8); break;
@@ -1280,8 +1282,8 @@ static __attribute__((noinline)) uint32_t lyric_pick(char *label)
 
 static void note_name(char *b, uint32_t n)
 {
-    str_cpy(b, N_NOTE[n % 12u], 4);
-    fmt_int(b + str_len(b), (int32_t)(n / 12u) - 1);
+    str_cpy(b, NOTE_NM(n % 12u), 4);
+    fmt_cat(b, (int32_t)(n / 12u) - 1);
 }
 
 /* (JIANT 0.6.51) a page (or the track) changed by hand: its name in the header (0.6.61), (0.6.64) the footer, for PF_MS, so the
@@ -1486,8 +1488,8 @@ static void pat_load_ui(track_t *t, uint32_t n)
     pat_label(n, tag, nm);
     pat_load(t, n);
     str_cpy(b, tag, sizeof b);
-    str_cpy(b + str_len(b), " ", 2);
-    str_cpy(b + str_len(b), nm, sizeof b - str_len(b));
+    str_cat(b, " ", 2);
+    str_cat(b, nm, sizeof b - str_len(b));
     ui_say("LOADED ", b);
 }
 
@@ -2115,8 +2117,8 @@ static const char *act_name(uint32_t c)          /* column c's action (the foote
     if (cur_page()->graph == GR_LYRSTEP) return "PLACE";
     if (cur_page()->graph == GR_TRACKGEN) return "MAKE";
     if (cur_page()->graph == GR_TOOLS) {
-        static const char *const actions[] = {"CLEAR", "CLEAR", "INIT", "DELETE", "CLEAR", "INIT"};
-        return actions[c < 6u ? c : 5u];
+        static const char actions[] = "CLEAR\0" "CLEAR\0" "INIT\0" "DELETE\0" "CLEAR\0" "INIT";   /* (V10.8.71: packed, str_nth) */
+        return str_nth(actions, (unsigned)(c < 6u ? c : 5u));
     }
     if (cur_page()->graph == GR_SONG)                   /* (0.8.5) SAVE's lens: OCT+ adds a row (PLAY plays); PARTS: */
         return SONG_PARTS(cur_page()) ? "LOOP" : SONG_CLIPS(cur_page()) ? "GO" : SONG_TAKE(cur_page()) ? "NEW" : "ADD";   /* the part loops; CLIPS: the cell */

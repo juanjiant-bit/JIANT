@@ -121,7 +121,7 @@ static void graph_adsr(const track_t *t, uint16_t c)
             cv_rect(x - 3, y, 9, 11, T_TEXT);
             cv_text_on(x - 1, y + 1 - AF_X_CAP_Y, &AF_X, L4[q], 0x0000u, T_TEXT);
             param_format(track_desc(t, pg->id[q]), t->p[pg->id[q]], vb, &u);
-            str_cpy(vb + str_len(vb), u, sizeof vb - str_len(vb));
+            str_cat(vb, u, sizeof vb - str_len(vb));
             if (graph_ht == 100 && (q < 3 || x + 8 + text_w(&AF_X, vb) < 236))   /* (MENU > LARGE's strip: the tags only) */
                 cv_text(x + 8, y + 1 - AF_X_CAP_Y, &AF_X, vb, T_MID);
         }
@@ -220,15 +220,15 @@ static void graph_sing(const track_t *t)
         return;
     }
     str_cpy(b, N_LANG[lang], sizeof b);
-    str_cpy(b + str_len(b), " \xB7 ", 4);
-    str_cpy(b + str_len(b), lyr == 0u && !lyr_get((uint32_t)(t - trk))[0] ? "W1" : N_LYRIC[lyr], 8);
+    str_cat(b, " \xB7 ", 4);
+    str_cat(b, lyr == 0u && !lyr_get((uint32_t)(t - trk))[0] ? "W1" : N_LYRIC[lyr], 8);
     if (lyr <= LYR_NW && (lyr || !lyr_get((uint32_t)(t - trk))[0])) {
-        str_cpy(b + str_len(b), " \xB7 ", 4);
-        str_cpy(b + str_len(b), N_THEME[(uint32_t)clamp(t->p[P_E1], 0, 127) >> 4], 8);
+        str_cat(b, " \xB7 ", 4);
+        str_cat(b, N_THEME[(uint32_t)clamp(t->p[P_E1], 0, 127) >> 4], 8);
     }
     cv_clip_text(PANEL_X0, 6 - AF_X_CAP_Y, &AF_X, b, T_TEXT, bg, lw - 30);   /* the source */
     fmt_int(b, s->nsy);
-    str_cpy(b + str_len(b), " SYL", 5);
+    str_cat(b, " SYL", 5);
     cv_text_r(cx0 - 10, 6 - AF_X_CAP_Y, &AF_X, b, T_DIM, bg);
     sing_up(b, s->w[0] ? s->w : "-", sizeof b);          /* the word */
     cv_free_text(PANEL_X0, 20, &AF_M, b, T_TEXT, bg, lw);
@@ -324,8 +324,8 @@ static __attribute__((noinline)) void graph_morph(const track_t *t)
         n0 = N_PD_WAVE[a0]; n1 = N_PD_WAVE[a1];
     } else {
         if (p[P_E0] >= 4) {                             /* (0.6.81) PWM SYNC RING SAW3: the WAVE, what MORPH moves */
-            static const char *const WHAT[5] = {"PWM  WIDTH", "SYNC  RATIO", "RING  RATIO", "SAW3  SPREAD", "PLS3  WIDTH"};
-            str_cpy(b, WHAT[clamp(p[P_E0] - 4, 0, 4)], sizeof b);
+            static const char WHAT[] = "PWM  WIDTH\0" "SYNC  RATIO\0" "RING  RATIO\0" "SAW3  SPREAD\0" "PLS3  WIDTH";   /* (V10.8.71: packed, str_nth) */
+            str_cpy(b, str_nth(WHAT, (unsigned)(clamp(p[P_E0] - 4, 0, 4))), sizeof b);
             if (bt_hw_seg())                            /* (V10.45) the wave as MORPH bends it */
                 morph_wave((uint32_t)clamp(p[P_E0] - 4, 0, 4), p[P_MORPH]);
             else {
@@ -358,7 +358,7 @@ static __attribute__((noinline)) void graph_morph(const track_t *t)
         px = x; py = y;
     }
     str_cpy(b, n0, sizeof b);
-    if (f && a1 != a0) { str_cpy(b + str_len(b), " > ", 4); str_cpy(b + str_len(b), n1, 8); }
+    if (f && a1 != a0) { str_cat(b, " > ", 4); str_cat(b, n1, 8); }
     cv_text(PANEL_X0 + 2, 90, &AF_S, b, T_MID);
 }
 
@@ -1069,13 +1069,13 @@ static void page_title(char *ti)
             }
     str_cpy(ti, pt ? pt : grid_on() && roll_view(pg) ? "GRID" : nb, 12);
     if (n > 1) {
-        str_cpy(ti + str_len(ti), " ", 4);
+        str_cat(ti, " ", 4);
         fmt_frac(ti + str_len(ti), (int32_t)k, (int32_t)n);
     }
     if (roll_view(pg) && !drum_track(t)) {          /* the piano roll: its tinted rows' scale ("C MIN") */
-        str_cpy(ti, N_NOTE[(uint32_t)t->p[P_ROOT] % 12u], 4);
-        str_cpy(ti + str_len(ti), " ", 4);
-        str_cpy(ti + str_len(ti), N_SCALE[clamp(t->p[P_SCALE], 0, (int32_t)(sizeof N_SCALE / sizeof N_SCALE[0]) - 1)], 8);
+        str_cpy(ti, NOTE_NM((uint32_t)t->p[P_ROOT] % 12u), 4);
+        str_cat(ti, " ", 4);
+        str_cat(ti, N_SCALE[clamp(t->p[P_SCALE], 0, (int32_t)(sizeof N_SCALE / sizeof N_SCALE[0]) - 1)], 8);
     }
 }
 /* the strip's title: L centred (M when L lacks a glyph or is too wide) */
@@ -1160,7 +1160,7 @@ static __attribute__((noinline)) void hold_banner(const char *nm, uint32_t k, in
     cv_rrect(14, y, 212, 52, 8, T_RAISE, cv_bg);
     cv_text_in(14, y + 6, 212, large_face_has(nm) ? &AF_L : &AF_M, nm, T_ACCENT, T_RAISE);
     str_cpy(b, key_black(k) ? "BLACK " : "KEY ", sizeof b);
-    fmt_int(b + str_len(b), (int32_t)key_place(k) + 1);
+    fmt_cat(b, (int32_t)key_place(k) + 1);
     cv_text_in(14, y + 36, rec ? 150 : 212, &AF_S, b, T_TEXT, T_RAISE);
     if (rec)
         cv_text_in(150, y + 36, 60, &AF_S, "REC", T_REC, T_RAISE);
@@ -1619,19 +1619,16 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
 /* 4-letter engine tags of the preset list */
 static const char *eng_abbr(const char *name)
 {
-    static const char *const A[][2] = {{"ANALOG", "ANLG"},
+    static const char A[] = "ANALOG\0ANLG\0"   /* (V10.8.71: packed, a name and its tag; was a table of pointers) */
 #if FELUCCA_FM4
-                                       {"DIGITAL", "DGTL"},
+                            "DIGITAL\0DGTL\0"
 #endif
-                                       {"PHASE", "PHAS"}, {"MATH", "MATH"},
-                                       {"SAMPLE", "SMPL"}, {"VOICE", "VOCL"}, {"TRIO", "TRIO"}, {"WHEEL", "WHEL"},
-                                       {"GRAIN", "GRAN"}, {"PHYS", "PHYS"}, {"DRUM", "DRUM"},
-                                       {"NOISE", "NOIS"}, {"FM6", "FM6"}, {"SLICE", "SLCE"},
-                                       {"ANIMAL", "ANML"}, {"STRING", "STRG"}, {"ADD", "ADD"}, {"EXT", "EXT"}};
-    uint32_t i;
-    for (i = 0; i < sizeof A / sizeof A[0]; i++)
-        if (str_eq(name, A[i][0]))
-            return A[i][1];
+                            "PHASE\0PHAS\0" "SAMPLE\0SMPL\0" "VOICE\0VOCL\0" "WHEEL\0WHEL\0"
+                            "GRAIN\0GRAN\0" "NOISE\0NOIS\0" "SLICE\0SLCE\0" "ANIMAL\0ANML\0" "STRING\0STRG\0";
+    const char *p = A;
+    for (; *p; p = str_nth(p, 2u))                      /* (a name of four or fewer: itself) */
+        if (str_eq(name, p))
+            return str_nth(p, 1u);
     return name;
 }
 

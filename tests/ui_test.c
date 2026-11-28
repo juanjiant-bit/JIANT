@@ -193,6 +193,7 @@ static void ui_power_on(void)
     memset(&song, 0, sizeof song);
     memset(macro_v, 0, sizeof macro_v); fx_mon = 0;   /* (V10.7.59: the macros at power-on, the FX layer's knobs) */
     mx_defaults();
+    ott_defaults(); memset(ott_s, 0, sizeof ott_s);   /* (V10.8.71) OTT off, as main.c's power-on */
     scn_on = 0; scn_keys = 0;                     /* (V10.25: SCENE off at power-on, its roles the defaults) */
     memset(eu, 0, sizeof eu);                     /* (EUCLID / MUTATE: the session's, none at power-on) */
     memset(scn_role, 0, sizeof scn_role); sc_trk = 5;
@@ -8998,27 +8999,27 @@ static int test_scl_alltr(void)
  * the page left. (Was 0.8.5's lens: SELECT TRACK <-> BUSES <-> EFFECT, PRESETS the module, the FX tap the level's next) */
 static int test_fx_sections(void)
 {
-    static const char *const CH[19] = {"SENDS", "DIST", "AUTO PAN", "BUSES", "DLY", "DLY 2", "DLY 3", "REVERB", "REVERB 2",
+    static const char *const CH[20] = {"SENDS", "DIST", "AUTO PAN", "OTT", "BUSES", "DLY", "DLY 2", "DLY 3", "REVERB", "REVERB 2",
                                        "CHORUS", "SLICER", "SL BUS", "SL BUS 2", "SL PITCH", "PUNCH IN", "MACROS", "MASTER",
-                                       "TAPE", "EQ"};   /* (V10.7.66: PUNCH LANE; V10.8.27: its page gone) */
+                                       "TAPE", "EQ"};   /* (V10.7.66: PUNCH LANE; V10.8.27: its page gone; V10.8.71: OTT) */
     static const char *const TP[7] = {"BUSES", "DLY", "REVERB", "CHORUS", "SLICER", "PUNCH IN", "MASTER"};   /* (codex/coherence:
                                                          * PUNCH IN, was PUNCH, MASTER's knob's name) */
     int bad = 0, ok;
     uint32_t pr;
     ui_power_on();
-    bad += check("0.9.2 FX: one chain of 18 (TRK BUS DLY REV CHO SLC PCH MST; snd8: MASTER, TAPE; p9: EQ) by SELECT, no wrap; an FX tap each group's first, round",
-                 chain_walk(B_FX, CH, 19, TP, 7));
+    bad += check("0.9.2 FX: one chain of 20 (TRK BUS DLY REV CHO SLC PCH MST; snd8: MASTER, TAPE; p9: EQ; V10.8.71: OTT) by SELECT, no wrap; an FX tap each group's first, round",
+                 chain_walk(B_FX, CH, 20, TP, 7));
     ui_power_on(); go_home(); frame(); press(B_FX); frame();
     ok = fx_on() && fx_level() == FXL_TRACK && lz_on() && card_y() == LZ_CARD_Y && lz_tabs() == 8u && lz_tab_lit(0) &&
-         lz_crumb_is("FX \xB7 TRACK \xB7 SENDS") && lz_count_is("1/19");
-    turn(EN_SELECT, 3); frame();
+         lz_crumb_is("FX \xB7 TRACK \xB7 SENDS") && lz_count_is("1/20");
+    turn(EN_SELECT, 4); frame();
     ok &= fx_level() == FXL_BUSES && cur_page()->graph == GR_BUSES && lz_tab_lit(1) && lz_crumb_is("FX \xB7 BUSES \xB7 BUSES");
     ok &= cur_page()->id[0] == G_DMIX && cur_page()->id[1] == G_RSIZE && cur_page()->id[2] == G_CDEPTH && cur_page()->id[3] == G_SLDEP;
     song.g[G_RSIZE] = 50; turn(EN_K2, 3); frame();
     ok &= song.g[G_RSIZE] > 50;
     turn(EN_SELECT, 2); frame();
     ok &= fx_level() == FXL_EFFECT && str_eq(cur_page()->title, "DLY 2") && lz_tab_lit(2) &&
-          lz_crumb_is("FX \xB7 DELAY \xB7 DLY 2") && lz_count_is("6/19") && ui.fxmod == 0u;
+          lz_crumb_is("FX \xB7 DELAY \xB7 DLY 2") && lz_count_is("7/20") && ui.fxmod == 0u;
     {   /* the eight tabs: their short names (the full ones do not fit) */
         const char *nm[8], *tab[8];
         uint8_t cnt[8];
@@ -9030,14 +9031,14 @@ static int test_fx_sections(void)
     ok &= str_eq(cur_page()->title, "DLY 2") && (TSEL->preset != pr || TSEL->eng_req != trk_def_engine(0));
     frames(320); press(B_FX); frame();
     ok &= str_eq(cur_page()->title, "REVERB") && ui.fxmod == 1u;
-    bad += check("0.9.2 FX: tabs (eight, short names, dots), crumb FX . DELAY . DLY 2 6/18; BUSES' knobs; PRESETS a sound (was the module)", ok);
+    bad += check("0.9.2 FX: tabs (eight, short names, dots), crumb FX . DELAY . DLY 2 7/20; BUSES' knobs; PRESETS a sound (was the module)", ok);
     go_home(); frame();
     press(B_FX); frame();
     ok = str_eq(cur_page()->title, "REVERB") && fx_level() == FXL_EFFECT;
     ui_load = LOAD_ECO; frame();                                   /* LOAD ECO: no CHORUS, no SLICER */
     turn(EN_SELECT, 1); frame(); ok &= str_eq(cur_page()->title, "REVERB 2");
     turn(EN_SELECT, 1); frame(); ok &= str_eq(cur_page()->title, "PUNCH IN");   /* (CHORUS, SLICER skipped) */
-    ok &= lz_tabs() == 6u && lz_count_is("10/14");   /* (V10.8.27: PUNCH LANE gone) */
+    ok &= lz_tabs() == 6u && lz_count_is("11/15");   /* (V10.8.27: PUNCH LANE gone; V10.8.71: OTT) */
     frames(320); press(B_FX); frame(); ok &= str_eq(cur_page()->title, "MASTER");
     ui_load = LOAD_FULL; frame();
     bad += check("0.9.2 FX: from elsewhere the page left; LOAD ECO: CHORUS and SLICER out of the chain and the tabs", ok);
@@ -13585,6 +13586,10 @@ static int test_nav_rules(void)
     name_key();
     ok &= !name_on() && msg_is("NAME: ON USER OR PROJECT");
     bad += check("0.9.2 SAVE + C5: NAME, the slot's rename on USER / PROJECT (its map names it); elsewhere it says where", ok);
+    (void)ly_keyname(LAYER_GLO, 0, GLO_RESOUND, kn);      /* (V10.8.71, the owner) A4's RESOUND on GLO's map, as G4's UNDO */
+    ok = str_eq(kn, "RESOUND");
+    (void)ly_keyname(LAYER_GLO, 0, GLO_UNDO, kn);
+    bad += check("V10.8.71 GLO's map names A4 RESOUND (and G4 UNDO)", ok && str_eq(kn, "UNDO"));
     ui_power_on(); go_home(); frame();
     fm1_ms += 1200u;
     held_turn(B_HOME, 1); frame();

@@ -50,6 +50,9 @@
 #define UP_WEST_AT (UP_VEL_AT - 3u)              /* byte 139, shared with newer WEST banks */
 #define UP_WEST_MARK 'W'
 _Static_assert(P_COUNT <= UP_WEST_AT, "WEST marker must follow the packed values");
+#define UP_OT_AT (UP_WEST_AT - 1u)               /* (V10.8.71, BYTE's) the byte before: UP_OT_MARK, the sound's OTT in the four */
+#define UP_OT_MARK 'O'                           /* before it (each less its default: params.c ott_get); without it: off */
+_Static_assert(P_COUNT <= UP_OT_AT - 4u, "user presets: the parameters before the OTT's bytes");
 typedef struct {
     uint8_t used, ver, engine, np;               /* UP_USED, UP_VER, engine, P_COUNT when stored */
     char name[12];                               /* ASCII 32..126, 0-padded (no 0 when 12 long) */
@@ -345,8 +348,8 @@ static void up_auto_name(char *b, uint32_t e, uint32_t k)
     e %= NENGINES;
     str_cpy(b, ENGINES[eng_live(e)]->name, 9);   /* (a DIGITAL record plays as FM6, PHYS as ANALOG) */
     up_slot_label(l, k);
-    str_cpy(b + str_len(b), " ", 2);
-    str_cpy(b + str_len(b), l + 1, 3);
+    str_cat(b, " ", 2);
+    str_cat(b, l + 1, 3);
 }
 
 /* the record's name = name (at most 12), 0 or "": the automatic one */
@@ -377,6 +380,8 @@ static int up_store(uint32_t k, const char *name)
     up_set_name(&r, k, name);
     for (i = 0; i < P_COUNT; i++)
         up_set_value(&r, i, motion_base_value(TSEL, i));
+    r.packed[UP_OT_AT] = UP_OT_MARK;                    /* (V10.8.71) the track's OTT */
+    ott_get(song.sel, (int8_t *)&r.packed[UP_OT_AT - OT_N]);
     up_pat_from(&r, TSEL->step);
     if (drum_track(TSEL)) {                             /* a DRUM track that strikes a lane: its grid */
         uint32_t any = 0;
@@ -451,6 +456,8 @@ static int up_load(uint32_t k)
         if (eng_gone(r->engine))                        /* a retired engine (core.h): ANALOG's first preset */
             set_engine_of(t, ENGI_PHYS_TO);
     }
+    ott_put(song.sel, r->ver >= 4u && r->packed[UP_OT_AT] == UP_OT_MARK ?   /* (V10.8.71) its OTT (a record of before: */
+            (const int8_t *)&r->packed[UP_OT_AT - OT_N] : 0);   /* off) */
     t->user = (uint8_t)(k + 1u);
     load_end(t);
     sync_reload = 1;

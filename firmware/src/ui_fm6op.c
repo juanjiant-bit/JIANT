@@ -117,7 +117,7 @@ static void fop_freq(const uint8_t *op, char *s)
         fmt_int(s, (int32_t)(m / 1000u));
     else
         fop_dec(s, m / 1000000u, m % 1000000u / 10000u, 2u);
-    str_cpy(s + str_len(s), m < 1000000u ? " HZ" : " KHZ", 5);
+    str_cat(s, m < 1000000u ? " HZ" : " KHZ", 5);
 }
 
 /* card slot of an operator page: its label, value (12), unit, gauge (0..1000, -1 none), icon; 0 = shown DIM (a level

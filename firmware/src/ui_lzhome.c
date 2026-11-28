@@ -276,6 +276,10 @@ static void graph_eco(void)
         eco_being(c, bx[c], by[c], eco.r[c]);
         ny = clamp(py + rad / 2 + 4, 4, bot);
         cv_text_in(px - 30, ny, 60, &AF_S, num, eco_off(c) ? T_DIM : trk_col(c), T_SURF);   /* (V10.8.10) */
+        if (ott_v[c][OT_DEPTH])                         /* (V10.8.71, BYTE's) its OTT on: a tag under its number, in the
+                                                         * thermal colour of the most it moves a band (ui_lzfx.c ott_col) */
+            cv_text_in(px - 30, ny + 12, 60, &AF_X, "OTT", eco_off(c) ? T_DIM :
+                       ott_col(ott_s[c].g[0], ott_s[c].g[1]), T_SURF);
     }
     if (home_set())                                     /* (V10.8.64, the owner: "LIFE en grande") LIFE / MACROS: the
                                                          * page's name large, its state under it */

@@ -177,6 +177,7 @@ static void felucca_init(void)
     for (i = 0; i < G_COUNT; i++)
         song.g[i] = GP[i].def;
     mx_defaults();                            /* (V10.7.59) the MACROS' routes */
+    ott_defaults();                           /* (V10.8.71) OTT off */
     sing_init();                              /* (0.9.0) VOICE's English generator words, resolved once (sing.c) */
     load_depth++;                             /* (the power-on loads: one outer load) */
     fm6_init();                               /* every track's FM6 patch: the init voice */
@@ -405,10 +406,10 @@ static void fm1_main(void)
         } else if (uh.want || uh.on)
             uh_task(fm1_ms);                            /* (V10.41) USB > HOST: the keyboard found, kept, lost */
         if (uh.msg) {
-            static const char *const UHM[8] = {"", "USB HOST: PLUG A MIDI KEYBOARD", "USB HOST OFF", "USB MIDI KEYBOARD READY",
-                                               "NOT USB MIDI OR AUDIO 16BIT 44.1-48K", "LOW SPEED: NOT SUPPORTED", "USB DEVICE LOST",
-                                               "USB AUDIO IN READY: USE INPUT"};   /* (V10.53; V10.56: an INPUT track takes it) */
-            ui_message(UHM[uh.msg % 8u]);
+            static const char UHM[] = "\0" "USB HOST: PLUG A MIDI KEYBOARD\0" "USB HOST OFF\0" "USB MIDI KEYBOARD READY\0"
+                                      "NOT USB MIDI OR AUDIO 16BIT 44.1-48K\0" "LOW SPEED: NOT SUPPORTED\0" "USB DEVICE LOST\0"
+                                      "USB AUDIO IN READY: USE INPUT";   /* (V10.8.71: packed, str_nth) */   /* (V10.53; V10.56: an INPUT track takes it) */
+            ui_message(str_nth(UHM, (unsigned)(uh.msg % 8u)));
             uh.msg = 0;
         }
 #endif

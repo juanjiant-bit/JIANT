@@ -129,15 +129,15 @@ static __attribute__((noinline)) void sc_put(uint32_t k, int32_t v)
     ui.force = 1;
 }
 /* (V10.8.14, the owner's "teclado y grados") SCL's pictures share a key's names, a chord's name and an octave of keys */
-static const char NN12[12][3] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+/* (V10.8.71, flash: params.c NOTE_NM, one list of the notes' names) */
 static const char RN7[7][4] = {"I", "II", "III", "IV", "V", "VI", "VII"};
 /* the triad on degree d of the seven notes pc (semitones from ROOT rt) as b (4): its root's name, "-" minor, the degree
  * sign diminished, "+" augmented (the faces have no lowercase) */
 static void chord_nm(char *b, const uint8_t *pc, uint32_t d, uint32_t rt)
 {
     uint32_t r = pc[d % 7u], th = (pc[(d + 2u) % 7u] + 12u - r) % 12u, fi = (pc[(d + 4u) % 7u] + 12u - r) % 12u;
-    str_cpy(b, NN12[(r + rt) % 12u], 4);
-    str_cpy(b + str_len(b), fi == 6u ? "\xB0" : fi == 8u ? "+" : th == 3u ? "-" : "", 2);
+    str_cpy(b, NOTE_NM((r + rt) % 12u), 4);
+    str_cat(b, fi == 6u ? "\xB0" : fi == 8u ? "+" : th == 3u ? "-" : "", 2);
 }
 /* (V10.7.70; V10.8.14) SCL > PROG: a card a chord of the progression, its name, its degree and its bar, the one playing
  * lit, under them where the progression is; OFF: the cards dim and what turns it on */
@@ -189,9 +189,9 @@ static void graph_scene(void)
         n = scn_notes(t, r, scn_on >= 2u ? scn_fnote : last_note, o, 1);
         for (j = 0; j < n; j++) { if (o[j] < lo) lo = o[j]; if (o[j] > hi) hi = o[j]; }
         if (!n) continue;
-        str_cpy(b, NN12[lo % 12u], 4); fmt_int(b + str_len(b), (int32_t)lo / 12 - 1);
-        str_cpy(b + str_len(b), "-", 2);
-        str_cpy(b + str_len(b), NN12[hi % 12u], 4); fmt_int(b + str_len(b), (int32_t)hi / 12 - 1);
+        str_cpy(b, NOTE_NM(lo % 12u), 4); fmt_cat(b, (int32_t)lo / 12 - 1);
+        str_cat(b, "-", 2);
+        str_cat(b, NOTE_NM(hi % 12u), 4); fmt_cat(b, (int32_t)hi / 12 - 1);
         cv_text(98, y + 4, &AF_X, b, T_MID);
         lo = (uint32_t)clamp((int32_t)lo, 36, 96); hi = (uint32_t)clamp((int32_t)hi, 36, 96);
         cv_rect(150 + (int32_t)(lo - 36u) * 84 / 60, y + 6, (int32_t)(hi - lo) * 84 / 60 + 2, 5, trk_col(i));

@@ -96,7 +96,7 @@ static const menu_flag_t MENU_FLAGS[] = {
 static const char *const SPK_EQ[3] = {"FLAT", "LOWCUT", "BASS+"};
 /* (0.7.0) USB LEVEL: MASTER (USB follows the knob, the default), FIXED (full level, the knob after: #42), then fixed
  * and attenuated (-6 .. -24 dB: a phone recording over USB clipped at the full level). ui.c usb_lvl, fx.c fx_usb_gain */
-static const char *const USBLVL_N[6] = {"MASTER", "FIXED", "-6 dB", "-12 dB", "-18 dB", "-24 dB"};
+static const char USBLVL_N[] = "MASTER\0" "FIXED\0" "-6 dB\0" "-12 dB\0" "-18 dB\0" "-24 dB";   /* (V10.8.71: packed, str_nth) */
 /* (0.7.1) MENU > SYSTEM > USB (was USB SERIAL ON / OFF, #67): CONSOLE, the serial console with the stereo audio (the
  * default, PREF_SERIAL_OFF clear: the descriptors as before); STEREO, audio + MIDI only (class 0: the old OFF); STEMS,
  * audio as 8 channels (the six parts mono, the FX return L R; fx.c, usb.c), no console; (0.7.5) IN+OUT, the stereo
@@ -116,10 +116,10 @@ static const char *const COUNTIN_N[3] = {"OFF", "1 BAR", "2 BARS"};
 static const char *const SCROFF_N[5] = {"NEVER", "5 MIN", "15 MIN", "30 MIN", "60 MIN"};
 /* (JIANT 0.6.72) MIDI OUT over USB (ui.c midi_out_mode, seq.c MO_*): the keys; and the clock + START / STOP; and every
  * note the FM-1 plays; nothing */
-static const char *const MIDIOUT_N[4] = {"KEYS", "CLOCK", "ALL", "OFF"};
+static const char MIDIOUT_N[] = "KEYS\0" "CLOCK\0" "ALL\0" "OFF";   /* (V10.8.71: packed, str_nth) */
 /* (V10.6z4) OCT BEND (ui_input.c kx_press, seq.c kx_block): OCT+ held on a note bends up this far, OCT- a vibrato; OFF:
  * OCT is the octave with a note held too, as before. Stored as its place ^ 2 (oct_xp): 0, every older setting, 2 ST */
-static const char *const OCTBEND_N[8] = {"OFF", "1 ST", "2 ST", "3 ST", "4 ST", "5 ST", "7 ST", "12 ST"};
+static const char OCTBEND_N[] = "OFF\0" "1 ST\0" "2 ST\0" "3 ST\0" "4 ST\0" "5 ST\0" "7 ST\0" "12 ST";   /* (V10.8.71: packed, str_nth) */
 /* (V10.6z6) the keys' velocity and pressure (vel.c: VEL_SET, VEL_SET2): VELOCITY's curve (OFF: every key 100), VEL MIN's
  * floor, AFTERTOUCH's sensitivity (OFF: none), VEL LEARN (RESET: the calibration's seeds back, then ON) */
 /* each: its settings byte, the field's shift, mask and ^ (its stored form), its count, its names (w bytes apart) */
@@ -242,15 +242,15 @@ static const char *menu_vname(uint32_t row, uint32_t v)
     case MI_SCOPE: case MI_HELP: return SCOPEOPT_N[v & 1u];
     case MI_PRSCR: return v & 1u ? "MENU" : "SCROLL";
     case MI_LOWCUT: return SPK_EQ[v % 3u];
-    case MI_USB: return USBLVL_N[v % 6u];
+    case MI_USB: return str_nth(USBLVL_N, (unsigned)(v % 6u));
     case MI_SERIAL: return USBOUT_N[v % 6u];
     case MI_HOLD: return HOLD_N[v & 3u];
     case MI_CLICK: return CLICK_N[v % 3u];
     case MI_CLKLVL: return CLKLVL_N[v % 3u];
     case MI_COUNTIN: return COUNTIN_N[v % 3u];
     case MI_LOAD: return N_LOAD[v % 3u];
-    case MI_MIDIOUT: return MIDIOUT_N[v & 3u];
-    case MI_OCTBEND: return OCTBEND_N[v & 7u];
+    case MI_MIDIOUT: return str_nth(MIDIOUT_N, (unsigned)(v & 3u));
+    case MI_OCTBEND: return str_nth(OCTBEND_N, (unsigned)(v & 7u));
     case MI_MIDIMAP: return MLMAP_N[v % MLM_N];
     case MI_LEARN: return MLON_N[v & 3u];
     case MI_CPU: return CPU_N[0][v & 1u];

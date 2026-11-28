@@ -103,7 +103,7 @@ static void ml_name(char *b)
         b[2] = ' ';
         b[3] = 0;
     }
-    str_cpy(b + str_len(b), track_desc(ml.trk == ML_SEL ? TSEL : &trk[ml.trk % NTRK], ml.id)->label, 12);
+    str_cat(b, track_desc(ml.trk == ML_SEL ? TSEL : &trk[ml.trk % NTRK], ml.id)->label, 12);
 }
 /* a knob turned parameter id of track t (ui_input.c knob_cap): picked while learning; "LEARN T2 CUT: SEND A CC" (its
  * CC if it has one) */
@@ -152,7 +152,7 @@ static __attribute__((noinline)) void ml_poll(void)
         ui_say(a, r ? " RESERVED" : ": LEARN FULL");   /* (still waiting for one) */
         return;
     }
-    str_cpy(a + str_len(a), " > ", 4);
+    str_cat(a, " > ", 4);
     ml_name(b);
     ui_say(a, b);
     ml.pick = 0;

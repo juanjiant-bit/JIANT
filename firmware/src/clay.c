@@ -162,7 +162,7 @@ static __attribute__((noinline)) void clay_tick(uint32_t n)
 static const char *const CL_ONN[] = {"OFF", "ON", 0};
 static const char *const CL_RUNN[] = {"SONG", "FREE", "SONG NOKEY", "FREE NOKEY", 0};   /* (V10.8.31: bit 1 the keys' OFF) */
 static const char *const CL_MODN[] = {"1", "2", "3", "4", 0};
-static const char *const CL_NN[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+/* (V10.8.71, flash: the notes' names params.c NOTE_NM, one list of them) */
 static const param_desc_t *clay_desc(const track_t *t, uint32_t f, int16_t **valp)
 {
     static const char *nm[CLAY_ND + 1], *on[5];   /* (DEST's: the sound's knobs by name) */
@@ -171,7 +171,7 @@ static const param_desc_t *clay_desc(const track_t *t, uint32_t f, int16_t **val
     static const char *const BASE[CLAY_ND] = {"OFF", "PITCH", "CUTOFF", "SHAPE", "VOLUME", "PAN", "DIST", "CHORUS", "DELAY",
                                               "REVERB", "LFO RATE", "VIBRATO", 0, 0, 0, 0, 0, 0, 0, 0, "VOICE CUT", "LEVEL"};   /* (FM: no LIFE
                                                          * destination: its own HOME > LIFE) */
-    static const char *const EN[8] = {"E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8"};
+    static const char EN[] = "E1\0" "E2\0" "E3\0" "E4\0" "E5\0" "E6\0" "E7\0" "E8";   /* (V10.8.71: packed, str_nth) */
     uint32_t tr = (uint32_t)(t - trk) % NTRK, i;
     d.def = 0; d.names = 0; d.fmt = F_ENUM; d.min = 0;
     if (f == CL_SEL) {                                   /* (BYTE, the owner: one MOD, scrolled, as the sequences are) */
@@ -186,9 +186,9 @@ static const param_desc_t *clay_desc(const track_t *t, uint32_t f, int16_t **val
     else if (f == CL_OCT) {                              /* (the drone's note: its octave on the track's ROOT) */
         uint32_t r = (uint32_t)clamp(t->p[P_ROOT], 0, 11);
         for (i = 0; i < 4u; i++) {
-            str_cpy(octn[i], CL_NN[r], 4);
+            str_cpy(octn[i], NOTE_NM(r), 4);
             octn[i][str_len(octn[i])] = (char)('0' + i);
-            octn[i][str_len(CL_NN[r]) + 1u] = 0;
+            octn[i][str_len(NOTE_NM(r)) + 1u] = 0;
             on[i] = octn[i];
         }
         on[4] = 0;
@@ -203,7 +203,7 @@ static const param_desc_t *clay_desc(const track_t *t, uint32_t f, int16_t **val
             for (i = 0; i < (uint32_t)CLAY_ND; i++) nm[i] = BASE[i];
             for (i = 0; i < 8u; i++) {
                 const param_desc_t *pd = track_desc(t, P_E0 + i);
-                nm[12u + i] = pd && pd->label && pd->label[0] && pd->label[0] != '-' ? pd->label : EN[i];
+                nm[12u + i] = pd && pd->label && pd->label[0] && pd->label[0] != '-' ? pd->label : str_nth(EN, (unsigned)(i));
             }
             nm[CLAY_ND] = 0;
             d.label = "DEST"; d.max = CLAY_ND - 1; d.names = nm;

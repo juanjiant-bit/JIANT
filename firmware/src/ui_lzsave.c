@@ -60,16 +60,16 @@ static void graph_lib(void)
  * wave, the song's rows, everything), at the right the scope's actions; under them a bar fills while OCT+ is held */
 static __attribute__((noinline)) void graph_lz_tools(void)
 {
-    static const char *const WHAT[6] = {"CLEAR PROJECT", "CLEAR SEQ", "INIT SOUND", "DELETE ROW", "CLEAR SONG", "CPU TEST"};
-    static const char *const ON[6] = {"EVERYTHING", "STEPS + AUTO", "ENGINE DEFAULT", "", "ALL ROWS", "HEAVY SONG"};
+    static const char WHAT[] = "CLEAR PROJECT\0" "CLEAR SEQ\0" "INIT SOUND\0" "DELETE ROW\0" "CLEAR SONG\0" "CPU TEST";   /* (V10.8.71: packed, str_nth) */
+    static const char ON[] = "EVERYTHING\0" "STEPS + AUTO\0" "ENGINE DEFAULT\0" "\0" "ALL ROWS\0" "HEAVY SONG";   /* (V10.8.71: packed, str_nth) */
     uint32_t a = ui.act ? ui.act - 1u : 0u, sc = TL_SC[a], c, n = 0, h = graph_h(), i;
     int32_t hold = tl_t0 ? (int32_t)(fm1_ms - tl_t0) * 232 / (int32_t)TL_HOLD : 0;
     uint16_t col = !ui.act ? T_DIM : sc == 1u ? T_THEME : sc == 2u ? T_ACCENT : sc == 3u ? T_MID : T_TEXT;
     char b[12];
     {   /* what the action takes, a word in its scope's colour (V10.8.53: its picture, the steps, a wave, the rows, gone) */
-        static const char *const SCW[5] = {"PROJECT", "TRACK", "SOUND", "SONG", "SYSTEM"};
+        static const char SCW[] = "PROJECT\0" "TRACK\0" "SOUND\0" "SONG\0" "SYSTEM";   /* (V10.8.71: packed, str_nth) */
         cv_frame(4, 4, 76, 76, col);
-        cv_text_in(4, 38, 76, &AF_X, SCW[sc % 5u], col, T_SURF);
+        cv_text_in(4, 38, 76, &AF_X, str_nth(SCW, (unsigned)(sc % 5u)), col, T_SURF);
     }
     for (c = 0; c < 6u; c++) {                           /* the scope's actions */
         int32_t y = 4 + (int32_t)n * 26;
@@ -79,9 +79,9 @@ static __attribute__((noinline)) void graph_lz_tools(void)
         n++;
         cv_rect(88, y, 148, 24, bg);
         GFX_HOOK_ALIGN(0, y, 0, y + 12, AL_V, "tools row text centred up/down");
-        cv_text_on(94, y + CAP_IN(M, 14), &AF_M, WHAT[c], sel ? T_TEXT : T_MID, bg);
+        cv_text_on(94, y + CAP_IN(M, 14), &AF_M, str_nth(WHAT, (unsigned)(c)), sel ? T_TEXT : T_MID, bg);
         if (c == 3u) { str_cpy(b, "ROW ", sizeof b); fmt_int(b + 4, (int32_t)ui.song_row + 1); }
-        cv_text(94, y + 15, &AF_X, c == 3u ? b : ON[c], sel ? T_MID : T_DIM);
+        cv_text(94, y + 15, &AF_X, c == 3u ? b : str_nth(ON, (unsigned)(c)), sel ? T_MID : T_DIM);
     }
     cv_rect(4, (int32_t)h - 20, 232, 6, T_RAISE);        /* OCT+ held: the bar */
     if (hold > 0) cv_rect(4, (int32_t)h - 20, hold > 232 ? 232 : hold, 6, col);
@@ -92,10 +92,10 @@ static void song_len_txt(char *b, uint32_t total)
 {
     uint32_t end = SONG_END(&chain_config);
     fmt_int(b, (int32_t)total);
-    str_cpy(b + str_len(b), " BARS \xB7 ", 9);
-    if (end == SONG_FOREVER) str_cpy(b + str_len(b), "END REPEAT", 11);
+    str_cat(b, " BARS \xB7 ", 9);
+    if (end == SONG_FOREVER) str_cat(b, "END REPEAT", 11);
     else if (end >= 2u) { uint32_t k = str_len(b); b[k] = 'x'; fmt_int(b + k + 1u, (int32_t)end); }
-    else str_cpy(b + str_len(b), "STOP", 6);
+    else str_cat(b, "STOP", 6);
 }
 static uint32_t song_bars(uint32_t s)                  /* the song's bars (s 4), part s's in it */
 {
@@ -157,7 +157,7 @@ static void graph_parts(void)
         cv_text_on(x + 6, y + 4, &AF_M, b, ink, c);
         if (used && song_bars(s)) {                       /* (its bars in the song) */
             fmt_int(b, (int32_t)song_bars(s));
-            str_cpy(b + str_len(b), " BARS", 6);
+            str_cat(b, " BARS", 6);
             cv_text_r(x + 109, y + 5, &AF_X, b, ink, c);
         }
         cv_free_text(x + 6, y + 22, &AF_X, !used ? "EMPTY" : nm[0] ? nm : (dice_secs >> s) & 1u ? "GENE" : "PART", ink, c, 102);
@@ -289,7 +289,7 @@ static __attribute__((noinline)) void graph_tl(void)
     song_strip(3, 18, 4u, 1);
     if (chain.running && !chain.loop) {
         str_cpy(b, chain.hold ? "LOOP ROW " : "ROW ", sizeof b);
-        fmt_int(b + str_len(b), (int32_t)chain.row + 1);
+        fmt_cat(b, (int32_t)chain.row + 1);
     } else b[0] = 0;
     cv_text(4, 25, &AF_X, b, chain.hold ? T_THEME : T_DIM);
     song_len_txt(b, song_bars(4u));
@@ -415,7 +415,7 @@ static void graph_proj(void)
         cv_text_on(x + 6, 4, &AF_M, b, ink, c);
         if (used && !nm[0]) {                            /* (V10.8.47, the owner) no name: its bars in the song ("0 BARS": in no row) */
             fmt_int(b, (int32_t)song_bars(i));
-            str_cpy(b + str_len(b), " BARS", 6);
+            str_cat(b, " BARS", 6);
             nm = b;
         }
         cv_free_text(x + 6, 25, &AF_X, used ? nm : "EMPTY", ink, c, 47);

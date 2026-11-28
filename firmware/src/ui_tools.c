@@ -170,8 +170,8 @@ BTAPP_FN static void se_amt(uint32_t a, char *b)
     else if (a == SE_REPEAT && m > 8) str_cpy(b, "FILL", 8);
     else {
         if ((f == 'n' || f == 's') && m > 0) b[0] = '+';
-        fmt_int(b + str_len(b), m);
-        if (f == '%') str_cpy(b + str_len(b), "%", 2);
+        fmt_cat(b, m);
+        if (f == '%') str_cat(b, "%", 2);
     }
 }
 
@@ -192,8 +192,8 @@ static __attribute__((noinline)) const char *tl_nudge(track_t *t, int32_t d, uin
     }
     if (!c) { ui_message(f ? "NUDGE: AT ITS LIMIT" : "NO NOTES"); return 0; }
     str_cpy(b, m > 0 ? "NUDGE +" : "NUDGE ", sizeof b);
-    fmt_int(b + str_len(b), m);
-    str_cpy(b + str_len(b), "/64", 4);
+    fmt_cat(b, m);
+    str_cat(b, "/64", 4);
     return h ? "HUMANIZED" : b;
 }
 
@@ -242,11 +242,11 @@ static __attribute__((noinline)) void se_do(uint32_t a, int32_t m)
         trackgen_make(lo, n);
         str_cpy(b, "GEN ", sizeof b);
         se_amt(a, b + 4);
-        str_cpy(b + str_len(b), " ", 2);
+        str_cat(b, " ", 2);
         cp_say(b, lo, n);
         str_cpy(b, ui.msg, sizeof b - 6);
-        str_cpy(b + str_len(b), " #", 3);
-        fmt_int(b + str_len(b), c->seed);
+        str_cat(b, " #", 3);
+        fmt_cat(b, c->seed);
         ui_message(b);
         return;
     }
@@ -353,8 +353,8 @@ static __attribute__((noinline)) void se_do(uint32_t a, int32_t m)
     tl_unlock(t, was, len);
     if (!msg) {
         str_cpy(b, SE[a].nm, sizeof b);
-        if (SE[a].f) { str_cpy(b + str_len(b), " ", 2); se_amt(a, b + str_len(b)); }
-        str_cpy(b + str_len(b), " ", 2);
+        if (SE[a].f) { str_cat(b, " ", 2); se_amt(a, b + str_len(b)); }
+        str_cat(b, " ", 2);
         cp_say(b, lo, n);                               /* "STRETCH x2 5-8" */
     } else
         ui_message(msg);
@@ -373,9 +373,9 @@ static void se_undo(void)
     str_cpy(b, r >> 15 ? "REDO " : "UNDO ", sizeof b);
     str_cpy(b + 5, SE[a].nm, sizeof b - 5);
     se_md = (int16_t)(int8_t)(clay_sp[10] >> 8);
-    if (SE[a].f) { str_cpy(b + str_len(b), " ", 2); se_amt(a, b + str_len(b)); }
+    if (SE[a].f) { str_cat(b, " ", 2); se_amt(a, b + str_len(b)); }
     se_md = md;
-    str_cpy(b + str_len(b), " ", 2);
+    str_cat(b, " ", 2);
     cp_say(b, r & 63u, (r >> 6) & 127u);
     ui.force = 1;
 }
@@ -405,7 +405,7 @@ static __attribute__((noinline)) const char *tl_do(track_t *t, uint32_t p, uint3
         n = tl_fill(t, len, l);
         msg = n == 1u ? " EVERY STEP" : n == 2u ? " EVERY 2ND" : n ? " EVERY 4TH" : " CLEARED";
     }
-    str_cpy(b + str_len(b), msg, sizeof b - str_len(b));
+    str_cat(b, msg, sizeof b - str_len(b));
     return b;
 }
 

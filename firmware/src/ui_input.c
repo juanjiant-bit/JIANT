@@ -1994,8 +1994,8 @@ static void rec_clear_auto(uint32_t b)
             pfx_lane[i] = 0;
         }
     str_cpy(msg, n ? "" : "NO ", sizeof msg);
-    str_cpy(msg + str_len(msg), name, sizeof msg - str_len(msg));
-    str_cpy(msg + str_len(msg), n ? " AUTOMATION CLEARED" : " AUTOMATION", sizeof msg - str_len(msg));
+    str_cat(msg, name, sizeof msg - str_len(msg));
+    str_cat(msg, n ? " AUTOMATION CLEARED" : " AUTOMATION", sizeof msg - str_len(msg));
     ui_message(msg);
     ui.force = 1;
 }
@@ -2006,17 +2006,17 @@ static void rec_clear_auto(uint32_t b)
 /* (0.6.37) the entry let go: a chord held for LEN steps (TIEs after it), or arpeggiated (ARP pressed while held): its
  * notes over the octaves in the ORDER, one every RES steps; the cursor after it */
 static const char *const ENT_ORD[4] = {"UP", "DOWN", "UP-DN", "RND"};
-static const char *const ENT_RES[4] = {"1/16", "1/8", "1/8.", "1/4"};
+static const char ENT_RES[] = "1/16\0" "1/8\0" "1/8.\0" "1/4";   /* (V10.8.71: packed, str_nth) */
 static void ent_message(void)
 {
     char a[24], b[24];
     if (ui.ent_arp) {
-        str_cpy(a, "ARP ", sizeof a); str_cpy(a + str_len(a), ENT_ORD[ui.ent_ord & 3u], 8);
-        str_cpy(b, ENT_RES[(ui.ent_res - 1u) & 3u], 8); str_cpy(b + str_len(b), " x", 4);
-        fmt_int(b + str_len(b), ui.ent_oct); str_cpy(b + str_len(b), " OCT", 6);
+        str_cpy(a, "ARP ", sizeof a); str_cat(a, ENT_ORD[ui.ent_ord & 3u], 8);
+        str_cpy(b, str_nth(ENT_RES, (unsigned)((ui.ent_res - 1u) & 3u)), 8); str_cat(b, " x", 4);
+        fmt_cat(b, ui.ent_oct); str_cat(b, " OCT", 6);
     } else {
-        str_cpy(a, "LEN ", sizeof a); fmt_int(a + str_len(a), ui.ent_len);
-        str_cpy(a + str_len(a), ui.ent_len > 1u ? " STEPS" : " STEP", 8);
+        str_cpy(a, "LEN ", sizeof a); fmt_cat(a, ui.ent_len);
+        str_cat(a, ui.ent_len > 1u ? " STEPS" : " STEP", 8);
         b[0] = 0;
     }
     str_cpy(ui.msg, a, sizeof ui.msg); str_cpy(ui.msg2, b, sizeof ui.msg2); ui.msg_t = 40;
@@ -2139,10 +2139,10 @@ static void presets_turn(int32_t s)
             cursor_set((int32_t)ui.cursor + s);
         str_cpy(b, "BAR ", sizeof b);
         fmt_int(b + 4, (int32_t)ui.cursor / 16 + 1);
-        str_cpy(b + str_len(b), "/", sizeof b - str_len(b));
-        fmt_int(b + str_len(b), nb);
-        str_cpy(b + str_len(b), "  STEP ", sizeof b - str_len(b));
-        fmt_int(b + str_len(b), (int32_t)ui.cursor + 1);
+        str_cat(b, "/", sizeof b - str_len(b));
+        fmt_cat(b, nb);
+        str_cat(b, "  STEP ", sizeof b - str_len(b));
+        fmt_cat(b, (int32_t)ui.cursor + 1);
         ui_message(b);
         return;
     }
@@ -2503,8 +2503,8 @@ static void mx_banner(void)
         dn = d && d->label && d->label[0] != '-' ? d->label : PN_AT(N_MDST, dst);
     }
     str_cpy(b, str_nth(MX_SRC_FULL, src), sizeof b);
-    str_cpy(b + str_len(b), " > ", sizeof b - str_len(b));
-    str_cpy(b + str_len(b), dn, sizeof b - str_len(b));
+    str_cat(b, " > ", sizeof b - str_len(b));
+    str_cat(b, dn, sizeof b - str_len(b));
     ui_say(b, "");
 }
 static void ui_input(void)
@@ -2578,7 +2578,7 @@ static void ui_input_frame(void)
             char b[24];
             str_cpy(b, "ALL TR ", sizeof b);
             if (song.g[G_STRN] < 0) str_cpy(b + 7, "-", 2);
-            fmt_int(b + str_len(b), song.g[G_STRN] < 0 ? -song.g[G_STRN] : song.g[G_STRN]);
+            fmt_cat(b, song.g[G_STRN] < 0 ? -song.g[G_STRN] : song.g[G_STRN]);
             ui_say(b, " DEG");
         }
         if (song.playing && !play0 && quiet)

@@ -254,7 +254,7 @@ static __attribute__((noinline)) void menu_panel(void)
             GFX_HOOK_ALIGN(x, 0, x + 115, 0, AL_H, "menu tab tile name centred");
             cv_text_in(x, y + 14, 115, &AF_M, MTAB_NAME[k], k == t ? T_THEME : T_TEXT, bg);
             fmt_int(v, (int32_t)mtab_rows(k));
-            str_cpy(v + str_len(v), " ROWS", 8);
+            str_cat(v, " ROWS", 8);
             cv_text_in(x, y + 40 - AF_X_CAP_Y, 115, &AF_X, v, T_MID, bg);
         }
         return;
@@ -290,8 +290,8 @@ static __attribute__((noinline)) void menu_panel(void)
         uint32_t row = ui.menu_sel, nv = row < MI_VALUES ? menu_n(row) : 0u, cur = nv ? menu_get(row) : 0u;
         char b[32];
         str_cpy(b, MTAB_NAME[t], 32);
-        str_cpy(b + str_len(b), " > ", 32 - str_len(b));
-        str_cpy(b + str_len(b), str_nth(MI_NAME, row), 32 - str_len(b));
+        str_cat(b, " > ", 32 - str_len(b));
+        str_cat(b, str_nth(MI_NAME, row), 32 - str_len(b));
         cv_text(10, 6 - AF_X_CAP_Y, &AF_X, b, T_THEME);
         if (!nv)
             return;
@@ -338,12 +338,12 @@ BTAPP_FN static void bt_prox_panel(const aafont_t *fx, const aafont_t *fm, const
     cv_rect(10, 18, 220, 14, T_RAISE);
     heat_bar(10, 18, p * 220 / 32767, 220, 14, T_ACCENT);   /* (V10.7.7: cold to hot, the thermal palette) */
     fmt_int(b, p * 100 / 32767);
-    str_cpy(b + str_len(b), BPS(13), 2);
+    str_cat(b, BPS(13), 2);
     cv_text(10, 40 - AF_M_CAP_Y, fm, b, T_TEXT);
     if (bp.conn && bp.have) {
         str_cpy(b, BPS(9), sizeof b);
         fmt_fix(b + str_len(b), bp.lvl * 10 / 256, 1);
-        str_cpy(b + str_len(b), BPS(10), 10);
+        str_cat(b, BPS(10), 10);
         for (k = 0; k < 4u; k++)
             b[str_len(b) + 1u] = 0, b[str_len(b)] = "0123456789ABCDEF"[bp.raw >> (12u - 4u * k) & 15u];
         b[str_len(b) + 3u] = 0;                         /* (V10.18) the reading used: "R" its word, its kind */
@@ -367,12 +367,12 @@ BTAPP_FN static void bt_prox_panel(const aafont_t *fx, const aafont_t *fm, const
     }
     if (bpc.on) {                                       /* (V10.6z8) a point being taken: how far */
         str_cpy(b, bpc.on > 1u ? "HOLD STILL: NEAR " : "HOLD STILL: FAR ", sizeof b);
-        fmt_int(b + str_len(b), (int32_t)((fm1_ms - bpc.t0) * 100u / BPC_MS));
-        str_cpy(b + str_len(b), BPS(13), 2);
+        fmt_cat(b, (int32_t)((fm1_ms - bpc.t0) * 100u / BPC_MS));
+        str_cat(b, BPS(13), 2);
     } else if (BT_CAL[0] != BT_CAL[1]) {
         str_cpy(b, BPS(11), sizeof b);
         fmt_fix(b + str_len(b), BT_CAL[0] * 5, 1);
-        str_cpy(b + str_len(b), BPS(12), 10);
+        str_cat(b, BPS(12), 10);
         fmt_fix(b + str_len(b), BT_CAL[1] * 5, 1);
     } else
         str_cpy(b, BPS(3), sizeof b);
@@ -380,11 +380,11 @@ BTAPP_FN static void bt_prox_panel(const aafont_t *fx, const aafont_t *fm, const
     for (k = 0; k < 3u; k++)
         cv_text(10, 95 + 11 * (int32_t)k - AF_X_CAP_Y, fx, BPS(4u + k), T_DIM);   /* (9 px capitals: 11 apart) */
     str_cpy(b, BPS(14), sizeof b);                     /* (V10.61) KNOB 1 MIN, KNOB 2 MAX, KNOB 3 SPEED */
-    fmt_int(b + str_len(b), BT_MIN());
-    str_cpy(b + str_len(b), BPS(15), 16);
-    fmt_int(b + str_len(b), BT_MAX() < BT_MIN() + 10 ? BT_MIN() + 10 : BT_MAX());
-    str_cpy(b + str_len(b), BPS(16), 16);
-    fmt_int(b + str_len(b), (int32_t)BT_SPEED() + 1);
+    fmt_cat(b, BT_MIN());
+    str_cat(b, BPS(15), 16);
+    fmt_cat(b, BT_MAX() < BT_MIN() + 10 ? BT_MIN() + 10 : BT_MAX());
+    str_cat(b, BPS(16), 16);
+    fmt_cat(b, (int32_t)BT_SPEED() + 1);
     cv_text(10, 129 - AF_S_CAP_Y, fs, b, T_TEXT);       /* (inside the panel: it stood at 136, cut at the foot) */
 }
 static __attribute__((noinline)) void bt_prox_input(uint32_t up, uint32_t dn)   /* (V10.6z8: out of the full segment) */

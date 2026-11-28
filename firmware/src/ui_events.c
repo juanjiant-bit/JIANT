@@ -38,7 +38,7 @@ static void ev_name(const track_t *t, uint32_t id, char *b)
 {
     const char *pre = id >= P_ATK && id <= P_ED_SHP ? "ENV " : id >= P_LRATE && id <= P_LD_AMP ? "LFO " : "";
     str_cpy(b, pre, 12);
-    str_cpy(b + str_len(b), id == P_LEVEL ? "LEVEL" : id == P_GLIDE ? "GLIDE" : track_desc(t, id)->label, 12 - str_len(b));
+    str_cat(b, id == P_LEVEL ? "LEVEL" : id == P_GLIDE ? "GLIDE" : track_desc(t, id)->label, 12 - str_len(b));
 }
 /* the next parameter after id in direction dir (+1 / -1) that is free on track t's step (a record there: skipped);
  * id itself when there is none */

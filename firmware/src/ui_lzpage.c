@@ -73,12 +73,12 @@ static void lfo_cap(const track_t *t, int32_t x, int32_t y, int mode)   /* "1.18
     const char *u = "";
     char b[32], w[12];
     param_format(&TP[P_LRATE], t->p[P_LRATE], b, &u);
-    str_cpy(b + str_len(b), u, 32 - str_len(b));
-    str_cpy(b + str_len(b), " \xB7 ", 32 - str_len(b));
+    str_cat(b, u, 32 - str_len(b));
+    str_cat(b, " \xB7 ", 32 - str_len(b));
     param_format(&TP[P_LWAVE], t->p[P_LWAVE], w, &u);
-    str_cpy(b + str_len(b), w, 32 - str_len(b));
+    str_cat(b, w, 32 - str_len(b));
     if (mode)                                           /* (0.9.18) LFO, LFO 2: MODE too (LFO DEST: no room) */
-        str_cpy(b + str_len(b), t->p[P_LPHASE] < 0 ? " \xB7 FREE" : " \xB7 TRIG", 32 - str_len(b));
+        str_cat(b, t->p[P_LPHASE] < 0 ? " \xB7 FREE" : " \xB7 TRIG", 32 - str_len(b));
     ed_cap(x, y, b, T_TEXT);
 }
 static __attribute__((noinline)) void graph_lfodest(const track_t *t, const page_t *pg)
@@ -106,7 +106,7 @@ static __attribute__((noinline)) void graph_lfodest(const track_t *t, const page
         cv_rect(100, y, 132, 26, T_RAISE);
         ed_cap(105, y + 4, d->label, T_MID);
         param_format(d, *vp, b, &u);
-        str_cpy(b + str_len(b), u, 16 - str_len(b));
+        str_cat(b, u, 16 - str_len(b));
         cv_text_r(228, y + 4 - AF_X_CAP_Y, &AF_X, b, T_TEXT, T_RAISE);
         cv_rect(106, y + 17, 120, 2, T_LINE);
         if (w)
@@ -172,11 +172,11 @@ static __attribute__((noinline)) void graph_key(const track_t *t, const page_t *
     const char *u = "";
     char b[32];
     (void)pg;
-    str_cpy(b, NN12[rt], 4);
-    str_cpy(b + str_len(b), " ", 2);
-    if (bt_hw_seg()) str_cpy(b + str_len(b), SCL_LONG[(uint32_t)t->p[P_SCALE] % NELEM(SCL_LONG)], 30 - str_len(b));
+    str_cpy(b, NOTE_NM(rt), 4);
+    str_cat(b, " ", 2);
+    if (bt_hw_seg()) str_cat(b, SCL_LONG[(uint32_t)t->p[P_SCALE] % NELEM(SCL_LONG)], 30 - str_len(b));
     if (text_w(f, b) > 228) f = &AF_M;
-    if (text_w(f, b) > 228 || !bt_hw_seg()) {           /* (too long, or the segment missing: the short name) */ b[str_len(NN12[rt]) + 1u] = 0; param_format(&TP[P_SCALE], t->p[P_SCALE], b + str_len(b), &u); }
+    if (text_w(f, b) > 228 || !bt_hw_seg()) {           /* (too long, or the segment missing: the short name) */ b[str_len(NOTE_NM(rt)) + 1u] = 0; param_format(&TP[P_SCALE], t->p[P_SCALE], b + str_len(b), &u); }
     cv_text(6, 4 - (f == &AF_L ? AF_L_CAP_Y : AF_M_CAP_Y), f, b, T_TEXT);
     for (i = 0; i < 12u; i++)                           /* dg[note]: its degree (1 ..), 0 not in the scale */
         dg[(rt + i) % 12u] = mask >> i & 1u ? ++n : 0u;
@@ -185,7 +185,7 @@ static __attribute__((noinline)) void graph_key(const track_t *t, const page_t *
             uint32_t nt = (rt + i) % 12u, k = dg[nt] - 1u;
             int32_t w = 228 / (int32_t)n, x = 6 + (int32_t)k * w;
             cv_rect(x, 34, w - 2, 24, note_col(nt));
-            cv_text_in(x, 34 + (n > 9u ? CAP_IN(X, 24) : CAP_IN(M, 24)), w - 2, n > 9u ? &AF_X : &AF_M, NN12[nt], T_INK, note_col(nt));
+            cv_text_in(x, 34 + (n > 9u ? CAP_IN(X, 24) : CAP_IN(M, 24)), w - 2, n > 9u ? &AF_X : &AF_M, NOTE_NM(nt), T_INK, note_col(nt));
             if (!i) cv_frame(x - 1, 33, w, 26, T_TEXT);
         }
     {   /* an octave of keys from C, the scale's lit, each its degree (ui_gx.c gx_keys); ROOT's its degree 1 */
@@ -213,10 +213,10 @@ static void chord_label(const uint8_t *pn, uint32_t n, char *o)
     s4 = !(m >> 3 & 1) && !(m >> 4 & 1) && (m >> 5 & 1); s2 = !(m >> 3 & 1) && !(m >> 4 & 1) && !s4 && (m >> 2 & 1);
     b7 = m >> 10 & 1; M7 = m >> 11 & 1; six = (m >> 9 & 1) && !dim; nine = (m >> 2 & 1) && !s2; d7 = dim && (m >> 9 & 1);
     q = dim ? (d7 ? 0u : b7 ? 1u : 2u) : aug ? 3u : s4 ? 4u : s2 ? 5u : mi ? (b7 ? 6u : M7 ? 7u : 8u) : M7 ? 9u : b7 ? 10u : 11u;
-    str_cpy(o, NN12[pn[0] % 12u], 24);
-    str_cpy(o + str_len(o), LQ[q], 24);
-    if (six && !d7) str_cpy(o + str_len(o), " 6", 24);
-    if (nine) str_cpy(o + str_len(o), b7 || M7 ? " 9" : " ADD9", 24);
+    str_cpy(o, NOTE_NM(pn[0] % 12u), 24);
+    str_cat(o, LQ[q], 24);
+    if (six && !d7) str_cat(o, " 6", 24);
+    if (nine) str_cat(o, b7 || M7 ? " 9" : " ADD9", 24);
 }
 /* CHORD: the last key's chord named large (yellow while it sounds, else the track's colour), TYPE . VOICING under it; two
  * octaves of keys, the chord's notes lit (its root the track's colour) and each its interval; the seven degrees as tags,
@@ -270,11 +270,11 @@ static void graph_arp(const track_t *t)
     char b[40], v[12];
     uint32_t i, md = (uint32_t)t->p[P_AMODE], oc = (uint32_t)clamp(t->p[P_AOCT], 1, 4), n = 3u * oc;
     param_format(&TP[P_AMODE], t->p[P_AMODE], b, &u);
-    str_cpy(b + str_len(b), " \xB7 ", 40 - str_len(b));
+    str_cat(b, " \xB7 ", 40 - str_len(b));
     param_format(&TP[P_ARATE], t->p[P_ARATE], v, &u);
-    str_cpy(b + str_len(b), v, 40 - str_len(b));
-    str_cpy(b + str_len(b), " \xB7 OCT ", 40 - str_len(b));
-    fmt_int(b + str_len(b), (int32_t)oc);
+    str_cat(b, v, 40 - str_len(b));
+    str_cat(b, " \xB7 OCT ", 40 - str_len(b));
+    fmt_cat(b, (int32_t)oc);
     ed_cap(10, 6, b, T_TEXT);
     param_format(&TP[P_AORDER], t->p[P_AORDER], b, &u);
     cv_text_r(228, 6 - AF_X_CAP_Y, &AF_X, b, T_DIM, T_SURF);
@@ -332,7 +332,7 @@ static __attribute__((noinline)) void graph_system(void)
         cv_text_in(8 + (int32_t)c * 22, 12 - AF_X_CAP_Y, 20, &AF_X, n, c < trk_live ? T_INK : T_DIM, bg);
     }
     fmt_int(b, (int32_t)trk_live);
-    str_cpy(b + str_len(b), " TRACKS PLAY", 24 - str_len(b));
+    str_cat(b, " TRACKS PLAY", 24 - str_len(b));
     ed_cap(144, 13, b, T_TEXT);
     for (k = 0; k < 3u; k++) {
         uint16_t bg = k == ld ? T_THEME : T_RAISE;
@@ -346,7 +346,7 @@ static __attribute__((noinline)) void graph_system(void)
                                                          * output's scope, the CPU's number at its right) */
     str_cpy(b, "CPU ", 24);
     fmt_int(b + 4, (int32_t)(song.cpu_q8 * 100u / 256u));
-    str_cpy(b + str_len(b), "%", 2);
+    str_cat(b, "%", 2);
     cv_text_r(230, 62 - AF_X_CAP_Y, &AF_X, b, T_TEXT, T_SURF);
 }
 

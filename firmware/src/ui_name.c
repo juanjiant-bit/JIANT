@@ -30,8 +30,8 @@ enum { NK_NONE, NK_USER_SAVE, NK_USER_RENAME, NK_PROJ_SAVE, NK_PROJ_RENAME, NK_L
 #define NM_REP_MS 450u                                 /* a held arrow / DELETE repeats after this, */
 #define NM_RATE_MS 90u                                 /* .. every this */
 enum { NB_LEFT, NB_SPACE, NB_RIGHT, NB_DEL, NB_MODE, NB_NONE };
-static const char *const NM_ABC[16] = {"AB", "CD", "EF", "GH", "IJK", "LM", "NO", "PQ", "RS", "TU", "VW", "XYZ",
-                                       "123", "456", "789", "0-."};
+static const char NM_ABC[] = "AB\0" "CD\0" "EF\0" "GH\0" "IJK\0" "LM\0" "NO\0" "PQ\0" "RS\0" "TU\0" "VW\0" "XYZ\0"
+                             "123\0" "456\0" "789\0" "0-."; /* (V10.8.71: packed, str_nth; was a table of pointers) */
 static const char NM_NUM[17] = "1234567890-._/#+";
 static const char NM_SET[] = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._/#+";   /* KNOB 2 */
 static struct {
@@ -64,7 +64,7 @@ static const char *nm_group(uint32_t p)                /* white key place p's ch
 {
     static char one[2];
     if (!nm.num)
-        return NM_ABC[p & 15u];
+        return str_nth(NM_ABC, p & 15u);
     one[0] = NM_NUM[p & 15u];
     return one;
 }
@@ -334,7 +334,7 @@ static void nm_title(char *b)
 {
     if (nm.kind == NK_SONG_SAVE) {
         str_cpy(b, song_save_loop ? "SAVE LOOP TO PROJECT " : "SAVE SONG TO PROJECT ", 24);
-        fmt_int(b + str_len(b), (int32_t)nm.slot + 1);
+        fmt_cat(b, (int32_t)nm.slot + 1);
         return;
     }
     str_cpy(b, nm.kind == NK_USER_SAVE || nm.kind == NK_PROJ_SAVE ? "SAVE " : "NAME ", 8);
@@ -367,7 +367,7 @@ static void nm_draw_field(void)
     nm_card(1, "CHAR", c[0] == ' ' ? "_" : c, T_TEXT);
     fmt_int(b, nm.len);
     if (nm.kind == NK_LYRIC)                           /* (0.8.5) a lyric: of 63 */
-        str_cpy(b + str_len(b), "/63", 4);
+        str_cat(b, "/63", 4);
     if (nm.kind == NK_SONG_SAVE) nm_card(2, "SCOPE", song_save_loop ? "LOOP" : "SONG", T_THEME);
     else nm_card(2, "LEN", b, nm.len >= nm_len_max() ? T_ACCENT : T_TEXT);
     nm_card(3, "OCT +", nm.kind == NK_LYRIC ? "SET" : nm.kind == NK_USER_SAVE || nm.kind == NK_PROJ_SAVE || nm.kind == NK_SONG_SAVE ? "SAVE" : "WRITE",
@@ -375,7 +375,7 @@ static void nm_draw_field(void)
 }
 static __attribute__((noinline)) void nm_draw_panel(void)
 {
-    static const char *const FN[5] = {"F#", "G#", "A#", "C#", "D#"};
+    static const char FN[] = "F#\0" "G#\0" "A#\0" "C#\0" "D#";   /* (V10.8.71: packed, str_nth) */
     uint32_t i, empty = nm.len == 0u, w0 = nm.cur > NM_LEN - 1u ? nm.cur - (NM_LEN - 1u) : 0u;   /* (a lyric: the window) */
     char b[24];
     cv_begin(240, LZ_GRAPH_H, T_BG);
@@ -430,7 +430,7 @@ static __attribute__((noinline)) void nm_draw_panel(void)
             GFX_HOOK_ALIGN(4, 0, 236, 0, AL_H | AL_CELLS | AL_N(5), "name keys' row in the panel");
         cv_rect(x, y, 42, 28, T_KEY);
         GFX_HOOK_ALIGN(x, 0, x + 42, 0, AL_H | AL_PASS, "name black key name / use centred across");
-        cv_text_in(x, y + 4 - AF_X_CAP_Y, 42, &AF_X, FN[i], T_INK, T_KEY);
+        cv_text_in(x, y + 4 - AF_X_CAP_Y, 42, &AF_X, str_nth(FN, (unsigned)(i)), T_INK, T_KEY);
         GFX_HOOK_ALIGN(x, 0, x + 42, 0, AL_H | AL_PASS, "name black key name / use centred across");
         cv_text_in(x, y + 16 - AF_X_CAP_Y, 42, &AF_X, i == NB_LEFT ? "<" : i == NB_RIGHT ? ">" : i == NB_SPACE ? "SPACE" :
                    i == NB_DEL ? "DEL" : nm.num ? "ABC" : "123", T_INK, T_KEY);

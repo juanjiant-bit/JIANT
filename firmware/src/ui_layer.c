@@ -631,7 +631,7 @@ static void song_key(uint32_t p)
             char b[24] = "CHAIN";
             for (k = 0; k < lys.nqc && k < 8u; k++) {
                 char c[3] = {' ', (char)('A' + lys.qc[k]), 0};
-                str_cpy(b + str_len(b), c, sizeof b - str_len(b));
+                str_cat(b, c, sizeof b - str_len(b));
             }
             ui_message(b);
         }
@@ -776,7 +776,7 @@ static __attribute__((noinline)) void layer_key(uint32_t l, uint32_t k)
         }
     } else if (l == LAYER_SCL) {
         TSEL->p[P_ROOT] = (int16_t)((k + 5u) % 12u);    /* the key's note name (F3 = F) */
-        ui_say("ROOT ", NN12[TSEL->p[P_ROOT]]);
+        ui_say("ROOT ", NOTE_NM(TSEL->p[P_ROOT]));
     } else if (l == LAYER_EDIT && key_black(k) && p < NLANE && drum_track(TSEL)) {
         dx_mute_set(dx_mute ^ DXM_LANE(p));             /* DRUM: black keys 1..8 mute each sound (lit = sounding) */
         ui_say(drum_lane_abbr(TSEL, p), dx_mute & DXM_LANE(p) ? " MUTED" : " ON");
@@ -853,7 +853,7 @@ static void layer_knob(uint32_t k, int32_t s)
             char b[6];
             TSEL->p[P_HRQ] = (int16_t)clamp(TSEL->p[P_HRQ] + accel(EN_K2, s, 127), 0, 127);
             fmt_int(b, TSEL->p[P_HRQ] * 100 / 127);
-            str_cpy(b + str_len(b), "%", 2);
+            str_cat(b, "%", 2);
             ui_say("REC GRID ", b);
         }
         else if (k < RL_N)
@@ -1024,11 +1024,11 @@ static uint32_t macro_routes(uint32_t m, char *b, uint32_t n)
                 char e[16] = {'T', (char)('1' + i), ' ', 0};
                 uint32_t l0 = str_len(b);
                 str_cpy(e + 3, mod_dst_name(&trk[i], p[1]), sizeof e - 3);
-                str_cpy(e + str_len(e), p[2] > 0 ? "+" : "", sizeof e - str_len(e));
-                fmt_int(e + str_len(e), p[2] * 100 / 64);
+                str_cat(e, p[2] > 0 ? "+" : "", sizeof e - str_len(e));
+                fmt_cat(e, p[2] * 100 / 64);
                 if (l0)
                     str_cpy(b + l0, " ", n - l0);
-                str_cpy(b + str_len(b), e, n - str_len(b));
+                str_cat(b, e, n - str_len(b));
                 if (text_w(&AF_S, b) > LMC_TW) {
                     b[l0] = 0;
                     str_cpy(b + l0, " +", n - l0);
@@ -1091,7 +1091,8 @@ static uint32_t ly_keyname(uint32_t l, int blk, uint32_t p, char *nm)
             nm[6] = (char)('1' + p);
             return (perf_solo >> p) & 1u ? LS_HELD : p >= trk_live ? LS_DIM : LS_OFF;
         }
-        str_cpy(nm, p == GLO_ALL ? "UNMUTE" : p == GLO_TAP ? "TAP" : p == GLO_UNDO ? "UNDO" : "", 12);
+        str_cpy(nm, p == GLO_ALL ? "UNMUTE" : p == GLO_TAP ? "TAP" : p == GLO_UNDO ? "UNDO" : p == GLO_RESOUND ? "RESOUND" : "",
+                12);                                    /* (V10.8.71, the owner: A4's RESOUND named on the map too) */
         return p == GLO_TAP && song.g[G_CLOCK] ? LS_DIM : p == GLO_UNDO && !undo_ok ? LS_DIM : LS_OFF;
     }
     if (l == LAYER_SCL) {                               /* every key its note: the root lit, the scale's plain, the rest dim */
@@ -1259,9 +1260,9 @@ static const char PD_NM[PD_N][9] = {"M1", "M2", "M3", "M4", "CUT", "FILTER", "PI
                                     "REV SIZE", "REV DAMP", "CHO RATE", "CHO DPTH"};
 static void pk_name(uint32_t e, uint32_t o, char *nm)
 {
-    static const char *const BN[5] = {"LOOP 3", "PITCH UP", "PITCH DN", "TAPE STOP", "STRETCH"};
-    str_cpy(nm, e < PF_M1 ? str_nth(PF_NAME, e) : e < PF_M1 + NTRK ? "MUTE T1" : e == PF_STR ? BN[4] : e >= PF_LP3 && e <= PF_TAPE ?
-            BN[e - PF_LP3] : e == PF_CLR ? "CLR AUTO" : e == PK_MOD ? PD_NM[PK_DST(o)] : "-", 12);
+    static const char BN[] = "LOOP 3\0" "PITCH UP\0" "PITCH DN\0" "TAPE STOP\0" "STRETCH";   /* (V10.8.71: packed, str_nth) */
+    str_cpy(nm, e < PF_M1 ? str_nth(PF_NAME, e) : e < PF_M1 + NTRK ? "MUTE T1" : e == PF_STR ? "STRETCH" : e >= PF_LP3 && e <= PF_TAPE ?
+            str_nth(BN, (unsigned)(e - PF_LP3)) : e == PF_CLR ? "CLR AUTO" : e == PK_MOD ? PD_NM[PK_DST(o)] : "-", 12);
     if (e >= PF_M1 && e < PF_M1 + NTRK) nm[6] = (char)('1' + e - PF_M1);
 }
 static int32_t pk_amt(uint32_t x) { return (int32_t)((x & 31u) ^ 16u) - 16; }   /* -10..10: tens of % */
@@ -1524,10 +1525,10 @@ static void layer_knobs(uint32_t l)                     /* the four as gauges in
     for (k = 0; k < 3u; k++)                            /* "PLAY RESTART . GLO DONE": the keycaps' words */
         if (ft[k].act) {
             if (b[0])
-                str_cpy(b + str_len(b), " \xB7 ", sizeof b - str_len(b));
-            str_cpy(b + str_len(b), KC[ft[k].key % KC_COUNT].label, sizeof b - str_len(b));
-            str_cpy(b + str_len(b), " ", sizeof b - str_len(b));
-            str_cpy(b + str_len(b), ft[k].act, sizeof b - str_len(b));
+                str_cat(b, " \xB7 ", sizeof b - str_len(b));
+            str_cat(b, KC[ft[k].key % KC_COUNT].label, sizeof b - str_len(b));
+            str_cat(b, " ", sizeof b - str_len(b));
+            str_cat(b, ft[k].act, sizeof b - str_len(b));
         }
     GFX_HOOK_ALIGN(4, 0, 236, 0, AL_H, "layer KNOBS keys' words centred");
     cv_text_in(4, 100 - AF_X_CAP_Y, 232, &AF_X, b, T_DIM, T_SURF);
@@ -1544,8 +1545,8 @@ static void lst_chip(const char *a, const char *v, int on)
     lst_n++;
     str_cpy(b, a, sizeof b);
     if (v) {
-        str_cpy(b + str_len(b), " ", sizeof b - str_len(b));
-        str_cpy(b + str_len(b), v, sizeof b - str_len(b));
+        str_cat(b, " ", sizeof b - str_len(b));
+        str_cat(b, v, sizeof b - str_len(b));
     }
     cv_rrect(x, y, 114, 13, 3, bg, T_SURF);
     if (on)
@@ -1554,11 +1555,11 @@ static void lst_chip(const char *a, const char *v, int on)
 }
 static __attribute__((noinline)) void layer_state(uint32_t l)
 {
-    static const char *const LN[LAYER_N] = {"", "FX", "GLO", "SCL", "EDIT", "SEQ", "REC", "SAVE", "LFO"};
+    static const char LN[] = "\0" "FX\0" "GLO\0" "SCL\0" "EDIT\0" "SEQ\0" "REC\0" "SAVE\0" "LFO";   /* (V10.8.71: packed, str_nth) */
     uint32_t k, e;
     char b[48], v[8];
-    str_cpy(b, LN[l], sizeof b);
-    str_cpy(b + str_len(b), " \xB7 HELD", sizeof b - str_len(b));
+    str_cpy(b, str_nth(LN, (unsigned)(l)), sizeof b);
+    str_cat(b, " \xB7 HELD", sizeof b - str_len(b));
     cv_text(6, 5 - AF_X_CAP_Y, &AF_X, b, T_THEME);
     if (l == LAYER_FX && fx_lock)
         cv_text_r(234, 5 - AF_X_CAP_Y, &AF_X, "[FX] LOCKED", T_ACCENT, T_SURF);
@@ -1594,7 +1595,7 @@ static __attribute__((noinline)) void layer_state(uint32_t l)
         v[0] = live.cur >= 0 ? (char)('A' + live.cur) : '-'; v[1] = 0;
         lst_chip("PART", v, live.cur >= 0);
         str_cpy(b, "CHAIN ", sizeof b);
-        for (k = 0; k < lys.nqc && k < 8u; k++) { char c[2] = {(char)('A' + lys.qc[k]), 0}; str_cpy(b + str_len(b), c, sizeof b - str_len(b)); }
+        for (k = 0; k < lys.nqc && k < 8u; k++) { char c[2] = {(char)('A' + lys.qc[k]), 0}; str_cat(b, c, sizeof b - str_len(b)); }
         lst_chip(lys.nqc >= 2u ? b : "CHAIN -", 0, lys.nqc >= 2u);
         lst_chip(live.mode ? "SONG" : "PART", 0, 1);
         lst_chip("SONG REC", live.srec == 2u ? "ON" : live.srec ? "ARM" : "OFF", live.srec != 0u);

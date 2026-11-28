@@ -1383,10 +1383,10 @@ static VX_CODE void vx_fm6env(const track_t *t)
     vxs.kc = 0;
     cv_text(10, 4, &AF_S, b, T_MID);
     str_cpy(b, STG[sg], sizeof b);
-    str_cpy(b + str_len(b), "  R ", 5);
-    fmt_int(b + str_len(b), op[FP_R1 + sg]);
-    str_cpy(b + str_len(b), "  L ", 5);
-    fmt_int(b + str_len(b), op[FP_L1 + sg]);
+    str_cat(b, "  R ", 5);
+    fmt_cat(b, op[FP_R1 + sg]);
+    str_cat(b, "  L ", 5);
+    fmt_cat(b, op[FP_L1 + sg]);
     cv_text_r(228, 4, &AF_S, b, T_TEXT, T_SURF);
 }
 
@@ -1472,7 +1472,7 @@ static VX_CODE void vx_wheel(const track_t *t, const int32_t *A, int32_t en_home
 /* the circuit's boxes (x0 y0 x1 y1, units: MOD OSC FOLD LPG, their names at the top) and wires (from, to: across or down) */
 static const int8_t VW_B[4][4] = {{-60, -45, -30, -23}, {-60, -13, -30, 9}, {-24, -30, 24, 22}, {30, -30, 60, 8}};
 static const int8_t VW_W[3][4] = {{-45, -23, -45, -13}, {-30, -2, -24, -2}, {24, -8, 30, -8}};
-static const char *const VW_N[4] = {"MOD", "OSC", "FOLD", "LPG"};
+static const char VW_N[] = "MOD\0" "OSC\0" "FOLD\0" "LPG";   /* (V10.8.71: packed, str_nth) */
 /* a wave of n points across x0..x1 (Q4 units) about y, a units high: wf(th) (th the point's turn, 16-bit) */
 static void vx_wv(const vxf_t *f, int32_t x0, int32_t x1, int32_t y, int32_t a, uint32_t n, uint32_t cyc, uint32_t d0,
                   const int32_t *k, int32_t h)
@@ -1518,7 +1518,7 @@ static VX_CODE void vx_west(const track_t *t, const int32_t *A, int32_t en_home)
                          q[0], q[1] + 3};
         vx_poly(&g, P, 8, 1, hb + lamp * i / 12);
         if (f.s >= 290)
-            vx_text(f.cx + ((q[0] + q[2]) * f.s >> 5), f.cy + ((q[1] + 2) * f.s >> 4), VW_N[i], vx_col(hb + 40));
+            vx_text(f.cx + ((q[0] + q[2]) * f.s >> 5), f.cy + ((q[1] + 2) * f.s >> 4), str_nth(VW_N, (unsigned)(i)), vx_col(hb + 40));
     }
     for (i = 0; i < 3; i++) {                            /* the wires and their heads, lit while it sounds */
         const int8_t *q = VW_W[i];
@@ -1929,7 +1929,7 @@ static void vx_swarm(const int32_t *A)
         static const char *const SRC[3] = {"ALONE", "AIR ", "PROX "};
         str_cpy(b, SRC[sm.src % 3u], sizeof b);
         if (sm.src)
-            fmt_int(b + str_len(b), (int32_t)sm.nd);
+            fmt_cat(b, (int32_t)sm.nd);
         else if (bt_get() != 2u)                         /* (BLUETOOTH not AIR: it will hear no device) */
             str_cpy(b, "AIR OFF", sizeof b);
         cv_text(A[0] + A[2] / 2 - 3 * (int32_t)str_len(b), A[1] + 2 - AF_X_CAP_Y, &AF_X, b, T_THEME);
@@ -2313,8 +2313,8 @@ static void vx_kit_page(const track_t *t, int32_t lane)
     vx_kit(t, 120 * 16, 73 * 16, 368, -1, lane);
     l = lane < 0 ? vxs.last & 7u : (uint32_t)lane & 7u;
     str_cpy(b, drum_lane_abbr(t, l), sizeof b);
-    str_cpy(b + str_len(b), " \xB7 ", sizeof b - str_len(b));
-    str_cpy(b + str_len(b), drum_lane_name(t, l), sizeof b - str_len(b));
+    str_cat(b, " \xB7 ", sizeof b - str_len(b));
+    str_cat(b, drum_lane_name(t, l), sizeof b - str_len(b));
     cv_text(8, 6 - AF_X_CAP_Y, &AF_X, "KIT", T_THEME);
     cv_text_r(232, 6 - AF_X_CAP_Y, &AF_X, b, lane < 0 ? T_TEXT : T_THEME, T_SURF);
 }

@@ -10,7 +10,7 @@
  * The values are the side's; the MORPH plays between the two (EDIT 2 MRPH). The panel shows the kit's specimen
  * with the sound's organ singled out (ui_plates.c graph_p_drum: the iris, its node lit). */
 static uint8_t dx_ui_seen = 0xFFu;                   /* the last key note followed */
-static const char *const DX_LANE_ABBR[8] = {"BD", "SD", "CP", "CH", "OH", "TM", "RS", "CB"};
+static const char DX_LANE_ABBR[] = "BD\0" "SD\0" "CP\0" "CH\0" "OH\0" "TM\0" "RS\0" "CB";   /* (V10.8.71: packed, str_nth) */
 
 /* a key struck on the track (seq.c key_on: last_note) picks the sound it plays */
 static void dx_follow(void)
@@ -111,17 +111,17 @@ static void dx_cards(const page_t *pg)
     char val[12], ln[8];
     dx_follow();
     if (pn == 4u) {                                     /* (JIANT 0.5.1) X-MOD */
-        static const char *const RT[9] = {"OFF", "4BAR", "2BAR", "1BAR", "1/2", "1/4", "1/8", "1/16", "1/32"};
-        static const char *const SH[5] = {"SINE", "TRI", "SAW", "RAMP", "S&H"};
-        gauge_column(0, "RATE", RT[dx_mot[XM_RATE] % 9u], dx_mot[XM_RATE] ? VAL(0u) : T_DIM, dx_mot[XM_RATE] * 125);
+        static const char RT[] = "OFF\0" "4BAR\0" "2BAR\0" "1BAR\0" "1/2\0" "1/4\0" "1/8\0" "1/16\0" "1/32";   /* (V10.8.71: packed, str_nth) */
+        static const char SH[] = "SINE\0" "TRI\0" "SAW\0" "RAMP\0" "S&H";   /* (V10.8.71: packed, str_nth) */
+        gauge_column(0, "RATE", str_nth(RT, (unsigned)(dx_mot[XM_RATE] % 9u)), dx_mot[XM_RATE] ? VAL(0u) : T_DIM, dx_mot[XM_RATE] * 125);
         fmt_int(val, dx_mot[XM_DPTH]);
         gauge_column(1, "DEPTH", val, dx_mot[XM_DPTH] ? VAL(1u) : T_DIM, dx_mot[XM_DPTH] * 1000 / 127);
-        hot_gauge_column(2, "SHAPE", SH[dx_mot[XM_SHPE] % 5u], dx_mot[XM_SHPE] * 250);
+        hot_gauge_column(2, "SHAPE", str_nth(SH, (unsigned)(dx_mot[XM_SHPE] % 5u)), dx_mot[XM_SHPE] * 250);
         fmt_int(val, dx_mot[XM_RAND]);
         gauge_column(3, "RAND", val, dx_mot[XM_RAND] ? VAL(3u) : T_DIM, dx_mot[XM_RAND] * 1000 / 127);
         return;
     }
-    str_cpy(ln, DX_LANE_ABBR[dx_ui_lane & 7u], sizeof ln);   /* KNOB 1: the sound (SOUND, SOUND 2, SOUND 4 its side too: the
+    str_cpy(ln, str_nth(DX_LANE_ABBR, (unsigned)(dx_ui_lane & 7u)), sizeof ln);   /* KNOB 1: the sound (SOUND, SOUND 2, SOUND 4 its side too: the
                                                          * values') */
     if (pn < 3u) {
         ln[2] = ' ';
@@ -135,7 +135,7 @@ static void dx_cards(const page_t *pg)
         char un[8];
         hot_gauge_column(1, "SIDE", dx_ui_side ? "B" : "A", dx_ui_side ? 1000 : 0);
         fmt_int(un, ix ? ((ix - 1) % 16 + 1) * 100 / 16 : 0);
-        str_cpy(un + str_len(un), "%", 2);
+        str_cat(un, "%", 2);
         draw_column(2, "SEND", BUS[DXS_BUS(sn)], ix ? un : "", ix ? VAL(2u) : T_DIM, ix * 1000 / 48, ICON_MIX);
         hot_gauge_column(3, "KEY MAP", N_DKEYMODE[km], (int32_t)km * 1000 / 9);
         return;
@@ -217,7 +217,7 @@ static BTAPP_FN void sw_ui_knob_bt(const page_t *pg, uint32_t k, int32_t s)
 }
 static BTAPP_FN void sw_ui_cards_bt(const page_t *pg)
 {
-    static const char *const LB[6] = {"RATE", "MOVE", "TONE", "NOISE", "MOD", "WAVE"};
+    static const char LB[] = "RATE\0" "MOVE\0" "TONE\0" "NOISE\0" "MOD\0" "WAVE";   /* (V10.8.71: packed, str_nth) */
     uint32_t q = pg->title[5] == ' ' ? 3u : 0u, c, i;
     char val[8];
     hot_gauge_column(0, "SIDE", sw_ui_side ? "NEAR" : "FAR", sw_ui_side ? 1000 : 0);
@@ -225,7 +225,7 @@ static BTAPP_FN void sw_ui_cards_bt(const page_t *pg)
         int32_t v = (i = c + q - 1u) < SWS_N ? sw_sv(TSEL, sw_ui_side, i) : TSEL->p[P_MORPH] * 15;
         val[0] = '1', val[1] = '/';
         fmt_int(val + (i ? 0 : 2), i == SWS_N ? v / 15 : i ? v : 1 << ((uint32_t)v * 6u >> 7));
-        hot_gauge_column(c, LB[i], val, v * 1000 / 128);
+        hot_gauge_column(c, str_nth(LB, (unsigned)(i)), val, v * 1000 / 128);
     }
 }
 static void sw_ui_knob(const page_t *pg, uint32_t k, int32_t s) { if (bt_hw_seg()) sw_ui_knob_bt(pg, k, s); }

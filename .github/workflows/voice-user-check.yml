@@ -249,6 +249,11 @@ jobs:
           set -euo pipefail
           cc -O1 -g -w -Wno-implicit-function-declaration -fsanitize=address,bounds -Ibuild/gen -Ifirmware/src tests/app_contract_test.c -lm -o build/song-check/app-contract
           ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/app-contract | tee build/song-check/app-contract.log
+      - name: FX > OTT, a track's two-band compressor (V10.8.71, JIANT BYTE's)
+        run: |
+          set -euo pipefail
+          cc -O1 -g -w -Wno-implicit-function-declaration -fsanitize=address,bounds -Ibuild/gen -Ifirmware/src tests/ott_test.c -lm -o build/song-check/ott
+          ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/ott | tee build/song-check/ott.log
       - name: Expression keys and the feel of live recording (V10.6z4)
         run: |
           set -euo pipefail

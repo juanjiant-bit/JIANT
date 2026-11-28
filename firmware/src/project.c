@@ -134,6 +134,10 @@ typedef struct {
                                                 * (cho_mix, 0..100): FUNC's 'D' 'N' block, the last, when one is set; absent: 0 */
     uint8_t gt[2];                             /* (V10.8.44) the reverb's and the delay's GATE (fx.c fx_gt, 0..127): FUNC's
                                                 * 'G' 'T' block after 'D' 'N', when one is set; absent: 0 */
+    int8_t ott[NTRK][OT_N];                    /* (V10.8.71) each track's OTT (params.c ott_v), each less its default (ott_get):
+                                                * FUNC's 'O' 'T' block after 'G' 'T', when one is not the default (its TIME,
+                                                * UP/DN and X-OVER kept at DEPTH 0 too); absent (every project of before):
+                                                * all 0, the defaults, OTT off */
     uint8_t dx_gain;                           /* (V10.7.63) the kit's GAIN (eng_drum.c dx_gain, 0..12): FUNC's 'K' 'G' block
                                                 * after LIFE's, when set; absent: 0 */
     uint8_t clay[NTRK][CLAY_NF];               /* (V10.8.21) DRONE CLAY (seq.c clay.c clay_pack, 0..127): FUNC's 'C' 'L' blocks
@@ -532,6 +536,39 @@ static int proj_gl_used(const project_t *q)            /* (0.9.9-seq2f) a global
         if (q->gl[i][0]) return 1;
     return q->gmode != 0u;
 }
+/* (V10.8.71, flash: one for the blocks that are a tag and an array, kept when a byte of it is not 0) the bytes p[0 .. n)
+ * not all 0; proj_blk: such a block at b + pos, its tag t ('A' | 'B' << 8) and the array, when one is set (b 0: only
+ * counted): the next pos */
+static __attribute__((noinline)) uint32_t proj_any(const void *p, uint32_t n)
+{
+    uint32_t k, a = 0;
+    for (k = 0; k < n; k++) a |= ((const uint8_t *)p)[k];
+    return a;
+}
+static __attribute__((noinline)) uint32_t proj_blk(uint8_t *b, uint32_t pos, uint32_t t, const void *p, uint32_t n)
+{
+    if (!proj_any(p, n))
+        return pos;
+    if (b) {
+        b[pos] = (uint8_t)t; b[pos + 1u] = (uint8_t)(t >> 8);
+        memcpy(b + pos + 2u, p, n);
+    }
+    return pos + 2u + n;
+}
+#define PB(a, c) ((uint32_t)(a) | (uint32_t)(c) << 8)
+/* (V10.8.71, flash: one for proj_unpack_c's blocks) a block of len bytes at b + pos within room, its tag t (PB) */
+static __attribute__((noinline)) int proj_at(const uint8_t *b, uint32_t pos, uint32_t room, uint32_t len, uint32_t t)
+{
+    return pos + len <= room && b[pos] == (uint8_t)t && b[pos + 1u] == (uint8_t)(t >> 8);
+}
+static __attribute__((noinline)) uint32_t proj_get(void *d, const uint8_t *b, uint32_t pos, uint32_t room, uint32_t t,
+                                                  uint32_t n)   /* .. such a block into d: the next pos (none: pos) */
+{
+    if (!proj_at(b, pos, room, 2u + n, t))
+        return pos;
+    memcpy(d, b + pos + 2u, n);
+    return pos + 2u + n;
+}
 static uint32_t proj_packed_size(const project_t *q)
 {
     uint32_t n = (proj_sc_used(q) ? 6u : 0u) + (q->g[G_DRTIM] ? 3u : 0u) + 68u + sizeof q->chain + 4u + q->motion.count * sizeof q->motion.event[0] + 2u + G_SL_N, t, i;
@@ -553,10 +590,8 @@ static uint32_t proj_packed_size(const project_t *q)
         n += 4u;
     if (q->g[G_PFXLEN] != 64 || q->g[G_PFXRES] != 1)    /* (0.6.99) the punch-in lane's LEN and RES, when not the default */
         n += 4u;
-    for (i = 0; i < sizeof q->dx_snd; i++)              /* (0.6.48) the SENDs' block, when one is set */
-        if (q->dx_snd[i]) { n += 2u + sizeof q->dx_snd; break; }
-    for (i = 0; i < sizeof q->dx_lay; i++)              /* (0.6.49) the LAYERs' */
-        if (q->dx_lay[i]) { n += 2u + sizeof q->dx_lay; break; }
+    n = proj_blk(0, n, 0, q->dx_snd, sizeof q->dx_snd);   /* (0.6.48) the SENDs' block, when one is set */
+    n = proj_blk(0, n, 0, q->dx_lay, sizeof q->dx_lay);   /* (0.6.49) the LAYERs' */
     if (proj_fg_used(q))                                /* (0.6.52) FUGUE's */
         n += 2u + sizeof q->fugue;
     for (t = 0; t < NTRK; t++)                          /* (0.8.5) the lyrics' */
@@ -570,29 +605,23 @@ static uint32_t proj_packed_size(const project_t *q)
         for (i = 0; i < NSTEP; i++)
             n += proj_step_empty(&q->t[t].step[i]) ? 0u : proj_step_size(&q->t[t].step[i]);
     }
-    for (t = 0; t < NTRK; t++)
-        if (q->fit[t]) { n += 2u + NTRK; break; }
-    for (i = 0; i < sizeof q->split; i++) if (q->split[i]) { n += 2u + sizeof q->split; break; }
-    for (i = 0; i < sizeof q->scpat; i++) if (q->scpat[i]) { n += 2u + sizeof q->scpat; break; }
+    n += proj_any(q->fit, NTRK) ? 2u + NTRK : 0u;
+    n = proj_blk(0, n, 0, q->split, sizeof q->split);
+    n = proj_blk(0, n, 0, q->scpat, sizeof q->scpat);
     if (proj_mx_custom(q))                              /* (V10.7.59) the MACROS' routes, when not the defaults */
         n += 2u + MX_OLD * 3u;
-    for (i = MX_OLD * 3u; i < sizeof q->mx; i++)
-        if (q->mx[i]) { n += 2u + sizeof q->mx - MX_OLD * 3u; break; }
-    if (q->lf[0] | q->lf[1] | q->lf[2] | q->lf[3])       /* (V10.7.62) LIFE, when on */
-        n += 2u + sizeof q->lf;
+    n = proj_blk(0, n, 0, q->mx + MX_OLD * 3u, sizeof q->mx - MX_OLD * 3u);
+    n = proj_blk(0, n, 0, q->lf, sizeof q->lf);         /* (V10.7.62) LIFE, when on */
     if (q->dx_gain)                                     /* (V10.7.63) the kit's GAIN */
         n += 3u;
-    for (t = 0; t < NTRK; t++)                          /* (V10.7.64) the tracks' GAIN */
-        if (q->tgain[t]) { n += 2u + NTRK; break; }
+    n = proj_blk(0, n, 0, q->tgain, sizeof q->tgain);   /* (V10.7.64) the tracks' GAIN */
     n += q->g[G_HPROG] ? 6u : 0u;                       /* (V10.7.66) HARMONY */
-    for (i = 0; i < 8u && !q->dx_fml[i]; i++) {}
-    n += i < 8u ? 18u : 0u;                             /* (V10.7.74) DRUM-X's MATH modulators */
+    n += proj_any(q->dx_fml, 8u) ? 18u : 0u;                /* (V10.7.74) DRUM-X's MATH modulators */
     for (t = 0; t < NTRK; t++)                          /* (V10.8.21) DRONE CLAY */
         if (q->clay[t][CL_ON]) n += 4u + CLAY_NF;
-    for (t = 0; t < sizeof q->dnz; t++)                 /* (V10.8.36) DIST NOISE, CHORUS MIX; (V10.8.37) KEY TRK */
-        if (q->dnz[t]) { n += 2u + sizeof q->dnz; break; }
-    if (q->gt[0] | q->gt[1]) n += 4u;                   /* (V10.8.44) GATE */
-    return n;
+    n = proj_blk(0, n, 0, q->dnz, sizeof q->dnz);       /* (V10.8.36) DIST NOISE, CHORUS MIX; (V10.8.37) KEY TRK */
+    n = proj_blk(0, n, 0, q->gt, sizeof q->gt);         /* (V10.8.44) GATE */
+    return proj_blk(0, n, 0, q->ott, sizeof q->ott);    /* (V10.8.71) OTT */
 }
 static int proj_split_ok(const uint8_t *s)
 {
@@ -690,20 +719,8 @@ static int proj_pack(project_store_t *out, const project_t *q)
     b[pos++] = 'S'; b[pos++] = 'L';                     /* (0.6.3) the SLICER's globals (biased bytes) */
     for (i = 0; i < G_SL_N; i++)
         b[pos++] = (uint8_t)(clamp(q->g[G_SLMODE + i], -64, 127) + 64);
-    for (i = 0; i < sizeof q->dx_snd && !q->dx_snd[i]; i++)
-        ;
-    if (i < sizeof q->dx_snd) {                         /* (0.6.48) the kit's SENDs, when one is set */
-        b[pos++] = 'D'; b[pos++] = 'S';
-        memcpy(b + pos, q->dx_snd, sizeof q->dx_snd);
-        pos += sizeof q->dx_snd;
-    }
-    for (i = 0; i < sizeof q->dx_lay && !q->dx_lay[i]; i++)
-        ;
-    if (i < sizeof q->dx_lay) {                         /* (0.6.49) the kit's LAYERs and FEEDBKs */
-        b[pos++] = 'D'; b[pos++] = 'L';
-        memcpy(b + pos, q->dx_lay, sizeof q->dx_lay);
-        pos += sizeof q->dx_lay;
-    }
+    pos = proj_blk(b, pos, PB('D', 'S'), q->dx_snd, sizeof q->dx_snd);   /* (0.6.48) the kit's SENDs, when one is set */
+    pos = proj_blk(b, pos, PB('D', 'L'), q->dx_lay, sizeof q->dx_lay);   /* (0.6.49) the kit's LAYERs and FEEDBKs */
     if (proj_fg_used(q)) {                              /* (0.6.52) FUGUE's heads */
         b[pos++] = 'F'; b[pos++] = 'G';
         memcpy(b + pos, q->fugue, sizeof q->fugue);
@@ -773,38 +790,26 @@ static int proj_pack(project_store_t *out, const project_t *q)
     if (q->g[G_DRTIM]) {                                /* (V10.49) the delay's R TIME, when set (the last: before, it stops here) */
         b[pos++] = 'D'; b[pos++] = 'R'; b[pos++] = (uint8_t)clamp(q->g[G_DRTIM], 0, 6);
     }
-    for (t = 0; t < NTRK && !q->fit[t]; t++) {}
-    if (t < NTRK) {
+    if (proj_any(q->fit, NTRK)) {
         b[pos++] = 'R'; b[pos++] = 'F';
         for (t = 0; t < NTRK; t++) b[pos++] = fit_valid(q->fit[t]);
     }
-    for (i = 0; i < sizeof q->split && !q->split[i]; i++) {}
-    if (i < sizeof q->split) { b[pos++] = 'K'; b[pos++] = 'S'; memcpy(b + pos, q->split, sizeof q->split); pos += sizeof q->split; }
-    for (i = 0; i < sizeof q->scpat && !q->scpat[i]; i++) {}   /* (V10.6k) SCENE's patterns (the last) */
-    if (i < sizeof q->scpat) { b[pos++] = 'S'; b[pos++] = 'P'; memcpy(b + pos, q->scpat, sizeof q->scpat); pos += sizeof q->scpat; }
+    pos = proj_blk(b, pos, PB('K', 'S'), q->split, sizeof q->split);
+    pos = proj_blk(b, pos, PB('S', 'P'), q->scpat, sizeof q->scpat);   /* (V10.6k) SCENE's patterns (the last) */
     if (proj_mx_custom(q)) {                            /* (V10.7.59) the MACROS' routes (after SCENE's patterns: the last) */
         b[pos++] = 'M'; b[pos++] = 'X'; memcpy(b + pos, q->mx, MX_OLD * 3u); pos += MX_OLD * 3u;
     }
-    for (i = MX_OLD * 3u; i < sizeof q->mx && !q->mx[i]; i++) {}
-    if (i < sizeof q->mx) {                             /* (V10.8.7) routes 9 .. 16, when any */
-        b[pos++] = 'M'; b[pos++] = 'Y'; memcpy(b + pos, q->mx + MX_OLD * 3u, sizeof q->mx - MX_OLD * 3u); pos += sizeof q->mx - MX_OLD * 3u;
-    }
-    if (q->lf[0] | q->lf[1] | q->lf[2] | q->lf[3]) {     /* (V10.7.62) LIFE (the last) */
-        b[pos++] = 'L'; b[pos++] = 'F'; memcpy(b + pos, q->lf, sizeof q->lf); pos += sizeof q->lf;
-    }
+    pos = proj_blk(b, pos, PB('M', 'Y'), q->mx + MX_OLD * 3u, sizeof q->mx - MX_OLD * 3u);   /* (V10.8.7) routes 9 .. 16, when any */
+    pos = proj_blk(b, pos, PB('L', 'F'), q->lf, sizeof q->lf);   /* (V10.7.62) LIFE (the last) */
     if (q->dx_gain) {                                   /* (V10.7.63) the kit's GAIN */
         b[pos++] = 'K'; b[pos++] = 'G'; b[pos++] = q->dx_gain;
     }
-    for (i = 0; i < NTRK && !q->tgain[i]; i++) {}
-    if (i < NTRK) {                                     /* (V10.7.64) the tracks' GAIN (the last) */
-        b[pos++] = 'T'; b[pos++] = 'G'; memcpy(b + pos, q->tgain, NTRK); pos += NTRK;
-    }
+    pos = proj_blk(b, pos, PB('T', 'G'), q->tgain, sizeof q->tgain);   /* (V10.7.64) the tracks' GAIN (the last) */
     if (q->g[G_HPROG]) {                                /* (V10.7.66) SCL > HARMONY (the last) */
         b[pos++] = 'H'; b[pos++] = 'M';
         for (i = 0; i < 4u; i++) b[pos++] = (uint8_t)q->g[G_HPROG + i];
     }
-    for (i = 0; i < 8u && !q->dx_fml[i]; i++) {}
-    if (i < 8u) {                                       /* (V10.7.74) DRUM-X's MATH modulators (the last) */
+    if (proj_any(q->dx_fml, 8u)) {                       /* (V10.7.74) DRUM-X's MATH modulators (the last) */
         b[pos++] = 'D'; b[pos++] = 'F'; memcpy(b + pos, q->dx_fml, 16); pos += 16u;
     }
     for (i = 0; i < NTRK; i++)                          /* (V10.8.21) DRONE CLAY: a block per track ON (the last) */
@@ -812,13 +817,10 @@ static int proj_pack(project_store_t *out, const project_t *q)
             b[pos++] = 'C'; b[pos++] = 'L'; b[pos++] = (uint8_t)i; b[pos++] = (uint8_t)CLAY_NF;
             memcpy(b + pos, q->clay[i], CLAY_NF); pos += CLAY_NF;
         }
-    for (i = 0; i < sizeof q->dnz && !q->dnz[i]; i++) {}
-    if (i < sizeof q->dnz) {                                    /* (V10.8.36) DIST NOISE, CHORUS MIX (the last) */
-        b[pos++] = 'D'; b[pos++] = 'N'; memcpy(b + pos, q->dnz, sizeof q->dnz); pos += sizeof q->dnz;
-    }
-    if (q->gt[0] | q->gt[1]) {                          /* (V10.8.44) GATE (the last) */
-        b[pos++] = 'G'; b[pos++] = 'T'; b[pos++] = q->gt[0]; b[pos++] = q->gt[1];
-    }
+    pos = proj_blk(b, pos, PB('D', 'N'), q->dnz, sizeof q->dnz);   /* (V10.8.36) DIST NOISE, CHORUS MIX (the last) */
+    pos = proj_blk(b, pos, PB('G', 'T'), q->gt, sizeof q->gt);   /* (V10.8.44) GATE (the last) */
+    pos = proj_blk(b, pos, PB('O', 'T'), q->ott, sizeof q->ott);   /* (V10.8.71) the tracks' OTT (the last: an older
+                                                         * firmware stops before it) */
     memcpy(b + PROJC_PFX_OFF, q->pfx_lane, sizeof q->pfx_lane);
     b[PROJC_PFX_OFF + sizeof q->pfx_lane] = q->pfx_ltgt > 2u ? 0u : q->pfx_ltgt;
     for (i = 0; i < 4u; i++)
@@ -1012,7 +1014,7 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
     memcpy(q->motion.event, b + pos, q->motion.count * sizeof q->motion.event[0]);
     pos += q->motion.count * sizeof q->motion.event[0];
     if (!chain_valid(&q->chain) || !motion_valid(&q->motion)) return 0;
-    if (pos + 2u + G_SL_N <= room && b[pos] == 'S' && b[pos + 1u] == 'L') {   /* (0.6.3) the SLICER's globals */
+    if (proj_at(b, pos, room, 2u + G_SL_N, PB('S', 'L'))) {   /* (0.6.3) the SLICER's globals */
         for (i = 0; i < G_SL_N; i++)
             q->g[G_SLMODE + i] = (int16_t)clamp((int32_t)b[pos + 2u + i] - 64, GP[G_SLMODE + i].min, GP[G_SLMODE + i].max);
         proj_sl_found = 1;
@@ -1020,16 +1022,10 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
     }
     memset(q->dx_snd, 0, sizeof q->dx_snd);
     memset(q->dx_lay, 0, sizeof q->dx_lay);
-    if (pos + 2u + sizeof q->dx_snd <= room && b[pos] == 'D' && b[pos + 1u] == 'S') {   /* (0.6.48) the kit's SENDs */
-        memcpy(q->dx_snd, b + pos + 2u, sizeof q->dx_snd);
-        pos += 2u + sizeof q->dx_snd;
-    }
-    if (pos + 2u + sizeof q->dx_lay <= room && b[pos] == 'D' && b[pos + 1u] == 'L') {   /* (0.6.49) its LAYERs */
-        memcpy(q->dx_lay, b + pos + 2u, sizeof q->dx_lay);
-        pos += 2u + sizeof q->dx_lay;
-    }
+    pos = proj_get(q->dx_snd, b, pos, room, PB('D', 'S'), sizeof q->dx_snd);   /* (0.6.48) the kit's SENDs */
+    pos = proj_get(q->dx_lay, b, pos, room, PB('D', 'L'), sizeof q->dx_lay);   /* (0.6.49) its LAYERs */
     memset(q->fugue, 0, sizeof q->fugue);
-    if (pos + 2u + sizeof q->fugue <= room && b[pos] == 'F' && b[pos + 1u] == 'G') {   /* (0.6.52) FUGUE's heads */
+    if (proj_at(b, pos, room, 2u + sizeof q->fugue, PB('F', 'G'))) {   /* (0.6.52) FUGUE's heads */
         uint32_t k;
         memcpy(q->fugue, b + pos + 2u, sizeof q->fugue);
         for (k = 0; k < sizeof q->fugue; k += 2u) {     /* (in range) */
@@ -1039,21 +1035,21 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
         }
         pos += 2u + sizeof q->fugue;
     }
-    if (pos + 3u <= room && b[pos] == 'D' && b[pos + 1u] == 'M') {   /* (0.6.86) the delay's MOD (else its default) */
+    if (proj_at(b, pos, room, 3u, PB('D', 'M'))) {   /* (0.6.86) the delay's MOD (else its default) */
         q->g[G_DMOD] = (int16_t)clamp((int32_t)b[pos + 2u] - 64, GP[G_DMOD].min, GP[G_DMOD].max);
         pos += 3u;
     }
-    if (pos + 4u <= room && b[pos] == 'D' && b[pos + 1u] == 'T') {   /* (0.6.90) its TYPE, PING-PONG (else ANALOG, OFF) */
+    if (proj_at(b, pos, room, 4u, PB('D', 'T'))) {   /* (0.6.90) its TYPE, PING-PONG (else ANALOG, OFF) */
         q->g[G_DTYPE] = (int16_t)(b[pos + 2u] & 1u);
         q->g[G_DPING] = (int16_t)(b[pos + 3u] & 1u);
         pos += 4u;
     }
-    if (pos + 4u <= room && b[pos] == 'P' && b[pos + 1u] == 'X') {   /* (0.6.99) the punch-in lane's LEN, RES (else 64, 1/16) */
+    if (proj_at(b, pos, room, 4u, PB('P', 'X'))) {   /* (0.6.99) the punch-in lane's LEN, RES (else 64, 1/16) */
         q->g[G_PFXLEN] = (int16_t)clamp(b[pos + 2u], 1, 64);
         q->g[G_PFXRES] = (int16_t)(b[pos + 3u] > 2u ? 1u : b[pos + 3u]);
         pos += 4u;
     }
-    while (pos + 4u <= room && b[pos] == 'L' && b[pos + 1u] == 'Y') {   /* (0.8.5) the lyrics (else none) */
+    while (proj_at(b, pos, room, 4u, PB('L', 'Y'))) {   /* (0.8.5) the lyrics (else none) */
         uint32_t lt = b[pos + 2u], n = b[pos + 3u], k;
         if (lt >= NTRK || !n || n >= LYR_LEN || pos + 4u + n > room) return 0;
         for (k = 0; k < n; k++) {
@@ -1064,7 +1060,7 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
         q->lyr[lt][n] = 0;
         pos += 4u + n;
     }
-    if (pos + 3u <= room && b[pos] == 'M' && b[pos + 1u] == 'G') {   /* (0.9.1) the DJ FILTER's records (else none) */
+    if (proj_at(b, pos, room, 3u, PB('M', 'G'))) {   /* (0.9.1) the DJ FILTER's records (else none) */
         uint32_t n = b[pos + 2u], k;
         if (!n || q->motion.count + n > MOTION_MAX || pos + 3u + n * sizeof q->motion.event[0] > room) return 0;
         memcpy(q->motion.event + q->motion.count, b + pos + 3u, n * sizeof q->motion.event[0]);
@@ -1074,7 +1070,7 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
         if (!motion_valid(&q->motion)) return 0;
         pos += 3u + n * sizeof q->motion.event[0];
     }
-    if (pos + 3u <= room && b[pos] == 'M' && b[pos + 1u] == 'F') {   /* (0.9.1) MICRO's 64ths (else none: x 4 exactly) */
+    if (proj_at(b, pos, room, 3u, PB('M', 'F'))) {   /* (0.9.1) MICRO's 64ths (else none: x 4 exactly) */
         uint32_t m = b[pos + 2u];
         if (!m || (m >> nt) || pos + 3u + 16u * proj_bits(m) > room) return 0;
         pos += 3u;
@@ -1088,7 +1084,7 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
             pos += 16u;
         }
     }
-    if (pos + 3u + sizeof q->gl <= room && b[pos] == 'G' && b[pos + 1u] == 'C') {   /* (0.9.9-seq2f) the global lane
+    if (proj_at(b, pos, room, 3u + sizeof q->gl, PB('G', 'C'))) {   /* (0.9.9-seq2f) the global lane
                                                          * (else empty, POLY) */
         if (b[pos + 2u] > 1u) return 0;
         q->gmode = b[pos + 2u];
@@ -1098,31 +1094,31 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
                 (q->gl[i][4] >> NTRK)) return 0;
         pos += 3u + sizeof q->gl;
     }
-    if (pos + 3u <= room && b[pos] == 'D' && b[pos + 1u] == 'G') {   /* (0.9.9-snd1) the kit's GLUE (else OFF) */
+    if (proj_at(b, pos, room, 3u, PB('D', 'G'))) {   /* (0.9.9-snd1) the kit's GLUE (else OFF) */
         glue = b[pos + 2u] > 15u ? 15u : b[pos + 2u];
         pos += 3u;
     }
-    if (pos + 3u <= room && b[pos] == 'D' && b[pos + 1u] == 'D') {   /* (0.9.9-snd2) the delay's DRIVE (else 0) */
+    if (proj_at(b, pos, room, 3u, PB('D', 'D'))) {   /* (0.9.9-snd2) the delay's DRIVE (else 0) */
         q->g[G_DDRV] = (int16_t)(b[pos + 2u] > 100u ? 100u : b[pos + 2u]);
         pos += 3u;
     }
     pos += proj_tp(q, b, pos, room);                    /* (0.9.9-snd8) the master's TAPE (else 0) */
     pos += proj_eq(q, b, pos, room);
-    if (pos + 3u <= room && b[pos] == 'D' && b[pos + 1u] == 'A')   /* (ADD15) DRUM-X's ACOUST, retired in V10.6o: a project
+    if (proj_at(b, pos, room, 3u, PB('D', 'A')))   /* (ADD15) DRUM-X's ACOUST, retired in V10.6o: a project
                                                          * saved with it set skips its value (the rest loads as stored) */
         pos += 3u;
     memset(q->scene, 0, sizeof q->scene);
-    if (pos + 2u + sizeof q->scene <= room && b[pos] == 'S' && b[pos + 1u] == 'C') {   /* (V10.31) SCENE (else OFF, all KEEP) */
+    if (proj_at(b, pos, room, 2u + sizeof q->scene, PB('S', 'C'))) {   /* (V10.31) SCENE (else OFF, all KEEP) */
         memcpy(q->scene, b + pos + 2u, sizeof q->scene);
         q->scene[0] &= 7u;                              /* (V10.7.63: 2..7 a track leads) */
         pos += 2u + sizeof q->scene;
     }
-    if (pos + 3u <= room && b[pos] == 'D' && b[pos + 1u] == 'R') {   /* (V10.49) the delay's R TIME (else =L) */
+    if (proj_at(b, pos, room, 3u, PB('D', 'R'))) {   /* (V10.49) the delay's R TIME (else =L) */
         q->g[G_DRTIM] = (int16_t)(b[pos + 2u] > 6u ? 0u : b[pos + 2u]);
         pos += 3u;
     }
     memset(q->fit, 0, sizeof q->fit);
-    if (pos + 2u <= room && b[pos] == 'R' && b[pos + 1u] == 'F') {
+    if (proj_at(b, pos, room, 2u, PB('R', 'F'))) {
         if (pos + 2u + NTRK > room) return 0;
         for (t = 0; t < NTRK; t++) {
             uint32_t v = b[pos + 2u + t];
@@ -1132,50 +1128,41 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
         pos += 2u + NTRK;
     }
     memset(q->split, 0, sizeof q->split);
-    if (pos + 2u <= room && b[pos] == 'K' && b[pos + 1u] == 'S') {
+    if (proj_at(b, pos, room, 2u, PB('K', 'S'))) {
         if (pos + 2u + sizeof q->split > room) return 0;
         memcpy(q->split, b + pos + 2u, sizeof q->split);
         if (!proj_split_ok(q->split)) return 0;
         pos += 2u + sizeof q->split;
     }
     memset(q->scpat, 0, sizeof q->scpat);
-    if (pos + 2u + sizeof q->scpat <= room && b[pos] == 'S' && b[pos + 1u] == 'P') {   /* (V10.6k) */
-        memcpy(q->scpat, b + pos + 2u, sizeof q->scpat);
-        pos += 2u + sizeof q->scpat;
-    }
+    pos = proj_get(q->scpat, b, pos, room, PB('S', 'P'), sizeof q->scpat);   /* (V10.6k) */
     proj_mx_def(q);                                     /* (V10.7.59) the MACROS' routes: as saved, else the defaults */
-    if (pos + 2u + MX_OLD * 3u <= room && b[pos] == 'M' && b[pos + 1u] == 'X') {
-        memcpy(q->mx, b + pos + 2u, MX_OLD * 3u);
-        pos += 2u + MX_OLD * 3u;
-    }
-    if (pos + 2u + sizeof q->mx - MX_OLD * 3u <= room && b[pos] == 'M' && b[pos + 1u] == 'Y') {   /* (V10.8.7) 9 .. 16 */
-        memcpy(q->mx + MX_OLD * 3u, b + pos + 2u, sizeof q->mx - MX_OLD * 3u);
-        pos += 2u + sizeof q->mx - MX_OLD * 3u;
-    }
+    pos = proj_get(q->mx, b, pos, room, PB('M', 'X'), MX_OLD * 3u);
+    pos = proj_get(q->mx + MX_OLD * 3u, b, pos, room, PB('M', 'Y'), sizeof q->mx - MX_OLD * 3u);   /* (V10.8.7) 9 .. 16 */
     memset(q->lf, 0, sizeof q->lf);                     /* (V10.7.62) LIFE: as saved, else off */
-    if (pos + 2u + sizeof q->lf <= room && b[pos] == 'L' && b[pos + 1u] == 'F') {
+    if (proj_at(b, pos, room, 2u + sizeof q->lf, PB('L', 'F'))) {
         uint32_t k;
         for (k = 0; k < sizeof q->lf; k++)
             q->lf[k] = b[pos + 2u + k] > 100u ? 100u : b[pos + 2u + k];
         pos += 2u + sizeof q->lf;
     }
     q->dx_gain = 0;                                     /* (V10.7.63) the kit's GAIN: as saved, else 0 */
-    if (pos + 3u <= room && b[pos] == 'K' && b[pos + 1u] == 'G') {
+    if (proj_at(b, pos, room, 3u, PB('K', 'G'))) {
         q->dx_gain = b[pos + 2u] > 12u ? 12u : b[pos + 2u];
         pos += 3u;
     }
     memset(q->tgain, 0, sizeof q->tgain);               /* (V10.7.64) the tracks' GAIN: as saved, else 0 */
-    if (pos + 2u + NTRK <= room && b[pos] == 'T' && b[pos + 1u] == 'G') {
+    if (proj_at(b, pos, room, 2u + NTRK, PB('T', 'G'))) {
         for (uint32_t g = 0; g < NTRK; g++) q->tgain[g] = b[pos + 2u + g] > 12u ? 12u : b[pos + 2u + g];
         pos += 2u + NTRK;
     }
     for (i = 0; i < 4u; i++) q->g[G_HPROG + i] = GP[G_HPROG + i].def;   /* (V10.7.66) HARMONY: as saved, else OFF */
-    if (pos + 6u <= room && b[pos] == 'H' && b[pos + 1u] == 'M') {
+    if (proj_at(b, pos, room, 6u, PB('H', 'M'))) {
         for (i = 0; i < 4u; i++) q->g[G_HPROG + i] = (int16_t)clamp(b[pos + 2u + i], GP[G_HPROG + i].min, GP[G_HPROG + i].max);
         pos += 6u;
     }
     memset(q->dx_fml, 0, sizeof q->dx_fml);            /* (V10.7.74) DRUM-X's MATH modulators: as saved, else none */
-    if (pos + 18u <= room && b[pos] == 'D' && b[pos + 1u] == 'F') {
+    if (proj_at(b, pos, room, 18u, PB('D', 'F'))) {
         for (i = 0; i < 16u; i++) q->dx_fml[i] = b[pos + 2u + i] <= (i < 8u ? 48u : 23u) ? b[pos + 2u + i] : 0u;
         pos += 18u;
     }
@@ -1197,15 +1184,14 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
         pos = at + len;
     }
     memset(q->dnz, 0, sizeof q->dnz);                   /* (V10.8.36) DIST NOISE: as saved, else 0 */
-    if (pos + 2u + sizeof q->dnz <= room && b[pos] == 'D' && b[pos + 1u] == 'N') {
-        memcpy(q->dnz, b + pos + 2u, sizeof q->dnz);
-        pos += 2u + sizeof q->dnz;
-    }
+    pos = proj_get(q->dnz, b, pos, room, PB('D', 'N'), sizeof q->dnz);
     q->gt[0] = q->gt[1] = 0;                            /* (V10.8.44) GATE: as saved, else 0 */
-    if (pos + 4u <= room && b[pos] == 'G' && b[pos + 1u] == 'T') {
+    if (proj_at(b, pos, room, 4u, PB('G', 'T'))) {
         q->gt[0] = b[pos + 2u] & 127u; q->gt[1] = b[pos + 3u] & 127u;
         pos += 4u;
     }
+    memset(q->ott, 0, sizeof q->ott);                   /* (V10.8.71) OTT: as saved (ott_put clamps), else off */
+    pos = proj_get(q->ott, b, pos, room, PB('O', 'T'), sizeof q->ott);
     proj_new_tracks(q, nt);                             /* (a FUNC of fewer tracks: the rest at power-on) */
     for (t = nt; t < NTRK; t++)
         memcpy(q->fm6[t], FM6_INIT, FM6_PACKED);
@@ -1338,6 +1324,7 @@ static __attribute__((noinline)) void proj_master_put(project_t *p)
     for (k = 0; k < NTRK; k++) p->dnz[k] = (uint8_t)clamp(dnz_v[k], 0, 127);   /* (V10.8.36) */
     p->dnz[NTRK] = (uint8_t)clamp(cho_mix, 0, 100);
     p->gt[0] = (uint8_t)clamp(fx_gt[0], 0, 127); p->gt[1] = (uint8_t)clamp(fx_gt[1], 0, 127);   /* (V10.8.44) */
+    for (k = 0; k < NTRK; k++) ott_get(k, p->ott[k]);   /* (V10.8.71) OTT */
     memcpy(p->dnz + NTRK + 1u, kt_v, NTRK);             /* (V10.8.37) KEY TRK, a byte a track after them */
     for (k = 0; k < NTRK; k++) clay_pack(clay[k], p->clay[k]);   /* (V10.8.21) DRONE CLAY */
     for (k = 0; k < 4u; k++) p->eq[k] = (int8_t)eq_v[k];
@@ -1610,6 +1597,7 @@ static int project_restore_runtime(const project_t *input)
         for (k = 0; k < NTRK; k++) dnz_v[k] = p->dnz[k] & 127;   /* (V10.8.36) */
         cho_mix = p->dnz[NTRK] > 100u ? 100 : p->dnz[NTRK];
         fx_gt[0] = p->gt[0]; fx_gt[1] = p->gt[1];       /* (V10.8.44) GATE */
+        for (k = 0; k < NTRK; k++) ott_put(k, p->ott[k]);   /* (V10.8.71) OTT (a project without it: all 0, the defaults) */
         for (k = 0; k < NTRK; k++) kt_v[k] = p->dnz[NTRK + 1u + k] & 3u;   /* (V10.8.37) KEY TRK */
         for (k = 0; k < NTRK; k++) clay_unpack(p->clay[k], clay[k]);   /* (V10.8.21) DRONE CLAY */
         memset(clay_dn, 0, sizeof clay_dn); memset(clay_nn, 0, sizeof clay_nn);   /* (its notes: the load's all-off) */
@@ -1722,6 +1710,7 @@ static __attribute__((noinline)) void system_init(void)   /* (snd8: out of its c
     memset(kt_v, 0, sizeof kt_v);                       /* (V10.8.37) KEY TRK */
     memset(dnz_v, 0, sizeof dnz_v); cho_mix = 0;        /* (V10.8.36) DIST NOISE, CHORUS MIX */
     fx_gt[0] = fx_gt[1] = 0;                            /* (V10.8.44) GATE */
+    ott_defaults();                                     /* (V10.8.71) OTT off */
     memset(clay, 0, sizeof clay); memset(clay_b0, 0, sizeof clay_b0); memset(clay_pq, 0, sizeof clay_pq);   /* (V10.8.21) DRONE CLAY off */
     for (i = 0; i < 5u; i++) song.g[KEEP[i]] = kept[i];
     kept[0] = dice_secs;
@@ -2095,6 +2084,7 @@ static uint32_t autosave_sig(void)
     h = as_mix(h, dnz_v, sizeof dnz_v);                 /* (V10.8.36) DIST NOISE */
     h = as_mix(h, &cho_mix, sizeof cho_mix);
     h = as_mix(h, fx_gt, sizeof fx_gt);                 /* (V10.8.44) GATE */
+    h = as_mix(h, ott_v, sizeof ott_v);                 /* (V10.8.71) OTT */
     return as_mix(h, proj_name, sizeof proj_name);
 }
 

@@ -168,6 +168,7 @@ regenerated from `params.c` and compared.
 | 1.1 | V10.6z5 | `VEL` (81): the velocity diagnostic (below); `INFO` tag `43 02 01 01` |
 | 1.2 | V10.6z7 | `VEL` ops 4 and 5: the keys' velocity, calibration and pressure (below); MENU ids 27..30 (VELOCITY, VEL MIN, AFTERTOUCH, VEL LEARN); `INFO` tag `43 02 01 02` |
 | 1.3 | V10.7.22 | `INFO` tag `58 01 s`: the Bluetooth segment (below); `INFO` tag `43 02 01 03` |
+| 1.4 | V10.8.71 | a track's special ids (below): `TRACK_PARAM` and `DESC` scope 0 at `P_COUNT` + 0..3, FX > OTT; `UI_STATE` / `INFO` `55` caps bit 4; `INFO` tag `43 02 01 04` |
 
 ## 1.0: performance pushes (40-42)
 
@@ -397,7 +398,7 @@ at 1..3 and hides 6 5 8: what it sets still plays the right kit, and the device 
 
 | cmd (v4) | Request args | Reply args |
 | --- | --- | --- |
-| 31 TRACK_PARAM | track, id (get), or track, id, v14 (set); id = `P_*` (0..P_COUNT−1) | track, id, v14 (the value after clamping, as `SET`). The selection does not change; no push about the editor's own write |
+| 31 TRACK_PARAM | track, id (get), or track, id, v14 (set); id = `P_*` (0..P_COUNT−1), (1.4) or a special id (`P_COUNT` + 0..3) | track, id, v14 (the value after clamping, as `SET`). The selection does not change; no push about the editor's own write |
 | 32 TRACK_CHANGED (push) | — | track, id, v14: `P_LEVEL`, `P_PAN` or `P_MUTE` of a track that is not selected changed on the device (only while `WATCH` was sent with bit 1) |
 
 | cmd (1.0) | Request args | Reply args |
@@ -1168,3 +1169,15 @@ do at power-on. Only the web installer writes both parts. The installer asks for
 installs once more when it reads 2 (web/fm1diag.js btPart). Firmware without the tag: protocol 1.2 (V10.6z7 ..
 V10.7.21) tells it by `VEL` op 4's reply, 9 bytes without the segment (the keys' block is in it); older firmware does
 not tell.
+
+## 1.4: a track's special ids (FX > OTT)
+
+A track's values that are not parameters (no `P_*` slot) have ids right after them, `P_COUNT` + k (P_COUNT from
+`INFO`: 123 today, so 123..126); firmware that has them sets bit 4 of the UI caps (`55 01 caps`, and `UI_STATE`'s
+caps). Today four, FX > OTT (V10.8.71, JIANT BYTE's two-band compressor), each track its own: k 0 DEPTH (`F_PCT`
+0..100, 0: off), 1 TIME (`F_TIME` 30..100, 72), 2 UP/DN (`F_BIPCT` -64..63, 0), 3 X-OVER (`F_CUTOFF` 15..100, 37).
+`TRACK_PARAM` track, id [, v14] reads or sets them on any track (clamped to the range; no automation, no push);
+`DESC` 0 id describes them (the selected track's value). `GET` / `SET`, `DUMP`, `TRACK_DUMP` and the pushes keep to
+the parameters. They are kept with the project (FUNC's `O` `T` block) and with a user preset. JIANT BYTE numbers them
+0xD0..0xD3 in its own protocol; a SysEx data byte is 7 bits, and here 0x50..0x53 are parameters, so FM's are
+`P_COUNT` + k.

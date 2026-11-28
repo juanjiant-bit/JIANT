@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (0.8.5) FX's lens (ui.c fx_*): the panels of its three levels, drawn as the approved HTML mock-up (FX, the proposal
  * "LENTE"), in the lens's panel (240 x 140 at y 84; the mock-up's coordinates less 84). Included by ui_graph.c.
- *   TRACK   the track's set (SENDS, DIST, AUTO PAN): its place as dots and its name at the top, its picture (the sends
+ *   TRACK   the track's set (SENDS, DIST, AUTO PAN, OTT): its place as dots and its name at the top, its picture (the sends
  *           as four bars, DIST's curve, AUTO PAN's swing), the DIST curve small under it
  *   BUSES   the six modules as tiles (3 x 2, 76 x 68: DELAY REVERB CHORUS SLICER MASTER PUNCH), each its name and its
  *           picture small; the one PRESETS picked TINT with a THEME frame; one LOAD ECO took away: dark, "ECO"
@@ -49,9 +49,9 @@ static void fxg_delay(int32_t x, int32_t y, int32_t w, int32_t h)
         gx_col(x + fb * sp, y + h, sp - 2 > 12 ? 12 : sp - 2, h - top, a, fb == run ? HUD_YE : fb ? 0 : FXG_TC);
     if (top) {
         param_format(&GP[G_DTIME], song.g[G_DTIME], b, &u);
-        str_cpy(b + str_len(b), " \xB7 ", 4);
-        fmt_int(b + str_len(b), n);
-        str_cpy(b + str_len(b), n == 1 ? " ECHO" : " ECHOES", 8);
+        str_cat(b, " \xB7 ", 4);
+        fmt_cat(b, n);
+        str_cat(b, n == 1 ? " ECHO" : " ECHOES", 8);
         hud_tag(x, y, b, T_TEXT, HUD_BL);
     }
 }
@@ -70,7 +70,7 @@ static void fxg_reverb(int32_t x, int32_t y, int32_t w, int32_t h)
     if (w > 120) {
         str_cpy(b, "PRE ", sizeof b);
         fmt_int(b + 4, song.g[G_RPRE]);
-        str_cpy(b + str_len(b), " MS", 4);
+        str_cat(b, " MS", 4);
         fxg_label(x + w, y, b, T_DIM, 1);
     }
 }
@@ -99,14 +99,14 @@ static void fxg_slicer(int32_t x, int32_t y, int32_t w, int32_t h)
         cv_rect(cx + 1, y + 12, cw - 2, h - 18, i == play ? (on ? HUD_YE : T_MID) : on ? FXG_H(102 + song.g[G_SLDEP] * 128 / 127) : T_SURF);
     }
     str_cpy(b, mode == SL_OFF ? "OFF" : mode == SL_STUT ? "STUT" : "GATE", sizeof b);
-    str_cpy(b + str_len(b), " ", 2);
-    if (w > 120) str_cpy(b + str_len(b), "\xB7 PAT ", 8);
-    fmt_int(b + str_len(b), song.g[G_SLPAT]);
+    str_cat(b, " ", 2);
+    if (w > 120) str_cat(b, "\xB7 PAT ", 8);
+    fmt_cat(b, song.g[G_SLPAT]);
     if (w > 120) {
         char r[8];
         param_format(&GP[G_SLRATE], song.g[G_SLRATE], r, &u);
-        str_cpy(b + str_len(b), " \xB7 ", 4);
-        str_cpy(b + str_len(b), r, 8);
+        str_cat(b, " \xB7 ", 4);
+        str_cat(b, r, 8);
     }
     lw = text_w(&AF_X, b);
     fxg_label(x, y, b, T_MID, 0);
@@ -116,7 +116,7 @@ static void fxg_slicer(int32_t x, int32_t y, int32_t w, int32_t h)
             if (song.g[G_SLT1 + i]) { b[n++] = 'T'; b[n++] = (char)('1' + i); b[n++] = ' '; }
         b[n] = 0;
         if (!n) str_cpy(b, "NONE ", sizeof b);
-        if (song.g[G_SLFX]) str_cpy(b + str_len(b), "+FX", 4);
+        if (song.g[G_SLFX]) str_cat(b, "+FX", 4);
         {   /* (at the right, clear of the mode's words: ellipsised when it must) */
             int32_t rw = text_w(&AF_X, b), l = x + lw + 14, rx = x + w - rw < l ? l : x + w - rw;
             cv_free_text(rx, y + 3, &AF_X, b, T_DIM, cv_bg, x + w - rx);
@@ -147,8 +147,8 @@ static void fxg_master(int32_t x, int32_t y, int32_t w, int32_t h)
     str_cpy(b, "CLIP ", sizeof b);
     fmt_int(b + 5, song.g[G_CLIP]);
     if (w > 120) {
-        str_cpy(b + str_len(b), " \xB7 PUNCH ", 10);
-        fmt_int(b + str_len(b), song.g[G_PUNCH]);
+        str_cat(b, " \xB7 PUNCH ", 10);
+        fmt_cat(b, song.g[G_PUNCH]);
         fxg_label(x + w, y + 14, "DUCK", T_DIM, 1);
     }
     fxg_label(x, y + 14, b, T_MID, 0);
@@ -202,7 +202,7 @@ static void fxg_sends(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t
         gx_col(bx, y + h, cw, h - 12, v * 1000 / 127, 0);
         cv_rect(bx - 2, ly, cw + 4, 1, HUD_YE);
         fmt_int(b, v * 100 / 127);
-        str_cpy(b + str_len(b), "%", 2);
+        str_cat(b, "%", 2);
         cv_text_on(bx + cw / 2 - 8, (ly - 12 > y + 12 ? ly - 12 : y + 12) - AF_X_CAP_Y, &AF_X, b, HUD_YE, cv_bg);   /* (above its line) */
     }
 }
@@ -237,12 +237,41 @@ static void fxg_pan(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h
         const param_desc_t *dw = page_desc(cur_page(), 3, &vp), *dr;
         char r[10];
         param_format(dw ? dw : track_desc(t, P_APWAVE), t->p[P_APWAVE], b, &u);
-        str_cpy(b + str_len(b), " \xB7 ", 4);
+        str_cat(b, " \xB7 ", 4);
         dr = page_desc(cur_page(), 1, &vp);
         param_format(dr ? dr : track_desc(t, P_APRATE), dr && vp ? *vp : t->p[P_APRATE], r, &u);
-        str_cpy(b + str_len(b), r, 10);
+        str_cat(b, r, 10);
     }
     fxg_label(x + 12, y, b, T_MID, 0);
+}
+/* (V10.8.71, JIANT BYTE 43923fd4's, the approved mock-up's B "BANDAS") OTT: its name large, OFF under it at DEPTH 0; two
+ * columns, LOW and HIGH: the band's level as it plays, a column of dim grey cells from the floor (-60 dB) up, and the gain
+ * it gets from the middle line (up or down, 1.5 px a dB) with its dB, coloured by how much on the thermal ramp (heat_col:
+ * cold a little, hot a lot, up or down alike; HOME's OTT tag the same, ui_lzhome.c). Read from fx.c's state (ott_s) */
+static __attribute__((noinline)) uint16_t ott_col(int32_t g, int32_t h)   /* the larger of two gains (log2 Q8: fx.c OT_GUP
+                                                         * +28 dB) */
+{
+    g = g < 0 ? -g : g;
+    h = h < 0 ? -h : h;
+    return FXG_H(40 + clamp(g > h ? g : h, 0, OT_GUP) * 216 / OT_GUP);
+}
+static void fxg_ott(uint32_t ti)                        /* (the TRACK panel's whole) */
+{
+    int32_t c;
+    char b[12];
+    page_big("OTT", ott_v[ti][OT_DEPTH] ? 0 : "OFF");
+    for (c = 0; c < 2; c++) {
+        int32_t cx = 8 + c * 116, L = ott_s[ti].lv[c], g = ott_s[ti].g[c], d = (g * 47 + (g > 0 ? 1000 : -1000)) / 2000,
+                gh = clamp(g * 7 / 200, -42, 42);        /* (dB rounded; 1.5 px a dB, the middle line at y 92) */
+        fxg_label(cx + 24, 44, c ? "HIGH" : "LOW", T_MID, 0);
+        gx_col(cx, 136, 14, 90, L > 0 ? (L - OT_FLOOR) * 1000 / (OT_FS - OT_FLOOR) : 0, T_DIM);
+        cv_rect(cx + 24, gh > 0 ? 92 - gh : 93, 80, gh < 0 ? -gh : gh, ott_col(g, 0));
+        cv_rect(cx + 20, 92, 88, 1, T_TEXT);
+        b[0] = '+';
+        fmt_int(b + (d >= 0), d);
+        str_cat(b, " dB", 4);
+        fxg_label(cx + 28, gh < 0 ? 78 : 96, b, T_TEXT, 0);   /* (on the side of the line the bar is not) */
+    }
 }
 /* module m's picture */
 static void fxg_mod(uint32_t m, int32_t x, int32_t y, int32_t w, int32_t h)
@@ -273,7 +302,11 @@ static __attribute__((noinline)) void graph_fx_lz(const track_t *t, const page_t
     if (lv == FXL_TRACK) {
         int32_t k = fx_trk_k(ui.page);
         char tn[3] = {'T', (char)('1' + song.sel % NTRK), 0};
-        fx_dots(3, (uint32_t)k, k == 0 ? "FX" : PAGES[ui.page].title, tn);
+        fx_dots(4, (uint32_t)k, k == 0 ? "FX" : PAGES[ui.page].title, tn);
+        if (k == 3) {                                   /* (V10.8.71) OTT: its two bands, the whole panel */
+            fxg_ott(song.sel % NTRK);
+            return;
+        }
         if (k == 0) fxg_sends(t, 8, 12, 224, 70);
         else if (k == 1) fxg_dist(t, 8, 12, 224, 70);
         else fxg_pan(t, 8, 12, 224, 70);

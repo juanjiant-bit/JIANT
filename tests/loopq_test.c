@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 #ifndef LOOPQ_OLD
     {
         int nm = 1;
-        for (k = 0; k < 9; k++) { char v[8]; const char *u; param_format(&LOFI_LOOPQ, (int32_t)k, v, &u); nm &= !strcmp(v, N_LOOPQ[k]); }
+        for (k = 0; k < 9; k++) { char v[8]; const char *u; param_format(&LOFI_LOOPQ, (int32_t)k, v, &u); nm &= !strcmp(v, str_nth(N_LOOPQ, k)); }
         bad += check("the card names LOOP 0 .. 8: OFF 4 BAR .. 1/32", nm);
     }
 #endif

@@ -126,8 +126,8 @@ static const char *bt_vname(uint32_t v)
     if (v == 2u)
         return bt_val;
     if (n) {
-        str_cpy(bt_val + str_len(bt_val), " ", 2);
-        fmt_int(bt_val + str_len(bt_val), (int32_t)n);
+        str_cat(bt_val, " ", 2);
+        fmt_cat(bt_val, (int32_t)n);
     }
     return bt_val;
 }

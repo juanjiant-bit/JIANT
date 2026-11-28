@@ -317,6 +317,31 @@ static void requests(void)
         ok("the editor answers after it", frame(C_PING, &n) != 0);
         ota_frame_done();
     }
+    /* (V10.8.71, 1.4) a track's special ids P_COUNT + 0 .. 3: FX > OTT's DEPTH TIME UP/DN X-OVER, through TRACK_PARAM and
+     * DESC; INFO's UI caps bit 4 says so; GET / SET keep to the parameters */
+    {
+        const uint8_t *q;
+        APP(C_TRACK_PARAM, 2, K_P_COUNT + 0, (60 + 8192) & 127, (60 + 8192) >> 7);
+        q = frame(C_TRACK_PARAM, &n);
+        ok("TRACK_PARAM 2 P_COUNT+0 60: T3's OTT DEPTH 60 (2, id, v14)", q && n == 4 && q[0] == 2 && q[1] == K_P_COUNT &&
+           v14_at(q + 2) == 60 && ott_v[2][OT_DEPTH] == 60);
+        APP(C_TRACK_PARAM, 2, K_P_COUNT + 3, (500 + 8192) & 127, (500 + 8192) >> 7);
+        q = frame(C_TRACK_PARAM, &n);
+        ok("TRACK_PARAM P_COUNT+3 500: X-OVER clamped to 100", q && v14_at(q + 2) == 100 && ott_v[2][OT_XO] == 100);
+        APP(C_TRACK_PARAM, 2, K_P_COUNT + 1);
+        q = frame(C_TRACK_PARAM, &n);
+        ok("TRACK_PARAM P_COUNT+1 (read): T3's TIME as it is", q && n == 4 && v14_at(q + 2) == ott_v[2][OT_TIME]);
+        APP(C_TRACK_PARAM, 2, K_P_COUNT + 4);
+        ok("TRACK_PARAM P_COUNT+4: no reply (no such id)", !frame(C_TRACK_PARAM, &n));
+        APP(5, 0, K_P_COUNT + 3);
+        q = frame(5, &n);
+        ok("DESC 0 P_COUNT+3: X-OVER (F_CUTOFF 15 .. 100, default 37)", q && n > 10 && q[1] == K_P_COUNT + 3 &&
+           v14_at(q + 3) == 15 && v14_at(q + 5) == 100 && v14_at(q + 7) == 37 && !strcmp((const char *)q + 9, "X-OVER"));
+        APP(C_GET, 0, K_P_COUNT);
+        ok("GET 0 P_COUNT: no reply (GET / SET keep to the parameters)", !frame(C_GET, &n));
+        ok("INFO's UI caps: bit 4, the special ids", (ed_ui_caps() & 16u) != 0);
+        ott_v[2][OT_DEPTH] = 0; ott_v[2][OT_XO] = 37;
+    }
     /* unknown command: no reply */
     APP0(43);
     ok("an unknown command (43) gets no reply", !host_wire_n);

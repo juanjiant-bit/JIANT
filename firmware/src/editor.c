@@ -24,7 +24,8 @@ enum { ED_INFO = 1, ED_GET, ED_SET, ED_DUMP, ED_DESC, ED_STEP_GET, ED_STEP_SET, 
 /* (V10.6z3) the protocol's version, INFO's tag 43 02 major minor: 1.0 the stability contract (web/EDITOR_PROTOCOL.md
  * "Stability contract"): from it on only additive changes; a minor for each addition, a major never (a break) */
 #define ED_PROTO_MAJOR 1u
-#define ED_PROTO_MINOR 3u   /* (V10.6z5) 1.1: VEL (81); (V10.6z6) 1.2: VEL ops 4, 5 (the keys' velocity); 1.3: INFO's 'X' */
+#define ED_PROTO_MINOR 4u   /* (V10.6z5) 1.1: VEL (81); (V10.6z6) 1.2: VEL ops 4, 5 (the keys' velocity); 1.3: INFO's 'X';
+                              * (V10.8.71) 1.4: a track's special ids (ed_ott; INFO's UI caps bit 4) */
 enum { ED_VM_READ = 80 };   /* (V10.10) read-only: 256 B of the stock VM (0xE7000 + 256 x a[0], a[0] < 48: the radio's
                               * RF trims and BT address, web/btcheck.html); reply: a[0], then 256 x (hi nibble, lo nibble) */
 /* (V10.6z5, 1.1) the velocity diagnostic (vel_diag.c, web/vel.html): op 0 status, 1 on (drive 0..4), 2 off, 3 the next
@@ -341,6 +342,18 @@ static const param_desc_t *ed_desc(uint32_t scope, uint32_t id, int16_t **vp)
     return 0;
 }
 
+/* (V10.8.71, 1.4, as JIANT BYTE's) a track's special ids, past the parameters: P_COUNT + 0 .. 3 its FX > OTT's DEPTH
+ * TIME UP/DN X-OVER (params.c ott_v; BYTE's 0xD0 .. 0xD3 are not 7-bit bytes here, and FM's 0x50 .. 0x53 are its
+ * parameters): TRACK_PARAM (31) reads and sets them on any track, DESC (5) describes them (scope 0); INFO's UI caps bit 4
+ * says so. GET / SET, DUMP and the pushes keep to the parameters (their shadows) */
+static const param_desc_t *ed_ott(uint32_t t, uint32_t id, int16_t **vp)
+{
+    if (t >= NTRK || id - P_COUNT >= OT_N)
+        return 0;
+    *vp = &ott_v[t][id - P_COUNT];
+    return &OTT_DESC[id - P_COUNT];
+}
+_Static_assert(P_COUNT + OT_N <= 127u, "the special ids: 7-bit bytes");
 /* a step as STEP_SET / TRACK_STEP send it (na bytes): n, 4 notes, time, flags, vel, then (v5) the lane hits
  * and their accents: hit & 127, acc & 127, bit 7 of each (bit 0 hit, bit 1 acc), (v7) the chance, (RATCH, INFO
  * 52 01) the hits 1..4; each value made valid. 8 bytes (an editor of before the grid): the hits stay; without
@@ -577,7 +590,7 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
             ed_v(song.g[i]);
         break;
     case ED_DESC:
-        if (na < 2u || !(d = ed_desc(a[0], a[1], &vp)))
+        if (na < 2u || !((d = ed_desc(a[0], a[1], &vp)) || (!a[0] && (d = ed_ott(song.sel, a[1], &vp)))))
             return;
         ed_b(a[0]);
         ed_b(a[1]);
@@ -843,20 +856,29 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
     }
     case ED_TRACK_PARAM: {                                 /* track, id [, v14] -> track, id, v14 */
         track_t *t;
-        if (na < 2u || a[0] >= NTRK || a[1] >= P_COUNT)
+        uint32_t sp;
+        if (na < 2u || a[0] >= NTRK)
             return;
         t = &trk[a[0]];
-        d = ed_tdesc(t, a[1]);
+        sp = (d = ed_ott(a[0], a[1], &vp)) != 0;          /* (1.4) a special id */
+        if (!sp) {
+            if (a[1] >= P_COUNT)
+                return;
+            d = ed_tdesc(t, a[1]);
+            vp = &t->p[a[1]];
+        }
         if (na >= 4u && !(chain_busy() && a[1] >= P_SLEN && a[1] <= P_SGATE)) {
             if (d->max > d->min)                           /* as SET: clamped; a fixed value stays */
-                t->p[a[1]] = (int16_t)enum_orig(d, clamp(ed_rv(a + 2), d->min, d->max));
-            (void)motion_capture(t, a[1], t->p[a[1]]);
-            ed_known(a[0], a[1]);
+                *vp = (int16_t)enum_orig(d, clamp(ed_rv(a + 2), d->min, d->max));
+            if (!sp) {
+                (void)motion_capture(t, a[1], *vp);
+                ed_known(a[0], a[1]);
+            }
             ui.force = 1;
         }
         ed_b(a[0]);
         ed_b(a[1]);
-        ed_v(t->p[a[1]]);
+        ed_v(*vp);
         break;
     }
     case ED_LYRIC: {                                       /* (0.8.5) track [, ASCII .. 0] -> track, rc, the lyric */

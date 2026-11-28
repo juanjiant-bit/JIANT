@@ -66,6 +66,11 @@ static uint32_t scene(uint32_t mask, uint32_t nblk)
         cpu_test_song();
     }
     song.master_q12 = 4096;
+    if (getenv("CL_OTT")) {                              /* (V10.8.71, as JIANT BYTE's) every track's OTT at this DEPTH (the
+                                                         * worst case: 100) */
+        uint32_t k;
+        for (k = 0; k < NTRK; k++) ott_v[k][OT_DEPTH] = (int16_t)atoi(getenv("CL_OTT"));
+    }
     if (live.mode) chain_play_ui(); else transport_req = 1;
     ui_input();
     for (b = 0; b < 400u + nblk; b++) {                  /* (its first 400 blocks to warm: the song under way) */

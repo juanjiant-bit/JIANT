@@ -114,8 +114,9 @@ static const char *desc_nm(const param_desc_t *d, int32_t i)   /* an enum's name
 static const char *const N_LWAVE[] = {"SIN", "TRI", "SAW", "SQR", "S&H"};
 static const char *const N_LWAVE6[] = {"SIN", "TRI", "SAW", "SQR", "S&H", "DRIFT"};   /* (V10.36) the LFO's own: AUTO PAN keeps five */
 /* (JIANT 0.6.51) the LFO's RATE below 0: in time with the tempo, -1 the slowest (next to the slowest free rate) */
-static const char *const N_LSYNC[14] = {"4BAR", "2BAR", "1BAR", "1/2", "1/4", "1/8D", "1/4T", "1/8", "1/8T", "1/16",
-                                        "1/16T", "1/32", "8BAR", "16BAR"};   /* (V10.27: -13 8BAR, -14 16BAR, a tester's) */
+static const char N_LSYNC[] = "4BAR\0" "2BAR\0" "1BAR\0" "1/2\0" "1/4\0" "1/8D\0" "1/4T\0" "1/8\0" "1/8T\0" "1/16\0"
+                              "1/16T\0" "1/32\0" "8BAR\0" "16BAR";   /* (V10.27: -13 8BAR, -14 16BAR, a tester's; V10.8.71:
+                                                         * packed, str_nth) */
 static const char *const N_AMODE[] = {"OFF", "UP", "DN", "UPDN", "RND", "ORD", "REPEAT",   /* (append-only: seq.c AM_*) */
                                        "DNUP", "UP+8", "CONV", "DIVG", "PINKY", "THUMB", "WALK", "CHORD",
                                        "TRNS"};                         /* (JIANT: seq.c AM_TRNS) */
@@ -149,7 +150,8 @@ static const char *const N_DLYTYPE[] = {"ANALOG", "DIGITAL", "REVERS", 0};   /* 
 static const char *const N_DTYPE[] = {"SOFT", "HARD", "FOLD", "CRUSH", "RECT", "AMP"};   /* (JIANT) fx.c DT_*; 0.7.8 AMP */
 static const char *const N_FTYPE[] = {"LP", "HP", "BP", "COMB", "COMB-"};   /* (JIANT 0.5) P_FTYPE: eng_analog.c FT_*
                                                          * (0.9.9-snd1: COMB- the negative comb, MS20) */
-static const char *const N_NOTE[] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+static const char N_NOTE_P[] = "C\0C#\0D\0D#\0E\0F\0F#\0G\0G#\0A\0A#\0B"; /* (V10.8.71: packed, str_nth; was a table of pointers) */
+#define NOTE_NM(i) str_nth(N_NOTE_P, (unsigned)(i))   /* note i's name (i < 12) */
 static const char *const N_DASH[] = {"--"};
 static const char *const N_RTYPE[] = {"ROOM", "SPRING", "SHIMR", "RESO", "CLOUD"};   /* (JIANT 0.5: + 3) */   /* G_RTYPE: the reverb bus's model (fx.c) */
 /* modulation matrix (mod.c): sources, destinations (E1..E8 = P_E0..P_E7: shown with the engine's labels; V10.8.70: in PNB)
@@ -589,7 +591,7 @@ static void param_format(const param_desc_t *d, int32_t v, char *val, const char
         return;
     }
     if (d == &LOFI_LOOPQ && v <= 8) {                   /* (V10.8.66) MATH's LOOP in WAVE SYNC: the song's division */
-        str_cpy(val, N_LOOPQ[v < 0 ? 0 : v], 6);
+        str_cpy(val, str_nth(N_LOOPQ, (unsigned)(v < 0 ? 0 : v)), 6);
         fmt_named = 1;
         return;
     }
@@ -647,7 +649,7 @@ static void param_format(const param_desc_t *d, int32_t v, char *val, const char
     case F_LFOHZ: {
         uint32_t h = LFO_HZ_X100[v & 127];
         if (v < 0) {                                    /* (0.6.51) the LFO in time */
-            str_cpy(val, N_LSYNC[(uint32_t)(-v - 1) % 14u], 6);
+            str_cpy(val, str_nth(N_LSYNC, (uint32_t)(-v - 1) % 14u), 6);
             break;
         }
         if (h < 1000u)
@@ -694,7 +696,7 @@ static void param_format(const param_desc_t *d, int32_t v, char *val, const char
         *unit = "BPM";
         break;
     case F_NOTE:
-        str_cpy(val, N_NOTE[v % 12], 6);
+        str_cpy(val, NOTE_NM(v % 12), 6);
         break;
     case F_ONOFF:
         str_cpy(val, N_ONOFF[v ? 1 : 0], 6);
@@ -806,6 +808,33 @@ static uint16_t vis_seed __attribute__((section(".bss.tape")));   /* (0: not set
 static const param_desc_t EQ_DESC[4] __attribute__((section(".rodata.tape"))) = {
     PD("LOW", F_INT, -12, 12, 0), PD("LO MID", F_INT, -12, 12, 0), PD("HI MID", F_INT, -12, 12, 0), PD("HIGH", F_INT, -12, 12, 0)};
 static int16_t eq_v[4] __attribute__((section(".bss.tape")));   /* (out of the merged statics, as fx.c's djf) */
+/* (V10.8.71, JIANT BYTE 43923fd4's, GPL) FX > OTT, a track each (fx.c ott_block): DEPTH (0: off, the track's chain as
+ * before, bit for bit, not run), TIME (the envelopes' release; the attack ~1/20 of it; 72: ~40 ms and ~1.5 ms), UP/DN (- less upward, + less
+ * downward), X-OVER (the two bands' split). Not track parameters (as DIST's NOISE): kept with the project ('O' 'T',
+ * project.c: each less its default, so the four are kept whatever DEPTH is; without it: these defaults, OTT off) and a
+ * user preset's sound (upreset.c UP_OT_AT). Ids past the parameters, under DRONE CLAY's (no editor command: the
+ * Studio protocol as it was) */
+#define ID_OT0 0xB0u
+enum { OT_DEPTH, OT_TIME, OT_UPDN, OT_XO, OT_N };
+_Static_assert(P_COUNT < ID_OT0 && ID_OT0 + OT_N <= ID_CL0 && MOT_DJF < ID_OT0, "OTT's ids between the parameters and CLAY's");
+static const param_desc_t OTT_DESC[OT_N] __attribute__((section(".rodata.tape"))) = {
+    PD("DEPTH", F_PCT, 0, 100, 0), PD("TIME", F_TIME, 30, 100, 72), PD("UP/DN", F_BIPCT, -64, 63, 0),
+    PD("X-OVER", F_CUTOFF, 15, 100, 37)};
+static int16_t ott_v[NTRK][OT_N] __attribute__((section(".bss.tape")));   /* (out of the merged statics) */
+static __attribute__((noinline)) void ott_put(uint32_t k, const int8_t *v)   /* track k's OTT from v, each less its
+                                                         * default (clamped), or (v 0) off at its defaults */
+{
+    uint32_t i;
+    for (i = 0; i < OT_N; i++)
+        ott_v[k % NTRK][i] = (int16_t)clamp(OTT_DESC[i].def + (v ? v[i] : 0), OTT_DESC[i].min, OTT_DESC[i].max);
+}
+static void ott_defaults(void) { uint32_t k; for (k = 0; k < NTRK; k++) ott_put(k, 0); }   /* every track's OTT off */
+static __attribute__((noinline)) void ott_get(uint32_t k, int8_t *v)   /* .. and back: each less its default */
+{
+    uint32_t i;
+    for (i = 0; i < OT_N; i++)
+        v[i] = (int8_t)(ott_v[k % NTRK][i] - OTT_DESC[i].def);
+}
 static uint8_t lfo_ph_mem[NTRK];
 static int lfo_mode_of(const track_t *t) { return t->p[P_LPHASE] < 0; }   /* 1 FREE */
 /* (deadcode) a page no chain shows any more keeps its row (the index, its ids for the section's masks), its title
@@ -987,6 +1016,9 @@ static const page_t PAGES[] = {
     {"CLAY MOD", FAM_SEQ, SC_TRACK, GR_CLAY, {ID_CL0 + CL_SEL, ID_CL0 + CL_M0, ID_CL0 + CL_M0 + 1u, ID_CL0 + CL_M0 + 3u}},
     {"CLAY RHYTHM", FAM_SEQ, SC_TRACK, GR_CLAY, {ID_CL0 + CL_SEL, ID_CL0 + CL_M0 + 5u, ID_CL0 + CL_M0 + 2u, ID_CL0 + CL_M0 + 4u}},
     {"CLAY TIME", FAM_SEQ, SC_TRACK, GR_CLAY, {ID_CL0 + CL_RUN, ID_CL0 + CL_SEED, 0xFF, 0xFF}},
+    {"OTT", FAM_FX, SC_TRACK, GR_NONE, {ID_OT0, ID_OT0 + 1u, ID_OT0 + 2u, ID_OT0 + 3u}},   /* (V10.8.71, BYTE's) the track's
+                                                         * two-band up / down compressor (FX > TRACK's fourth, after AUTO
+                                                         * PAN; last: the rows' indices kept) */
 };
 #define SPLIT_PAGE(pg) ((uint32_t)((pg)->graph - GR_SPLIT) < 2u)
 #define FIT_PAGE(pg) ((pg)->graph == GR_STEPS && (pg)->id[1] == 0xFFu)   /* RHYTHM (BAR: KNOB 2 LEN) */
@@ -1121,6 +1153,10 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
         return sc_desc(id - ID_SC0, valp);
     if (id >= ID_CL0 && id <= ID_CL0 + CL_SEL)        /* (V10.8.21) DRONE CLAY's (seq.c clay.c clay_page_desc) */
         return clay_page_desc(TSEL, id - ID_CL0, valp);
+    if (id - ID_OT0 < OT_N) {                         /* (V10.8.71) FX > OTT's */
+        *valp = &ott_v[song.sel % NTRK][id - ID_OT0];
+        return &OTT_DESC[id - ID_OT0];
+    }
     *valp = &TSEL->p[id];
     if (id == P_APRATE && TSEL->p[P_APSYNC])         /* (0.6.9) AUTO PAN on the tempo: a division */
         return &AP_BEAT;
