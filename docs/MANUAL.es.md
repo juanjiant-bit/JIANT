@@ -65,11 +65,18 @@ Las versiones V10.8.49 a V10.8.72 en una lista. Donde un capítulo de abajo toda
 
 **Sonido y generador**
 - **OTT** (V10.8.71): un compresor de dos bandas en cada pista, **FX › TRACK › OTT** (DEPTH, TIME, UP/DN, X-OVER),
-  tomado de JIANT BYTE. V10.8.72: su ley como la de JIANT BYTE (10:1 a −16 dB, hasta +30 dB, TIME 56).
+  tomado de JIANT BYTE. V10.8.72: una ley mucho más dura (hasta +36 dB hacia arriba, hacia −18 dBFS; 20:1 arriba de
+  −22 dBFS; después un recorte suave, nunca por encima de −0,3 dBFS), DEPTH al cuadrado hasta 70 y más empinado
+  arriba, TIME **48** de fábrica (el TIME de un proyecto de V10.8.71 abre 24 más abajo). Ver
+  [OTT](#ott-fx--track-v10871).
+- **DIST TYPE** (V10.8.72): seis tipos nuevos hechos con las fórmulas de JIANT BYTE, **6 RING**, **7 STEPS**, **8 XOR**,
+  **9 WOB**, **10 SFOLD** y **11 SAT**. SOFT … AMP siguen en 0–5, y los proyectos viejos suenan igual. Ver
+  [Por pista](#por-pista).
 - **El generador** (V10.8.68–V10.8.72): los planes de tema de JIANT BYTE (plantillas por género, de 2 a 5 minutos,
   fills), cada sección con su propia automatización (grich), vuelven la pregunta y respuesta y el corte de EXPLORE,
   vuelve la pegada de la batería, NEO CLASSIC sin batería. Ninguna pieza pasa de −1 dBFS antes del master (V10.8.51).
-  V10.8.72: OTT en los géneros electrónicos.
+  V10.8.72: OTT en la batería y el bajo de los géneros electrónicos, y en una semilla de cada dos en el lead; RESOUND
+  también lo pone (ver [GEN](#gen--el-generador-de-temas-home--select)).
 - **MATH**: **WAVE SYNC** (V10.8.62) traba el ritmo de la fórmula al tempo, con el preset nuevo **BYTE SYNC**; **LOOP**
   (V10.8.66) lo repite cada 4 BAR … 1/32.
 - **MOD AMOUNT** (V10.8.51): −200 … +198 %; 100 % recorre todo el rango.
@@ -88,8 +95,9 @@ Las versiones V10.8.49 a V10.8.72 en una lista. Donde un capítulo de abajo toda
 - **Vuelve HOME › MACROS** (V10.8.64), tercera página de ECO, con **DICE MACROS** (HOME + SELECT). **LIFE**: el KNOB 3
   es **STEREO** (era PUMP), y cada profundidad llega más lejos pasando 60. Ver [Las secciones](#las-secciones-y-sus-cadenas).
 - **HOME › BEING › VISUAL** y **MENU › DISPLAY › SAVER** (V10.8.56–V10.8.67): dibujos hechos con los gráficos del
-  propio FM que se mueven con la música, en toda la pantalla. V10.8.72: más fluido (menos trazos en vez de saltear
-  cuadros). Ver [VISUAL y SAVER](#visual-y-saver-v10856v10867).
+  propio FM que se mueven con la música, en toda la pantalla. V10.8.72: dibuja todos los cuadros, con menos puntos
+  cuando el sonido está cargado (unos 20 cuadros por segundo donde dibujaba 3 a 7). Ver
+  [VISUAL y SAVER](#visual-y-saver-v10856v10867).
 - **MENU › DISPLAY › PANEL** (V10.8.63): AUTO / A / B, para las pantallas de los equipos de fines de 2026. Ver
   [PANEL](#panel-las-pantallas-de-fines-de-2026-v10863).
 - **SCL › CHORD** nombra la tríada de cada grado (**D-**, **E°**, **F**; V10.8.59). El DELAY de FX dibuja sus ecos
@@ -647,8 +655,9 @@ los sonidos del proyecto); una sección nueva, doce bombos o diez segundos traen
 - Una perilla girada muestra su nombre y su valor en una línea abajo, un momento. **OCT+**: una figura nueva
   (**VISUAL #n**). Cualquier otro botón sale de la página como siempre. Las perillas no se guardan.
 - Es liviano: un presupuesto fijo de puntos, y cede cuando el sonido está cargado. Fuera de su página no corre nada de
-  él (V10.8.68). V10.8.72: cuando el sonido está cargado dibuja menos trazos en vez de saltear cuadros, así que se mueve
-  más fluido.
+  él (V10.8.68). V10.8.72: dibuja todos los cuadros, y cuando el sonido está cargado cada cuadro dibuja menos (con más
+  de 65 % de carga solo el primer dibujo, con 300 puntos; con más de 80 %, 150). Con carga se mueve a unos 20 cuadros
+  por segundo (10 si la carga se queda cerca del 80 %), donde V10.8.71 dibujaba 3 a 7, con huecos desparejos.
 
 **MENU › DISPLAY › SAVER** (V10.8.56): **OFF**, **1 MIN**, **3 MIN** (de fábrica), **5 MIN**, **10 MIN**. Después de
 ese tiempo sin tocar el panel, la pantalla muestra una figura de VISUAL, nueva, en toda la pantalla, moviéndose con la
@@ -855,7 +864,7 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.
 | Página | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 | --- | --- | --- | --- | --- |
 | SENDS | CHORUS (envío) | DLY (envío) | REV (envío) | DIST |
-| DIST | DIST | TYPE | TONE | NOISE (V10.8.36) |
+| DIST | DIST | TYPE (0–11: SOFT … AMP; V10.8.72: RING … SAT) | TONE | NOISE (V10.8.36) |
 | AUTO PAN | DEPTH | RATE | SYNC | WAVE |
 | OTT (V10.8.71) | DEPTH (0–100 %; 0 = apagado) | TIME | UP/DN | X-OVER |
 | BUSES (0.8.5) | DLY (el MIX del delay) | REV (el SIZE de la reverb) | CHO (el DEPTH del chorus) | SLC (el DEPTH del SLICER) |
@@ -2455,9 +2464,11 @@ armadas. No se guarda con el proyecto.
 - **el sonido y la forma, hacia CALM** (V10.8.68): ataques y releases más largos (los de un pad y una textura los que
   más, los de un arpegio los que menos), una envolvente de filtro más suave, envíos más húmedos (la reverb de los pads
   y la textura, el delay de las líneas). Desde −25, los acordes que un género tocaría picados quedan sostenidos o
-  entran de a poco. Las secciones se alargan y, con RADIO, los cambios llegan
-  más despacio. El barrido del DJ FILTER del build (abajo) nunca suena
-  desde −15.
+  entran de a poco. La pieza se hace **más corta**: el plan del tema se ajusta a unos cuatro minutos como mucho en
+  −50 (cinco en MID), y después cada fila de SONG y de PARTS se recorta, un poco en −5 y hasta más o menos el 40 % de
+  sus compases en −50 (nunca menos de 4 compases; el build se recorta recién desde −25). Con RADIO, un loop trae la
+  pieza siguiente después de la mitad de compases (desde −15, ver RADIO arriba). El barrido del DJ FILTER del build
+  (abajo) nunca suena desde −15.
 - **hacia DANCE** (V10.8.68): el pump del bombo (el DUCK del master) más hondo, entre 40 y 60. Toda pieza DANCE tiene
   batería, salvo las de NEO CLASSIC.
 No se guarda con el proyecto.
@@ -2526,8 +2537,21 @@ No se guarda con el proyecto.
   ruido en la textura, los pads y las texturas muchas veces entrando de a poco; ningún lead chip ni hoover (un piano
   eléctrico en su lugar); un rol con un motor al azar la mitad de veces que antes; locrio pocas veces; menos rarezas
   por pieza; los componentes de paso sobre todo arpegios y ecos (RAND y BEND pocas veces).
-- **OTT** (V10.8.72): las piezas de los géneros electrónicos ponen **FX › OTT** en sus pistas (ver
-  [OTT](#ott-fx--track-v10871)).
+- **OTT** (V10.8.72): los géneros electrónicos ponen **FX › OTT** (ver [OTT](#ott-fx--track-v10871)) en la batería y
+  en el bajo, con un DEPTH según el género: **40**: HOUSE, DEEP HOUSE, MINIMAL TECHNO (MINIMAL: solo el bajo, con su
+  LEVEL dos pasos más arriba); **44**: TECH HOUSE, TRIBAL (solo la batería), REGGAETON, IDM GLITCH (la batería, sin
+  bajo), la tirada synth de TECHNO ROCK; **48–54**: DRUM & BASS 48; ELECTRO, BREAKBEAT, DEMBOW, ELECTRO METAL y el
+  trap, el drill y el pluggnb de HIP HOP 50; HARD TECHNO, EBM y BAILE FUNK 54; **60**: HARD BASS, PHONK, DUBSTEP. MOOD DANCE
+  (+15 para arriba) suma 4. En una semilla de cada dos el lead recibe uno fuerte, DEPTH 60–78 (si no hay lead, o es un riff que ya va adelante, lo toma la textura), en todos los géneros de arriba menos MINIMAL TECHNO, DEEP
+  HOUSE, TRIBAL, REGGAETON y ELECTRO METAL. Tres pistas como mucho, nunca los pads. Cada rol tiene sus ajustes: la
+  batería TIME 44, UP/DN un poco menos hacia arriba, X-OVER 45; el bajo TIME 52, X-OVER 26 (su sub entero); el lead
+  TIME 48, X-OVER 55. El LEVEL de cada pista con OTT baja un poco (más cuanto más hondo), así ninguna pieza pasa de
+  −1 dBFS. Nada en los géneros acústicos y orgánicos (CUMBIA, JAZZ, NEO CLASSIC, DREAM POP, SHOEGAZE, KRAUT,
+  METALCORE, IDM AMBIENT, IDM WEIRD), en el boom bap y el lofi de HIP HOP, en el rock de TECHNO ROCK, en EXPLORE, ni
+  con MOOD en CALM (−15 o menos); el OTT de las demás pistas se apaga. **RESOUND** pone el OTT del género, o lo saca,
+  en las pistas a las que les da sonidos nuevos; una pista que no toca conserva el suyo. Todas las secciones de la pieza
+  reciben el mismo OTT: no cambia de sección en sección. El resto de la pieza queda como estaba: la misma semilla sigue dando la misma
+  pieza.
 
 La pieza es **determinista**: los mismos ajustes dan siempre la misma pieza, así que una semilla que te gustó se
 puede volver a marcar. **OCT+ con los ajustes sin tocar tira una semilla nueva** (otra pieza); girá una perilla y
@@ -2883,12 +2907,23 @@ sonidos de la pista, como en todos lados.
 ### Por pista
 
 - **FX**: cantidad de DIST y los tres envíos (CHORUS, DLY, REV).
-- **DIST**: cantidad, **TYPE** (SOFT, HARD, FOLD, CRUSH, RECT, **AMP**), **TONE** (más oscuro / más brillante). **AMP**
+- **DIST**: cantidad, **TYPE** (0 SOFT, 1 HARD, 2 FOLD, 3 CRUSH, 4 RECT, 5 **AMP**, y desde V10.8.72 los tipos de
+  fórmula 6 **RING**, 7 **STEPS**, 8 **XOR**, 9 **WOB**, 10 **SFOLD**, 11 **SAT**, abajo), **TONE** (más oscuro / más brillante). **AMP**
   es un amplificador de guitarra: dos etapas de válvula que saturan desparejo (DIST bajo limpio, después crunch, después
   lead), el bias respirando con el nivel, y un bafle con su pico de presencia; TONE mueve el brillo del bafle.
   **NOISE** (V10.8.36, KNOB 4, 0–127): un ruido filtrado mueve la ganancia de la distorsión y la esquina de TONE,
   así aparece grano alrededor de cada armónico de la nota; no suma nada (el silencio sigue en silencio y el nivel
   queda como estaba). En AMP no actúa.
+- **Los tipos de fórmula** (V10.8.72, de los efectos de fórmula de JIANT BYTE, como código fijo): DIST fija la cantidad
+  de la fórmula en vez de una ganancia, y no hay corte de graves ni compensación de nivel; TONE y la entrada gradual de
+  DIST funcionan como en los otros tipos, y DIST en 0 sigue siendo apagado. **RING**: modulación en anillo con una
+  senoidal de 110 Hz (DIST bajo) a 990 Hz (DIST al máximo). **STEPS**: la onda en escalones, 32 niveles con DIST bajo
+  hasta 2. **XOR**: los bits de las muestras invertidos según el valor de DIST (grano digital). **WOB**: el nivel
+  hundido por un triángulo dos veces por tiempo, tan hondo como DIST (parado, con un reloj propio). **SFOLD**: un
+  plegador senoidal, más pliegues a medida que sube DIST. **SAT**: una saturación de hasta 21 veces, con su nivel
+  bajando hasta la mitad a medida que sube DIST. NOISE mueve la entrada de la fórmula y la esquina de TONE. La página
+  dibuja la curva de SOFT con el nombre del tipo. Los SENDS no tienen saturación propia: la cuarta perilla de SENDS es
+  este mismo DIST.
 - **AUTO PAN**: el paneo de la pista oscilando a izquierda y derecha alrededor de su PAN. **DEPTH** (0 = apagado),
   **RATE**, **SYNC** (BEAT: RATE en divisiones 4BAR … 1/32, sincronizado al compás; FREE: RATE en Hz), **WAVE** (SIN,
   TRI, SAW, SQR, S&H).
@@ -2897,18 +2932,25 @@ sonidos de la pista, como en todos lados.
 
 ### OTT (FX › TRACK, V10.8.71)
 
-Un compresor liviano de dos bandas en cada pista, que viene de JIANT BYTE. Sube las partes suaves y aprieta las
-fuertes, en una banda grave y una aguda. Va después de DIST en la cadena de la pista. Es la cuarta página de TRACK,
-después de AUTO PAN.
+Un compresor de dos bandas en cada pista, que viene de JIANT BYTE. Sube las partes suaves y aprieta las fuertes, en
+una banda grave y una aguda, y después empuja las dos juntas a un recorte suave. Va después de DIST en la cadena de la
+pista. Es la cuarta página de TRACK, después de AUTO PAN.
 
 - **DEPTH** (0–100 %): cuánto. **0 = apagado**: la pista se saltea OTT entero, el sonido queda exactamente como sin
-  él y no gasta CPU. La profundidad crece de a poco (va al cuadrado): 50 hace más o menos un cuarto de lo que hace 100.
-- **Qué hace 100** (V10.8.72): las partes suaves suben hasta **+30 dB**, las fuertes por encima de **−16 dB** se
-  aprietan más o menos **10:1**, y un limitador (8:1) sujeta los picos por encima de −3 dBFS. Lo muy suave (debajo de
-  −60 dB) no se sube, así no trae ruido. (V10.8.71: hasta +28 dB debajo de −12 dBFS, más o menos 10:1 arriba de
-  −15 dBFS.)
-- **TIME** (8,8 ms … 1,41 s): qué tan rápido sigue el nivel de cada banda (el release; el ataque es mucho más
-  rápido). El valor de fábrica es **56** (V10.8.72, unos 58 ms en la tarjeta; V10.8.71: 72, 185 ms).
+  él (bit a bit) y no gasta CPU. La profundidad va al cuadrado hasta 70 y sube más rápido por encima (V10.8.72): 30
+  hace más o menos un décimo de lo que hace 100, 50 un cuarto, 60 un tercio, 70 la mitad, 80 un 85 %, 90 casi todo.
+  De 30 a 60 es musical, de 80 a 100 brutal.
+- **Qué hace 100** (V10.8.72, mucho más duro que en V10.8.71): cada banda sube hacia **−18 dBFS**, casi un dB por
+  cada dB que le falta, hasta **+36 dB** (una banda en −46 dBFS sube unos 27 dB); por encima de **−22 dBFS** se aprieta
+  **20:1**, hasta −36 dB. Después las dos bandas juntas entran con hasta **+9 dB** a un recorte suave: denso y saturado,
+  nunca un recorte duro, nunca por encima de **−0,3 dBFS**. Lo muy suave (debajo de −66 dBFS) no se sube, así no trae
+  ruido. Los picos de cada bloque se leen primero, así un golpe después de un silencio no sale inflado por la ganancia
+  del silencio, y una ganancia que baja actúa enseguida. (V10.8.71: hasta +28 dB debajo de −12 dBFS, más o menos 10:1
+  arriba de −15 dBFS, un limitador arriba de −3 dBFS.)
+- **TIME** (8,8 ms … 1,41 s): qué tan rápido sigue el nivel de cada banda (el release; el ataque es de 1 ms más o
+  menos hasta 50 y más lento por encima). El valor de fábrica es **48** (V10.8.72, unos 33 ms en la tarjeta: bombea con
+  el bombo; V10.8.71: 72, 185 ms). Un proyecto o un preset de usuario guardado con V10.8.71 abre con el TIME de cada
+  pista 24 más abajo (su 72 entra como 48).
 - **UP/DN** (−100 … +98 %): el balance. A la izquierda, menos hacia arriba (las partes suaves suben menos); a la
   derecha, menos hacia abajo (las fuertes se aprietan menos). En 0: las dos enteras.
 - **X-OVER** (63 Hz … 4,2 kHz, 187 Hz de fábrica): dónde termina la banda grave y empieza la aguda.
@@ -2921,8 +2963,9 @@ después de AUTO PAN.
   90 %, se retira del todo. El sonido nunca se corta.
 - **Se guarda** con el proyecto y con un preset de usuario (SAVE › USER): los cuatro valores, aunque DEPTH esté en 0.
   Los proyectos y presets de antes de V10.8.71 abren con OTT apagado. El editor web también lo alcanza (protocolo del
-  editor 1.4).
-- **GEN** (V10.8.72) prende OTT en las piezas de los géneros electrónicos (ver
+  editor 1.4); un cambio hecho en el equipo, por GEN o por RESOUND no se le avisa (lo vuelve a leer).
+- **GEN** (V10.8.72) pone OTT en la batería, el bajo y, en una semilla de cada dos, el lead de las piezas de los
+  géneros electrónicos, y **RESOUND** lo pone o lo saca en las pistas a las que les da sonidos nuevos (ver
   [GEN](#gen--el-generador-de-temas-home--select)).
 
 ### SLICER (uno solo, en un bus)

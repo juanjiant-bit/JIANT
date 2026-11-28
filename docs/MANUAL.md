@@ -65,10 +65,15 @@ The versions V10.8.49 to V10.8.72 in one list. Where a chapter below still descr
 
 **Sound and the generator**
 - **OTT** (V10.8.71): a two-band compressor on every track, **FX › TRACK › OTT** (DEPTH, TIME, UP/DN, X-OVER), from JIANT
-  BYTE. V10.8.72: its law as JIANT BYTE's (10:1 at −16 dB, up to +30 dB, TIME 56).
+  BYTE. V10.8.72: a much harder law (up to +36 dB up towards −18 dBFS, 20:1 over −22 dBFS, then a soft clip, never over
+  −0.3 dBFS), DEPTH squared up to 70 and steeper above, TIME **48** by default (a V10.8.71 project's TIME opens 24
+  lower). See [OTT](#ott-fx--track-v10871).
+- **DIST TYPE** (V10.8.72): six new types made from JIANT BYTE's formulas, **6 RING**, **7 STEPS**, **8 XOR**, **9 WOB**,
+  **10 SFOLD** and **11 SAT**. SOFT … AMP keep 0–5, and old projects sound the same. See [Per track](#per-track).
 - **The generator** (V10.8.68–V10.8.72): JIANT BYTE's song plans (templates by genre, 2 to 5 minutes, fills), each
   section its own automation (grich), call and response and EXPLORE's cut back, the drums' punch back, NEO CLASSIC with
-  no drums. No piece goes over −1 dBFS before the master (V10.8.51). V10.8.72: OTT on the electronic genres.
+  no drums. No piece goes over −1 dBFS before the master (V10.8.51). V10.8.72: OTT on the electronic genres' drums and
+  bass, and in one seed in two on the lead; RESOUND sets it too (see [GEN](#gen--the-song-generator-home--select)).
 - **MATH**: **WAVE SYNC** (V10.8.62) locks the formula's rhythm to the tempo, with the new preset **BYTE SYNC**; **LOOP**
   (V10.8.66) repeats it every 4 BAR … 1/32.
 - **MOD AMOUNT** (V10.8.51): −200 … +198 %; 100 % sweeps the whole range.
@@ -86,7 +91,8 @@ The versions V10.8.49 to V10.8.72 in one list. Where a chapter below still descr
 - **HOME › MACROS** is back (V10.8.64), ECO's third page, with **DICE MACROS** (HOME + SELECT). **LIFE**: KNOB 3 is
   **STEREO** (was PUMP), and every depth goes further above 60. See [The sections](#the-sections-and-their-chains).
 - **HOME › BEING › VISUAL** and **MENU › DISPLAY › SAVER** (V10.8.56–V10.8.67): pictures from FM's own graphics that
-  move with the music, on the whole screen. V10.8.72: smoother (fewer strokes instead of skipped frames). See
+  move with the music, on the whole screen. V10.8.72: every frame is drawn, with fewer points under load (about 20
+  frames a second where it drew 3 to 7). See
   [VISUAL and SAVER](#visual-and-saver-v10856v10867).
 - **MENU › DISPLAY › PANEL** (V10.8.63): AUTO / A / B, for the screens of the late-2026 units. See
   [PANEL](#panel-the-late-2026-screens-v10863).
@@ -617,8 +623,9 @@ and energy, or from the project's sounds); a new section, twelve kicks or ten se
 - A knob turned shows its name and value on one line at the foot for a moment. **OCT+**: a new figure (**VISUAL #n**).
   Any other button leaves the page as usual. The knobs are not saved.
 - It is light: a fixed budget of points, and it gives way when the sound is busy. Off its page nothing of it runs
-  (V10.8.68). V10.8.72: when the sound is busy it draws fewer strokes instead of skipping frames, so it moves more
-  smoothly.
+  (V10.8.68). V10.8.72: every frame is drawn, and when the sound is busy each frame draws less instead (past 65 % load
+  only the first picture, with 300 points; past 80 %, 150). Under load it moves at about 20 frames a second (10 while
+  the load stays near 80 %), where V10.8.71 drew 3 to 7 with uneven gaps.
 
 **MENU › DISPLAY › SAVER** (V10.8.56): **OFF**, **1 MIN**, **3 MIN** (default), **5 MIN**, **10 MIN**. After that long
 with no panel input the screen shows a VISUAL figure, a new one, on the whole screen, moving with the music. The first
@@ -817,7 +824,7 @@ since 0.6.51: every project opens as it was.
 | Page | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 | --- | --- | --- | --- | --- |
 | SENDS | CHORUS (send) | DLY (send) | REV (send) | DIST |
-| DIST | DIST | TYPE | TONE | NOISE (V10.8.36) |
+| DIST | DIST | TYPE (0–11: SOFT … AMP; V10.8.72: RING … SAT) | TONE | NOISE (V10.8.36) |
 | AUTO PAN | DEPTH | RATE | SYNC | WAVE |
 | OTT (V10.8.71) | DEPTH (0–100 %; 0 = off) | TIME | UP/DN | X-OVER |
 | BUSES (0.8.5) | DLY (the delay's MIX) | REV (the reverb's SIZE) | CHO (the chorus' DEPTH) | SLC (the SLICER's DEPTH) |
@@ -2350,9 +2357,10 @@ it plays, the dial's needle is MOOD, and **RADIO n** counts the pieces it has ma
   side, the next piece takes the tempo of its range nearest the piece before.
 - **the sound and the form, towards CALM** (V10.8.68): longer attacks and releases (a pad's and a texture's most, an
   arp's least), a softer filter envelope, wetter sends (the pads' and the texture's reverb, the lines' delay). From
-  −25, chords a genre would stab are held or swell in instead. Sections get longer and, with RADIO, the changes come
-  more slowly. The build's DJ FILTER sweep
-  (below) never plays from −15.
+  −25, chords a genre would stab are held or swell in instead. The piece gets **shorter**: the song plan is fitted to
+  at most about four minutes at −50 (five at MID), then every row of SONG and PARTS is cut, a little at −5 and to about
+  40 % of its bars at −50 (never under 4 bars; the build is cut only from −25). With RADIO, a loop brings the next piece
+  after half as many bars (from −15, see RADIO above). The build's DJ FILTER sweep (below) never plays from −15.
 - **towards DANCE** (V10.8.68): the kick's pump (the master's DUCK) deeper, held between 40 and 60. Every DANCE piece
   has drums, except NEO CLASSIC's.
 Not saved with the project.
@@ -2418,7 +2426,20 @@ Not saved with the project.
   noise on the texture, the pads and textures often swelling in; no chip or hoover leads (an electric piano instead);
   a role on a random engine half as often as before;
   locrian rarely; fewer odd tricks a piece; the step components mostly arps and echoes (RAND and BEND rarely).
-- **OTT** (V10.8.72): the electronic genres' pieces put **FX › OTT** on their tracks (see [OTT](#ott-fx--track-v10871)).
+- **OTT** (V10.8.72): the electronic genres put **FX › OTT** (see [OTT](#ott-fx--track-v10871)) on the drums and the
+  bass, at a DEPTH set by the genre: **40**: HOUSE, DEEP HOUSE, MINIMAL TECHNO (MINIMAL: the bass alone, its LEVEL
+  two steps up); **44**: TECH HOUSE, TRIBAL (the drums alone), REGGAETON, IDM GLITCH (the drums, no bass), TECHNO
+  ROCK's synth throw; **48–54**: DRUM & BASS 48; ELECTRO, BREAKBEAT, DEMBOW, ELECTRO METAL and HIP HOP's trap, drill
+  and pluggnb 50; HARD TECHNO, EBM and BAILE FUNK 54; **60**: HARD BASS, PHONK, DUBSTEP. MOOD DANCE (+15 and up)
+  adds 4. In one seed in two the lead gets a hard one, DEPTH 60–78 (when there is no lead, or it is a riff already up front, the texture takes it), in every genre above but MINIMAL TECHNO, DEEP HOUSE, TRIBAL,
+  REGGAETON and ELECTRO METAL. Three tracks at most, never the pads. Each role has its own settings: the drums TIME 44,
+  UP/DN a little less upward, X-OVER 45; the bass TIME 52, X-OVER 26 (its sub whole); the lead TIME 48, X-OVER 55. Each
+  OTT track's LEVEL comes down a little (more the deeper it is), so no piece goes over −1 dBFS. None on the acoustic
+  and organic genres (CUMBIA, JAZZ, NEO CLASSIC, DREAM POP, SHOEGAZE, KRAUT, METALCORE, IDM AMBIENT, IDM WEIRD), on
+  HIP HOP's boom bap and lofi, on TECHNO ROCK's rock, on EXPLORE, nor at MOOD CALM (−15 or lower); every other track's
+  OTT is turned off. **RESOUND** sets the genre's OTT, or clears it, on the tracks it gives new sounds; a track it does
+  not touch keeps its OTT. Every section of the piece gets the same OTT: it does not change from section to section. The rest of the
+  piece is as it was: the same seed still makes the same piece.
 
 The piece is **deterministic**: the same settings make the same piece every time, so a seed you like can be dialled
 back. **OCT+ with the settings unchanged throws a new seed** (another piece); turn a knob and press OCT+ and you get
@@ -2744,11 +2765,20 @@ picked the module and the FX tap its page). PRESETS loads the track's sounds, as
 ### Per track
 
 - **FX**: DIST amount and the three sends (CHORUS, DLY, REV).
-- **DIST**: amount, **TYPE** (SOFT, HARD, FOLD, CRUSH, RECT, **AMP**), **TONE** (darker / brighter). **AMP** is a guitar
+- **DIST**: amount, **TYPE** (0 SOFT, 1 HARD, 2 FOLD, 3 CRUSH, 4 RECT, 5 **AMP**, and since V10.8.72 the formula types
+  6 **RING**, 7 **STEPS**, 8 **XOR**, 9 **WOB**, 10 **SFOLD**, 11 **SAT**, below), **TONE** (darker / brighter). **AMP** is a guitar
   amp: two valve stages that clip unevenly (low DIST clean, then crunch, then lead), the bias breathing with the level,
   and a speaker cabinet with its presence peak; TONE moves the cabinet's brightness. **NOISE** (V10.8.36, KNOB 4,
   0–127): a low-passed noise moves the drive's gain and TONE's corner, so grain appears round every harmonic of the
   note; nothing is added (silence stays silent, the level as it was). Not on AMP.
+- **The formula types** (V10.8.72, from JIANT BYTE's formula effects, as fixed code): DIST sets the formula's amount
+  instead of a drive, and there is no low cut and no make-up gain; TONE and DIST's fade-in work as on the other types,
+  and DIST 0 is still off. **RING**: ring modulation by a sine from 110 Hz (DIST low) up to 990 Hz (DIST full).
+  **STEPS**: the wave in steps, 32 levels at low DIST down to 2. **XOR**: the samples' bits flipped by DIST's value
+  (digital grit). **WOB**: the level dipped by a triangle twice a beat, as deep as DIST (stopped, on a clock of its
+  own). **SFOLD**: a sine wavefolder, more folds as DIST rises. **SAT**: a saturation driven up to 21 times, its level
+  coming down to half as DIST rises. NOISE moves the formula's input and TONE's corner. The page draws SOFT's curve
+  with the type's name. The SENDS have no drive of their own: SENDS' fourth knob is this same DIST.
 - **AUTO PAN**: the track's pan swung left and right around its PAN. **DEPTH** (0 = off), **RATE**, **SYNC** (BEAT:
   RATE in divisions 4BAR … 1/32, locked to the bar; FREE: RATE in Hz), **WAVE** (SIN, TRI, SAW, SQR, S&H).
 - **OTT** (V10.8.71): the track's two-band compressor, below.
@@ -2756,16 +2786,24 @@ picked the module and the FX tap its page). PRESETS loads the track's sounds, as
 
 ### OTT (FX › TRACK, V10.8.71)
 
-A light two-band compressor on each track, from JIANT BYTE. It brings the quiet parts up and squeezes the loud parts
-down, in a low band and a high band. It sits after DIST in the track's chain. The page is TRACK's fourth, after AUTO PAN.
+A two-band compressor on each track, from JIANT BYTE. It brings the quiet parts up and squeezes the loud parts down,
+in a low band and a high band, then drives the two into a soft clip. It sits after DIST in the track's chain. The page
+is TRACK's fourth, after AUTO PAN.
 
-- **DEPTH** (0–100 %): how much. **0 = off**: the track skips OTT completely, the sound is exactly as without it and
-  it costs no CPU. The depth grows gently (it is squared): 50 does about a quarter of what 100 does.
-- **What 100 does** (V10.8.72): quiet parts come up by as much as **+30 dB**, loud parts over **−16 dB** are squeezed
-  about **10:1**, and a limiter (8:1) holds the peaks over −3 dBFS. Very quiet sound (under −60 dB) is not brought
-  up, so no hiss comes with it. (V10.8.71: up to +28 dB under −12 dBFS, about 10:1 over −15 dBFS.)
-- **TIME** (8.8 ms … 1.41 s): how fast it follows each band's level (the release; the attack is much quicker). The
-  default is **56** (V10.8.72, about 58 ms on the card; V10.8.71: 72, 185 ms).
+- **DEPTH** (0–100 %): how much. **0 = off**: the track skips OTT completely, the sound is exactly as without it (bit
+  for bit) and it costs no CPU. The depth is squared up to 70 and rises faster above it (V10.8.72): 30 does about a
+  tenth of what 100 does, 50 a quarter, 60 about a third, 70 half, 80 about 85 %, 90 nearly all of it. 30–60 is
+  musical, 80–100 brutal.
+- **What 100 does** (V10.8.72, much harder than V10.8.71): each band is pulled up towards **−18 dBFS**, almost a dB
+  for every dB it is under, by as much as **+36 dB** (a band at −46 dBFS comes up about 27 dB); over **−22 dBFS** it
+  is squeezed **20:1**, by as much as −36 dB. Then the two bands together are driven up to **+9 dB** into a soft clip:
+  dense and saturated, never a hard clip, never over **−0.3 dBFS**. Very quiet sound (under −66 dBFS) is not brought
+  up, so no hiss comes with it. Each block's peaks are read first, so a hit after silence is not boosted by the
+  silence's gain, and a gain going down acts at once. (V10.8.71: up to +28 dB under −12 dBFS, about 10:1 over −15 dBFS,
+  a limiter over −3 dBFS.)
+- **TIME** (8.8 ms … 1.41 s): how fast it follows each band's level (the release; the attack is about 1 ms up to 50
+  and slower above). The default is **48** (V10.8.72, about 33 ms on the card: it pumps with the kick; V10.8.71: 72,
+  185 ms). A project or user preset saved with V10.8.71 opens with each track's TIME 24 lower (its 72 comes in as 48).
 - **UP/DN** (−100 … +98 %): the balance. Turned left, less upward (the quiet parts come up less); turned right, less
   downward (the loud parts are squeezed less). 0: both in full.
 - **X-OVER** (63 Hz … 4.2 kHz, 187 Hz by default): where the low band ends and the high band starts.
@@ -2776,8 +2814,11 @@ down, in a low band and a high band. It sits after DIST in the track's chain. Th
 - **CPU**: under the overload guard OTT works at half its depth; while the load stays over 90 % it eases out. The
   sound is never cut.
 - **Saved** with the project and with a user preset (SAVE › USER): all four values, even at DEPTH 0. Projects and
-  presets from before V10.8.71 open with OTT off. The web editor reaches it too (editor protocol 1.4).
-- **GEN** (V10.8.72) turns OTT on in the electronic genres' pieces (see [GEN](#gen--the-song-generator-home--select)).
+  presets from before V10.8.71 open with OTT off. The web editor reaches it too (editor protocol 1.4); a change made
+  on the device, by GEN or by RESOUND is not pushed to it (it reads it again).
+- **GEN** (V10.8.72) puts OTT on the drums, the bass and, in one seed in two, the lead of the electronic genres'
+  pieces, and **RESOUND** sets or clears it on the tracks it gives new sounds (see
+  [GEN](#gen--the-song-generator-home--select)).
 
 ### SLICER (one, on a bus)
 

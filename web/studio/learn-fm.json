@@ -147,13 +147,13 @@
       "es": [
        "Cada tema tiene su escena (la semilla y el género del generador, o los sonidos del proyecto); el bombo la sacude, el redoblante la gira, los hats la hacen temblar.",
        "KNOB 1 DENSITY, KNOB 2 WOBBLE, KNOB 3 PALETTE (MIXED, THERMAL, ORG/BLUE, GRN/RED, AMBER, MONO), KNOB 4 REACT; OCT+ una nueva.",
-       "Le cede el lugar al sonido: con el audio cargado dibuja menos, y fuera de su página no gasta nada. V10.8.72: menos trazos en vez de saltear cuadros, más fluida.",
+       "Le cede el lugar al sonido: con el audio cargado dibuja menos, y fuera de su página no gasta nada. V10.8.72: dibuja todos los cuadros, con menos puntos cuando el sonido está cargado (unos 20 por segundo donde antes eran 3 a 7).",
        "MENU › DISPLAY › SAVER (OFF, 1, 3, 5, 10 MIN; 3 por defecto) la muestra sola después de ese tiempo sin tocar nada; el primer toque solo vuelve a la página."
       ],
       "en": [
        "Each song has its scene (the generator's seed and genre, or the project's sounds); the kick shakes it, the snare turns it, the hats make it shiver.",
        "KNOB 1 DENSITY, KNOB 2 WOBBLE, KNOB 3 PALETTE (MIXED, THERMAL, ORG/BLUE, GRN/RED, AMBER, MONO), KNOB 4 REACT; OCT+ a new one.",
-       "It gives way to the sound: with the audio busy it draws less, and off its page it costs nothing. V10.8.72: fewer strokes instead of skipped frames, smoother.",
+       "It gives way to the sound: with the audio busy it draws less, and off its page it costs nothing. V10.8.72: every frame drawn, with fewer points when the sound is busy (about 20 a second where it was 3 to 7).",
        "MENU › DISPLAY › SAVER (OFF, 1, 3, 5, 10 MIN; 3 by default) shows it on its own after that long untouched; the first touch only brings the page back."
       ]
      },
@@ -1880,12 +1880,12 @@
      "how": {
       "es": [
        "SENDS: DIST, CHORUS, DLY y REV de la pista, como columnas.",
-       "DIST: TYPE SOFT, HARD, FOLD, CRUSH, RECT o AMP (un amplificador de guitarra), TONE y, desde V10.8.36, NOISE: un ruido que mueve la ganancia y el tono dentro de la distorsión (grano pegado a la nota; en AMP no actúa).",
+       "DIST: TYPE SOFT, HARD, FOLD, CRUSH, RECT, AMP (un amplificador de guitarra) y, desde V10.8.72, las de fórmula de JIANT BYTE RING, STEPS, XOR, WOB, SFOLD y SAT (DIST es su cantidad), TONE y, desde V10.8.36, NOISE: un ruido que mueve la ganancia y el tono dentro de la distorsión (grano pegado a la nota; en AMP no actúa).",
        "AUTO PAN: DEPTH, RATE, SYNC (al compás o libre) y WAVE (SIN, TRI, SAW, SQR, S&H)."
       ],
       "en": [
        "SENDS: the track's DIST, CHORUS, DLY and REV, as columns.",
-       "DIST: TYPE SOFT, HARD, FOLD, CRUSH, RECT or AMP (a guitar amp), TONE and, since V10.8.36, NOISE: a noise that moves the gain and the tone inside the distortion (grain stuck to the note; not on AMP).",
+       "DIST: TYPE SOFT, HARD, FOLD, CRUSH, RECT, AMP (a guitar amp) and, since V10.8.72, JIANT BYTE's formula ones RING, STEPS, XOR, WOB, SFOLD and SAT (DIST their amount), TONE and, since V10.8.36, NOISE: a noise that moves the gain and the tone inside the distortion (grain stuck to the note; not on AMP).",
        "AUTO PAN: DEPTH, RATE, SYNC (to the bar or free) and WAVE (SIN, TRI, SAW, SQR, S&H)."
       ]
      },
@@ -2180,17 +2180,17 @@
      "how": {
       "es": [
        "DEPTH: cuánto (0 lo apaga y no gasta procesador: la pista suena exactamente como sin él).",
-       "TIME: qué tan rápido suelta (el ataque es una fracción de eso); UP/DN: hacia − sube menos lo bajo, hacia + aplasta menos lo fuerte.",
+       "TIME: qué tan rápido suelta (48 de fábrica: bombea con el bombo; el ataque es casi instantáneo hasta 50); UP/DN: hacia − sube menos lo bajo, hacia + aplasta menos lo fuerte.",
        "X-OVER: dónde se separan las dos bandas, LOW y HIGH; la página dibuja cada una con su nivel y lo que le suma o le saca, en dB.",
        "En HOME › ECOSYSTEM la pista con OTT lleva su etiqueta. Se guarda con el proyecto y con los sonidos de usuario.",
-       "V10.8.72: la misma ley que JIANT BYTE (unos 10:1 arriba de −16 dB, hasta +30 dB de subida, TIME 56) y el generador lo usa en los géneros electrónicos."
+       "V10.8.72: mucho más duro: hasta +36 dB de subida hacia −18 dBFS, 20:1 arriba de −22 dBFS y un recorte suave al final (nunca pasa de −0,3 dBFS); de 30 a 60 es musical, de 80 a 100 brutal. El generador lo pone en la batería, el bajo y a veces el lead de los géneros electrónicos, y RESOUND también."
       ],
       "en": [
        "DEPTH: how much (0 turns it off and costs no processor: the track sounds exactly as without it).",
-       "TIME: how fast it lets go (the attack a fraction of it); UP/DN: towards − it lifts the quiet less, towards + it squashes the loud less.",
+       "TIME: how fast it lets go (48 by default: it pumps with the kick; the attack is near instant up to 50); UP/DN: towards − it lifts the quiet less, towards + it squashes the loud less.",
        "X-OVER: where the two bands, LOW and HIGH, split; the page draws each with its level and what it adds or takes, in dB.",
        "On HOME › ECOSYSTEM a track with OTT carries its tag. Saved with the project and with user sounds.",
-       "V10.8.72: the same law as JIANT BYTE (about 10:1 above −16 dB, up to +30 dB of lift, TIME 56), and the generator uses it on the electronic genres."
+       "V10.8.72: much harder: up to +36 dB of lift towards −18 dBFS, 20:1 above −22 dBFS and a soft clip at the end (never over −0.3 dBFS); 30 to 60 is musical, 80 to 100 brutal. The generator puts it on the drums, the bass and sometimes the lead of the electronic genres, and RESOUND does too."
       ]
      },
      "where": {
@@ -2658,7 +2658,7 @@
        "SEED, ENERGY y FORM (LOOP, PARTS, SONG, MY LOOP).",
        "DRUMS, BASS, CHORDS, ARP, LEAD: OFF, 10–100 % o AUTO; COMPLEX, SWING, HUMAN; KEY (NEW / KEEP) y ENTRY (ALL / BUILD).",
        "OCT+ arma la pieza; con los ajustes sin tocar tira otra semilla, y girando una perilla cambia solo esa parte.",
-       "RADIO (GENERATOR 4, V10.8.39): en ON, cuando termina la pieza generada (un loop: cada 16, 8 o 4 compases según el tempo, V10.8.45) arma sola la siguiente y entra en la barra de compás; un STOP en el último compás para; MOOD, de CALM a DANCE, mueve la energía, la batería y, con RANDOM, qué géneros salen. Ninguno se guarda con el proyecto.",
+       "RADIO (GENERATOR 4, V10.8.39): en ON, cuando termina la pieza generada (un loop: cada 16, 8 o 4 compases según el tempo, V10.8.45) arma sola la siguiente y entra en la barra de compás; un STOP en el último compás para; MOOD, de CALM a DANCE, mueve la energía, la batería y, con RANDOM, qué géneros salen; hacia CALM la pieza se acorta (sus filas hasta un 40 % en −50) y los loops de RADIO duran la mitad. Ninguno se guarda con el proyecto.",
        "Desde V10.8.43–V10.8.48 las partes viven: secciones de la mitad de largo que no vuelven idénticas, LFOs lentos y libres en el filtro y la forma, envolventes reales por rol (los leads con poco sustain y release largo), cada parte su tipo de filtro (BP o HP con KEY TRK 100) y el GAIN de la pista compensando el nivel.",
        "SEQ › TRACK GEN escribe solo la pista elegida: GENRE, SEED, ROLE (BUSY en un kit) y ENERGY; OCT+ la arma (MAKE)."
       ],
@@ -2667,7 +2667,7 @@
        "SEED, ENERGY and FORM (LOOP, PARTS, SONG, MY LOOP).",
        "DRUMS, BASS, CHORDS, ARP, LEAD: OFF, 10–100 % or AUTO; COMPLEX, SWING, HUMAN; KEY (NEW / KEEP) and ENTRY (ALL / BUILD).",
        "OCT+ builds the piece; with settings untouched it throws a new seed, and turning one knob changes only that part.",
-       "RADIO (GENERATOR 4, V10.8.39): ON, when the generated piece ends (a loop: every 16, 8 or 4 bars by tempo, V10.8.45) it makes the next one by itself, in on the bar line; a STOP in the last bar stops; MOOD, from CALM to DANCE, moves the energy, the drums and, with RANDOM, which genres come up. Neither is saved with the project.",
+       "RADIO (GENERATOR 4, V10.8.39): ON, when the generated piece ends (a loop: every 16, 8 or 4 bars by tempo, V10.8.45) it makes the next one by itself, in on the bar line; a STOP in the last bar stops; MOOD, from CALM to DANCE, moves the energy, the drums and, with RANDOM, which genres come up; towards CALM the piece gets shorter (its rows down to about 40 % at −50) and RADIO's loops last half as long. Neither is saved with the project.",
        "Since V10.8.43–V10.8.48 the parts live: sections half as long that never come back identical, slow free LFOs on the filter and the shape, real envelopes by role (leads with little sustain and a long release), each part its own filter type (BP or HP with KEY TRK 100) and the track's GAIN making up the level.",
        "SEQ › TRACK GEN writes the chosen track alone: GENRE, SEED, ROLE (BUSY on a kit) and ENERGY; OCT+ makes it (MAKE)."
       ]

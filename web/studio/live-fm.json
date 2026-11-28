@@ -586,11 +586,11 @@
   "DIST": {
    "es": {
     "what": "Cuánta distorsión propia tiene la pista, antes de los efectos compartidos.",
-    "how": "Bajo calienta, alto rompe. Elegí el carácter en TYPE (SOFT, HARD, FOLD, CRUSH, RECT, AMP) y el color en TONE."
+    "how": "Bajo calienta, alto rompe. Elegí el carácter en TYPE (SOFT, HARD, FOLD, CRUSH, RECT, AMP o las de fórmula RING, STEPS, XOR, WOB, SFOLD, SAT) y el color en TONE."
    },
    "en": {
     "what": "How much of its own distortion the track has, before the shared effects.",
-    "how": "Low warms, high breaks. Pick the character in TYPE (SOFT, HARD, FOLD, CRUSH, RECT, AMP) and the colour in TONE."
+    "how": "Low warms, high breaks. Pick the character in TYPE (SOFT, HARD, FOLD, CRUSH, RECT, AMP or the formula ones RING, STEPS, XOR, WOB, SFOLD, SAT) and the colour in TONE."
    },
    "learn": "sends"
   },
@@ -629,12 +629,12 @@
   },
   "TYPE": {
    "es": {
-    "what": "Elige el tipo: de la distorsión de la pista (SOFT, HARD, FOLD, CRUSH, RECT, AMP), del filtro (LP, HP, BP, COMB, COMB-), de la reverb o del delay.",
-    "how": "En DIST, AMP suena a ampli de guitarra y CRUSH a bits rotos; en el filtro, LP oscurece, HP afina y COMB resuena a la nota."
+    "what": "Elige el tipo: de la distorsión de la pista (SOFT, HARD, FOLD, CRUSH, RECT, AMP, y las de fórmula RING, STEPS, XOR, WOB, SFOLD, SAT), del filtro (LP, HP, BP, COMB, COMB-), de la reverb o del delay.",
+    "how": "En DIST, AMP suena a ampli de guitarra, CRUSH a bits rotos y RING a metal; en el filtro, LP oscurece, HP afina y COMB resuena a la nota."
    },
    "en": {
-    "what": "Picks the type: of the track's distortion (SOFT, HARD, FOLD, CRUSH, RECT, AMP), the filter (LP, HP, BP, COMB, COMB-), the reverb or the delay.",
-    "how": "On DIST, AMP is a guitar amp and CRUSH broken bits; on the filter, LP darkens, HP thins and COMB rings at the note."
+    "what": "Picks the type: of the track's distortion (SOFT, HARD, FOLD, CRUSH, RECT, AMP, and the formula ones RING, STEPS, XOR, WOB, SFOLD, SAT), the filter (LP, HP, BP, COMB, COMB-), the reverb or the delay.",
+    "how": "On DIST, AMP is a guitar amp, CRUSH broken bits and RING metallic; on the filter, LP darkens, HP thins and COMB rings at the note."
    },
    "learn": "sends"
   },
@@ -894,11 +894,11 @@
   },
   "TIME": {
    "es": {
-    "what": "El tiempo del DELAY: a tempo (1/16, 1/8, con puntillo, tresillos) o libre, en milisegundos y segundos. En FX › OTT, qué tan rápido suelta el compresor (el ataque es una fracción de eso).",
+    "what": "El tiempo del DELAY: a tempo (1/16, 1/8, con puntillo, tresillos) o libre, en milisegundos y segundos. En FX › OTT, qué tan rápido suelta el compresor (48 de fábrica, para que bombee con el bombo; el ataque es casi instantáneo hasta 50).",
     "how": "1/8D es el eco clásico que rellena; tiempos cortos (5–40 ms) dan doblados y sonidos metálicos."
    },
    "en": {
-    "what": "The DELAY time: in tempo (1/16, 1/8, dotted, triplets) or free, in milliseconds and seconds. On FX › OTT, how fast the compressor lets go (the attack a fraction of it).",
+    "what": "The DELAY time: in tempo (1/16, 1/8, dotted, triplets) or free, in milliseconds and seconds. On FX › OTT, how fast the compressor lets go (48 by default, so it pumps with the kick; the attack is near instant up to 50).",
     "how": "1/8D is the classic filling echo; short times (5–40 ms) give doubling and metallic sounds."
    },
    "learn": "delay"

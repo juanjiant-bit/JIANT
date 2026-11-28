@@ -71,7 +71,7 @@ No command changed; an editor that takes P_COUNT, G_COUNT and P_E0 from `INFO` k
 
 | id | label | values |
 | --- | --- | --- |
-| 91 | TYPE | DIST's type, enum: 0 SOFT (the drive as before), 1 HARD, 2 FOLD (wavefolder), 3 CRUSH (bits and a held sample), 4 RECT (full-wave rectifier, an octave up) |
+| 91 | TYPE | DIST's type, enum: 0 SOFT (the drive as before), 1 HARD, 2 FOLD (wavefolder), 3 CRUSH (bits and a held sample), 4 RECT (full-wave rectifier, an octave up); 5 AMP (0.7.8, a guitar amp); V10.8.72 appends 6 RING, 7 STEPS, 8 XOR, 9 WOB, 10 SFOLD, 11 SAT (JIANT BYTE's formula effects): 0..11, the names from `DESC` |
 | 92 | TONE | DIST's tone, −64..63 (fmt BIPCT): darker / brighter |
 | 93 | LEN | the modulation sequence's length, 1..16 steps |
 | 94 | DIV | its step rate, the `N_DIV` enum (default 1/16) |
@@ -250,19 +250,22 @@ With P_COUNT 123:
 | id | label | fmt | range | default | what |
 | --- | --- | --- | --- | --- | --- |
 | 123 | DEPTH | 1 PCT | 0..100 | 0 | how much; 0 is off (not run: the track bit for bit as without it) |
-| 124 | TIME | 3 TIME | 30..100 | 72 (V10.8.71) | the envelopes' release (the attack about 1/20 of it) |
+| 124 | TIME | 3 TIME | 30..100 | 48 (V10.8.72; V10.8.71: 72) | the envelopes' release (the attack about 1 ms up to 50, slower above) |
 | 125 | UP/DN | 2 BIPCT | −64..63 | 0 | the balance: − less upward, + less downward |
 | 126 | X-OVER | 5 CUTOFF | 15..100 | 37 | the split between LOW and HIGH |
 
-V10.8.72 aligns OTT's gain law with JIANT BYTE's and moves TIME's default (56): read the default from `DESC`, never
-from this table.
+V10.8.72 makes OTT's law much harder (the same ids and ranges) and moves TIME's default from 72 to **48**; a project
+or user preset saved with V10.8.71 loads each track's TIME 24 lower. Read the default from `DESC` rather than from this
+table.
 
 - `TRACK_PARAM` (31) reads and sets them on any track: `track, id` → `track, id, v14`; `track, id, v14` sets (clamped to
   the range, as `SET`). An id past P_COUNT + 3 gets no reply.
 - `DESC` (5) describes them with scope 0 (`0, id`), for the selected track; labels and ranges as the table, read them
   from the device. Firmware before 1.4 gives no reply for these ids.
 - `GET` / `SET` (2, 3), `DUMP` (4), `TRACK_DUMP` (29) and the pushes `CHANGED` / `TRACK_CHANGED` keep to the parameters:
-  an OTT change on the device is not pushed (read it again with `TRACK_PARAM`). OTT is not on NRPN.
+  an OTT change on the device is not pushed (read it again with `TRACK_PARAM`). That holds for V10.8.72's generator
+  and RESOUND too, which set or clear OTT on several tracks: after a generated piece or a RESOUND, read the four ids
+  of each track again. OTT is not on NRPN.
 - A project (block `O` `T`) and a user preset keep a track's OTT; a project or preset from before V10.8.71 loads with
   OTT off. The four special ids stay within 7-bit bytes (P_COUNT + 4 ≤ 127); JIANT BYTE's own numbers (0xD0..) do
   not apply to JIANT FM.

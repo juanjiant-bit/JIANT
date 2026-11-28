@@ -59,7 +59,7 @@ Includes the betas V10.8.49 to V10.8.71. If you come from V10.8.48, this is ever
 - Projects saved before **V10.7** are no longer converted on the FM-1: LOAD says **OLD PROJECT: OPEN IN STUDIO** and the slot is left as it is (never erased). Open it in JIANT Studio, which converts it.
 - Global settings from Felucca before JIANT 0.6 (**PER1 / PER2**) are no longer migrated: the settings start from their defaults once.
 - **SEQ EDIT** replaces the SEQ TOOLS key map (SEQ held, below): STRETCH, SQUEEZE and REPEAT are ACTIONs now, and B3–E4 select bars 1–4.
-- A MOD matrix route below −100 % does not open in V10.8.50 or earlier. Projects and presets from before V10.8.71 open with OTT off.
+- A MOD matrix route below −100 % does not open in V10.8.50 or earlier. Projects and presets from before V10.8.71 open with OTT off; those saved with V10.8.71 open with each track's OTT TIME 24 lower (its default 72 comes in as the new default 48), and OTT itself is much harder than in V10.8.71.
 - Editor protocol **1.4** (OTT through TRACK_PARAM and DESC, the project library 95–97): older clients keep working.
 - Back up your projects before updating.
 
@@ -70,7 +70,9 @@ Includes the betas V10.8.49 to V10.8.71. If you come from V10.8.48, this is ever
 
 **Effects and sound**
 - **FX › OTT**, FX › TRACK's fourth page (from JIANT BYTE): a two-band upward / downward compressor on each track: **DEPTH** (0 off: no CPU, the track as before), **TIME**, **UP/DN**, **X-OVER**. LOW and HIGH drawn with their gain; HOME's ECO tags a track with OTT on. Kept with the project and the user presets.
-- V10.8.72: OTT's law as JIANT BYTE's (about 10:1 above −16 dB, up to +30 dB of lift, TIME 56 by default), and the generator puts OTT on the electronic genres.
+- V10.8.72: a much harder OTT: up to +36 dB of lift towards −18 dBFS, 20:1 above −22 dBFS, both bands driven up to +9 dB into a soft clip (never over −0.3 dBFS); DEPTH squared up to 70 and steeper above; TIME 48 by default (was 72), so it pumps with the kick. DEPTH 0 is still bit for bit the track without it.
+- V10.8.72: the generator puts OTT on the electronic genres: the drums and the bass at DEPTH 40 (HOUSE, DEEP HOUSE; MINIMAL TECHNO the bass alone), 44 (TECH HOUSE, TRIBAL, REGGAETON, IDM GLITCH, TECHNO ROCK's synth throw), 48–54 (DRUM & BASS, ELECTRO, BREAKBEAT, DEMBOW, ELECTRO METAL, HIP HOP's trap, drill and pluggnb, HARD TECHNO, EBM, BAILE FUNK) or 60 (HARD BASS, PHONK, DUBSTEP), 4 more with MOOD DANCE; in one seed in two the lead at 60–78. Three tracks at most, never the pads; none on the acoustic and organic genres, HIP HOP's boom bap and lofi, TECHNO ROCK's rock, EXPLORE or MOOD CALM. RESOUND sets it or clears it on the tracks it resounds. The same OTT in every section.
+- V10.8.72: **DIST TYPE** gets JIANT BYTE's formula effects: **6 RING**, **7 STEPS**, **8 XOR**, **9 WOB**, **10 SFOLD**, **11 SAT** (DIST their amount; TONE and NOISE as on the others). SOFT … AMP keep 0–5: old projects sound the same.
 - **MATH WAVE SYNC**: the formula's rhythm locked to the tempo, every key the same pattern transposed; with SYNC, KNOB 8 is **LOOP** (OFF, 4 BAR … 1/32), the pattern repeating bar-exact. New preset **BYTE SYNC**.
 - MOD matrix **AMOUNT** up to ±200 % (100 % sweeps the whole range). DRUM-X has one GAIN (LEVEL's); kits sound as before.
 
@@ -82,7 +84,7 @@ Includes the betas V10.8.49 to V10.8.71. If you come from V10.8.48, this is ever
 **HOME and screens**
 - **HOME › MACROS** is back (ECOSYSTEM's third page): KNOB 1–4 M1–M4, **HOME + SELECT** DICE MACROS (with UNDO).
 - **LIFE**: KNOB 3 **STEREO** (was PUMP): each track moves across the stereo field from its neighbours.
-- **HOME › VISUAL** (BEING's second page): a full-screen picture made from FM's own graphics (FX, ENV, LFO, ECO, the creatures, ANIMAL morphing), deformed, repeated and broken by the song; KNOB 1 DENSITY, 2 WOBBLE, 3 PALETTE, 4 REACT, OCT+ a new one. It yields to the sound and costs nothing off its page; V10.8.72 draws it smoother (fewer strokes instead of skipped frames). **MENU › DISPLAY › SAVER** (OFF, 1, 3, 5, 10 MIN; 3 by default) shows it after that long untouched.
+- **HOME › VISUAL** (BEING's second page): a full-screen picture made from FM's own graphics (FX, ENV, LFO, ECO, the creatures, ANIMAL morphing), deformed, repeated and broken by the song; KNOB 1 DENSITY, 2 WOBBLE, 3 PALETTE, 4 REACT, OCT+ a new one. It yields to the sound and costs nothing off its page; V10.8.72 draws every frame, with fewer points under load (about 20 frames a second where it drew 3 to 7). **MENU › DISPLAY › SAVER** (OFF, 1, 3, 5, 10 MIN; 3 by default) shows it after that long untouched.
 - **MENU › DISPLAY › PANEL** (AUTO / A / B) for the screen of the FM-1s sold from late 2026 (B untested on that unit); OCT− + SAVE held at power-on forces A.
 - Pages without a picture show their name large (LIFE, MACROS, GLOBAL, KEY SPLIT, LEVEL, PUNCH IN, the CLAY pages); a knob turned is said whole on the footer with its page ("LIFE STEREO 100 %"). More banners (mutes, ROOT, QUANTIZE, RESTART, PROJECT n).
 - The creatures redrawn through one engine (PHASE's snail and MATH's caterpillar as their originals, wobbling circles). Gone for room: the big-number face, ABOUT's AUDIO LOAD lines, the RAMP curve, the EQ curve.

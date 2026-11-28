@@ -127,8 +127,9 @@ ADD** and **EXT** (the USB audio input, or SWARM: a melody out of the Bluetooth 
 
 - **SEQ EDIT** (SEQ held): select steps, pick an ACTION (STRETCH, SQUEEZE, REPEAT, NUDGE, TRANSP, INVERT, STUTTER, ARP,
   MUTATE, GEN, RANDOM…) and OCT+ does it; F#5 undoes / redoes. It replaces the SEQ TOOLS key map.
-- **FX › OTT** on every track (a two-band compressor from JIANT BYTE: DEPTH, TIME, UP/DN, X-OVER); the generator uses it
-  on the electronic genres.
+- **FX › OTT** on every track (a two-band compressor from JIANT BYTE: DEPTH, TIME, UP/DN, X-OVER); the generator puts
+  it on the electronic genres' drums, bass and sometimes the lead. Six new **DIST TYPE**s from JIANT BYTE's formulas:
+  RING, STEPS, XOR, WOB, SFOLD, SAT.
 - **RESOUND** (GLO + A4): new sounds for the whole song, the notes kept. **SAVE asks** before overwriting a part, and
   GLO + G4 undoes it.
 - **HOME › MACROS** back (HOME + SELECT dices them), **LIFE STEREO** (was PUMP), **HOME › VISUAL** and **MENU › SAVER**,
@@ -319,7 +320,7 @@ same license.
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
 
 ### V10.8.72 — public (2026-11-28)
-- Everything since V10.8.48: SEQ EDIT, FX › OTT, RESOUND, SAVE's OVERWRITE? with its UNDO, HOME › MACROS, LIFE STEREO, HOME › VISUAL and SAVER, MATH WAVE SYNC, PANEL, the generator from JIANT BYTE, Studio's project library. Details: [CHANGELOG.md](CHANGELOG.md).
+- Everything since V10.8.48: SEQ EDIT, FX › OTT, DIST's formula TYPEs, RESOUND, SAVE's OVERWRITE? with its UNDO, HOME › MACROS, LIFE STEREO, HOME › VISUAL and SAVER, MATH WAVE SYNC, PANEL, the generator from JIANT BYTE, Studio's project library. Details: [CHANGELOG.md](CHANGELOG.md).
 
 ### V10.8.49 – V10.8.71 — betas (2026-11-26 … 11-28)
 - See V10.8.72 above and [CHANGELOG.md](CHANGELOG.md).
