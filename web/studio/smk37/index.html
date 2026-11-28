@@ -6,11 +6,11 @@ body{max-width:700px;margin:5vh auto;padding:24px}h1{line-height:1.1;font-size:c
 a{color:#ffc084}small{color:#ffc084}section{border-top:1px solid #686168;margin-top:24px;padding-top:18px}
 button{font:inherit;font-weight:650;padding:10px 18px;margin:8px 8px 8px 0;border:0;border-radius:5px;background:#ffc084;color:#171012}
 button:disabled{background:#38343a;color:#aaa}label{display:block;margin:15px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.5 monospace}
-</style><body><small>JIANT FM · Prueba de hardware</small><h1>Instalador SMK-37</h1>
+</style><body><small>JIANT FM</small><h1>Instalador SMK-37</h1>
 <p>JIANT FM V10.8.48 para M-VAVE SMK-37 Pro y Elite: desde el firmware de fábrica v016 o actualizando un JIANT ya instalado. Distribución estilo Rhythmer: las 37 teclas con escalas y acordes, pads PLAY/STEPS, faders con bancos LEVEL/PAN/REVERB/DELAY, ruedas, pedal y MIDI OUT por el jack (<a href="https://github.com/juanjiant-bit/JIANT/blob/0d353032fea9cf8f4fa805221d2401915e71e5d7/docs/SMK37.md" target="_blank" rel="noopener">controles</a>). Sin Bluetooth en el SMK. Conectá únicamente el teclado a probar por USB de datos y cerrá el editor, el DAW y el actualizador de M-VAVE.</p>
-<p>Esta primera prueba reemplaza el firmware. Tené a mano el firmware oficial de tu modelo y una copia de tus datos. El arranque y la recuperación en un teclado real siguen pendientes de validación. Los proyectos y ajustes de esta versión de JIANT se pierden al apagar.</p>
+<p>La instalación reemplaza el firmware. Tené a mano el firmware oficial de tu modelo (abajo). Los proyectos y ajustes de esta versión de JIANT se pierden al apagar.</p>
 <section><button id="detect">Detectar teclado</button><output id="device" aria-live="polite"></output>
-<label><input type="checkbox" id="accept" disabled> Quiero escribir JIANT experimental en el teclado detectado.</label>
+<label><input type="checkbox" id="accept" disabled> Quiero instalar JIANT en el teclado detectado.</label>
 <button id="install" disabled>Instalar JIANT</button><p id="status" role="status">La detección solo consulta la identidad MIDI.</p>
 <p id="stock" hidden><a href="https://www.m-vave.com/download" target="_blank" rel="noopener">Descargas oficiales de M-VAVE</a> · Elegí M-UPGRADE y el firmware SMK-37 PRO V016.</p>
 </section><section id="stocksec"><h2 style="margin:.2em 0">Volver al firmware oficial de M-VAVE</h2>
@@ -73,7 +73,7 @@ detect.onclick = () => run(async () => {
     return;
   }
   const target = classify(dev.id.text);
-  if (!target) throw Error('Identidad fuera de esta prueba: ' + dev.id.text);
+  if (!target) throw Error('Teclado no compatible: ' + dev.id.text);
   await imageFor(target.model);
   selection = target;
   install.textContent = target.loader ? 'Reanudar escritura' : target.jiant ? 'Actualizar JIANT' : 'Instalar JIANT';
