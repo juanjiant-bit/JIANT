@@ -83,7 +83,7 @@ const TEXT = {
     cNone: "Sin equipo conectado.", cFm1: "FM-1 conectado: %s", cBusy: "El FM-1 está ocupado (instalando o en otra pestaña).", cLooking: "Buscando el FM-1…",
     cEmuOn: "Usando el emulador (encendido).", cEmuOff: "Usando el emulador (apagado).", cFind: "Buscar mi FM-1", cUseEmu: "Usar el emulador", cUseFm1: "Usar mi FM-1", cOpenEmu: "Abrir el emulador",
     pjTitle: "Biblioteca de proyectos", pjRead: "Leer los proyectos", pjAsk: "Leé los proyectos del FM-1: sus nombres y qué partes A–D tienen.", pjHelp: "Escribí un nombre y tocá Enter: cambia en el FM-1 al instante. Antes de pisar o borrar, se baja una copia de lo que había.",
-    pjOld: "El FM-1 no respondió: la biblioteca necesita JIANT FM V10.8.54 o posterior.", pjUnnamed: "sin nombre", pjName: "Nombre del proyecto", pjOpen: "ABIERTO",
+    pjOld: "El FM-1 no respondió: la biblioteca necesita JIANT FM V10.8.54 o posterior, o una versión de JIANT BYTE que la tenga (en camino).", pjUnnamed: "sin nombre", pjName: "Nombre del proyecto", pjOpen: "ABIERTO",
     pjCopy: "Copiar a…", pjMove: "Mover a…", pjExport: "Exportar", pjImport: "Importar acá", pjDelete: "Borrar", pjParts: "Nombrar partes",
     pjCopyTo: "¿A qué proyecto copiar el %s? (1–6)", pjMoveTo: "¿A qué proyecto mover el %s? (1–6)", pjBadTarget: "Ese destino no sirve: elegí otro proyecto, del 1 al 6.",
     pjOverwrite: "El proyecto %s («%n») tiene contenido y se va a pisar. Antes se baja una copia. ¿Seguir?", pjDelConfirm: "¿Borrar el proyecto %s («%n»)? Antes se baja una copia.",
@@ -104,7 +104,7 @@ const TEXT = {
     peSoon_seq: "SEQ llega con el largo de nota, la probabilidad y el micro-timing en el firmware: un piano roll por pista.",
     peSoon_mod: "MOD · MIX llega en la próxima entrega: la matriz completa con montos ±200 %, niveles, paneo, envíos y efectos.",
     peSoon_gen: "GEN llega cuando el emulador pueda regenerar una pista o una sección: género, semilla, MOOD, ENERGY, y lo que cambiaste respecto del original.",
-    peNoDev: "Conectá el FM-1 o prendé el emulador.", peAsk: "Leé las pistas del proyecto que está sonando.", peRead: "Leer el proyecto", peReading: "Leyendo…", peFail: "No se pudo completar", peTrackParams: "Pista (comunes)", peOnlyChanged: "Ver solo las que cambiaron (las otras están en su valor de fábrica)",
+    peNoDev: "Conectá el FM-1 o prendé el emulador.", peAsk: "Leé las pistas del proyecto que está sonando.", peRead: "Leer el proyecto", peReading: "Leyendo…", peFail: "No se pudo completar", peTrackParams: "Pista (comunes)", peFormula: "FÓRMULA DE LA PISTA", peFormulaSend: "Mandar la fórmula", peFormulaOk: "Fórmula enviada.", peFormulaCut: "Enviada, pero cortada a 255 caracteres.", peOnlyChanged: "Ver solo las que cambiaron (las otras están en su valor de fábrica)",
     peSaved: "Archivo guardado.", peLoaded: "Abierto: %s. Tocá «Enviar al FM-1» para cargarlo.", peBadFile: "Ese archivo no es un proyecto de Studio.", peNoFile: "Primero abrí un archivo de proyecto.",
     peSendConfirm: "Se va a reemplazar la música de %n por «%s». Antes queda un backup completo en este navegador. ¿Seguir?", peSending: "Enviando… ", peSent: "Listo: el proyecto está en el FM-1.", peBefore: "Antes de enviar un proyecto",
     tourV_peT: "Proyecto", tourV_pe: "El proyecto entero en grande: guardarlo, enviarlo y editar todo el sonido.", tourV_peH: "Hoy anda SONIDO; el resto llega con el firmware.",
@@ -291,7 +291,7 @@ const TEXT = {
     cNone: "No device connected.", cFm1: "FM-1 connected: %s", cBusy: "The FM-1 is busy (installing or in another tab).", cLooking: "Looking for the FM-1…",
     cEmuOn: "Using the emulator (on).", cEmuOff: "Using the emulator (off).", cFind: "Find my FM-1", cUseEmu: "Use the emulator", cUseFm1: "Use my FM-1", cOpenEmu: "Open the emulator",
     pjTitle: "Project library", pjRead: "Read the projects", pjAsk: "Read the FM-1's projects: their names and which parts A–D they hold.", pjHelp: "Type a name and press Enter: it changes on the FM-1 at once. Before anything is overwritten or deleted, a copy of it is downloaded.",
-    pjOld: "The FM-1 did not answer: the library needs JIANT FM V10.8.54 or later.", pjUnnamed: "untitled", pjName: "Project name", pjOpen: "OPEN",
+    pjOld: "The FM-1 did not answer: the library needs JIANT FM V10.8.54 or later, or a JIANT BYTE version with it (on its way).", pjUnnamed: "untitled", pjName: "Project name", pjOpen: "OPEN",
     pjCopy: "Copy to…", pjMove: "Move to…", pjExport: "Export", pjImport: "Import here", pjDelete: "Delete", pjParts: "Name parts",
     pjCopyTo: "Copy project %s to which project? (1–6)", pjMoveTo: "Move project %s to which project? (1–6)", pjBadTarget: "That target does not work: pick another project, 1 to 6.",
     pjOverwrite: "Project %s (“%n”) holds music and will be overwritten. A copy is downloaded first. Go on?", pjDelConfirm: "Delete project %s (“%n”)? A copy is downloaded first.",
@@ -312,7 +312,7 @@ const TEXT = {
     peSoon_seq: "SEQ arrives with note length, probability and micro-timing in the firmware: a piano roll per track.",
     peSoon_mod: "MOD · MIX arrives in the next delivery: the full matrix with ±200 % amounts, levels, pan, sends and effects.",
     peSoon_gen: "GEN arrives when the emulator can regenerate one track or one section: genre, seed, MOOD, ENERGY, and what you changed from the original.",
-    peNoDev: "Connect the FM-1 or switch the emulator on.", peAsk: "Read the tracks of the project playing.", peRead: "Read the project", peReading: "Reading…", peFail: "Could not complete", peTrackParams: "Track (common)", peOnlyChanged: "Show only the changed ones (the rest are at their defaults)",
+    peNoDev: "Connect the FM-1 or switch the emulator on.", peAsk: "Read the tracks of the project playing.", peRead: "Read the project", peReading: "Reading…", peFail: "Could not complete", peTrackParams: "Track (common)", peFormula: "THE TRACK'S FORMULA", peFormulaSend: "Send the formula", peFormulaOk: "Formula sent.", peFormulaCut: "Sent, but cut at 255 characters.", peOnlyChanged: "Show only the changed ones (the rest are at their defaults)",
     peSaved: "File saved.", peLoaded: "Opened: %s. Press “Send to the FM-1” to load it.", peBadFile: "That file is not a Studio project.", peNoFile: "Open a project file first.",
     peSendConfirm: "The music on %n will be replaced by “%s”. A full backup is kept in this browser first. Go on?", peSending: "Sending… ", peSent: "Done: the project is on the FM-1.", peBefore: "Before sending a project",
     tourV_peT: "Project", tourV_pe: "The whole project, big: keep it, send it and edit all of its sound.", tourV_peH: "SOUND works today; the rest comes with the firmware.",
@@ -1464,7 +1464,7 @@ async function pjImport(p) {
 function renderPj() {
   if (!$("pjgrid")) return;
   const can = !!projLink() && !state.busy && !proj.working && !pj.busy;
-  $("pjcard").hidden = state.fw !== "fm"; $("pjread").disabled = !can;
+  $("pjcard").hidden = false; $("pjread").disabled = !can;
   $("pjhelp").textContent = t(pj.list ? "pjHelp" : projLink() ? "pjAsk" : "bkNoDev");
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const btn = (k, cls, f, dis) => { const b = el("button", "btn" + (cls ? " " + cls : ""), t(k)); b.type = "button"; b.disabled = !can || !!dis; b.onclick = f; return b; };
@@ -1982,7 +1982,7 @@ async function visStart() {
   const src = $("vissrc").value;
   if (src === "usb" && state.dev) {
     vis.link = state.dev.link;
-    try { const a = await vis.link.request(22, [0, 1], 900); if (!(a.length > 1 && a[1] & 1)) { visSay(t("visNone")); vis.link.request(22, [0, 0], 600).catch(() => {}); vis.link = null; } }   // (WATCH's second byte 0: this firmware has no VIS)
+    try { const a = await vis.link.request(22, [0, 1], 900); if (!(a.length > 1 && a[1] & 1)) { visSay(t("visNone")); vis.link.request(22, [0, 0], 600).catch(() => {}); vis.link = null; } else vis.poll = setInterval(() => vis.link && vis.link.request(CMD.PING, [], 600).catch(() => {}), 1000); }   // (BYTE cuts a WATCH 3 s without a request)   // (WATCH's second byte 0: this firmware has no VIS)
     catch (_) { visSay(t("visOld")); }
   }
   else if (src === "emu") await visEmu();
@@ -2070,6 +2070,21 @@ function peSound(body, L) {
     box.append(lab, ctl); return box;
   };
   const group = (title, ids, src) => { const g = el("div", "pegrid"); for (const id of ids) { const d = src[id]; if (d && d.label && d.label !== "-") g.append(knob(id, d)); } if (g.children.length) body.append(el("p", "pegrp", title), g); };
+  if (state.fw === "byte") {                                     // BYTE: the track's formula (39 LYRIC: read, written live)
+    const box = el("div"), ta = el("textarea"), send = el("button", "btn", t("peFormulaSend")), msg = el("span", "dim");
+    ta.rows = 3; ta.spellcheck = false; ta.maxLength = 255; ta.style.cssText = "width:100%;font:15px/1.4 var(--mono);background:var(--field);color:var(--fg);border:var(--border) solid var(--line);padding:8px";
+    ta.setAttribute("aria-label", t("peFormula")); send.type = "button";
+    if (P.formula == null) { L.link.request(39, [pe.trk], 900, (r) => r[0] === pe.trk).then((a) => { P.formula = String.fromCharCode(...a.slice(2).filter((c) => c)); renderPe(); }).catch(() => { P.formula = ""; }); }
+    ta.value = P.formula || "";
+    send.onclick = async () => {
+      const v = ta.value.replace(/[^ -~]/g, "").slice(0, 255);
+      try { const a = await L.link.request(39, [pe.trk, ...[...v].map((c) => c.charCodeAt(0)), 0], 1500, (r) => r[0] === pe.trk); P.formula = v; msg.textContent = a[1] === 1 ? t("peFormulaCut") : t("peFormulaOk"); }
+      catch (_) { msg.textContent = t("peFail"); }
+    };
+    ta.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) send.click(); });
+    const row = el("div", "emuctl"); row.append(send, msg);
+    box.append(el("p", "pegrp", t("peFormula")), ta, row); body.append(box);
+  }
   const C = pe.desc.common, only = el("label", "chk"), cb = el("input");
   cb.type = "checkbox"; cb.checked = !!pe.onlyChanged; cb.onchange = () => { pe.onlyChanged = cb.checked; renderPe(); };
   only.append(cb, document.createTextNode(" " + t("peOnlyChanged"))); body.append(only);
