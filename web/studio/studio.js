@@ -104,7 +104,7 @@ const TEXT = {
     peSoon_seq: "SEQ llega con el largo de nota, la probabilidad y el micro-timing en el firmware: un piano roll por pista.",
     peSoon_mod: "MOD · MIX llega en la próxima entrega: la matriz completa con montos ±200 %, niveles, paneo, envíos y efectos.",
     peSoon_gen: "GEN llega cuando el emulador pueda regenerar una pista o una sección: género, semilla, MOOD, ENERGY, y lo que cambiaste respecto del original.",
-    peNoDev: "Conectá el FM-1 o prendé el emulador.", peAsk: "Leé las pistas del proyecto que está sonando.", peRead: "Leer el proyecto", peReading: "Leyendo…", peFail: "No se pudo completar", peTrackParams: "Pista (comunes)", peSongRead: "Leer la canción", peSongAsk: "Lee las secciones de las canciones del FM-1.", peSongOld: "El índice de canciones de este firmware es de otra versión: actualizá JIANT BYTE.", peSongN: "Proyecto", peSongEmpty: "Este proyecto no tiene filas de canción todavía.", peSongSec: "SECCIÓN", peSongCell: "Clic: mute · clic derecho: variación", peSongHelp: "Cada columna es una fila de la canción (su parte A–D y sus compases). Clic en una celda: mute de esa pista en esa fila; clic derecho: su variación (FILL, REV, OCT…). La letra en la celda es el patrón A–D de esa pista.", peSongApply: "Aplicar al FM-1", peSongUndo: "Deshacer", peSongConfirm: "Se escribe el índice de canciones del FM-1 (las filas, mutes y variaciones de los 6 proyectos). ¿Seguir?", peSongDone: "Canción aplicada.", peFormula: "FÓRMULA DE LA PISTA", peFormulaSend: "Mandar la fórmula", peFormulaOk: "Fórmula enviada.", peFormulaCut: "Enviada, pero cortada a 255 caracteres.", peOnlyChanged: "Ver solo las que cambiaron (las otras están en su valor de fábrica)",
+    peNoDev: "Conectá el FM-1 o prendé el emulador.", peAsk: "Leé las pistas del proyecto que está sonando.", peRead: "Leer el proyecto", peReading: "Leyendo…", peFail: "No se pudo completar", peTrackParams: "Pista (comunes)", peSeqPick: "Elegí una pista para leer sus pasos.", peSeqRefused: "El FM-1 no aceptó el cambio (¿está sonando la cadena de canción?).", peSeqHelp: "Clic en una celda: agrega o saca una nota (hasta 4 por paso). VEL, PROB y µTIME: clic a la altura que querés. µTIME (−32..+31 sesentaicuatroavos) es solo de la web: el FM-1 lo toca igual.", peSeqHelpOld: "Clic en una celda: agrega o saca una nota. VEL y PROB: clic a la altura que querés. El micro-timing, el largo y los componentes llegan con un firmware que los exponga.", peModMatrix: "MATRIZ MOD", peModMix: "MEZCLA (NIVEL DE CADA PISTA)", peModFx: "EFECTOS Y MASTER", peSongRead: "Leer la canción", peSongAsk: "Lee las secciones de las canciones del FM-1.", peSongOld: "El índice de canciones de este firmware es de otra versión: actualizá JIANT BYTE.", peSongN: "Proyecto", peSongEmpty: "Este proyecto no tiene filas de canción todavía.", peSongSec: "SECCIÓN", peSongCell: "Clic: mute · clic derecho: variación", peSongHelp: "Cada columna es una fila de la canción (su parte A–D y sus compases). Clic en una celda: mute de esa pista en esa fila; clic derecho: su variación (FILL, REV, OCT…). La letra en la celda es el patrón A–D de esa pista.", peSongApply: "Aplicar al FM-1", peSongUndo: "Deshacer", peSongConfirm: "Se escribe el índice de canciones del FM-1 (las filas, mutes y variaciones de los 6 proyectos). ¿Seguir?", peSongDone: "Canción aplicada.", peFormula: "FÓRMULA DE LA PISTA", peFormulaSend: "Mandar la fórmula", peFormulaOk: "Fórmula enviada.", peFormulaCut: "Enviada, pero cortada a 255 caracteres.", peOnlyChanged: "Ver solo las que cambiaron (las otras están en su valor de fábrica)",
     peSaved: "Archivo guardado.", peLoaded: "Abierto: %s. Tocá «Enviar al FM-1» para cargarlo.", peBadFile: "Ese archivo no es un proyecto de Studio.", peNoFile: "Primero abrí un archivo de proyecto.",
     peSendConfirm: "Se va a reemplazar la música de %n por «%s». Antes queda un backup completo en este navegador. ¿Seguir?", peSending: "Enviando… ", peSent: "Listo: el proyecto está en el FM-1.", peBefore: "Antes de enviar un proyecto",
     tourV_peT: "Proyecto", tourV_pe: "El proyecto entero en grande: guardarlo, enviarlo y editar todo el sonido.", tourV_peH: "Hoy anda SONIDO; el resto llega con el firmware.",
@@ -312,7 +312,7 @@ const TEXT = {
     peSoon_seq: "SEQ arrives with note length, probability and micro-timing in the firmware: a piano roll per track.",
     peSoon_mod: "MOD · MIX arrives in the next delivery: the full matrix with ±200 % amounts, levels, pan, sends and effects.",
     peSoon_gen: "GEN arrives when the emulator can regenerate one track or one section: genre, seed, MOOD, ENERGY, and what you changed from the original.",
-    peNoDev: "Connect the FM-1 or switch the emulator on.", peAsk: "Read the tracks of the project playing.", peRead: "Read the project", peReading: "Reading…", peFail: "Could not complete", peTrackParams: "Track (common)", peSongRead: "Read the song", peSongAsk: "Reads the sections of the FM-1's songs.", peSongOld: "This firmware's song index is another version: update JIANT BYTE.", peSongN: "Project", peSongEmpty: "This project has no song rows yet.", peSongSec: "SECTION", peSongCell: "Click: mute · right click: variation", peSongHelp: "Each column is a song row (its part A–D and its bars). Click a cell: mute that track in that row; right click: its variation (FILL, REV, OCT…). The letter in the cell is that track's pattern A–D.", peSongApply: "Apply to the FM-1", peSongUndo: "Undo", peSongConfirm: "The FM-1's song index is written (the rows, mutes and variations of all 6 projects). Go on?", peSongDone: "Song applied.", peFormula: "THE TRACK'S FORMULA", peFormulaSend: "Send the formula", peFormulaOk: "Formula sent.", peFormulaCut: "Sent, but cut at 255 characters.", peOnlyChanged: "Show only the changed ones (the rest are at their defaults)",
+    peNoDev: "Connect the FM-1 or switch the emulator on.", peAsk: "Read the tracks of the project playing.", peRead: "Read the project", peReading: "Reading…", peFail: "Could not complete", peTrackParams: "Track (common)", peSeqPick: "Pick a track to read its steps.", peSeqRefused: "The FM-1 did not take the change (is the song chain playing?).", peSeqHelp: "Click a cell: add or remove a note (up to 4 a step). VEL, PROB and µTIME: click at the height you want. µTIME (−32..+31 64ths) is web-only: the FM-1 plays it all the same.", peSeqHelpOld: "Click a cell: add or remove a note. VEL and PROB: click at the height you want. Micro-timing, length and components come with a firmware that exposes them.", peModMatrix: "MOD MATRIX", peModMix: "MIX (EACH TRACK'S LEVEL)", peModFx: "EFFECTS AND MASTER", peSongRead: "Read the song", peSongAsk: "Reads the sections of the FM-1's songs.", peSongOld: "This firmware's song index is another version: update JIANT BYTE.", peSongN: "Project", peSongEmpty: "This project has no song rows yet.", peSongSec: "SECTION", peSongCell: "Click: mute · right click: variation", peSongHelp: "Each column is a song row (its part A–D and its bars). Click a cell: mute that track in that row; right click: its variation (FILL, REV, OCT…). The letter in the cell is that track's pattern A–D.", peSongApply: "Apply to the FM-1", peSongUndo: "Undo", peSongConfirm: "The FM-1's song index is written (the rows, mutes and variations of all 6 projects). Go on?", peSongDone: "Song applied.", peFormula: "THE TRACK'S FORMULA", peFormulaSend: "Send the formula", peFormulaOk: "Formula sent.", peFormulaCut: "Sent, but cut at 255 characters.", peOnlyChanged: "Show only the changed ones (the rest are at their defaults)",
     peSaved: "File saved.", peLoaded: "Opened: %s. Press “Send to the FM-1” to load it.", peBadFile: "That file is not a Studio project.", peNoFile: "Open a project file first.",
     peSendConfirm: "The music on %n will be replaced by “%s”. A full backup is kept in this browser first. Go on?", peSending: "Sending… ", peSent: "Done: the project is on the FM-1.", peBefore: "Before sending a project",
     tourV_peT: "Project", tourV_pe: "The whole project, big: keep it, send it and edit all of its sound.", tourV_peH: "SOUND works today; the rest comes with the firmware.",
@@ -518,12 +518,12 @@ class Link {
 function parseInfo(a) {
   let i = 0;
   const str = () => { let s = ""; while (i < a.length && a[i]) s += String.fromCharCode(a[i++]); i++; return s; };
-  const version = str(), n = a[i], pe0 = a[i + 4]; i += 5;
+  const version = str(), n = a[i], pe0 = a[i + 4], pcount = a[i + 1], gcount = a[i + 2], nstep = a[i + 3]; i += 5;
   const engines = [];
   for (let k = 0; k < n && i < a.length; k++) engines.push(str());
   /* JIANT BYTE names itself ("JIANT BYTE v0.16"); JIANT FM does not ("JIANT V10.8.24"). (Not by its engines: JIANT FM has
      MATH too since V10.8.21) */
-  return { version, engines, pe0, kind: /\bBYTE\b/i.test(version) ? "byte" : "fm", jiant: /^(JIANT|FELUCCA)\b/i.test(version) };
+  return { version, engines, pe0, pcount, gcount, nstep, kind: /\bBYTE\b/i.test(version) ? "byte" : "fm", jiant: /^(JIANT|FELUCCA)\b/i.test(version) };
 }
 const PORT_RE = /felucca|jiant|skiff|fm[ _-]*1|smk[ _-]*37|m[ _-]*vave|cuvave|composite|sinco|usb[ _-]*midi|usb audio/i;
 let access = null;
@@ -2022,6 +2022,8 @@ function renderPe() {
   $("petabs").replaceChildren(...PE_TABS.map(([k, n]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = TEXT[lang][n] ? t(n) : n; b.setAttribute("aria-pressed", String(pe.tab === k)); b.onclick = () => { pe.tab = k; renderPe(); }; return b; }));
   const body = $("pebody");
   if (pe.tab === "song" && state.fw === "byte") { peSong(body, L); return; }
+  if (pe.tab === "seq") { peSeq(body, L); return; }
+  if (pe.tab === "mod") { peMod(body, L); return; }
   if (pe.tab !== "sound") { body.innerHTML = ""; const p = document.createElement("p"); p.className = "dim"; p.textContent = t("peSoon_" + pe.tab); body.append(p); return; }
   peSound(body, L);
 }
@@ -2091,6 +2093,111 @@ function peSound(body, L) {
   only.append(cb, document.createTextNode(" " + t("peOnlyChanged"))); body.append(only);
   group(`${pe.tracks[pe.trk].engine}`, Object.keys(P.eng).map(Number), P.eng);
   group(t("peTrackParams"), Object.keys(C).map(Number).filter((id) => !pe.onlyChanged || (C[id] && P.vals[id] !== C[id].def)), C);
+}
+/* ---- a control for a described parameter (DESC): a slider or a list; set calls back as it moves */
+function peCtl(d, v, set) {
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const box = el("div", "pek" + (v !== d.def ? " chg" : "")), lab = el("label"), out = el("b");
+  const show = (x) => { out.textContent = d.names && d.names.length ? (d.names[x - d.min] ?? x) : /^AMT/.test(d.label) ? `${Math.round(x * 100 / 64)} %` : `${x}${d.unit ? " " + d.unit : ""}`; };
+  lab.append(document.createTextNode(d.label), out); show(v);
+  let ctl;
+  if (d.names && d.names.length && d.max - d.min < 64) { ctl = el("select"); d.names.forEach((n, i) => { const o = el("option", null, n); o.value = d.min + i; ctl.append(o); }); ctl.value = v; }
+  else { ctl = el("input"); ctl.type = "range"; ctl.min = d.min; ctl.max = d.max; ctl.value = v; }
+  ctl.setAttribute("aria-label", d.label);
+  let tm = 0; ctl.addEventListener("input", () => { const x = +ctl.value; show(x); box.classList.toggle("chg", x !== d.def); clearTimeout(tm); tm = setTimeout(() => set(x), 30); });
+  box.append(lab, ctl); return box;
+}
+/* ---- SEQ: a track's steps as a piano roll (TRACK_STEP track index 2: the whole step, JIANT BYTE 1.6 caps bit 1;
+   without it the plain step): notes, then velocity, probability and (whole step) micro-timing as bars to click */
+async function peSeqRead(L, k) {
+  const n = (pe.info && pe.info.nstep) || 64, steps = [];
+  let whole = true;
+  for (let i = 0; i < n; i++) {
+    let a = null;
+    if (whole) try { a = await L.link.request(30, [k, i, 2], 700, (r) => r[0] === k && r[1] === i); } catch (_) { whole = false; }
+    if (!a) a = await L.link.request(30, [k, i], 700, (r) => r[0] === k && r[1] === i);
+    steps.push(a); peSay(`${t("peReading")} ${i + 1}/${n}`);
+  }
+  pe.seq = { k, steps, whole: whole && steps[0].length >= 43 }; peSay("");
+}
+function peSeq(body, L) {
+  body.replaceChildren();
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  if (!L) { body.append(el("p", "dim", t("peNoDev"))); return; }
+  if (!pe.tracks.length) { body.append(el("p", "dim", t("peAsk"))); const b = el("button", "btn", t("peRead")); b.type = "button"; b.onclick = async () => { try { await peLoad(L); } catch (_) { peSay(t("peFail")); } renderPe(); }; body.append(b); return; }
+  const bar = el("div", "petrk");
+  pe.tracks.forEach((tr, k) => { const b = el("button", "btn" + (pe.seq && pe.seq.k === k ? "" : " ghost"), `T${k + 1} · ${tr.engine}`); b.type = "button"; b.onclick = async () => { try { await exclusive(() => peSeqRead(L, k)); } catch (e) { peSay(t("peFail")); } renderPe(); }; bar.append(b); });
+  body.append(bar);
+  const Q = pe.seq; if (!Q) { body.append(el("p", "dim", t("peSeqPick"))); return; }
+  const notes = Q.steps.flatMap((a) => a.slice(3, 3 + a[2])), lo = Math.max(0, Math.min(48, ...notes) - 2), hi = Math.min(127, Math.max(lo + 12, ...notes) + 2), N = Q.steps.length;
+  const NN = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  const write = async (i) => {
+    const a = Q.steps[i], len = Q.whole && !a.slice(27, 43).some((v, j) => j % 2 === 1 && v > 1) ? 43 : 23;   // (a legacy LENGTH 255: the 20 bytes left as they are)
+    try { const r = await L.link.request(30, a.slice(0, len), 900, (x) => x[0] === Q.k && x[1] === i); Q.steps[i] = len === 43 ? r : [...r.slice(0, 23), ...a.slice(23)]; }
+    catch (_) { peSay(t("peSeqRefused")); }
+  };
+  const wrap = el("div", "sc"), grid = el("div", "grid");
+  grid.style.cssText = `display:grid;gap:1px;grid-template-columns:44px repeat(${N},minmax(12px,1fr));min-width:${Math.max(560, N * 14)}px`;
+  for (let p = hi; p >= lo; p--) {
+    grid.append(el("div", "lab", NN[p % 12] + (Math.floor(p / 12) - 1)));
+    for (let i = 0; i < N; i++) {
+      const a = Q.steps[i], on = a.slice(3, 3 + a[2]).includes(p), c = el("button", "cell");
+      c.type = "button"; c.style.cssText = `height:13px;min-height:0;border:0;padding:0;background:${on ? "var(--accent)" : i % 4 ? "var(--field)" : "color-mix(in srgb, var(--field) 70%, var(--line))"}`;
+      c.setAttribute("aria-label", `${NN[p % 12]} ${i + 1}`);
+      c.onclick = async () => {
+        const ns = a.slice(3, 3 + a[2]);
+        const next = on ? ns.filter((x) => x !== p) : ns.length < 4 ? [...ns, p] : ns;
+        a[2] = next.length; for (let j = 0; j < 4; j++) a[3 + j] = next[j] || 0; if (!on) a[7] = 0;
+        await write(i); renderPe();
+      };
+      grid.append(c);
+    }
+  }
+  const lane = (name, get, set, max, web) => {
+    grid.append(el("div", "lab", name));
+    for (let i = 0; i < N; i++) {
+      const a = Q.steps[i], v = get(a), c = el("div");
+      c.style.cssText = "height:26px;display:flex;align-items:flex-end;cursor:pointer;background:var(--field)";
+      const f = el("div"); f.style.cssText = `width:100%;height:${Math.round(v / max * 26)}px;background:${web ? "var(--hud)" : "var(--accent)"}`; c.append(f);
+      c.onclick = async (e) => { const r = c.getBoundingClientRect(), x = Math.round((1 - (e.clientY - r.top) / r.height) * max); set(a, Math.max(0, Math.min(max, x))); await write(i); renderPe(); };
+      grid.append(c);
+    }
+  };
+  lane("VEL", (a) => a[9], (a, x) => { a[9] = x; }, 127);
+  lane("PROB", (a) => Math.min(100, a[13] ?? 100), (a, x) => { a[13] = x; }, 100);
+  if (Q.whole) lane("µTIME", (a) => a[23], (a, x) => { a[23] = x; }, 63, true);
+  wrap.append(grid); body.append(wrap, el("p", "dim", t(Q.whole ? "peSeqHelp" : "peSeqHelpOld")));
+}
+/* ---- MOD · MIX: the track's matrix (its SRC/DEST/AMT slots, AMT ±200 % where the firmware has it), the six tracks'
+   levels and mutes (TRACK_MIX 28) and the global effects and master (DUMP, DESC scope 1) */
+async function peMod(body, L) {
+  body.replaceChildren();
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  if (!L) { body.append(el("p", "dim", t("peNoDev"))); return; }
+  if (!pe.tracks.length || !pe.params[pe.trk]) { body.append(el("p", "dim", t("peAsk"))); const b = el("button", "btn", t("peRead")); b.type = "button"; b.onclick = async () => { try { await peLoad(L); await peTrack(L, pe.trk); } catch (_) { peSay(t("peFail")); } renderPe(); }; body.append(b); return; }
+  const P = pe.params[pe.trk], C = pe.desc.common, k = pe.trk;
+  body.append(el("p", "pegrp", `${t("peModMatrix")} · T${k + 1} ${pe.tracks[k].engine}`));
+  const slots = {}; for (const [id, d] of Object.entries(C)) { const m = /^(SRC|DEST|AMT)(\d)$/.exec(d.label || ""); if (m) (slots[m[2]] = slots[m[2]] || {})[m[1]] = +id; }
+  const g = el("div", "pegrid");
+  for (const n of Object.keys(slots).sort()) for (const f of ["SRC", "DEST", "AMT"]) { const id = slots[n][f]; if (id == null) continue; g.append(peCtl(C[id], P.vals[id], (x) => { P.vals[id] = x; L.link.request(31, [k, id, (x + 8192) & 127, (x + 8192) >> 7], 800).catch(() => peSay(t("peFail"))); })); }
+  body.append(g);
+  body.append(el("p", "pegrp", t("peModMix")));
+  const mg = el("div", "pegrid");
+  for (let tk = 0; tk < pe.tracks.length; tk++) {
+    let mx; try { mx = await L.link.request(28, [tk], 800, (r) => r[0] === tk); } catch (_) { continue; }
+    const lv = v14(mx, 1), mute = mx[3];
+    mg.append(peCtl({ label: `T${tk + 1} ${pe.tracks[tk].engine}${mute ? " (MUTE)" : ""}`, min: 0, max: 127, def: 100, unit: "", names: [] }, lv, (x) => L.link.request(28, [tk, (x + 8192) & 127, (x + 8192) >> 7, mute], 800).catch(() => {})));
+  }
+  body.append(mg);
+  body.append(el("p", "pegrp", t("peModFx")));
+  if (!pe.globals) {
+    const G = await L.link.request(4, [], 1500), gd = {};
+    for (let id = 0; id < pe.info.gcount; id++) { try { const d = parseDesc(await L.link.request(5, [1, id], 800)); if (d.label && d.label !== "-") gd[id] = { d, v: v14(G, 2 + (pe.pcount + id) * 2) }; } catch (_) {} }
+    pe.globals = gd;
+  }
+  const fg = el("div", "pegrid");
+  for (const [id, { d, v }] of Object.entries(pe.globals)) fg.append(peCtl(d, v, (x) => { pe.globals[id].v = x; L.link.request(3, [1, +id, (x + 8192) & 127, (x + 8192) >> 7], 800).catch(() => peSay(t("peFail"))); }));
+  body.append(fg);
 }
 /* ---- SONG (JIANT BYTE): the song index (backup object 10, v4, 2344 B: rows[n] at 8 + 36n, scene[n][r] at 296 + 128n
    + 8r, tsrc at 1320 + 64n + 4r, tvar at 1832 + 64n + 4r) read and written whole; the playing song's sections over the
