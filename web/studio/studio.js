@@ -104,7 +104,7 @@ const TEXT = {
     peSoon_seq: "SEQ llega con el largo de nota, la probabilidad y el micro-timing en el firmware: un piano roll por pista.",
     peSoon_mod: "MOD · MIX llega en la próxima entrega: la matriz completa con montos ±200 %, niveles, paneo, envíos y efectos.",
     peSoon_gen: "GEN llega cuando el emulador pueda regenerar una pista o una sección: género, semilla, MOOD, ENERGY, y lo que cambiaste respecto del original.",
-    peNoDev: "Conectá el FM-1 o prendé el emulador.", peAsk: "Leé las pistas del proyecto que está sonando.", peRead: "Leer el proyecto", peReading: "Leyendo…", peFail: "No se pudo completar", peTrackParams: "Pista (comunes)", peFormula: "FÓRMULA DE LA PISTA", peFormulaSend: "Mandar la fórmula", peFormulaOk: "Fórmula enviada.", peFormulaCut: "Enviada, pero cortada a 255 caracteres.", peOnlyChanged: "Ver solo las que cambiaron (las otras están en su valor de fábrica)",
+    peNoDev: "Conectá el FM-1 o prendé el emulador.", peAsk: "Leé las pistas del proyecto que está sonando.", peRead: "Leer el proyecto", peReading: "Leyendo…", peFail: "No se pudo completar", peTrackParams: "Pista (comunes)", peSongRead: "Leer la canción", peSongAsk: "Lee las secciones de las canciones del FM-1.", peSongOld: "El índice de canciones de este firmware es de otra versión: actualizá JIANT BYTE.", peSongN: "Proyecto", peSongEmpty: "Este proyecto no tiene filas de canción todavía.", peSongSec: "SECCIÓN", peSongCell: "Clic: mute · clic derecho: variación", peSongHelp: "Cada columna es una fila de la canción (su parte A–D y sus compases). Clic en una celda: mute de esa pista en esa fila; clic derecho: su variación (FILL, REV, OCT…). La letra en la celda es el patrón A–D de esa pista.", peSongApply: "Aplicar al FM-1", peSongUndo: "Deshacer", peSongConfirm: "Se escribe el índice de canciones del FM-1 (las filas, mutes y variaciones de los 6 proyectos). ¿Seguir?", peSongDone: "Canción aplicada.", peFormula: "FÓRMULA DE LA PISTA", peFormulaSend: "Mandar la fórmula", peFormulaOk: "Fórmula enviada.", peFormulaCut: "Enviada, pero cortada a 255 caracteres.", peOnlyChanged: "Ver solo las que cambiaron (las otras están en su valor de fábrica)",
     peSaved: "Archivo guardado.", peLoaded: "Abierto: %s. Tocá «Enviar al FM-1» para cargarlo.", peBadFile: "Ese archivo no es un proyecto de Studio.", peNoFile: "Primero abrí un archivo de proyecto.",
     peSendConfirm: "Se va a reemplazar la música de %n por «%s». Antes queda un backup completo en este navegador. ¿Seguir?", peSending: "Enviando… ", peSent: "Listo: el proyecto está en el FM-1.", peBefore: "Antes de enviar un proyecto",
     tourV_peT: "Proyecto", tourV_pe: "El proyecto entero en grande: guardarlo, enviarlo y editar todo el sonido.", tourV_peH: "Hoy anda SONIDO; el resto llega con el firmware.",
@@ -312,7 +312,7 @@ const TEXT = {
     peSoon_seq: "SEQ arrives with note length, probability and micro-timing in the firmware: a piano roll per track.",
     peSoon_mod: "MOD · MIX arrives in the next delivery: the full matrix with ±200 % amounts, levels, pan, sends and effects.",
     peSoon_gen: "GEN arrives when the emulator can regenerate one track or one section: genre, seed, MOOD, ENERGY, and what you changed from the original.",
-    peNoDev: "Connect the FM-1 or switch the emulator on.", peAsk: "Read the tracks of the project playing.", peRead: "Read the project", peReading: "Reading…", peFail: "Could not complete", peTrackParams: "Track (common)", peFormula: "THE TRACK'S FORMULA", peFormulaSend: "Send the formula", peFormulaOk: "Formula sent.", peFormulaCut: "Sent, but cut at 255 characters.", peOnlyChanged: "Show only the changed ones (the rest are at their defaults)",
+    peNoDev: "Connect the FM-1 or switch the emulator on.", peAsk: "Read the tracks of the project playing.", peRead: "Read the project", peReading: "Reading…", peFail: "Could not complete", peTrackParams: "Track (common)", peSongRead: "Read the song", peSongAsk: "Reads the sections of the FM-1's songs.", peSongOld: "This firmware's song index is another version: update JIANT BYTE.", peSongN: "Project", peSongEmpty: "This project has no song rows yet.", peSongSec: "SECTION", peSongCell: "Click: mute · right click: variation", peSongHelp: "Each column is a song row (its part A–D and its bars). Click a cell: mute that track in that row; right click: its variation (FILL, REV, OCT…). The letter in the cell is that track's pattern A–D.", peSongApply: "Apply to the FM-1", peSongUndo: "Undo", peSongConfirm: "The FM-1's song index is written (the rows, mutes and variations of all 6 projects). Go on?", peSongDone: "Song applied.", peFormula: "THE TRACK'S FORMULA", peFormulaSend: "Send the formula", peFormulaOk: "Formula sent.", peFormulaCut: "Sent, but cut at 255 characters.", peOnlyChanged: "Show only the changed ones (the rest are at their defaults)",
     peSaved: "File saved.", peLoaded: "Opened: %s. Press “Send to the FM-1” to load it.", peBadFile: "That file is not a Studio project.", peNoFile: "Open a project file first.",
     peSendConfirm: "The music on %n will be replaced by “%s”. A full backup is kept in this browser first. Go on?", peSending: "Sending… ", peSent: "Done: the project is on the FM-1.", peBefore: "Before sending a project",
     tourV_peT: "Project", tourV_pe: "The whole project, big: keep it, send it and edit all of its sound.", tourV_peH: "SOUND works today; the rest comes with the firmware.",
@@ -2021,6 +2021,7 @@ function renderPe() {
   $("peexport").textContent = t("peExport").replace("%s", peExt()); $("peimport").textContent = t("peImport").replace("%s", peExt());
   $("petabs").replaceChildren(...PE_TABS.map(([k, n]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = TEXT[lang][n] ? t(n) : n; b.setAttribute("aria-pressed", String(pe.tab === k)); b.onclick = () => { pe.tab = k; renderPe(); }; return b; }));
   const body = $("pebody");
+  if (pe.tab === "song" && state.fw === "byte") { peSong(body, L); return; }
   if (pe.tab !== "sound") { body.innerHTML = ""; const p = document.createElement("p"); p.className = "dim"; p.textContent = t("peSoon_" + pe.tab); body.append(p); return; }
   peSound(body, L);
 }
@@ -2090,6 +2091,82 @@ function peSound(body, L) {
   only.append(cb, document.createTextNode(" " + t("peOnlyChanged"))); body.append(only);
   group(`${pe.tracks[pe.trk].engine}`, Object.keys(P.eng).map(Number), P.eng);
   group(t("peTrackParams"), Object.keys(C).map(Number).filter((id) => !pe.onlyChanged || (C[id] && P.vals[id] !== C[id].def)), C);
+}
+/* ---- SONG (JIANT BYTE): the song index (backup object 10, v4, 2344 B: rows[n] at 8 + 36n, scene[n][r] at 296 + 128n
+   + 8r, tsrc at 1320 + 64n + 4r, tvar at 1832 + 64n + 4r) read and written whole; the playing song's sections over the
+   six tracks: bars, mutes, each cell's pattern and variation */
+const TVAR = ["", "MUTE", "THIN", "FILL", "HALF", "REV", "SHIFT", "OCT+", "OCT-", "VAR1", "VAR2", "VAR3", "VAR4"];
+async function peGetObj(req, id) {
+  const man = bkManifestAll(await req([65, []], { timeout: 8000, retries: 1 })), o = man.find((m) => m.id === id);
+  if (!o || !o.size) return new Uint8Array(0);
+  const bytes = new Uint8Array(o.size);
+  for (let off = 0; off < o.size; off += 256) {
+    const size = Math.min(256, o.size - off), match = (r) => r[0] === id && (() => { try { return bkR32(r, 2) === off; } catch (_) { return false; } })();
+    const a = await req([66, [id, ...bkU32(off), size & 127, size >>> 7]], { timeout: 2500, retries: 2, match });
+    if (a[1]) throw new Error(`get ${a[1]}`);
+    bytes.set(bkUnpack(a.slice(9), size), off);
+  }
+  return bytes;
+}
+function peSong(body, L) {
+  body.replaceChildren();
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  if (!L) { body.append(el("p", "dim", t("peNoDev"))); return; }
+  const S = pe.song;
+  if (!S) {
+    const b = el("button", "btn", t("peSongRead")); b.type = "button";
+    b.onclick = async () => { peSay(t("peReading")); try { await exclusive(async () => { const d = await peGetObj(bkRequest(L.link), 10); pe.song = { d, orig: d.slice() }; }); peSay(""); } catch (e) { peSay(t("peFail") + ` (${e.message})`); } renderPe(); };
+    body.append(el("p", "dim", t("peSongAsk")), b); return;
+  }
+  const d = S.d, dv = new DataView(d.buffer);
+  if (d.length < 2344 || dv.getUint32(0, true) !== 0x474E4F53 || d[4] !== 4) { body.append(el("p", "dim", t("peSongOld"))); return; }
+  const n = S.n ?? d[5], rb = 8 + 36 * n, count = d[rb];
+  const sel = el("select"); for (let k = 0; k < 6; k++) { const o = el("option", null, `${t("peSongN")} ${k + 1}`); o.value = k; sel.append(o); } sel.value = n; sel.onchange = () => { S.n = +sel.value; renderPe(); };
+  const top = el("div", "emuctl"); top.append(sel); body.append(top);
+  if (!count) { body.append(el("p", "dim", t("peSongEmpty"))); }
+  const bars = Array.from({ length: count }, (_, r) => d[rb + 4 + r * 2 + 1] || 1), total = bars.reduce((a, b) => a + b, 0) || 1;
+  const wrap = el("div", "sc"), grid = el("div", "grid");
+  grid.style.cssText = `display:grid;gap:2px;grid-template-columns:70px ${bars.map((b) => `minmax(${Math.max(36, b * 6)}px,${b}fr)`).join(" ")};min-width:${Math.max(560, total * 8)}px`;
+  grid.append(el("div", "lab", t("peSongSec")));
+  bars.forEach((b, r) => {
+    const h = el("div", "sec"), slot = d[rb + 4 + r * 2], inp = el("input");
+    h.style.cssText = `background:${["#ffb21a", "#a77bff", "#3fe0e6", "#ff38b4"][slot & 3]};color:#000;padding:4px 6px;font:11px var(--display);display:flex;gap:4px;align-items:center`;
+    inp.type = "number"; inp.min = 1; inp.max = 64; inp.value = b; inp.style.cssText = "width:3.2em;font:12px var(--mono);background:rgba(0,0,0,.25);border:0;color:#000";
+    inp.setAttribute("aria-label", `bars ${r + 1}`);
+    inp.onchange = () => { d[rb + 4 + r * 2 + 1] = Math.max(1, Math.min(64, +inp.value | 0)); S.dirty = true; renderPe(); };
+    h.append(document.createTextNode("ABCD"[slot & 3]), inp); grid.append(h);
+  });
+  const TC = ["#ff38b4", "#3fe0e6", "#6bff9e", "#a77bff", "#ffb21a", "#ff7a1a"];
+  for (let tk = 0; tk < 6; tk++) {
+    grid.append(Object.assign(el("div", "lab", `T${tk + 1}`), { style: `color:${TC[tk]}` }));
+    for (let r = 0; r < count; r++) {
+      const so = 296 + 128 * n + 8 * r, muted = tk < 4 ? (d[so + 1] >> tk) & 1 : (d[so] >> (tk - 3)) & 1;
+      const src = (dv.getUint32(1320 + 64 * n + 4 * r, true) >>> (tk * 3)) & 7, va = (dv.getUint32(1832 + 64 * n + 4 * r, true) >>> (tk * 4)) & 15;
+      const c = el("button", "cell", `${src ? "ABCD"[src - 1] : ""} ${TVAR[va] || ""}`.trim());
+      c.type = "button"; c.title = t("peSongCell");
+      c.style.cssText = `height:30px;border:0;font:10px var(--mono);color:#000;background:${muted ? "#1b1628" : TC[tk] + "cc"};cursor:pointer;min-height:0;padding:0 3px`;
+      c.onclick = () => {                                        // a mute on or off (the row then holds a scene)
+        if (tk < 4) d[so + 1] ^= 1 << tk; else d[so] ^= 1 << (tk - 3);
+        d[so] |= 1; S.dirty = true; renderPe();
+      };
+      c.oncontextmenu = (e) => {                                 // the cell's variation, one on
+        e.preventDefault(); const o = 1832 + 64 * n + 4 * r, v = dv.getUint32(o, true), cur = (v >>> (tk * 4)) & 15;
+        dv.setUint32(o, ((v & ~(15 << (tk * 4))) | (((cur + 1) % 13) << (tk * 4))) >>> 0, true); S.dirty = true; renderPe();
+      };
+      grid.append(c);
+    }
+  }
+  wrap.append(grid); body.append(wrap, el("p", "dim", t("peSongHelp")));
+  const acts = el("div", "emuctl"), apply = el("button", "btn", t("peSongApply")), undo = el("button", "btn ghost", t("peSongUndo"));
+  apply.type = undo.type = "button"; apply.disabled = !S.dirty;
+  apply.onclick = async () => {
+    if (!confirm(t("peSongConfirm"))) return;
+    try { await exclusive(async () => { await cvPut(bkRequest(L.link), 10, d); }); S.orig = d.slice(); S.dirty = false; peSay(t("peSongDone")); }
+    catch (e) { peSay(t("peFail") + ` (${e.message})`); }
+    renderPe();
+  };
+  undo.onclick = () => { S.d = S.orig.slice(); S.dirty = false; renderPe(); };
+  acts.append(apply, undo); body.append(acts);
 }
 /* the project file: the device's objects (a full backup) with the name and the generator */
 async function peCapture(L) {
