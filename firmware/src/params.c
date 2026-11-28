@@ -2,6 +2,115 @@
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
  * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* Parameter descriptors, formatting and the page table. */
+/* (V10.8.70) the enum lists of these parameters packed one after another, each name 0-terminated (str_nth: desc_nm),
+ * for the flash (a pointer each saved); PNB + the list's byte offset in place of the list, its count _N */
+static const char PNB[] =
+    /* N_CLEN */ "OFF\0" "1\0" "2\0" "3\0" "4\0" "5\0" "6\0" "7\0" "8\0" "9\0" "10\0" "11\0" "12\0" "13\0" "14\0" "15\0" "16\0" "17\0" "18\0" "19\0" "20\0" "21\0" "22\0" "23\0" "24\0" "25\0" "26\0" "27\0" "28\0" "29\0" "30\0" "31\0" "32\0" "33\0" "34\0" "35\0" "36\0" "37\0" "38\0" "39\0" "40\0" "41\0" "42\0" "43\0" "44\0" "45\0" "46\0" "47\0" "48\0" "49\0" "50\0" "51\0" "52\0" "53\0" "54\0" "55\0" "56\0" "57\0" "58\0" "59\0" "60\0" "61\0" "62\0" "63\0" "64\0" "\0"
+    /* N_HPROG */ "OFF\0" "PEDAL\0" "I-bVII\0" "I-VI\0" "I-IV\0" "I-V\0" "I-II\0" "I-III\0" "IV-I\0" "AXIS\0" "TRANCE\0" "MINOR 4\0" "ANDALUZ\0" "EPIC\0" "50S\0" "CADENCE\0" "DEEP\0" "DEEP VI\0" "II-V-I\0" "SUS\0" "POP\0" "PHRYGIAN\0" "ELECTRO\0" "DREAM\0" "DREAM 2\0" "TURN\0" "STAB\0" "NEO SOUL\0" "NEOSOUL2\0" "JAZZ 2\0" "JAZZ 3\0" "IDM 1\0" "IDM 2\0" "LYDIAN\0" "PROG\0"
+    /* N_DRTIM */ "=L\0" "x1/2\0" "x2/3\0" "x3/4\0" "x4/3\0" "x3/2\0" "x2\0"
+    /* N_HSKIP */ "NONE\0" "T1\0" "T2\0" "T3\0" "T4\0" "T5\0" "T6\0"
+    /* N_HLEN */ "1/4\0" "1/2\0" "1 BAR\0" "2 BARS\0" "4 BARS\0"
+    /* N_QUANT */ "OFF\0" "SNAP\0" "WHITE\0" "SEQ\0"
+    /* N_VOICE */ "POLY\0" "MONO\0" "LEG\0" "UNI\0"
+    /* N_GLMODE */ "RATE\0" "TIME\0"
+    /* N_PRIO */ "LAST\0" "LOW\0" "HIGH\0"
+    /* N_ALLOC */ "ROT\0" "REUSE\0"
+    /* N_ORDER */ "NOTE\0" "PLAY\0"
+    /* N_CLOCK */ "INT\0" "USB+BT\0" "TRS\0"
+    /* N_MIDI_INPUT */ "USB\0" "TRS\0"
+    /* N_ROUTE */ "CH1-6\0" "SEL\0"
+    /* N_GO */ "--\0" "GO\0"
+    /* N_SLCR */ "OFF\0" "GATE\0" "STUT\0"
+    /* N_SLDIV */ "1/8\0" "1/16\0" "1/32\0" "8T\0" "16T\0" "32T\0"
+    /* N_SLPQ */ "CHR\0" "SCL\0"
+    /* N_APSYNC */ "FREE\0" "BEAT\0"
+    /* N_APDIV */ "4BAR\0" "2BAR\0" "1BAR\0" "1/2\0" "1/4\0" "1/8\0" "1/16\0" "1/32\0"
+    /* N_PFXRES */ "1/8\0" "1/16\0" "1/32\0"
+    /* N_TRKS */ "4\0" "6\0"
+    /* N_LMODE */ "TRIG\0" "FREE\0"
+    /* N_MXM */ "M1\0" "M2\0" "M3\0" "M4\0"
+    /* N_VPAL */ "MIXED\0" "THERMAL\0" "ORG/BLUE\0" "GRN/RED\0" "AMBER\0" "MONO\0"
+    /* N_RFOLW */ "OFF\0" "T1\0" "T2\0" "T3\0" "T4\0" "T5\0" "T6\0"
+    /* N_MSRC */ "OFF\0" "LFO\0" "ENV\0" "VEL\0" "KEY\0" "RAND\0" "MODW\0" "AT\0" "EXPR\0" "M1\0" "M2\0" "M3\0" "M4\0" "MSEQ\0" "NOISE\0" "PROX\0" "ENV2\0" "IN ENV\0" "T1 ENV\0" "T2 ENV\0" "T3 ENV\0" "T4 ENV\0" "T5 ENV\0" "T6 ENV\0" "OCT+\0" "OCT-\0"
+    /* N_MDST */ "OFF\0" "PITCH\0" "CUT\0" "SHP\0" "AMP\0" "PAN\0" "DIST\0" "CHO\0" "DLY\0" "REV\0" "L.RATE\0" "L.PIT\0" "E1\0" "E2\0" "E3\0" "E4\0" "E5\0" "E6\0" "E7\0" "E8\0" "CLIP\0" "PNCH\0" "D.TIM\0" "D.FB\0" "D.TON\0" "D.MIX\0" "R.SIZ\0" "R.DMP\0" "C.RAT\0" "C.DEP\0" "F.CUT\0" "LEVEL\0" "M1\0" "M2\0" "M3\0" "M4\0"
+    /* N_CHRD */ "OFF\0" "TRIAD\0" "7TH\0" "ADD9\0" "SUS2\0" "SUS4\0" "MAJ\0" "MIN\0" "7\0" "MAJ7\0" "MIN7\0" "POWER\0" "POP\0" "JAZZ\0" "SOUL\0" "DREAM\0" "QUART\0" "\0"
+    /* N_DTIME (last: its length the delay line's) */ "1/4\0" "1/8\0" "1/16\0" "1/32\0" "8T\0" "16T\0" "1/2\0" "1/1\0" "2BAR\0" "4BAR\0" "5ms\0" "6ms\0" "7ms\0" "8ms\0" "9ms\0" "10ms\0" "11ms\0" "12ms\0" "13ms\0" "15ms\0" "17ms\0" "19ms\0" "21ms\0" "24ms\0" "27ms\0" "31ms\0" "35ms\0" "39ms\0" "44ms\0" "50ms\0" "56ms\0" "64ms\0" "72ms\0" "81ms\0" "91ms\0" "103ms\0" "116ms\0" "131ms\0" "148ms\0" "167ms\0" "189ms\0" "213ms\0" "241ms\0" "272ms\0" "307ms\0" "346ms\0" "391ms\0" "441ms\0" "498ms\0" "562ms\0" "634ms\0" "716ms\0" "808ms\0" "912ms\0" "1.03s\0" "1.16s\0" "1.31s\0" "1.48s\0"
+                                      /* (0.8.4) past the line at the full rate (fx.c dly_lo): half rate to 2.97 s, then a quarter */
+                                      "1.67s\0" "1.89s\0" "2.13s\0" "2.40s\0" "2.71s\0"
+#if DLY_LEN >= 65536u
+                                       "3.06s\0" "3.45s\0" "3.90s\0" "4.40s\0" "4.97s\0" "5.61s\0" "5.90s\0"
+#else
+                                       "2.95s\0"
+#endif
+                                       "1/8D\0" "1/16D\0" "1/4D\0"   /* (V10.8) dotted, appended (the values before mean what
+                                                         * they did); DTIME_ORDER puts them by their divisions */
+    ;
+#define N_CLEN ((const char *const *)(PNB + 0))
+#define N_CLEN_N 66u
+#define N_HPROG ((const char *const *)(PNB + 188))
+#define N_HPROG_N 35u
+#define N_DRTIM ((const char *const *)(PNB + 405))
+#define N_DRTIM_N 7u
+#define N_HSKIP ((const char *const *)(PNB + 436))
+#define N_HSKIP_N 7u
+#define N_HLEN ((const char *const *)(PNB + 459))
+#define N_HLEN_N 5u
+#define N_QUANT ((const char *const *)(PNB + 487))
+#define N_QUANT_N 4u
+#define N_VOICE ((const char *const *)(PNB + 506))
+#define N_VOICE_N 4u
+#define N_GLMODE ((const char *const *)(PNB + 524))
+#define N_GLMODE_N 2u
+#define N_PRIO ((const char *const *)(PNB + 534))
+#define N_PRIO_N 3u
+#define N_ALLOC ((const char *const *)(PNB + 548))
+#define N_ALLOC_N 2u
+#define N_ORDER ((const char *const *)(PNB + 558))
+#define N_ORDER_N 2u
+#define N_CLOCK ((const char *const *)(PNB + 568))
+#define N_CLOCK_N 3u
+#define N_MIDI_INPUT ((const char *const *)(PNB + 583))
+#define N_MIDI_INPUT_N 2u
+#define N_ROUTE ((const char *const *)(PNB + 591))
+#define N_ROUTE_N 2u
+#define N_GO ((const char *const *)(PNB + 601))
+#define N_GO_N 2u
+#define N_SLCR ((const char *const *)(PNB + 607))
+#define N_SLCR_N 3u
+#define N_SLDIV ((const char *const *)(PNB + 621))
+#define N_SLDIV_N 6u
+#define N_SLPQ ((const char *const *)(PNB + 646))
+#define N_SLPQ_N 2u
+#define N_APSYNC ((const char *const *)(PNB + 654))
+#define N_APSYNC_N 2u
+#define N_APDIV ((const char *const *)(PNB + 664))
+#define N_APDIV_N 8u
+#define N_PFXRES ((const char *const *)(PNB + 701))
+#define N_PFXRES_N 3u
+#define N_TRKS ((const char *const *)(PNB + 715))
+#define N_TRKS_N 2u
+#define N_LMODE ((const char *const *)(PNB + 719))
+#define N_LMODE_N 2u
+#define N_MXM ((const char *const *)(PNB + 729))
+#define N_MXM_N 4u
+#define N_VPAL ((const char *const *)(PNB + 741))
+#define N_VPAL_N 6u
+#define N_RFOLW ((const char *const *)(PNB + 783))
+#define N_RFOLW_N 7u
+#define N_MSRC ((const char *const *)(PNB + 805))
+#define N_MSRC_N 26u
+#define N_MDST ((const char *const *)(PNB + 935))
+#define N_MDST_N 36u
+#define N_CHRD ((const char *const *)(PNB + 1096))
+#define N_CHRD_N 18u
+#define N_DTIME ((const char *const *)(PNB + 1178))
+#define N_DTIME_N (DT_DOT + 3u)
+#define PN_AT(l, i) str_nth((const char *)(l), (unsigned)(i))   /* a packed list's name i */
+static const char *desc_nm(const param_desc_t *d, int32_t i)   /* an enum's name i (a list of PNB's or of pointers) */
+{
+    const char *p = (const char *)d->names;
+    return (uintptr_t)p - (uintptr_t)PNB < sizeof PNB || (uintptr_t)p - (uintptr_t)PNE < sizeof PNE ? str_nth(p, (unsigned)i) : d->names[i];
+}
 static const char *const N_LWAVE[] = {"SIN", "TRI", "SAW", "SQR", "S&H"};
 static const char *const N_LWAVE6[] = {"SIN", "TRI", "SAW", "SQR", "S&H", "DRIFT"};   /* (V10.36) the LFO's own: AUTO PAN keeps five */
 /* (JIANT 0.6.51) the LFO's RATE below 0: in time with the tempo, -1 the slowest (next to the slowest free rate) */
@@ -20,21 +129,9 @@ static const char *const N_DIV[] = {"1/4", "1/8", "1/16", "1/32", "8T", "16T", "
 #ifndef DLY_LEN
 #define DLY_LEN 32768u
 #endif
-static const char *const N_DRTIM[] = {"=L", "x1/2", "x2/3", "x3/4", "x4/3", "x3/2", "x2"};   /* (V10.49) R TIME */
-static const char *const N_DTIME[] = {"1/4", "1/8", "1/16", "1/32", "8T", "16T", "1/2", "1/1", "2BAR", "4BAR", "5ms", "6ms", "7ms", "8ms", "9ms", "10ms", "11ms", "12ms", "13ms", "15ms", "17ms", "19ms", "21ms", "24ms", "27ms", "31ms", "35ms", "39ms", "44ms", "50ms", "56ms", "64ms", "72ms", "81ms", "91ms", "103ms", "116ms", "131ms", "148ms", "167ms", "189ms", "213ms", "241ms", "272ms", "307ms", "346ms", "391ms", "441ms", "498ms", "562ms", "634ms", "716ms", "808ms", "912ms", "1.03s", "1.16s", "1.31s", "1.48s",
-                                      /* (0.8.4) past the line at the full rate (fx.c dly_lo): half rate to 2.97 s, then a quarter */
-                                      "1.67s", "1.89s", "2.13s", "2.40s", "2.71s"
-#if DLY_LEN >= 65536u
-                                      , "3.06s", "3.45s", "3.90s", "4.40s", "4.97s", "5.61s", "5.90s"
-#else
-                                      , "2.95s"
-#endif
-                                      , "1/8D", "1/16D", "1/4D"   /* (V10.8) dotted, appended (the values before mean what
-                                                         * they did); DTIME_ORDER puts them by their divisions */
-                                      };
 #define DT_DOT (DLY_LEN >= 65536u ? 70u : 64u)          /* the first dotted one */
-typedef char dt_dot_ok[NELEM(N_DTIME) == DT_DOT + 3u ? 1 : -1];
-static const uint16_t DTIME_MS[NELEM(N_DTIME) - DT_FREE] = {5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 17, 19, 21, 24, 27, 31, 35, 39, 44, 50, 56, 64, 72, 81, 91, 103, 116, 131, 148, 167, 189, 213, 241, 272, 307, 346, 391, 441, 498, 562, 634, 716, 808, 912, 1029, 1162, 1311, 1480,
+typedef char dt_dot_ok[N_DTIME_N == DT_DOT + 3u ? 1 : -1];
+static const uint16_t DTIME_MS[N_DTIME_N - DT_FREE] = {5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 17, 19, 21, 24, 27, 31, 35, 39, 44, 50, 56, 64, 72, 81, 91, 103, 116, 131, 148, 167, 189, 213, 241, 272, 307, 346, 391, 441, 498, 562, 634, 716, 808, 912, 1029, 1162, 1311, 1480,
                                       1670, 1885, 2128, 2402, 2711
 #if DLY_LEN >= 65536u
                                       , 3060, 3454, 3899, 4400, 4967, 5606, 5900
@@ -46,45 +143,17 @@ static const char *const N_SCALE[] = {"CHR", "MAJ", "MIN", "DOR", "MIX", "PEN", 
                                     "PHRY", "LYD", "LOC", "MEL", "BLUES", "WHOLE", "DIMHW", "DIMWH"};
 static const char *const N_ONOFF[] = {"OFF", "ON"};
 static const char *const N_DLYTYPE[] = {"ANALOG", "DIGITAL", "REVERS", 0};   /* (0.6.90) DLY 3 > TYPE; (V10.6g) REVERSE */
-static const char *const N_PFXRES[] = {"1/8", "1/16", "1/32"};     /* (0.6.99) FX > PUNCH: the lane's step */
 /* (V10.7.66) SCL > HARMONY: the progressions, gen_tables.c PROG's order (1 + PR_*) */
-static const char *const N_HPROG[] = {"OFF", "PEDAL", "I-bVII", "I-VI", "I-IV", "I-V", "I-II", "I-III", "IV-I", "AXIS",
-                                      "TRANCE", "MINOR 4", "ANDALUZ", "EPIC", "50S", "CADENCE", "DEEP", "DEEP VI", "II-V-I",
-                                      "SUS", "POP", "PHRYGIAN", "ELECTRO", "DREAM", "DREAM 2", "TURN", "STAB", "NEO SOUL",
-                                      "NEOSOUL2", "JAZZ 2", "JAZZ 3", "IDM 1", "IDM 2", "LYDIAN", "PROG"};
-static const char *const N_HLEN[] = {"1/4", "1/2", "1 BAR", "2 BARS", "4 BARS"};
-static const char *const N_HSKIP[] = {"NONE", "T1", "T2", "T3", "T4", "T5", "T6"};
 /* seq.c kb_map; 1 = SNAP (stored projects: the former ON); 3 = SEQ: SNAP, and the sequencer's notes snap too as
  * they play (seq.c seq_step; the steps keep what was written). Append-only: older projects hold 0..2 */
-static const char *const N_QUANT[] = {"OFF", "SNAP", "WHITE", "SEQ"};
 static const char *const N_DTYPE[] = {"SOFT", "HARD", "FOLD", "CRUSH", "RECT", "AMP"};   /* (JIANT) fx.c DT_*; 0.7.8 AMP */
 static const char *const N_FTYPE[] = {"LP", "HP", "BP", "COMB", "COMB-"};   /* (JIANT 0.5) P_FTYPE: eng_analog.c FT_*
                                                          * (0.9.9-snd1: COMB- the negative comb, MS20) */
-static const char *const N_VOICE[] = {"POLY", "MONO", "LEG", "UNI"};   /* V_POLY .. V_UNISON */
-static const char *const N_GLMODE[] = {"RATE", "TIME"};
-static const char *const N_PRIO[] = {"LAST", "LOW", "HIGH"};
-static const char *const N_ALLOC[] = {"ROT", "REUSE"};
-static const char *const N_ORDER[] = {"NOTE", "PLAY"};
-static const char *const N_CLOCK[] = {"INT", "USB+BT", "TRS"};   /* (V10.37) USB follows Bluetooth's clock too */
-static const char *const N_MIDI_INPUT[] = {"USB", "TRS"};
-static const char *const N_ROUTE[] = {"CH1-6", "SEL"};   /* MIDI IN (seq.c): 1..6 -> parts, 7..16 ignored / all -> selected */
 static const char *const N_NOTE[] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
 static const char *const N_DASH[] = {"--"};
 static const char *const N_RTYPE[] = {"ROOM", "SPRING", "SHIMR", "RESO", "CLOUD"};   /* (JIANT 0.5: + 3) */   /* G_RTYPE: the reverb bus's model (fx.c) */
-static const char *const N_GO[] = {"--", "GO"};
-static const char *const N_SLCR[] = {"OFF", "GATE", "STUT"};             /* SL_OFF .. SL_STUT (slicer.c) */
-static const char *const N_SLDIV[] = {"1/8", "1/16", "1/32", "8T", "16T", "32T"};   /* SL_DEN */
-static const char *const N_SLPQ[] = {"CHR", "SCL"};                      /* (JIANT 0.6.3) the SLICER's pitch steps */
-static const char *const N_APSYNC[] = {"FREE", "BEAT"};                  /* (JIANT 0.6.9) AUTO PAN's RATE: Hz / the tempo */
-static const char *const N_APDIV[] = {"4BAR", "2BAR", "1BAR", "1/2", "1/4", "1/8", "1/16", "1/32"};   /* .. BEAT (fx.c AP_SIXT) */
-/* modulation matrix (mod.c): sources, destinations (E1..E8 = P_E0..P_E7: shown with the engine's labels) */
-static const char *const N_MSRC[] = {"OFF", "LFO", "ENV", "VEL", "KEY", "RAND", "MODW", "AT", "EXPR",
-                                     "M1", "M2", "M3", "M4", "MSEQ", "NOISE", "PROX", "ENV2", "IN ENV", "T1 ENV", "T2 ENV", "T3 ENV", "T4 ENV", "T5 ENV", "T6 ENV", "OCT+", "OCT-"};   /* (V10.7.22) OCT+ OCT-: the expression keys */   /* (V10.22) ENV2 */   /* (0.7.8) NOISE; (V10.14) PROX */   /* (JIANT: the macros, LFO held; the modulation sequence) */
-static const char *const N_MDST[] = {"OFF", "PITCH", "CUT", "SHP", "AMP", "PAN", "DIST", "CHO", "DLY", "REV", "L.RATE",
-                                     "L.PIT", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8",
-                                     "CLIP", "PNCH",   /* (JIANT: the master, FX > MASTER) */
-                                     "D.TIM", "D.FB", "D.TON", "D.MIX", "R.SIZ", "R.DMP", "C.RAT", "C.DEP", "F.CUT", "LEVEL", "M1", "M2", "M3", "M4"};   /* (0.7.0) the FX buses'
-                                                         * globals (DELAY TIME FDBK TONE MIX, REVERB SIZE DAMP, CHORUS RATE
+/* modulation matrix (mod.c): sources, destinations (E1..E8 = P_E0..P_E7: shown with the engine's labels; V10.8.70: in PNB)
+ * (0.7.0) the FX buses' globals (DELAY TIME FDBK TONE MIX, REVERB SIZE DAMP, CHORUS RATE
                                                          * DEPTH): mod.c macro_master, fx.c GFX() */
 static const char *const N_ENGNAME[] = {"ANALOG", FELUCCA_FM4 ? "DIGITAL" : "-", "PHASE", "MATH", "-", "VOICE", "-", "WHEEL", "STRING", "-",
                                              "DRUM", "WEST", "FM6", "ADD", "ANIMAL", "EXT"};   /* (JIANT: SAMPLE 4, GRAIN 8, SLICE 13 retired; 0.8.3 ANIMAL;
@@ -92,6 +161,7 @@ static const char *const N_ENGNAME[] = {"ANALOG", FELUCCA_FM4 ? "DIGITAL" : "-",
 
 #define PD(l, f, mn, mx, df) {l, f, mn, mx, df, 0}
 #define PE(l, n, df) {l, F_ENUM, 0, (int16_t)(sizeof(n) / sizeof(n[0]) - 1), df, n}
+#define PEN(l, n, df) {l, F_ENUM, 0, (int16_t)(n##_N - 1u), df, n}   /* (V10.8.70) a packed list (PNB) */
 
 static const param_desc_t TP[P_COUNT];
 /* (V10.6i) a factory preset's movement (preset_t.mod): each pair a common parameter (< P_E0) and its value, within its
@@ -130,10 +200,10 @@ static const param_desc_t TP[P_COUNT] = {
     [P_ASWING] = PD("SWING", F_PCT, 0, 100, 0),
     [P_APROB] = PD("PROB", F_PCT, 0, 127, 127),
     [P_AHOLD] = PE("HOLD", N_ONOFF, 0),
-    [P_AORDER] = PE("ORDER", N_ORDER, 0),
+    [P_AORDER] = PEN("ORDER", N_ORDER, 0),
     [P_ROOT] = PD("ROOT", F_NOTE, 0, 11, 0),
     [P_SCALE] = PE("SCALE", N_SCALE, 0),
-    [P_QUANT] = PE("QUANT", N_QUANT, 0),
+    [P_QUANT] = PEN("QUANT", N_QUANT, 0),
     [P_TRANS] = PD("TRANS", F_SEMI, -24, 24, 0),
     [P_SLEN] = PD("LEN", F_STEPS, 1, NSTEP, 16),
     [P_SDIV] = PE("DIV", N_DIV, 2),
@@ -143,11 +213,11 @@ static const param_desc_t TP[P_COUNT] = {
     [P_CHOR] = PD("CHORUS", F_PCT, 0, 127, 0),
     [P_DLY] = PD("DLY", F_PCT, 0, 127, 0),
     [P_REV] = PD("REV", F_PCT, 0, 127, 0),
-    [P_VOICE] = PE("POLY", N_VOICE, 0),         /* (codex/coherence: was VOICE, the engine's, the group's and the page's) */
+    [P_VOICE] = PEN("POLY", N_VOICE, 0),         /* (codex/coherence: was VOICE, the engine's, the group's and the page's) */
     [P_GLIDE] = PD("GLIDE", F_TIME, 0, 127, 0),
-    [P_GLMODE] = PE("GL TYPE", N_GLMODE, 0),    /* (codex/coherence: the glide's MODE) */
-    [P_PRIO] = PE("NOTE PRIO", N_PRIO, 0),
-    [P_ALLOC] = PE("VOICE ORDER", N_ALLOC, 0),
+    [P_GLMODE] = PEN("GL TYPE", N_GLMODE, 0),    /* (codex/coherence: the glide's MODE) */
+    [P_PRIO] = PEN("NOTE PRIO", N_PRIO, 0),
+    [P_ALLOC] = PEN("VOICE ORDER", N_ALLOC, 0),
     [P_DETUNE] = PD("UNISON", F_PCT, 0, 127, 40),   /* (codex/coherence) UNISON's detune, how far apart (was DETUNE, a
                                                      * bare number: the engines' DETUNE is another) */
     [P_PAN] = PD("PAN", F_BIPCT, -64, 63, 0),
@@ -155,8 +225,8 @@ static const param_desc_t TP[P_COUNT] = {
     [P_APDEP] = PD("DEPTH", F_PCT, 0, 127, 0),       /* (JIANT 0.6.9) AUTO PAN (core.h: the old SLICER's slots) */
     [P_APRATE] = PD("RATE", F_LFOHZ, 0, 127, 2),    /* (BEAT: 0..7, page_desc AP_BEAT) */
     [P_APWAVE] = PE("WAVE", N_LWAVE, 1),
-    [P_APSYNC] = PE("SYNC", N_APSYNC, 1),
-#define MSLOT(k) [P_M##k##SRC] = PE("SRC" #k, N_MSRC, 0), [P_M##k##DST] = PE("DEST" #k, N_MDST, 0), \
+    [P_APSYNC] = PEN("SYNC", N_APSYNC, 1),
+#define MSLOT(k) [P_M##k##SRC] = PEN("SRC" #k, N_MSRC, 0), [P_M##k##DST] = PEN("DEST" #k, N_MDST, 0), \
                  [P_M##k##AMT] = PD("AMT" #k, F_BIPCT, -128, 127, 0)
     MSLOT(1), MSLOT(2), MSLOT(3), MSLOT(4),
 #undef MSLOT
@@ -194,9 +264,9 @@ static const param_desc_t TP[P_COUNT] = {
 static const param_desc_t GP[G_COUNT] = {
     [G_BPM] = PD("BPM", F_BPM, 40, 240, 120),
     [G_SWING] = PD("SWING", F_PCT, 0, 100, 0),
-    [G_CLOCK] = PE("CLOCK", N_CLOCK, 0),
+    [G_CLOCK] = PEN("CLOCK", N_CLOCK, 0),
     [G_TUNE] = PD("TUNE", F_INT, -50, 50, 0),
-    [G_DTIME] = PE("TIME", N_DTIME, 1),                 /* (JIANT 0.4: past the divisions, free times) */
+    [G_DTIME] = PEN("TIME", N_DTIME, 1),                 /* (JIANT 0.4: past the divisions, free times) */
     [G_DFDBK] = PD("FEEDBK", F_PCT, 0, 120, 60),
     [G_DCOLOR] = PD("TONE", F_PCT, 0, 127, 64),        /* (JIANT 0.4, was COLR + HPF) the repeats: below 64 darker, above
                                                         * thinner (64 open) */
@@ -205,18 +275,18 @@ static const param_desc_t GP[G_COUNT] = {
     [G_RDAMP] = PD("DAMP", F_PCT, 0, 127, 60),
     [G_CRATE] = PD("RATE", F_LFOHZ, 0, 127, 40),
     [G_CDEPTH] = PD("DEPTH", F_PCT, 0, 127, 60),
-    [G_MIDI] = PE("MIDI", N_MIDI_INPUT, 0),
+    [G_MIDI] = PEN("MIDI", N_MIDI_INPUT, 0),
     [G_DREL] = PD("REL", F_PCT, 0, 100, 30),     /* DUCK's release: 40 .. 600 ms (fx.c duck_block) */
-    [G_ROUTE] = PE("ROUTE", N_ROUTE, 0),          /* (was "--": stored 0 = CH1-4, as MIDI IN always was) */
+    [G_ROUTE] = PEN("ROUTE", N_ROUTE, 0),          /* (was "--": stored 0 = CH1-4, as MIDI IN always was) */
     [G_INFO] = PD("CPU", F_INT, 0, 0, 0),
     [G_SLOT] = PD("SLOT", F_INT, 1, 4, 1),
     [G_DJF] = PD("DJ FILT", F_BIPCT, -64, 63, 0),   /* (0.9.1) the master DJ FILTER: 0 off, - low-pass, + high-pass (fx.c) */
-    [G_LOAD] = PE("LOAD", N_GO, 0),
-    [G_SAVE] = PE("SAVE", N_GO, 0),
+    [G_LOAD] = PEN("LOAD", N_GO, 0),
+    [G_SAVE] = PEN("SAVE", N_GO, 0),
     [G_ENGSEL] = PE("ENG", N_ENGNAME, 0),
     [G_CLIP] = PD("CLIP", F_PCT, 0, 100, 0),     /* the master clipper: drive x1 .. x4 into the soft clip */
-    [G_CLRSEQ] = PE("CLEAR SEQ", N_GO, 0),
-    [G_INITSND] = PE("INIT", N_GO, 0),
+    [G_CLRSEQ] = PEN("CLEAR SEQ", N_GO, 0),
+    [G_INITSND] = PEN("INIT", N_GO, 0),
     /* the reverb's model on the REVERB page: the id of the old GM drum channel (G_DRCH, inert since 1.0) */
     [G_RTYPE] = PE("TYPE", N_RTYPE, 0),
     /* (JIANT) the drum bus and the kick's ducking (fx.c, eng_drum.c); the ids of the GM drum part's level and
@@ -230,11 +300,11 @@ static const param_desc_t GP[G_COUNT] = {
     [G_DPING] = {"PING", F_ENUM, 0, 1, 0, N_ONOFF},   /* (0.6.90) PING-PONG: the repeats left, right, left .. */
     [G_PFXLEN] = PD("LEN", F_INT, 1, 64, 64),    /* (0.6.99) the punch-in lane: its steps and their size */
     [G_PFXRES] = {"RES", F_ENUM, 0, 2, 1, N_PFXRES},
-    [G_DRTIM] = PE("RIGHT", N_DRTIM, 0),           /* (V10.49) the right echo's time, a ratio of TIME (fx.c dly_rate) */
-    [G_HPROG] = PE("PROG", N_HPROG, 0),            /* (V10.7.66) SCL > HARMONY */
-    [G_HLEN] = PE("LENGTH", N_HLEN, 2),
+    [G_DRTIM] = PEN("RIGHT", N_DRTIM, 0),           /* (V10.49) the right echo's time, a ratio of TIME (fx.c dly_rate) */
+    [G_HPROG] = PEN("PROG", N_HPROG, 0),            /* (V10.7.66) SCL > HARMONY */
+    [G_HLEN] = PEN("LENGTH", N_HLEN, 2),
     [G_HEVO] = PD("EVOLVE", F_PCT, 0, 127, 0),
-    [G_HSKIP] = PE("SKIP", N_HSKIP, 0),
+    [G_HSKIP] = PEN("SKIP", N_HSKIP, 0),
     [G_DDRV] = PD("DRIVE", F_PCT, 0, 100, 0),    /* (snd2) the delay's loop driven: 0 clean as before, 100 x4 into the clip */
     [G_DMOD] = PD("MOD", F_PCT, 0, 127, 0),      /* (0.6.89: 0, the repeats exact copies, by default) */     /* (0.6.86) the delay's drift: WOW + FLUTTER (fx.c dly_wow_adv) */
     [G_RMOD] = PD("MOD", F_PCT, 0, 127, 0),      /* the reverb's modulation depth (ROOM: the combs, SPRING: its wobble) */
@@ -246,15 +316,15 @@ static const param_desc_t GP[G_COUNT] = {
     [G_DSPRY] = PD("SCATTER", F_PCT, 0, 127, 0),    /* .. their spray: each grain from a random place (0: plain delay) */
     [G_STRN] = PD("ALL TRK", F_INT, -14, 14, 0),  /* (JIANT 0.4) every sequence this many steps up / down its scale (0.6.45:
                                                   * named ALL TR, was STRN: nobody knew what moved their notes) */
-    [G_SLMODE] = PE("MODE", N_SLCR, 0),         /* (JIANT 0.6.3) the SLICER bus (slicer.c) */
+    [G_SLMODE] = PEN("MODE", N_SLCR, 0),         /* (JIANT 0.6.3) the SLICER bus (slicer.c) */
     [G_SLPAT] = PD("PAT", F_INT, 1, 16, 1),
-    [G_SLRATE] = PE("RATE", N_SLDIV, 1),
+    [G_SLRATE] = PEN("RATE", N_SLDIV, 1),
     [G_SLDEP] = PD("DEPTH", F_PCT, 0, 127, 127),
     [G_SLT1] = PE("T1", N_ONOFF, 1), [G_SLT1 + 1] = PE("T2", N_ONOFF, 1), [G_SLT1 + 2] = PE("T3", N_ONOFF, 1),
     [G_SLT1 + 3] = PE("T4", N_ONOFF, 1), [G_SLT1 + 4] = PE("T5", N_ONOFF, 1), [G_SLT6] = PE("T6", N_ONOFF, 1),
     [G_SLFX] = PE("FX", N_ONOFF, 1),            /* the delay, reverb and chorus returns: on, the tails cut too */
     [G_SLPLEN] = PD("LEN", F_INT, 1, 16, 16),
-    [G_SLPQ] = PE("QUANT", N_SLPQ, 1),            /* the pitch steps: every semitone / the scale's */
+    [G_SLPQ] = PEN("QUANT", N_SLPQ, 1),            /* the pitch steps: every semitone / the scale's */
     [G_SLP0] = PD("PITCH", F_SEMI, -24, 24, 0), [G_SLP0 + 1] = PD("PITCH", F_SEMI, -24, 24, 0),
     [G_SLP0 + 2] = PD("PITCH", F_SEMI, -24, 24, 0), [G_SLP0 + 3] = PD("PITCH", F_SEMI, -24, 24, 0),
     [G_SLP0 + 4] = PD("PITCH", F_SEMI, -24, 24, 0), [G_SLP0 + 5] = PD("PITCH", F_SEMI, -24, 24, 0),
@@ -268,11 +338,6 @@ static const param_desc_t GP[G_COUNT] = {
 static const param_desc_t LOFI_RTRG = {"RESTART", F_ONOFF, 0, 1, 1, 0};   /* (0.6.12) P_LRTRG on a MATH track (V10.6d: ON its default) */
 static const param_desc_t TRK_CHANCE = {"CHANCE", F_PCTINV, 0, 127, 0, 0};   /* (0.6.37) P_TCHAN: 0 = 100 % */
 static const param_desc_t MORPH_DESC = {"MORPH", F_PCT, 0, 127, 0, 0};   /* (0.6.45) P_MORPH */
-static const char *const N_CLEN[] = {"OFF", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
-                                     "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
-                                     "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43",
-                                     "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57",
-                                     "58", "59", "60", "61", "62", "63", "64", 0};
 static const param_desc_t CLEN_DESC = {"C.LEN", F_ENUM, 0, 64, 0, N_CLEN};   /* (0.6.47) P_CLEN */
 static const param_desc_t DXIMG_DESC = {"IMAGE", F_INT, 0, 127, 0, 0};       /* (0.6.48) P_DXIMG */
 /* (V10.6) SEQ > EUCLID / MODES' knobs (ui_euclid.c: ids ID_EU0 + EK_*, the views of the selected track's settings) */
@@ -284,8 +349,6 @@ _Static_assert(ID_CL0 + CL_SEL <= 0xDFu && P_COUNT < ID_CL0, "DRONE CLAY's ids b
 static const param_desc_t *clay_page_desc(const track_t *t, uint32_t f, int16_t **valp);   /* (seq.c clay.c) */
 static const param_desc_t *eu_desc(uint32_t k, int16_t **valp);
 static const param_desc_t *sc_desc(uint32_t k, int16_t **valp);   /* (V10.25) ui_scene.c */
-static const char *const N_CHRD[] = {"OFF", "TRIAD", "7TH", "ADD9", "SUS2", "SUS4", "MAJ", "MIN", "7", "MAJ7", "MIN7",
-                                     "POWER", "POP", "JAZZ", "SOUL", "DREAM", "QUART", 0};   /* (V10.7.63: the SETS) */
 static const char *const N_CVOI[] = {"CLOSE", "LEAD", "OPEN", "+BASS", 0};
 static const param_desc_t CHORD_DESC[3] = {              /* (0.6.81) SCL > CHORD: P_CHRD P_CVOI P_CSTR */
     {"CHORD", F_ENUM, 0, 16, 0, N_CHRD}, {"VOICING", F_ENUM, 0, 3, 0, N_CVOI}, {"STRUM", F_PCT, 0, 127, 0, 0}};
@@ -431,7 +494,7 @@ static int32_t enum_step(const param_desc_t *d, int32_t from, int32_t v)
  * -> the shown order of d's values (index: position, entry: value), 0 = the values' own order */
 static const uint8_t DIV_ORDER[10] = {9, 8, 7, 6, 0, 1, 4, 2, 5, 3};   /* 4BAR 2BAR 1/1 1/2 1/4 1/8 8T 1/16 16T 1/32 */
 static const uint8_t SLDIV_ORDER[6] = {0, 3, 1, 4, 2, 5};              /* 1/8 8T 1/16 16T 1/32 32T */
-static const uint8_t DTIME_ORDER[NELEM(N_DTIME)] = {9, 8, 7, 6, DT_DOT + 2u, 0, DT_DOT, 1, DT_DOT + 1u, 4, 2, 5, 3, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57,
+static const uint8_t DTIME_ORDER[N_DTIME_N] = {9, 8, 7, 6, DT_DOT + 2u, 0, DT_DOT, 1, DT_DOT + 1u, 4, 2, 5, 3, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57,
                                                  58, 59, 60, 61, 62
 #if DLY_LEN >= 65536u
                                                  , 63, 64, 65, 66, 67, 68, 69
@@ -624,7 +687,7 @@ static void param_format(const param_desc_t *d, int32_t v, char *val, const char
         *unit = "st";
         break;
     case F_ENUM:
-        str_cpy(val, d->names[v < d->min ? d->min : v > d->max ? d->max : v], 6);
+        str_cpy(val, desc_nm(d, v < d->min ? d->min : v > d->max ? d->max : v), 6);
         break;
     case F_BPM:
         fmt_int(val, v);
@@ -674,8 +737,7 @@ typedef struct {
  * kept with the settings, not in the song). An id past the globals (no song.g of its own): trks_ui mirrors the setting
  * (ui.c rp_apply), a turn writes it back (ui_input.c knob_turn) */
 #define G_TRKS 0xFEu
-static const char *const N_TRKS[] = {"4", "6"};
-static const param_desc_t TRKS_DESC = PE("TRACKS", N_TRKS, 0);
+static const param_desc_t TRKS_DESC = PEN("TRACKS", N_TRKS, 0);
 static int16_t trks_ui;
 /* (0.6.30) .. and LOAD, next to it (ui.c ui_load, voice.c sys_load): the heavy parts lightened or gone while they
  * sound, ECO the lightest. load_ui mirrors it as trks_ui does */
@@ -701,8 +763,7 @@ static int16_t load_ui;
  * (RAM, a track each) for TRIG again, and PHASE turned in FREE moves only that (shown dimmed) */
 #define ID_LMODE 0xFBu
 #define ID_LPHS 0xFAu
-static const char *const N_LMODE[] = {"TRIG", "FREE"};
-static const param_desc_t LFO_MODE_DESC = PE("MODE", N_LMODE, 0);
+static const param_desc_t LFO_MODE_DESC = PEN("MODE", N_LMODE, 0);
 static const param_desc_t LFO_PHASE_DESC = PD("PHASE", F_INT, 0, 127, 0);
 static int16_t lmode_ui, lphase_ui;
 /* (0.9.9-snd8) the master's TAPE (FX > TAPE): its DRIVE and WOW, 0..100 (fx.c tape_block). Not song globals: song_t's size
@@ -723,8 +784,7 @@ static mx_t mx_r[MX_N];
 /* (V10.8.7, the owner) FX > MACROS: KNOB 1 the macro (M1..M4), 2 a destination, 3 how much that macro moves it (0: none;
  * the destinations add up, a macro moves as many as it is given), 4 its next destination set (the count shown) */
 #define ID_MX0 0xECu
-static const char *const N_MXM[] = {"M1", "M2", "M3", "M4"};
-static const param_desc_t MX_DESC[4] = {PE("MACRO", N_MXM, 0), PE("DEST", N_MDST, 0), PD("AMOUNT", F_BIPCT, -128, 127, 0),
+static const param_desc_t MX_DESC[4] = {PEN("MACRO", N_MXM, 0), PEN("DEST", N_MDST, 0), PD("AMOUNT", F_BIPCT, -128, 127, 0),
                                         PD("DESTS", F_INT, 0, MX_N, 0)};
 static int16_t mx_ui[4] = {0, 2, 0, 0};                 /* (the macro, the destination: MD_CUT; the views) */
 /* (V10.7.62, the owner: "the tracks interacting, completely audible, as light as it can be") LIFE: HOME > LIFE, ECO's
@@ -738,9 +798,8 @@ static int16_t life_v[4] __attribute__((section(".bss.tape")));
 /* (V10.8.56, the owner: "visuales random en HOME") HOME > VISUAL, BEING's second page, and the screensaver (ui.c scr_*): a
  * figure from a seed (OCT+ a new one), drawn with the creatures' pieces (ui_lzhome.c vis_fig): KNOB 1 COMPLEX (how many
  * pieces), 2 WOBBLE (the circles' deformation), 3 PALETTE, 4 REACT (how much it follows the sound). Not saved */
-static const char *const N_VPAL[] = {"MIXED", "THERMAL", "ORG/BLUE", "GRN/RED", "AMBER", "MONO"};   /* (V10.8.57) */
 static const param_desc_t VIS_DESC[4] = {PD("DENSITY", F_PCT, 0, 100, 0), PD("WOBBLE", F_PCT, 0, 100, 0),
-                                         PE("PALETTE", N_VPAL, 0), PD("REACT", F_PCT, 0, 100, 0)};
+                                         PEN("PALETTE", N_VPAL, 0), PD("REACT", F_PCT, 0, 100, 0)};
 static int16_t vis_v[4] __attribute__((section(".bss.tape")));
 static uint16_t vis_seed __attribute__((section(".bss.tape")));   /* (0: not set yet: vis_fig sets the knobs' defaults) */
 #define ID_EQ0 0xE0u
@@ -935,13 +994,12 @@ static const page_t PAGES[] = {
 #define NPAGES (sizeof(PAGES) / sizeof(PAGES[0]))
 static uint8_t mod_ui_slot;      /* the MOD page: the matrix slot (0..3) KNOB 2..4 edit */
 static uint8_t ms_ui_step;       /* (JIANT) the MSEQ page: the step (0..15) KNOB 2 edits */
-static const char *const N_RFOLW[] = {"OFF", "T1", "T2", "T3", "T4", "T5", "T6"};
 static const param_desc_t RESO_PITCH = PD("PITCH", F_INT, 0, 14, 0);   /* (0.6.5) RESO: the chord's steps up the scale (G_RPRE) */
-static const param_desc_t RESO_FOLW = PE("FOLLOW", N_RFOLW, 0);          /* .. the track whose notes it follows (G_RDAMP) */
+static const param_desc_t RESO_FOLW = PEN("FOLLOW", N_RFOLW, 0);          /* .. the track whose notes it follows (G_RDAMP) */
 static const param_desc_t REV_PRE = PD("PRE", F_INT, 0, 100, 0);       /* ROOM / SPRING: the pre-delay, ms (G_RPRE) */
 static const param_desc_t REV_AIR = PD("AIR", F_SEMI, -24, 24, 0);    /* (0.6.12) SHIMMER / CLOUD: pitch and tone, down dark,
                                                                        * up airy (G_RPRE; fx.c rev_air) */
-static const param_desc_t AP_BEAT = PE("RATE", N_APDIV, 2);          /* (0.6.9) AUTO PAN's RATE on the tempo (SYNC BEAT) */
+static const param_desc_t AP_BEAT = PEN("RATE", N_APDIV, 2);          /* (0.6.9) AUTO PAN's RATE on the tempo (SYNC BEAT) */
 static uint8_t sl_ui_step;       /* (JIANT 0.6.3) the SL PITCH page: the step KNOB 2 edits */
 
 /* page_desc's views (ids ID_TAPE .. ID_LMODE): (0.9.18) the LFO's MODE and PHASE, views of P_LPHASE; (0.9.9-snd8) the

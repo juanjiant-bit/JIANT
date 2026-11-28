@@ -100,7 +100,7 @@ static uint32_t gpickw(const uint8_t *w, uint32_t n)    /* an index by its weigh
     for (i = 0; i < n; i++) { if (r < w[i]) return i; r -= w[i]; }
     return n - 1u;
 }
-enum { GS_PICK, GS_DRUMS, GS_BASS, GS_CHORDS, GS_ARP, GS_LEAD, GS_SOUND, GS_FORM, GS_MIX, GS_TEX, GS_PLAN, GS_GRAM };
+enum { GS_PICK, GS_DRUMS, GS_BASS, GS_CHORDS, GS_ARP, GS_LEAD, GS_SOUND, GS_FORM, GS_MIX, GS_TEX, GS_PLAN, GS_GRAM, GS_RICH };
 
 /* ------------------------------------------------------------------------------------------------ the piece --- */
 /* (0.8.3) a chord of the plan: its first step, its steps, its root's degree in the mode, its quality (QSTACK) and how
@@ -2025,8 +2025,8 @@ BTAPP_FN static void gmix_more(track_t *t, uint32_t r)   /* (the Bluetooth segme
  * master (tests/gen_peak.c, the stems' and the mix's peaks over the genres x MOOD -50 / 0 / +50) its loudest piece's mix
  * under -1 dBFS (were up to +13 dBFS, the leveler at its floor and the limiter taking the rest: the distortion); the
  * LEVELER (fx.c lev_block) brings the whole back to its loudness. The last EXPLORE's (V10.8.69: HARD BASS and KRAUT 1 dB more, the kits' punch back: their DANCE pieces -0.1 and -0.6 dBFS) */
-static const uint8_t GTRIM[] BTAPP_RO = {29, 29, 28, 20, 21, 31, 29, 14, 21, 20, 24, 19, 16, 12, 15, 19, 16, 26, 20, 19, 12, 18,
-                                         31, 24, 21, 16, 24, 17, 14, 21};
+static const uint8_t GTRIM[] BTAPP_RO = {29, 29, 28, 21, 21, 31, 29, 14, 21, 20, 24, 19, 16, 12, 15, 19, 16, 26, 20, 19, 12, 18,
+                                         31, 24, 21, 16, 24, 17, 16, 21};   /* (V10.8.70: HOUSE 0.5 dB, METALCORE 1 dB more: grich's throws) */
 _Static_assert(sizeof GTRIM == NGENRE + 1u, "GTRIM: a genre each, EXPLORE last");
 static __attribute__((noinline)) void gen_mix(track_t *t, uint32_t r)
 {
@@ -2254,6 +2254,51 @@ static const int8_t GDJF[16] = {-14, -12, -10, -8, -6, -4, -2, 0, -2, -4, -6, -8
 static void gmot(track_t *t, uint32_t step, uint32_t id, int32_t v, int ramp)
 {
     if (!motion_set_event(t, step, id, (int16_t)clamp(v, 0, 127)) && ramp) motion.event[motion.count - 1u].value ^= (int16_t)(1 << 13);
+}
+/* (V10.8.70, JIANT BYTE's grich, its V10.7.30) a section's own automation, locks and components: the drums' tone
+ * moving into the next part (the build's rising to the drop), a snare's roll muted into the turn, the hats' offbeats a
+ * chance; the lead's delay thrown on its last note; the arp's filter ramped over the build, a stab chord in a melodic
+ * part; the break's pads slower and longer */
+static uint32_t gchord_page(void);
+static track_t *gtr(uint32_t r) { uint32_t k = gs.trk_of[r]; return k < NTRK && gs.act[r] ? &trk[k] : 0; }
+static uint32_t gfree(const track_t *t, uint32_t i, uint32_t to)
+{ for (; i < to && (!dstarts(t, i) || comp_any(&t->step[i])); i++) {} return i; }
+static __attribute__((noinline)) void grich(uint32_t k)
+{
+    uint32_t q0 = gq, f = gform(), e = (gs.energy + gs.complex) / 2u + (gx.on ? 25u : 0u), i, len, id;
+    uint32_t bld = f == FM_CLUB && k == 2u, brk = k == (f == FM_CLUB ? 3u : 1u), mel = !bld && !brk && (f != FM_CLUB || k != 1u);
+    track_t *t, *dr = gtr(RL_DRUM), *ld = gtr(RL_LEAD), *ar = gtr(RL_ARP), *pd = gtr(RL_PAD);
+    step_t *s;
+    if (gls.on) return;
+    gseed(GS_RICH);
+    if (dr && !brk) {
+        t = dr; len = dlen(t); id = bld ? P_E2 : P_E3;
+        if (bld || gch(e)) { gmot(t, 0, id, t->p[id], 0);   /* (FM: from the kit's own, never shorter: its punch) */ gmot(t, bld ? 63u : len - 1u, id, t->p[id] + (bld ? 24 : 8), 1); }
+        for (i = 0; i < len && !bld; i++) {
+            s = &t->step[i];
+            if (i + 2u >= len && s->time != ST_NOTE && gch(e)) {
+                gdrum_hit(t, i, DV_SNARE, 80, 0);
+                s->comp = CO_MAKE(CA_MUTE, CC_NM); s->carg = CV_MUTE_TRIG; s->cnm[0] = (uint8_t)(len > 16u ? 0x11u : 0x33u);
+            } else if ((i & 1u) && s->time == ST_NOTE && s->hit == 1u << DV_HATC && !s->comp && gs.complex > 55u) step_set_chance(s, 80);
+        }
+    }
+    if (!ld) ld = ar;
+    if (mel && ld && gch(e)) {
+        len = dlen(ld);
+        for (i = len - 1u; i > 1u && i + 8u >= len; i--)
+            if (dstarts(ld, i)) { gmot(ld, i, P_DLY, ld->p[P_DLY] + 48, 0); gmot(ld, 0, P_DLY, ld->p[P_DLY], 0); break; }
+    }
+    if (ar && (mel ? GSTAB(gs.g->pads) && !gx.on && ar->p[P_VOICE] == V_POLY && gch(e) : bld)) {
+        len = dlen(ar);
+        i = gfree(ar, mel && len > 16u ? len - 16u : 0u, bld ? 16u : len);
+        id = ar->eng_req == EG_A ? P_E4 : P_FCUT;
+        s = &ar->step[i];
+        if (i < 16u && bld && !motion_set_lock(ar, i, id, (int16_t)clamp(ar->p[id] + 30, 0, 127))) {
+            s->comp = CO_MAKE(CA_RAMP, 0); s->carg = 1u | CV_RAMP_BARS; s->clen[0] = 3;
+        } else if (i < len && mel) { s->comp = CO_MAKE(CA_CHORD, CC_NM); s->carg = (uint8_t)(gchord_page() - 1u); s->cnm[0] = 0x11u; }
+    }
+    if (brk && pd) { gmot(pd, 0, P_ATK, pd->p[P_ATK] + 16, 0); gmot(pd, 0, P_REL, pd->p[P_REL] + 24, 0); }
+    gq = q0;
 }
 /* (V10.6m) the song as rows (after SIREN's plan, docs: the owner's "nothing happens in a section, fills every loop, no
  * builds"): a row's kind, GT_*: the section it plays, the drums' groups out (DXG_*), the bass in or out, the melodic
@@ -2603,6 +2648,7 @@ static void gen_parts(void)
             gmute(dr);
             if (bs < NTRK && (ld < NTRK || ar < NTRK || pd < NTRK)) trk[bs].p[P_MUTE] = 1;
         }
+        grich(k);                                       /* (V10.8.70, BYTE's) the section's automation, locks, components */
         for (i = 0; i < NTRK; i++)                      /* (BYTE: every melodic part's timbre moving over its loop, the
                                                          * break's back) */
             if (gs.role[i] - 1u < 5u && gs.act[gs.role[i]] && trk[i].eng_req != ENGI_DRUM) {
@@ -2976,6 +3022,25 @@ static void gen_post(void)
                 if (i + 1u < len && trk[bs].step[i + 1u].time == ST_NOTE && gch(GG_SLD(gg) * 12u)) s->flags |= SF_SLIDE;
                 if (i % 4u == 2u && s->n == 1u && s->note[0] <= 52u && gin_mode(s->note[0]) && gch(GG_OCT(gg) * 12u)) s->note[0] += 12;
             }
+        {   /* (V10.8.34, the owner: "call and response"; V10.8.70 back) a dialogue, a throw in two: where the lead speaks
+             * (two notes or more in a half bar) the arp is silent, and answers in its gaps; not where the lead leaves it
+             * none */
+            uint32_t ld = gs.trk_of[RL_LEAD], ar = gs.trk_of[RL_ARP], c = 0, kill = 0, busy = 0, j;
+            if (ld < NTRK && ar < NTRK && gs.act[RL_LEAD] && gs.act[RL_ARP] && gch(50)) {
+                uint32_t ll = dlen(&trk[ld]);
+                len = dlen(&trk[ar]);
+                for (k = 0; k < 2u; k++)                /* (the first pass counts the lead's busy half bars) */
+                    for (i = 0; i < len && busy * 4u <= len / 8u * 3u; i++) {
+                        step_t *s = &trk[ar].step[i];
+                        if (!(i & 7u)) {
+                            for (j = c = 0; j < 8u; j++) c += trk[ld].step[(i + j) % ll].time == ST_NOTE;
+                            if (!k) busy += c >= 2u;
+                        }
+                        if (!k) continue;
+                        if (c >= 2u || (kill && s->time == ST_TIE)) { gclear(s); kill = 1; } else kill = 0;
+                    }
+            }
+        }
         gchr();
         gq = q0;
     }
@@ -3036,8 +3101,20 @@ static void gen_post(void)
             }
         }
     }
-    if (gx.on) gx_comps();                                     /* (0.8.6) EXPLORE: wilder ones (V10.6n: the odd track's; every
+    if (gx.on) {
+        gx_comps();                                     /* (0.8.6) EXPLORE: wilder ones (V10.6n: the odd track's; every
                                                          * piece's) */
+        if (gch(45)) {                                  /* (V10.8.41, the owner: "cuts, changes"; V10.8.70 back) the cut:
+                                                         * the cycle's last beat or two silent but for the drums and the
+                                                         * odd role's track */
+            uint32_t n = gch(50) ? 4u : 8u;
+            for (k = 0; k < NTRK; k++) {
+                uint32_t len = dlen(&trk[k]);
+                if (gs.role[k] == RL_DRUM || gs.role[k] == gx.orole || len < 16u) continue;
+                for (i = len - n; i < len; i++) gclear(&trk[k].step[i]);
+            }
+        }
+    }
     for (k = 0; k < NTRK; k++)                          /* (seq2d) the CP_* written above as components v2 */
         comp_migrate(trk[k].step, dlen(&trk[k]));
 }
@@ -3556,6 +3633,7 @@ static __attribute__((noinline)) void gen_make(void)
         fg_set_t *f = &fg_set[gs.trk_of[RL_LEAD]][0];
         f->rate = 5; f->dir = FG_FWD; f->ivl = -2;      /* (x1, with it, a third under) */
     }
+    grich(0);                                           /* (V10.8.70, BYTE's) A's automation, locks, components */
 parts:
     gen_parts();
     gs.song = 0;

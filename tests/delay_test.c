@@ -192,11 +192,11 @@ static void test_times(void)
         dreset();
         song.g[G_DTIME] = (int16_t)(DT_FREE + n - 1u);
         printf("delay:   free times: %u, the last %s = %.3f s (the line's longest %.3f s); full rate to %.3f s, half to %.3f s\n",
-               n, N_DTIME[DT_FREE + n - 1u], last / (double)FS, DLY_MAX / (double)FS, DLY_SPAN(0u) / (double)FS,
+               n, PN_AT(N_DTIME, DT_FREE + n - 1u), last / (double)FS, DLY_MAX / (double)FS, DLY_SPAN(0u) / (double)FS,
                DLY_SPAN(1u) / (double)FS);
         check("the free times past 1.48 s, each longer, the last within the line (its own length)",
               inc && n > 48u && DTIME_MS[47] == 1480u && last <= DLY_MAX && delay_samples() == last &&
-              NELEM(N_DTIME) == DT_FREE + n + 3u && (uint32_t)GP[G_DTIME].max == DT_FREE + n + 2u);
+              N_DTIME_N == DT_FREE + n + 3u && (uint32_t)GP[G_DTIME].max == DT_FREE + n + 2u);
     }
 }
 
@@ -415,7 +415,7 @@ static void test_clicks(void)
         blk_hook = 0;
         st = step_max(3u * FS, 3u * FS + len);
         snprintf(what, sizeof what, "TIME swept %s -> %s -> back, a sine playing: %u rate changes, largest step %d (the echo's own %d)",
-                 N_DTIME[seq[0]], N_DTIME[last], n_sw, st, own);
+                 PN_AT(N_DTIME, seq[0]), PN_AT(N_DTIME, last), n_sw, st, own);
         check(what, n_sw >= 4u && n_rs == n_sw && st <= own * 2 + 64);
     }
     {   /* the tempo: 1/2 at 120 -> 60 -> 120 -> 40 -> 200 BPM */

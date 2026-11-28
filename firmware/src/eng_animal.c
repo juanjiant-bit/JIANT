@@ -48,8 +48,7 @@
 enum { AN_CMOS, AN_PULSE, AN_WHSTL, AN_WING, AN_GLOTT, AN_NMODE };
 static const char *const N_ANIMAL_MODE[] = {"CMOS", "PULSE", "WHSTL", "WING", "GLOTT"};
 /* GROUP: syllables sounding + silent (HOLD: one as long as the note, TRILL: no gap) */
-static const char *const N_AN_GROUP[] = {"HOLD", "TRILL", "1+1", "1+3", "2+2", "2+6", "3+3", "3+9", "4+4", "4+12",
-                                         "6+6", "8+8", "8+24", "12+12", "16+16", "32+32"};
+/* (V10.8.70) N_AN_GROUP: core.h PNE */
 static const uint8_t AN_GROUP[16][2] = {{1, 0}, {1, 0}, {1, 1}, {1, 3}, {2, 2}, {2, 6}, {3, 3}, {3, 9}, {4, 4}, {4, 12},
                                         {6, 6}, {8, 8}, {8, 24}, {12, 12}, {16, 16}, {32, 32}};
 /* Sparse overrides: the old 5x8 table held 25 empty descriptors. */

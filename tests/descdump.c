@@ -42,7 +42,7 @@ static void js_desc(const param_desc_t *d)
         for (i = 0; i <= d->max - d->min; i++) {
             if (i)
                 putchar(',');
-            js_str(d->names[d->min + i]);   /* (as editor.c ED_DESC and param_format: names[] by the value itself;
+            js_str(desc_nm(d, d->min + i));   /* (as editor.c ED_DESC and param_format: names[] by the value itself;
                                              * names[i] read MATH's WAVE 5..6 as "-", "-") */
         }
         putchar(']');
@@ -238,7 +238,7 @@ int main(void)
                 int32_t w = param_turn(d, v, 1);
                 if (n)
                     putchar(',');
-                js_str(d->names[v]);
+                js_str(desc_nm(d, v));
                 if (w == v)
                     break;
                 v = w;

@@ -1270,7 +1270,7 @@ static __attribute__((noinline)) void macro_cards(void)
         for (r = 0; r < MX_N && !d; r++)
             if ((mx_r[r].m & 3u) == c && mx_r[r].d && mx_r[r].a)
                 d = mx_r[r].d;
-        if (d && d < NELEM(N_MDST)) { nm[2] = ' '; str_cpy(nm + 3, N_MDST[d], 6); }
+        if (d && d < N_MDST_N) { nm[2] = ' '; str_cpy(nm + 3, PN_AT(N_MDST, d), 6); }
         fmt_int(val, macro_v[c] * 100 / 127);
         draw_column(c, nm, macro_v[c] ? val : "OFF", macro_v[c] ? "%" : "", macro_v[c] ? VAL(c) : T_DIM,
                     macro_v[c] * 1000 / 127, ICON_MIX);
@@ -1330,7 +1330,7 @@ static void draw_columns(void)
         hot_gauge_column(0, "PARAM", d->label, (int32_t)k * 1000 / 7);
         card_mot_of(vp);
         draw_column(1, d->label, val, unit, VAL(1u), RATIO(d, enum_rank(d, *vp)), ICON_NONE);
-        text_column(2, "SRC", j < 0 ? "OFF" : N_MSRC[clamp(TSEL->p[P_M1SRC + 3u * (uint32_t)j], 0, MS_N - 1)], j < 0 ? T_DIM : VAL(2u));
+        text_column(2, "SRC", j < 0 ? "OFF" : PN_AT(N_MSRC, clamp(TSEL->p[P_M1SRC + 3u * (uint32_t)j], 0, MS_N - 1)), j < 0 ? T_DIM : VAL(2u));
         if (j < 0)
             text_column(3, "AMT", "--", T_DIM);
         else {
@@ -1640,7 +1640,7 @@ static void draw_columns(void)
         int32_t s = t->p[id], d = t->p[id + 1u], a = t->p[id + 2u];
         fmt_int(val, (int32_t)mod_ui_slot + 1);
         draw_column(0, "SLOT", val, "/4", VAL(0u), (int32_t)mod_ui_slot * 1000 / 3, mod_src_icon(MS_OFF));   /* (the mod icon) */
-        text_column(1, "SRC", N_MSRC[clamp(s, 0, MS_N - 1)], s ? VAL(1u) : T_DIM);
+        text_column(1, "SRC", PN_AT(N_MSRC, clamp(s, 0, MS_N - 1)), s ? VAL(1u) : T_DIM);
         text_column(2, mod_dst_scope(t, d) == 'M' ? "MASTER" : mod_dst_scope(t, d) == 'V' ? "VOICE" : "TRACK", mod_dst_name(t, d), d ? VAL(2u) : T_DIM);
         pf_column(3, "AMT", &TP[id + 2u], a, a ? VAL(3u) : T_DIM, mod_src_icon(MS_OFF));
         return;

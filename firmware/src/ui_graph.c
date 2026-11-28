@@ -2155,7 +2155,7 @@ static void draw_graph(void)
             break;
         case GR_DXSND:                               /* EDIT > SOUND: the kit's lanes, the sound edited singled out */
             cv_oy = 0;
-            if (pg->title[0] == 'S' && pg->title[6] == '3' && dx_fml[dx_ui_lane & 7u])
+            if (str_eq(pg->title, "SOUND 3") && dx_fml[dx_ui_lane & 7u])   /* (V10.8.70: no read past a short title) */
                 dx_wave_draw(dx_fml[dx_ui_lane & 7u]);   /* (V10.7.76, the owner) SOUND 3, a formula: its wavetable */
             else if (pg->title[0] == 'S')            /* (0.9.4) SOUND 1..4: the drum kit, the sound edited lit (ui_engvis.c) */
                 vx_kit_page(t, (int32_t)(dx_ui_lane & 7u));

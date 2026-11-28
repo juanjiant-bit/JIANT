@@ -177,7 +177,7 @@ static void graph_focus_lz(const track_t *t)
         cv_rect(10 + x0, 42, x1 - x0 + 1, 3, tc);
         cv_rect(10 + x0, 40, 1, 5, tc); cv_rect(10 + x1, 40, 1, 5, tc);
         str_cpy(b, "MOD: ", 24);
-        str_cpy(b + 5, N_MSRC[clamp(t->p[P_M1SRC + 3u * (uint32_t)j], 0, MS_N - 1)], 19);
+        str_cpy(b + 5, PN_AT(N_MSRC, clamp(t->p[P_M1SRC + 3u * (uint32_t)j], 0, MS_N - 1)), 19);
         str_cpy(b + str_len(b), " \xB7 ", 4);
         param_format(da, am, a, &u);
         str_cpy(b + str_len(b), a, 24 - str_len(b));

@@ -3143,7 +3143,7 @@ static int test_menu_tabs(void)
         memset(&favorites.factory[6][22], 0, 10);
         memset(&bp, 0, sizeof bp);
         mod_prox = 0;
-        ok = MS_PROX == 15 && MS_N > MS_FOLLOW && MS_FOLLOW == 17 &&   /* Existing source IDs stay stable when sources are appended. */ str_eq(N_MSRC[MS_PROX], "PROX") && !MS_BIPOLAR(MS_PROX);
+        ok = MS_PROX == 15 && MS_N > MS_FOLLOW && MS_FOLLOW == 17 &&   /* Existing source IDs stay stable when sources are appended. */ str_eq(PN_AT(N_MSRC, MS_PROX), "PROX") && !MS_BIPOLAR(MS_PROX);
         for (k = 0; k < 40u; k++)
             w[k] = LV(80u);
         bt_prox_step(w, 8, 1, t);
@@ -9688,7 +9688,7 @@ static int test_div_order(void)
                   d == &GP[G_DTIME] && v >= (int32_t)DT_DOT ? div_samples((0x021u >> ((v - DT_DOT) * 4u)) & 3u) * 3u / 2u :
                   div_samples((uint32_t)v);
             if (!(len < prev && enum_rank(d, v) == d->min + n && !seen[v])) {
-                printf("  %s: %s (value %d, place %d, length %u) after %u\n", d->label, d->names[v], (int)v,
+                printf("  %s: %s (value %d, place %d, length %u) after %u\n", d->label, desc_nm(d, v), (int)v,
                        (int)enum_rank(d, v), len, prev);
                 ok = 0;
             }
@@ -9710,14 +9710,14 @@ static int test_div_order(void)
             prev = DTIME_MS[n];
         }
         okf &= param_turn(&GP[G_DTIME], v, 1) == v && DTIME_MS[0] == 5u && DTIME_MS[47] == 1480u &&
-               str_eq(N_DTIME[DT_FREE], "5ms") && str_eq(N_DTIME[57], "1.48s") && nf > 48 &&
-               NELEM(N_DTIME) == (uint32_t)(DT_FREE + nf + 3) && DTIME_MS[nf - 1] * 441u / 10u <= DLY_MAX;
+               str_eq(PN_AT(N_DTIME, DT_FREE), "5ms") && str_eq(PN_AT(N_DTIME, 57), "1.48s") && nf > 48 &&
+               N_DTIME_N == (uint32_t)(DT_FREE + nf + 3) && DTIME_MS[nf - 1] * 441u / 10u <= DLY_MAX;
         song.g[G_DTIME] = DT_FREE + 47;
         okf &= delay_samples() == 1480u * 441u / 10u;
         song.g[G_DTIME] = (int16_t)(DT_FREE + nf - 1);
         okf &= delay_samples() == DTIME_MS[nf - 1] * 441u / 10u;
         song.g[G_DTIME] = (int16_t)DT_DOT;              /* (V10.8) 1/8D: three 16ths */
-        okf &= str_eq(N_DTIME[DT_DOT], "1/8D") && delay_samples() == div_of(beat_real(), 1) * 3u / 2u;   /* (V10.8.40: the DAC's samples) */
+        okf &= str_eq(PN_AT(N_DTIME, DT_DOT), "1/8D") && delay_samples() == div_of(beat_real(), 1) * 3u / 2u;   /* (V10.8.40: the DAC's samples) */
         song.g[G_DTIME] = (int16_t)(DT_DOT + 2u);
         okf &= delay_samples() == div_of(beat_real(), 0) * 3u / 2u && param_turn(&GP[G_DTIME], 0, -1) == (int32_t)(DT_DOT + 2u);
         song.g[G_DTIME] = 1;

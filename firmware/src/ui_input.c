@@ -2500,7 +2500,7 @@ static void mx_banner(void)
     dn = str_nth(MX_DST_FULL, dst);
     if (!*dn) {                                          /* E1..E8: the engine's own label */
         const param_desc_t *d = track_desc(TSEL, P_E0 + (dst - 12u));
-        dn = d && d->label && d->label[0] != '-' ? d->label : N_MDST[dst];
+        dn = d && d->label && d->label[0] != '-' ? d->label : PN_AT(N_MDST, dst);
     }
     str_cpy(b, str_nth(MX_SRC_FULL, src), sizeof b);
     str_cpy(b + str_len(b), " > ", sizeof b - str_len(b));

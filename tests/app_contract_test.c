@@ -714,7 +714,7 @@ static void md_desc(const param_desc_t *d)
         int32_t i;
         mdp(" | ");
         for (i = 0; i <= d->max - d->min && i < 40; i++)
-            mdp("%s%s", i ? " " : "", d->names[d->min + i]);
+            mdp("%s%s", i ? " " : "", desc_nm(d, d->min + i));
         if (i <= d->max - d->min)
             mdp(" ...");
     } else
@@ -729,7 +729,7 @@ static int md_same(const param_desc_t *a, const param_desc_t *b)
         !a->names != !b->names)
         return 0;
     for (i = 0; a->names && a->fmt == F_ENUM && i <= a->max - a->min; i++)
-        if (strcmp(a->names[a->min + i], b->names[b->min + i])) return 0;
+        if (strcmp(desc_nm(a, a->min + i), desc_nm(b, b->min + i))) return 0;
     return 1;
 }
 static void nrpn_doc(void)

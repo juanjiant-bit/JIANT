@@ -43,10 +43,7 @@
  * NOISE (engine 11 until V10.7.35) is gone: a project or a user preset made with it opens as WEST in a DUST patch
  * (core.h west_from_noise, project.c proj_phys_gone, upreset.c up_migrate); its first eight presets are NOISE's names
  * remade (PROGRAM CHANGE, the generator's textures 4..7 and the stored preset numbers name what they named). */
-static const char *const N_WEST_RATIO[] = {"0.5", "1", "1.41", "1.5", "1.73", "2", "2.5", "2.76",
-                                           "3", "3.5", "4", "5", "5.40", "6", "7", "8",
-                                           "0.5T", "1T", "1.41T", "1.5T", "1.73T", "2T", "2.5T", "2.76T",
-                                           "3T", "3.5T", "4T", "5T", "5.40T", "6T", "7T", "8T"};
+/* (V10.8.70) N_WEST_RATIO: core.h PNE */
 static const uint16_t WEST_RATIO[16] = {128, 256, 362, 384, 443, 512, 640, 706, 768, 896, 1024, 1280, 1383, 1536, 1792, 2048};
 /* (V10.8.28) DUST's METAL, NOISE's META as Leo Kuroshita wrote it (eng_noise.c until V10.7.35): one period of a register's output bit (bit i of the words, from the state 1), its length,
  * and the levels of a 1 and a 0 (no DC, the larger at 16384). 7-bit taps 0x60 and 0x78, the 15-bit

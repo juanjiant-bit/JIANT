@@ -46,7 +46,7 @@ static void graph_mod_net(const track_t *t)
         uint16_t bg = sel ? T_TINT : T_RAISE, lc = sel ? T_THEME : on ? T_MID : T_DIM;
         char b[16];
         const char *u = "";
-        cv_text(6, sy - AF_X_CAP_Y, &AF_X, N_MSRC[clamp(p[0], 0, MS_N - 1)], on ? T_TEXT : T_DIM);
+        cv_text(6, sy - AF_X_CAP_Y, &AF_X, PN_AT(N_MSRC, clamp(p[0], 0, MS_N - 1)), on ? T_TEXT : T_DIM);
         if (on) {
             cv_rect(58, sy, 100, 1, lc);
             if (sel && !ANIM_OFF())

@@ -42,13 +42,12 @@ static const char *const FORM_SHAPE[]={
  "FM x1/2","FM x1","FM x1.5","FM x2","FM x3","FM x5","FM x7",0};
 #define FORM_NSH 55u
 /* (BYTE, RAM) DRONE CLAY's SHAPE knob: the same names, the HITS first (clay_sh), a table in the flash */
-static const char *const CLAY_SHN[]={"KICK","SNARE","HAT","OPEN HAT","CLAP","RIM","TOM","ZAP","BITHAT","NOISE DN","SWELL","CRASH","SINE","S&H","DRIFT","SPRING","STAIRS","BOUNCE","EXP UP","LOG DN","CHAOS","SWEEP","RND GATE","TRIPLET","RAMP UP","RAMP DN","TRI","GATE","ENV UP","ENV DN","RISER","STUTTER","STUT UP","DOWN","UP","REST","ARP UP","ARP DN","ARP UPDN","ARP RND","CHORD m","CHORD M","SUS4","m7","CLUSTER","+OCT","+5TH","GLIDE DN","FM x1/2","FM x1","FM x1.5","FM x2","FM x3","FM x5","FM x7",0};
+/* (V10.8.70) CLAY_SHN: core.h PNE */
 enum{FPG_TAB,FPG_HIT,FPG_GES,FPG_NOTE,FPG_FM};
 enum{FS_ENVDN=29,FS_REST=35};                          /* (BYTE's S_ENVDN, S_REST: its S_* names the USB's registers here) */
 /* (BYTE's 1adbf0a6) DRONE CLAY's EUCLID: the straight ones first (on the bar's grid), then the triplets' 12, then the
  * polyrhythms; "--" none, FUSE two drawn from the SEED and joined, 1/1 every step */
-static const char *const CLAY_EU[]={"--","FUSE","1/1","1/4","2/4","3/4","1/8","2/8","3/8","5/8","7/8","3/16","5/16","7/16","9/16",
- "5/12","7/12","2/5","3/5","3/7","4/7","2/9","4/9","5/9","4/11","5/13",0};
+/* (V10.8.70) CLAY_EU: core.h PNE */
 static const uint8_t CLAY_EUK[26][2]={{0,0},{0,0},{1,1},{1,4},{2,4},{3,4},{1,8},{2,8},{3,8},{5,8},{7,8},{3,16},{5,16},{7,16},{9,16},
  {5,12},{7,12},{2,5},{3,5},{3,7},{4,7},{2,9},{4,9},{5,9},{4,11},{5,13}};
 #define CLAY_NEU 26u

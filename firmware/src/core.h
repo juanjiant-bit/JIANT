@@ -97,6 +97,21 @@ typedef struct {
     int16_t min, max, def;
     const char *const *names;   /* F_ENUM */
 } param_desc_t;
+/* (V10.8.70) the engines' long enum lists packed as params.c PNB (desc_nm), here before the engines */
+static const char PNE[] =
+    /* CLAY_SHN (clay_form.c) */ "KICK\0" "SNARE\0" "HAT\0" "OPEN HAT\0" "CLAP\0" "RIM\0" "TOM\0" "ZAP\0" "BITHAT\0" "NOISE DN\0" "SWELL\0" "CRASH\0" "SINE\0" "S&H\0" "DRIFT\0" "SPRING\0" "STAIRS\0" "BOUNCE\0" "EXP UP\0" "LOG DN\0" "CHAOS\0" "SWEEP\0" "RND GATE\0" "TRIPLET\0" "RAMP UP\0" "RAMP DN\0" "TRI\0" "GATE\0" "ENV UP\0" "ENV DN\0" "RISER\0" "STUTTER\0" "STUT UP\0" "DOWN\0" "UP\0" "REST\0" "ARP UP\0" "ARP DN\0" "ARP UPDN\0" "ARP RND\0" "CHORD m\0" "CHORD M\0" "SUS4\0" "m7\0" "CLUSTER\0" "+OCT\0" "+5TH\0" "GLIDE DN\0" "FM x1/2\0" "FM x1\0" "FM x1.5\0" "FM x2\0" "FM x3\0" "FM x5\0" "FM x7\0" "\0"
+    /* CLAY_EU (clay_form.c) */ "--\0" "FUSE\0" "1/1\0" "1/4\0" "2/4\0" "3/4\0" "1/8\0" "2/8\0" "3/8\0" "5/8\0" "7/8\0" "3/16\0" "5/16\0" "7/16\0" "9/16\0" "5/12\0" "7/12\0" "2/5\0" "3/5\0" "3/7\0" "4/7\0" "2/9\0" "4/9\0" "5/9\0" "4/11\0" "5/13\0" "\0"
+    /* N_WEST_RATIO (eng_west.c) */ "0.5\0" "1\0" "1.41\0" "1.5\0" "1.73\0" "2\0" "2.5\0" "2.76\0" "3\0" "3.5\0" "4\0" "5\0" "5.40\0" "6\0" "7\0" "8\0" "0.5T\0" "1T\0" "1.41T\0" "1.5T\0" "1.73T\0" "2T\0" "2.5T\0" "2.76T\0" "3T\0" "3.5T\0" "4T\0" "5T\0" "5.40T\0" "6T\0" "7T\0" "8T\0"
+    /* N_AN_GROUP (eng_animal.c) */ "HOLD\0" "TRILL\0" "1+1\0" "1+3\0" "2+2\0" "2+6\0" "3+3\0" "3+9\0" "4+4\0" "4+12\0" "6+6\0" "8+8\0" "8+24\0" "12+12\0" "16+16\0" "32+32\0"
+    /* N_DRW_REG (eng_wheel.c) */ "FLUTE\0" "MELLO\0" "HOLLW\0" "SMOOT\0" "3BAR\0" "BLUES\0" "GOSPL\0" "ROCK\0" "TOPS\0" "CLARI\0" "REED\0" "STRNG\0" "CHAPL\0" "BRITE\0" "BASS\0" "FULL\0"
+    /* N_ADD_MODE (eng_add.c) */ "HARM\0" "ODD\0" "WIDE\0" "BELL\0" "BAR\0" "DRUM\0" "PRIME\0" "FIFTH\0" "SUB\0" "PLATE\0"
+    ;
+#define CLAY_SHN ((const char *const *)(PNE + 0))
+#define CLAY_EU ((const char *const *)(PNE + 351))
+#define N_WEST_RATIO ((const char *const *)(PNE + 464))
+#define N_AN_GROUP ((const char *const *)(PNE + 584))
+#define N_DRW_REG ((const char *const *)(PNE + 659))
+#define N_ADD_MODE ((const char *const *)(PNE + 749))
 static inline uint32_t desc_fmt(const param_desc_t *d) { return d->fmt >= F_INT_CT ? (uint32_t)F_INT : d->fmt; }
 static inline const char *desc_unit(const param_desc_t *d)   /* F_INT_CT .. F_REG64's, else 0 */
 {

@@ -17,7 +17,7 @@
  * part's either way (a part is WHEEL or ADD); the voice's age in blocks in its perc. Cost: WHEEL's (a table lookup and a
  * multiply-add a partial a sample); the levels and the decays once a block. A note from silence starts its partials in
  * phase (a bell's, a pluck's attack the same every time). */
-static const char *const N_ADD_MODE[] = {"HARM", "ODD", "WIDE", "BELL", "BAR", "DRUM", "PRIME", "FIFTH", "SUB", "PLATE"};
+/* (V10.8.70) N_ADD_MODE: core.h PNE */
 enum { AD_HARM, AD_ODD, AD_WIDE, AD_BELL, AD_BAR, AD_DRUM, AD_PRIME, AD_FIFTH, AD_SUB, AD_PLATE, AD_N };
 #define AD_R(x) ((uint16_t)((x) * 1024.0 + 0.5))         /* a ratio, Q10 */
 static const uint16_t ADD_RATIO[AD_N][DRW_NP] = {
