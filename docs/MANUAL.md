@@ -2366,8 +2366,8 @@ it plays, the dial's needle is MOOD, and **RADIO n** counts the pieces it has ma
   side, the next piece takes the tempo of its range nearest the piece before.
 - **the sound and the form, towards CALM** (V10.8.68): longer attacks and releases (a pad's and a texture's most, an
   arp's least), a softer filter envelope, wetter sends (the pads' and the texture's reverb, the lines' delay). From
-  −25, chords a genre would stab are held or swell in instead. A song is planned shorter (four minutes at most at
-  −50), and then its rows are cut (to about 40 % at −50; the build only from −25). The build's DJ FILTER sweep
+  −25, chords a genre would stab are held or swell in instead. Sections get longer and, with RADIO, the changes come
+  more slowly. The build's DJ FILTER sweep
   (below) never plays from −15.
 - **towards DANCE** (V10.8.68): the kick's pump (the master's DUCK) deeper, held between 40 and 60. Every DANCE piece
   has drums, except NEO CLASSIC's.

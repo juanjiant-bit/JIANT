@@ -1696,10 +1696,11 @@ tienen su propio dibujo.
 - **SEQ desde otra página** vuelve a la página que dejaste; al encender, STEP, el piano roll.
 - **PRESETS** en una página SEQ mueve el **cursor de pasos** (V10.7.60): girada despacio un paso, rápido un compás
   entero; el encabezado dice el compás y el paso. Las teclas de paso también lo mueven.
-- **SEQ mantenido** abre SEQ TOOLS en todas las páginas (**G5 CLR STEP** borra el paso del cursor; en NOTE con una
-  nota en foco, solo esa nota), **SEQ + REC** borra todo (pregunta antes), **SEQ + PLAY** mientras suena es **RESYNC**,
-  un paso mantenido + una perilla es un lock (en STEP), teclas de paso mantenidas + SELECT copian y una tecla de paso +
-  REC pega.
+- **SEQ mantenido** abre **SEQ EDIT** en todas las páginas SEQ (V10.8.53; ver [SEQ EDIT](#seq-edit-seq-mantenido-v10853);
+  **G5 CLR STEP** borra el paso del cursor; en NOTE con una nota en foco, solo esa nota), **SEQ + REC** borra todo
+  (pregunta antes), **SEQ + PLAY** mientras suena es **RESYNC**, un paso mantenido + una perilla es un lock (en STEP),
+  teclas de paso mantenidas + SELECT copian, una tecla de paso + REC pega, y teclas de paso mantenidas + EDIT borran
+  esos pasos.
 - **A tiempo** (V10.8.40): cada pista toma su lugar del transporte en cada paso al que entra, así que una pista a la
   que le cambió el LEN o el DIV (las perillas, los STEPS de EUCLID, una mutación, una variación o una secuencia de otro
   largo) vuelve a la grilla de las demás en su paso siguiente. Quedan libres a propósito: los cabezales de los
@@ -1839,9 +1840,10 @@ timing. Una nota tocada justo en el primer instante después de PLAY va al paso 
   guardaron (uno guardado al 50 % carga al 50 %); borrar pasos no toca el GATE; GEN pone el suyo en cada parte.
 - **Mover una nota o un acorde** que entró antes o después: **NOTE**, KNOB 1 FOCUS en el paso, KNOB 3 **MOVE** lo
   corre de a un paso a los costados (FOCUS ALL: el acorde entero con sus TIE; una nota enfocada: esa sola).
-- **STRETCH** se fue en V10.8.20, con su REPEAT y su NUDGE. Su **ROTATE** (−32 … +32: la secuencia leída desde otro
-  paso, sin mover los pasos) sigue siendo el KNOB 3 de la capa SCL (mantené SCL), y el micro timing de un paso es el MICRO
-  de NOTE.
+- **STRETCH** perdió su página en V10.8.20. **STRETCH, SQUEEZE, REPEAT y NUDGE volvieron en SEQ EDIT** (V10.8.49;
+  mantené SEQ, ver [SEQ EDIT](#seq-edit-seq-mantenido-v10853)), sobre los pasos seleccionados o toda la pista. El KNOB 3
+  de la capa SCL sigue siendo ROTATE (−32 … +32: la secuencia leída desde otro paso, sin mover los pasos), y el micro
+  timing de un paso es el MICRO de NOTE.
 - **MICRO** (0.6.92, KNOB 4 de NOTE; era el OFFSET de la página TIMING): el lugar propio del paso enfocado fuera de la
   grilla, en **64avos de paso** (0.9.1; antes dieciseisavos), de −32/64 (medio paso antes) a +31/64 (después): un 64avo
   de un paso de 1/16 son unos 2 ms a 120 BPM. Un 64avo por paso de perilla (girada más rápido, más: aceleración); la
@@ -2045,12 +2047,91 @@ bajo la pestaña **CLAY** de SEQ (V10.8.27):
 
 En **SEQ > STEP** (el grupo BAR), **mantené un paso** (una tecla de la grilla, o la nota que estás entrando en el roll) y girá una
 perilla: ese paso recibe su propio valor del parámetro que esa perilla edita en la última página de sonido que
-visitaste. Tocá EDIT mientras mantenés el paso para borrar sus locks. Los eventos de automatización y los locks
+visitaste. Tocá EDIT mientras mantenés el paso para borrar sus locks. (V10.8.50) Con teclas de paso mantenidas en el
+roll o en la grilla (la pista sin armar), EDIT borra esos **pasos enteros**: notas, componentes y locks (**CLEAR 6-7**);
+un punto de UNDO. Los eventos de automatización y los locks
 comparten **64 registros por sección** (todas las pistas juntas); cuando se acaban, la pantalla dice
 **AUTOMATION FULL**. (V10.5) Lo que grabás se **ralea** para que entre mucho más: al parar (y mientras grabás, pasados
 los 56) la curva de cada perilla se queda solo con los registros que necesita, dentro de 1/32 de su rango. Un tramo
 donde el valor no cambia queda en un registro que lo **sostiene**; uno que se mueve parejo, en un registro **RAMP** que
 se desliza paso a paso desde el anterior (SEQ › AUTO LIST lo muestra como RAMP; el componente RAMP es otra cosa, ver COMP).
+
+### SEQ EDIT (SEQ mantenido, V10.8.53)
+
+Mantené **SEQ** en cualquier página de SEQ (STEP, NOTE, LENGTH, EUCLID …): la pantalla pasa a ser **SEQ EDIT** (el
+encabezado dice **[SEQ] EDIT**). Reemplaza a SEQ TOOLS de la V10.8.48. Muestra el roll de la pista seleccionada (en
+una pista DRUM, su grilla), con los pasos seleccionados marcados con una barra arriba. Cada acción trabaja sobre los
+**pasos seleccionados**; **sin selección**, sobre **toda la pista** (pasos 1 a LEN). Soltás SEQ y volvés a tu página.
+Mientras suena un tema (no el loop) dice **SONG PLAYS: STOP IT TO EDIT**.
+
+**Las perillas** (con SEQ mantenido)
+
+| Perilla | Tarjeta | Hace |
+| --- | --- | --- |
+| **KNOB 1** | START (después de A3: MOVE) | el primer paso de la selección (MOVE: corre toda la selección y conserva su ancho) |
+| **KNOB 2** | END (después de A3: WIDTH) | el último paso (WIDTH: cuántos pasos) |
+| **KNOB 3** | ACTION | la acción, de la lista de abajo |
+| **KNOB 4** | BY, AMOUNT, 64THS o MODE | cuánto hace la acción (al cambiar de ACTION vuelve a su valor por defecto) |
+
+Sin selección, KNOB 1 y KNOB 2 dicen **ALL**; girá uno de los dos para empezar una selección. **A3** los cambia entre
+START / END y MOVE / WIDTH. La selección es de la pista: queda al soltar SEQ, al cambiar de página o de pista, hasta que
+la borres.
+
+**Seleccionar con las teclas**
+- **B3, C4, D4, E4**: el compás 1, 2, 3 o 4 (pasos 1–16, 17–32 …; pasado LEN: **NO SUCH BAR**).
+- **G3** u **OCT−**: sin selección (**ALL STEPS**): las acciones vuelven a trabajar sobre toda la pista.
+- Sin mantener SEQ, en el roll: mantené dos o más teclas de paso (la pantalla dice **SEL 5-8**). Una sola tecla la borra.
+
+**Hacerlo**
+- **D5** u **OCT+** hace la ACTION. La pantalla dice qué hizo y dónde: **STRETCH x2 5-8**, **TRANSP +3 1-16**,
+  **GEN TECHNO 5-8 #1791**.
+- **F#5** es **UNDO** de la última edición (**UNDO STRETCH x2 5-8**); otra vez: **REDO**. Cada acción es un punto de
+  UNDO, así que **GLO + G4** también la deshace.
+
+**Teclas que actúan directo** (sin elegir ACTION)
+
+| Tecla | Hace |
+| --- | --- |
+| **F3** | CLEAR de los pasos seleccionados (sin selección: los pasos de toda la pista; sus notas sostenidas terminan) |
+| **F4** | CLR AUTO: la automatización y los locks de los pasos seleccionados (sin selección: los de toda la pista); los pasos quedan |
+| **C5** | DUP: la selección copiada justo después de sí misma, con LEN más largo (64 como mucho: **NO ROOM**); después queda seleccionada la copia |
+| **E5** | COPY de la selección (sin selección: los pasos 1 a LEN), al portapapeles de [Copiar, pegar y duplicar](#copiar-pegar-y-duplicar) |
+| **F5** | PASTE en el primer paso de la selección; sin selección reemplaza toda la secuencia, con el LEN de la copia (como hacía PASTE SEQ) |
+| **G5** | CLR STEP: el paso del cursor y sus locks (NOTE con una nota en foco: esa nota; AUTO LIST: el registro de la fila) |
+| **C#5 / D#5** | NUDGE < / >: las notas 4/64 de paso antes / después, todas juntas (**NUDGE +8/64**) |
+| **G4 · A4 · B4** | DRUM: CLEAR, REVERSE y FILL del carril (cada paso, cada 2, cada 4, nada) elegido con las negras 1–8 (**LANE SD**) |
+| **REC** | **CLEAR ALL SEQUENCES?** (las seis pistas; pregunta antes) |
+| **PLAY** (sonando) | **RESYNC** |
+
+**Las acciones** (KNOB 3; KNOB 4 dice cuánto)
+
+| ACTION | KNOB 4 | Hace |
+| --- | --- | --- |
+| STRETCH | x2–x4 | los pasos esa cantidad de veces más largos; los pasos de después se corren y LEN crece (64 como mucho); las notas sostenidas siguen sostenidas, los locks y la automatización van con sus pasos |
+| SQUEEZE | /2–/4 | los pasos esa cantidad de veces más cortos (de cada grupo, el primero que suena); LEN se achica; **TOO SHORT** si no hay nada para apretar |
+| REPEAT | x2–x8, FILL | los pasos tocados esa cantidad de veces seguidas, con sus locks (FILL: todas las que entren en 64 pasos) |
+| NUDGE | −32 … +31 (64avos) | el MICRO de cada nota movido lo mismo, cada uno dentro del rango de MICRO |
+| ROTATE | −15 … +15 | los pasos girados dentro de la selección |
+| SHIFT | −16 … +16 | la selección corrida por la pista; los pasos que cruza pasan al otro lado (**AT THE EDGE** si no se puede) |
+| REVERSE | — | los pasos al revés (una nota conserva sus TIEs después) |
+| DUP · COPY | — | como **C5** y **E5** |
+| PASTE | OVER, INSERT | como **F5**; INSERT corre los pasos de ahí en adelante, con LEN más largo |
+| CLEAR · CLR AUTO · CLR STEP | — | como **F3**, **F4** y **G5** |
+| VEL RND | 5–100 % | la velocidad de cada nota cambiada hasta esa cantidad |
+| NOTE RND | 1–7 | cada nota movida para arriba o para abajo hasta esa cantidad de grados de la escala |
+| HUMANIZE | 1–16 (64avos) | el MICRO de cada nota movido al azar, hasta esa cantidad para cada lado (**HUMANIZED**) |
+| TRANSP | −12 … +12 | las notas movidas esa cantidad de semitonos |
+| OCTAVE | −2 … +2 | las notas movidas esa cantidad de octavas |
+| THIN | 5–100 % | esa parte de las notas sacada, al azar |
+| INVERT | — | las notas espejadas alrededor del medio entre la más grave y la más aguda |
+| STUTTER | x2–x4 | cada nota, un ratchet de esa cantidad |
+| ARP | UP, DOWN, UP+DN, RANDOM | un acorde con TIEs después pasa a ser sus notas, una por paso |
+| MUTATE | 5–100 % | esa parte de las notas cambiada un poco: un grado o dos, la velocidad, el lugar |
+| GEN | ANY o un género | el generador de la pista escribe solo dentro de la selección, con una semilla nueva cada vez; el resto queda |
+| RANDOM | 1/4, 1/8, 1/16, 1/32 | notas nuevas en la escala sobre esa grilla (pista DRUM: golpes; 1/32: ratchets) |
+
+NOTE RND, TRANSP, OCTAVE, INVERT y ARP son para notas: en una pista DRUM dicen **NOTES ONLY**. Las demás funcionan
+también en un kit.
 
 ### Copiar, pegar y duplicar
 
@@ -2377,8 +2458,8 @@ armadas. No se guarda con el proyecto.
 - **el sonido y la forma, hacia CALM** (V10.8.68): ataques y releases más largos (los de un pad y una textura los que
   más, los de un arpegio los que menos), una envolvente de filtro más suave, envíos más húmedos (la reverb de los pads
   y la textura, el delay de las líneas). Desde −25, los acordes que un género tocaría picados quedan sostenidos o
-  entran de a poco. Un tema se planea más corto (cuatro minutos como mucho en −50) y después sus filas se recortan
-  (a más o menos el 40 % en −50; el build recién desde −25). El barrido del DJ FILTER del build (abajo) nunca suena
+  entran de a poco. Las secciones se alargan y, con RADIO, los cambios llegan
+  más despacio. El barrido del DJ FILTER del build (abajo) nunca suena
   desde −15.
 - **hacia DANCE** (V10.8.68): el pump del bombo (el DUCK del master) más hondo, entre 40 y 60. Toda pieza DANCE tiene
   batería, salvo las de NEO CLASSIC.
