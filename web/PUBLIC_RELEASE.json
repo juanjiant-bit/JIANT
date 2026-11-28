@@ -1,11 +1,11 @@
 {
-  "source": "e3e7ceb3b9fec2054c83b026738665651b0e4923",
-  "version": "V10.8.48",
+  "source": "d3bb2ebebc8a3157578786b17947e782e18a5446",
+  "version": "V10.8.72",
   "released_site_run": 45282056838,
-  "previous_public_source": "ca03212d80b91e0c5b7ffa331df69753423fa69f",
-  "audit_source": "e3e7ceb3b9fec2054c83b026738665651b0e4923",
-  "candidate_run_id": 45679765156,
-  "sha256": "3a72686d03f7832230c644878df7585a88add022cac49282a444de23bcab065b",
+  "previous_public_source": "e3e7ceb3b9fec2054c83b026738665651b0e4923",
+  "audit_source": "d3bb2ebebc8a3157578786b17947e782e18a5446",
+  "candidate_run_id": 46161897733,
+  "sha256": "fa80dc44a352068a0c507571e3f8f4172ebf50eb9e304b49cbfa7fecd2068a6e",
   "regressions": [
     "loop_song",
     "song_generator",
@@ -13,5 +13,5 @@
     "gen"
   ],
   "publication_revision": 1,
-  "emulator_sha256": "1c3f98e9d82cb5665e637e11b36f649f041a14e6a16c51b4bb72aa0168d13cca"
+  "emulator_sha256": "c7927a962fdb612ed88dc51c4fdecce3cde7ce11076553a9d9d37fbcda0c4216"
 }

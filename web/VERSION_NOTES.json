@@ -235,9 +235,99 @@
     "ott": {
       "es": "OTT por pista (FX)",
       "en": "Per-track OTT (FX)"
+    },
+    "gen_ott": {
+      "en": "Generator uses OTT on electronic genres",
+      "es": "El generador usa OTT en géneros electrónicos"
+    },
+    "dist_formulas": {
+      "en": "DIST types RING, STEPS, XOR, WOB, SFOLD, SAT",
+      "es": "Tipos de DIST RING, STEPS, XOR, WOB, SFOLD, SAT"
+    },
+    "visual_smooth": {
+      "en": "HOME › VISUAL smooth under load",
+      "es": "HOME › VISUAL fluida con carga"
     }
   },
   "versions": {
+    "V10.8.72": {
+      "date": "2026-11-28",
+      "has": [
+        "eng_west",
+        "drumx_math",
+        "life",
+        "punch_editor",
+        "fx_punchins",
+        "song_mode",
+        "stepfx_keys",
+        "drone_clay",
+        "macros_dest",
+        "euclid",
+        "euclid_role",
+        "harmony",
+        "scene",
+        "half_rate",
+        "track_colours",
+        "hud_screens",
+        "no_power_click",
+        "velocity_at",
+        "gen_new_genres",
+        "copy_paste_oct",
+        "clay_rate",
+        "clay_bars",
+        "clay_keys",
+        "west_dust_metal",
+        "ui_push",
+        "screen_mirror",
+        "emu_editor",
+        "emu_stems",
+        "mutate_compact",
+        "live_compact",
+        "cloud_fix",
+        "dist_noise",
+        "chorus_mix",
+        "key_trk",
+        "presets_retouch",
+        "gain_all",
+        "dj_filter_knob",
+        "swarm_wave",
+        "swarm_notes",
+        "gen_character",
+        "gen_radio_mood",
+        "seq_sync_fix",
+        "resync",
+        "mood_strong",
+        "gen_idiomatic",
+        "gate_fx",
+        "gain_page",
+        "ott",
+        "gen_ott",
+        "dist_formulas",
+        "visual_smooth"
+      ],
+      "hasnt": [
+        "eng_noise",
+        "mutate",
+        "stretch",
+        "live",
+        "seq_dice",
+        "punch_lane",
+        "help_hints",
+        "flt_ms20_lp24",
+        "env_stage",
+        "pages_bar_phrases_sys2",
+        "gen_fuga"
+      ],
+      "notes": {
+        "es": "La página de CPU de ABOUT y el diagnóstico de velocity ya no están. Los proyectos y presets con filtro MS20 o LP24 abren como LP. MUTATE y LIVE no son las páginas originales (esas quedan en V10.7.81). Ya no están las páginas BAR, PHRASES y SYSTEM 2 ni el género FUGA del generador. Hacé un respaldo completo de tus proyectos antes de cambiar de versión. Una ruta de la matriz por debajo de −100 % no abre en V10.8.50 o anteriores. Los números grandes usan una fuente más chica; la cuenta regresiva es una línea. Los ajustes globales de Felucca anteriores a JIANT 0.6 ya no se migran: arrancan por defecto una vez. Los proyectos con LIFE PUMP abren como STEREO. El TIME del OTT de un proyecto de V10.8.71 carga 24 más bajo (su default viejo 72 pasa a ser el nuevo default 48).",
+        "en": "The CPU page in ABOUT and the velocity diagnostic are gone. Projects and presets using the MS20 or LP24 filter open as LP. MUTATE and LIVE are not the original pages (those remain in V10.7.81). The BAR, PHRASES and SYSTEM 2 pages and the generator's FUGA genre are gone. Make a complete backup of your projects before changing version. A matrix route below −100 % does not open in V10.8.50 or earlier. Big numbers use a smaller font; the count-in is one line. Felucca global settings from before JIANT 0.6 are no longer migrated: they start from defaults once. Projects with LIFE PUMP open as STEREO. OTT's TIME in a V10.8.71 project loads 24 lower (its old default 72 becomes the new default 48)."
+      },
+      "status": "public",
+      "summary": {
+        "en": "Public release: everything since V10.8.48, plus the generator now puts OTT on drums, bass and sometimes the lead in electronic genres (RESOUND too), a much harder OTT, six new DIST types from JIANT BYTE (RING, STEPS, XOR, WOB, SFOLD, SAT) and a HOME › VISUAL that stays smooth under load.",
+        "es": "Versión pública: todo lo de desde V10.8.48, más el generador que pone OTT en batería, bajo y a veces el lead en los géneros electrónicos (también RESOUND), un OTT mucho más extremo, seis tipos nuevos de DIST de JIANT BYTE (RING, STEPS, XOR, WOB, SFOLD, SAT) y HOME › VISUAL fluida con carga."
+      }
+    },
     "V10.8.71": {
       "date": "2026-11-28",
       "status": "beta",
