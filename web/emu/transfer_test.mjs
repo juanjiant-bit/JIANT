@@ -118,6 +118,25 @@ async function modelTests() {
     check("project: the FM-1's other objects untouched (live music, settings, presets)", same(dev.objs.get(0), fm1Content().get(0)) && same(dev.objs.get(1), fm1Content().get(1)) && same(dev.objs.get(7), fm1Content().get(7)));
     c.link.close();
   }
+  { /* a project to a file and back: PROJECT 1 of the emulator to a file (JSON, as downloaded), into PROJECT 5 of the
+       FM-1 (C emptied, its rows merged); a Studio file (version 1, no index) leaves the rows; a damaged one refused */
+    const ed = jsDevice(emuContent()), emu = jsSide(ed), dev = jsDevice(fm1Content()), c = await X.connectFM1(midiAccess(dev));
+    const file = JSON.parse(JSON.stringify(await X.exportProject(emu, 0, "MY SONG")));
+    const before = dev.objs.get(10).slice();
+    const r = await X.importProject(c.side, file, 4);
+    const part = (b, s) => [[8, 36], [296, 128], [1320, 64], [1832, 64]].map(([o, n]) => Array.from(b.subarray(o + s * n, o + (s + 1) * n)).join()).join("|");
+    check(`project file: "${X.projectFileName("emu", 0, file.name).replace(/\d{4}-\d\d-\d\d/, "DATE")}", 4 sections and the index`, file.format === "jiant-project" && file.parts.length === 4 && !!file.index && file.song === 1);
+    check(`project file: into the FM-1's PROJECT 5: A B D byte-exact, C empty, its rows from PROJECT 1, others kept (${r.verified.length} verified)`,
+          same(dev.objs.get(56), ed.objs.get(40)) && same(dev.objs.get(57), ed.objs.get(41)) && dev.objs.get(58).length === 0 && same(dev.objs.get(59), ed.objs.get(43)) &&
+          part(dev.objs.get(10), 4) === part(ed.objs.get(10), 0) && part(dev.objs.get(10), 2) === part(before, 2) && r.verified.length === 5);
+    const v1 = { format: "jiant-project", version: 1, name: "MY SONG", parts: file.parts }, idx1 = dev.objs.get(10).slice();
+    const r1 = await X.importProject(c.side, v1, 5);
+    check("project file: JIANT Studio's (no index) into PROJECT 6: the sections, the rows untouched", same(dev.objs.get(60), ed.objs.get(40)) && same(dev.objs.get(10), idx1) && r1.verified.length === 4);
+    const bad = JSON.parse(JSON.stringify(file)); bad.parts[1].crc ^= 1; const log0 = dev.log.length;
+    const e = await rejects(X.importProject(c.side, bad, 1)), e2 = await rejects(X.importProject(c.side, { format: "felucca-backup" }, 1));
+    check("project file: a damaged section or another kind of file refused before writing", e?.code === "projFile" && e2?.code === "projFile" && dev.log.length === log0);
+    c.link.close();
+  }
   { /* a preset: emulator 1 (FM6, a patch) to FM-1 21 (over "OLD 21"), then 5 (no patch) to 22 */
     const ed = jsDevice(emuContent()), emu = jsSide(ed), dev = jsDevice(fm1Content()), c = await X.connectFM1(midiAccess(dev));
     await X.transfer(emu, c.side, { what: "preset", from: 0, to: 20 });
@@ -231,6 +250,10 @@ async function wasmTests(path) {
   /* GET FROM FM-1: its PROJECT 3 into the emulator's PROJECT 5 */
   const r2 = await X.transfer(c.side, emu, { what: "project", from: 2, to: 4 });
   check("wasm: GET FROM FM-1: PROJECT 3 into the emulator's PROJECT 5, verified", r2.verified.length === 5);
+  /* a project file: the FM-1's PROJECT 3 to a file, into the emulator's PROJECT 6; the firmware takes and verifies it */
+  const pf = JSON.parse(JSON.stringify(await X.exportProject(c.side, 2, "")));
+  const r4 = await X.importProject(emu, pf, 5);
+  check(`wasm: a project file: the FM-1's PROJECT 3 into the emulator's PROJECT 6, verified (${r4.verified.length})`, r4.verified.length === 5 && !r4.refused.length);
   /* everything, then the file round trip on the firmware */
   const r3 = await X.transfer(emu, c.side, { what: "all" });
   check(`wasm: everything to the FM-1 (${r3.verified.length} objects verified)`, r3.verified.length >= 5);

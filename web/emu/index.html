@@ -67,6 +67,8 @@ a { color: inherit; }
 .keys, footer { margin: 16px 0 0; color: var(--dim); text-align: center; }
 .keys span { white-space: nowrap; margin: 0 8px; }
 kbd { font: 600 11px ui-monospace, Menlo, monospace; border: 1px solid var(--rule); padding: 0 4px; color: var(--fg); }
+.stems { margin: 16px auto 0; max-width: 60em; color: var(--dim); font-size: 12px; border: 1px solid var(--edge); padding: 6px 12px; }
+.stems summary { cursor: pointer; color: var(--fg); }
 footer { margin-top: 12px; font-size: 12px; }
 footer nav a { margin: 0 6px; }
 footer small { font-size: 11px; opacity: .8; }
@@ -110,6 +112,8 @@ footer small { font-size: 11px; opacity: .8; }
   <span><kbd>Shift</kbd>-click holds a button</span>
 </p>
 
+
+<details class="stems" id="xfer"><summary>FM-1 ⇄ emulator</summary></details>
 
 <p class="kofi" style="border-left:3px solid #ec6e50;padding:4px 0 4px 12px">If you resonate with my work, consider supporting me on <a href="https://ko-fi.com/juanjiant" target="_blank" rel="noopener" style="color:inherit;font-weight:600">Ko-fi</a> (in Argentina: <a href="https://cafecito.app/juanjiant" target="_blank" rel="noopener" style="color:inherit;font-weight:600">Cafecito</a>). Thanks for all the good energy, hope you enjoy this little beast 🫶✨🎹</p>
 <footer>
@@ -522,6 +526,11 @@ window.jiantEmu = {
   },
 };
 
+// ------------------------------------------------------------------ the FM-1 panel (transfer-ui.js: SEND TO FM-1, GET FROM FM-1, a project to a file and back, backups)
+let xfer = null;
+import("./transfer-ui.js").then((m) => { xfer = m.mountTransfer(document.getElementById("xfer")); if (node) xfer.attach(node); },
+                                (e) => console.warn("JIANT: the FM-1 panel did not load", e));
+
 // ------------------------------------------------------------------ switching on
 const status = document.getElementById("status");
 const say = (t) => { status.textContent = t; status.hidden = !t; };
@@ -575,6 +584,7 @@ async function switchOn() {
     syncKeys();
     send({ type: "visible", on: !document.hidden });
     midiOn();
+    xfer?.attach(node);
   } catch (err) {
     node = null;
     go.disabled = false;

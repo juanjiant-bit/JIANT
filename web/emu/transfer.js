@@ -367,6 +367,45 @@ export async function restoreFile(dst, file, opt = {}, onProgress = () => {}) {
   return { ...r, archive, songsLeft: songsNotRestored(r.refused.filter((id) => by.get(id).size)) };   // (with data only)
 }
 
+/* ---- one project as a file (the computer), and back: { format: "jiant-project", version: 2, firmware, created, name,
+ * song (1..6, where it came from), parts: [{ k, size, crc, data (base64) }], index (base64, the whole song index: the
+ * rows, scenes, sources and variations of song `song` go with it) }. JIANT Studio's project library writes and reads
+ * the same parts (its version 1 has no index: the rows on the device are left as they are) */
+const b64 = (bytes) => { let s = ""; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(s); };
+const unb64 = (s) => Uint8Array.from(atob(s || ""), (c) => c.charCodeAt(0));
+export async function exportProject(side, s, name = "", onProgress = () => {}) {
+  const m = await list(side), ids = SONG_IDS(s);
+  let done = 0; const total = ids.reduce((n, id) => n + (m.byId.get(id)?.size || 0), 0) + IDX.SIZE;
+  const tick = (n) => { done += n; onProgress(Math.min(done, total), total, "read"); };
+  const parts = [];
+  for (let k = 0; k < 4; k++) {
+    const o = m.byId.get(ids[k]), bytes = o ? await getObject(side, o, tick) : new Uint8Array(0);
+    parts.push({ k, size: bytes.length, crc: bkCrc(bytes), data: b64(bytes) });
+  }
+  const io = m.byId.get(10), idx = io && io.size ? await getObject(side, io, tick) : null;
+  return { format: "jiant-project", version: 2, firmware: side.version || "", created: new Date().toISOString(), name, song: s + 1,
+           parts, ...(idx ? { index: b64(idx) } : {}) };
+}
+/* a project file into song d of a side: its four sections (an empty one empty), then the song rows merged (the rest
+ * of the index as it was), each verified as transfer's */
+export async function importProject(dst, file, d, onProgress = () => {}) {
+  if (!file || file.format !== "jiant-project" || !Array.isArray(file.parts)) throw new XferError("projFile");
+  const dsts = SONG_IDS(d), plan = [];
+  for (let k = 0; k < 4; k++) {
+    const p = file.parts.find((x) => x.k === k), bytes = p ? unb64(p.data) : new Uint8Array(0);
+    if (p && p.crc != null && p.size && bkCrc(bytes) !== p.crc) throw new XferError("projFile", `${SECTION[k]}`);
+    plan.push([dsts[k], bytes]);
+  }
+  if (file.index && file.song >= 1) {
+    const m = await list(dst), io = m.byId.get(10);
+    if (io && io.size) plan.push([10, mergeIndex(await getObject(dst, io), d, unb64(file.index), file.song - 1)]);
+  }
+  let done = 0; const total = plan.reduce((n, [, b]) => n + b.length, 0);
+  return writePlan(dst, plan, (n, phase) => { done += n; onProgress(Math.min(done, total), total, phase); });
+}
+export const projectFileName = (who, s, name, d = new Date()) =>
+  `JIANT-${who === "emu" ? "emu-" : ""}project-${s + 1}-${(name || "untitled").replace(/[^\w-]+/g, "_")}-${d.toISOString().slice(0, 10)}.json`;
+
 /* a side's complete backup file: exactly what the installer's and the editor's "Back up" write (captureBackup) */
 export async function backupFile(side, onProgress) {
   return captureBackup((r, o) => side.request(r, o), side.version || "", onProgress);

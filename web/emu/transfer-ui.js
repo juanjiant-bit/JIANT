@@ -13,6 +13,9 @@ const T = {
     title: "FM-1 ⇄ emulator: send what you made to your FM-1, get it back, backups",
     emu: "Emulator", fm1: "FM-1", off: "switch the emulator on first", notConn: "not connected", connect: "Connect FM-1",
     reconnect: "Reconnect", usb: "USB", bt: "Bluetooth", what: "What", project: "Project", preset: "User preset", all: "Everything",
+    projOut: (who) => `⤓ ${who}'S PROJECT TO A FILE`, projIn: (who) => `⤒ A FILE INTO THE ${who}`,
+    projHelp: "One project with its song rows, as a file on the computer: keep it, send it, open it in the emulator or on the FM-1 (also JIANT Studio's project files).",
+    projSaved: (n) => `Downloaded ${n}.`, projLoaded: (what, where) => `Done: the file in ${what} on the ${where}, written and verified.`,
     send: "SEND TO FM-1 →", get: "← GET FROM FM-1", download: "DOWNLOAD BACKUP", importB: "IMPORT BACKUP", retry: "RETRY",
     settings: "also the settings (MENU options, palette, button calibration)",
     emuSlot: "Emulator slot", fm1Slot: "FM-1 slot", empty: "(empty)", noName: "(no name)",
@@ -48,6 +51,7 @@ const T = {
       validation: "The device refused the data (it failed its checks). Nothing of that object was written.",
       busy: "A transfer is running.",
       file: (m) => `Not a JIANT / Felucca backup file: ${m}`,
+      projFile: (m) => m && !/^V/.test(m) ? `The file's section ${m} is damaged (its CRC does not match): nothing was written.` : "Not a project file (JIANT-…project-….json, or a project exported from JIANT Studio).",
       partial: (where, newP, oldP, lost) => `${lost ? "The connection dropped" : "The transfer stopped"} half-way. On the ${where} these are NEW: ${newP}; these are still OLD: ${oldP}. The project plays a mix of both until it is finished. Press RETRY to send it all again (reconnect first), or restore the backup you saved.`,
       other: (m) => `Error: ${m}`,
     },
@@ -56,6 +60,9 @@ const T = {
     title: "FM-1 ⇄ emulador: pasá lo que hiciste a tu FM-1, traelo de vuelta, backups",
     emu: "Emulador", fm1: "FM-1", off: "primero encendé el emulador", notConn: "no conectado", connect: "Conectar FM-1",
     reconnect: "Reconectar", usb: "USB", bt: "Bluetooth", what: "Qué", project: "Proyecto", preset: "Preset de usuario", all: "Todo",
+    projOut: (who) => `⤓ PROYECTO DEL ${who} A UN ARCHIVO`, projIn: (who) => `⤒ UN ARCHIVO AL ${who}`,
+    projHelp: "Un proyecto con sus filas de canción, como archivo en la compu: guardalo, mandalo, abrilo en el emulador o en el FM-1 (también los archivos de proyecto de JIANT Studio).",
+    projSaved: (n) => `Descargado ${n}.`, projLoaded: (what, where) => `Listo: el archivo en ${what} del ${where}, escrito y verificado.`,
     send: "ENVIAR AL FM-1 →", get: "← TRAER DEL FM-1", download: "DESCARGAR BACKUP", importB: "IMPORTAR BACKUP", retry: "REINTENTAR",
     settings: "también los ajustes (opciones del MENU, paleta, calibración de botones)",
     emuSlot: "Lugar en el emulador", fm1Slot: "Lugar en el FM-1", empty: "(vacío)", noName: "(sin nombre)",
@@ -91,6 +98,7 @@ const T = {
       validation: "El equipo rechazó los datos (no pasaron sus controles). No se escribió nada de ese objeto.",
       busy: "Hay una transferencia en curso.",
       file: (m) => `No es un archivo de backup de JIANT / Felucca: ${m}`,
+      projFile: (m) => m && !/^V/.test(m) ? `La sección ${m} del archivo está dañada (su CRC no coincide): no se escribió nada.` : "No es un archivo de proyecto (JIANT-…project-….json, o un proyecto exportado de JIANT Studio).",
       partial: (where, newP, oldP, lost) => `${lost ? "La conexión se cortó" : "La transferencia se detuvo"} a la mitad. En el ${where} esto quedó NUEVO: ${newP}; esto sigue VIEJO: ${oldP}. El proyecto suena como una mezcla de ambos hasta terminarlo. Tocá REINTENTAR para enviarlo todo de nuevo (reconectá primero), o restaurá el backup que guardaste.`,
       other: (m) => `Error: ${m}`,
     },
@@ -146,6 +154,8 @@ export function mountTransfer(root, opt = {}) {
     return e;
   };
   const fileIn = h("input", { type: "file", accept: ".json,application/json", hidden: true, onchange: () => importFile() });
+  let projTo = "emu";
+  const projIn = h("input", { type: "file", accept: ".json,application/json", hidden: true, onchange: () => importProjectFile() });
 
   // ------------------------------------------------------------------ what each slot holds, as an option's text
   const songText = (s) => `${s.n + 1} · ${s.used ? (s.name || t().noName) + "  [" + s.stored.map((v, i) => v ? "ABCD"[i] : "-").join("") + "]" : t().empty}`;
@@ -179,6 +189,12 @@ export function mountTransfer(root, opt = {}) {
           h("select", { disabled: !on || !idle || S.what === "all", onchange: (e) => { selEmu = +e.target.value; } }, options(S.emuCat, selEmu))),
         h("label", { class: "slot" }, h("small", {}, L.fm1Slot),
           h("select", { disabled: !conn || !idle || S.what === "all", onchange: (e) => { selFm1 = +e.target.value; } }, options(S.fm1Cat, selFm1)))),
+      S.what === "project" ? h("div", { class: "row acts" },
+        h("button", { type: "button", id: "xfer-pout-emu", disabled: !on || !idle, onclick: () => run(() => saveProject("emu")) }, L.projOut(L.emu.toUpperCase())),
+        h("button", { type: "button", id: "xfer-pin-emu", disabled: !on || !idle, onclick: () => { projTo = "emu"; projIn.click(); } }, L.projIn(L.emu.toUpperCase())),
+        h("button", { type: "button", id: "xfer-pout-fm1", disabled: !on || !conn || !idle, onclick: () => run(() => saveProject("fm1")) }, L.projOut(L.fm1)),
+        h("button", { type: "button", id: "xfer-pin-fm1", disabled: !on || !conn || !idle, onclick: () => { projTo = "fm1"; projIn.click(); } }, L.projIn(L.fm1)), projIn) : null,
+      S.what === "project" ? h("p", {}, h("small", {}, L.projHelp)) : null,
       S.what === "all" ? h("div", { class: "row" }, h("label", {}, h("input", { type: "checkbox", id: "xfer-settings", checked: S.settings, disabled: !idle, onchange: (e) => { S.settings = e.target.checked; } }), " " + L.settings)) : null,
       h("div", { class: "row acts" },
         h("button", { type: "button", class: "go", disabled: !on || !conn || !idle, onclick: () => run(() => start("to")) }, L.send),
@@ -322,6 +338,42 @@ export function mountTransfer(root, opt = {}) {
     download(name, file);
     S.progress = null;
     say(t().downloaded(name), "good");
+  }
+  /* one project to a file, and a file into a slot (the slot picked above, on that side) */
+  async function saveProject(who) {
+    if (who === "fm1") await ensureFm1();
+    await refresh();
+    const side = who === "fm1" ? S.fm1 : S.emu, s = who === "fm1" ? selFm1 : selEmu, cat = who === "fm1" ? S.fm1Cat : S.emuCat;
+    const name = cat?.songs[s]?.name || "";
+    const file = await X.exportProject(side, s, name, progress(t().projectN(s + 1)));
+    const fname = X.projectFileName(who, s, name);
+    download(fname, file);
+    S.progress = null;
+    say(t().projSaved(fname), "good");
+  }
+  async function importProjectFile() {
+    const f = projIn.files && projIn.files[0], who = projTo;
+    projIn.value = "";
+    if (!f || !S.emu) return;
+    run(async () => {
+      let file;
+      try { if (f.size > 600000) throw 0; file = JSON.parse(await f.text()); if (file.format !== "jiant-project" || !Array.isArray(file.parts)) throw 0; }
+      catch (_) { throw new X.XferError("projFile"); }
+      if (who === "fm1") await ensureFm1();
+      await refresh();
+      if (who === "fm1") { const e = X.compat(S.info, S.fm1List, S.emuList, "to", "project"); if (e) throw e; }
+      const d = who === "fm1" ? selFm1 : selEmu, dst = who === "fm1" ? S.fm1 : S.emu, cat = who === "fm1" ? S.fm1Cat : S.emuCat;
+      S.ask = { dst: who, items: X.overwrites(cat, { what: "project", to: d }), go: async () => {
+        S.lastDst = who;
+        const L = t(), label = L.projectN(d + 1);
+        const r = await X.importProject(dst, file, d, progress(label));
+        await refresh().catch(() => {});
+        S.progress = null;
+        if (r.refused.length) throw new X.XferError("validation");
+        say(L.projLoaded(label, who === "fm1" ? L.fm1 : L.emu.toLowerCase()), "good");
+      } };
+      render();
+    });
   }
   async function importFile() {
     const f = fileIn.files && fileIn.files[0];
