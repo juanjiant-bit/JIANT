@@ -46,6 +46,7 @@ static void cost_in(void)                                /* (the device's split:
 static uint32_t scene(uint32_t mask, uint32_t nblk)
 {
     uint32_t b, q, f = 0, h = 2166136261u;
+    int dty;
     blk = 0;
     ui_power_on(); go_home(); frames(4);
     if (mask >= 0x100u) {                                /* GEN songs, TRACKS 6 */
@@ -73,8 +74,14 @@ static uint32_t scene(uint32_t mask, uint32_t nblk)
     }
     if (live.mode) chain_play_ui(); else transport_req = 1;
     ui_input();
+    dty = getenv("CL_DTYPE") ? atoi(getenv("CL_DTYPE")) : -1;
     for (b = 0; b < 400u + nblk; b++) {                  /* (its first 400 blocks to warm: the song under way) */
         if (b % 23u == 0u) { f++; ui_input(); song_poll(); host_ticks += 1000000u / 30u; fm1_ms += 1000u / 30u; }
+        if (dty >= 0) {                                  /* (V10.8.72) every track's DIST at 100 on this TYPE (BYTE's formulas:
+                                                         * 6 .. 11; a type's worst case), each block (the sections load theirs) */
+            uint32_t k;
+            for (k = 0; k < NTRK; k++) { trk[k].p[P_DIST] = 127; trk[k].p[P_DTYPE] = (int16_t)dty; }
+        }
         move();
         cost_in();
         if (b >= 400u) cl_mark = 1;

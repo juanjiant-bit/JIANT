@@ -20,7 +20,7 @@ static int32_t sw_l[CTL], sw_r[CTL];                    /* (SWARM) its own block
 static uint8_t sw_on;
 enum { AIN_IN1, AIN_IN2, AIN_SUM, AIN_ST, AIN_SW, AIN_N };   /* (SWARM: the drone of the surroundings) */
 static const char *const N_AIN_SRC[] = {"IN 1", "IN 2", "1+2", "STEREO", "SWARM"};
-static const char *const N_AIN_PLAY[] = {"THRU", "KEYS", ">T1", ">T2", ">T3", ">T4", ">T5", ">T6"};   /* (SWARM: its notes to a track) */
+/* (V10.8.72) N_AIN_PLAY: core.h PNE (packed, str_nth) */   /* (SWARM: its notes to a track) */
 static const int16_t SW_FULL[P_COUNT] = {[P_E4] = 127};   /* (SWARM's fill: WIDTH whole, DIST none) */
 static int16_t ain_gg[NTRK];                             /* GATE's gain now, Q15 */
 static uint8_t ain_upd[NTRK];                            /* this block's GATE not yet stepped (ain_block) */

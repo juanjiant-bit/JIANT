@@ -34,6 +34,7 @@ static const char PNB[] =
     /* N_MSRC */ "OFF\0" "LFO\0" "ENV\0" "VEL\0" "KEY\0" "RAND\0" "MODW\0" "AT\0" "EXPR\0" "M1\0" "M2\0" "M3\0" "M4\0" "MSEQ\0" "NOISE\0" "PROX\0" "ENV2\0" "IN ENV\0" "T1 ENV\0" "T2 ENV\0" "T3 ENV\0" "T4 ENV\0" "T5 ENV\0" "T6 ENV\0" "OCT+\0" "OCT-\0"
     /* N_MDST */ "OFF\0" "PITCH\0" "CUT\0" "SHP\0" "AMP\0" "PAN\0" "DIST\0" "CHO\0" "DLY\0" "REV\0" "L.RATE\0" "L.PIT\0" "E1\0" "E2\0" "E3\0" "E4\0" "E5\0" "E6\0" "E7\0" "E8\0" "CLIP\0" "PNCH\0" "D.TIM\0" "D.FB\0" "D.TON\0" "D.MIX\0" "R.SIZ\0" "R.DMP\0" "C.RAT\0" "C.DEP\0" "F.CUT\0" "LEVEL\0" "M1\0" "M2\0" "M3\0" "M4\0"
     /* N_CHRD */ "OFF\0" "TRIAD\0" "7TH\0" "ADD9\0" "SUS2\0" "SUS4\0" "MAJ\0" "MIN\0" "7\0" "MAJ7\0" "MIN7\0" "POWER\0" "POP\0" "JAZZ\0" "SOUL\0" "DREAM\0" "QUART\0" "\0"
+    /* N_DTYPE (V10.8.72: BYTE's formulas appended) */ "SOFT\0" "HARD\0" "FOLD\0" "CRUSH\0" "RECT\0" "AMP\0" "RING\0" "STEPS\0" "XOR\0" "WOB\0" "SFOLD\0" "SAT\0"
     /* N_DTIME (last: its length the delay line's) */ "1/4\0" "1/8\0" "1/16\0" "1/32\0" "8T\0" "16T\0" "1/2\0" "1/1\0" "2BAR\0" "4BAR\0" "5ms\0" "6ms\0" "7ms\0" "8ms\0" "9ms\0" "10ms\0" "11ms\0" "12ms\0" "13ms\0" "15ms\0" "17ms\0" "19ms\0" "21ms\0" "24ms\0" "27ms\0" "31ms\0" "35ms\0" "39ms\0" "44ms\0" "50ms\0" "56ms\0" "64ms\0" "72ms\0" "81ms\0" "91ms\0" "103ms\0" "116ms\0" "131ms\0" "148ms\0" "167ms\0" "189ms\0" "213ms\0" "241ms\0" "272ms\0" "307ms\0" "346ms\0" "391ms\0" "441ms\0" "498ms\0" "562ms\0" "634ms\0" "716ms\0" "808ms\0" "912ms\0" "1.03s\0" "1.16s\0" "1.31s\0" "1.48s\0"
                                       /* (0.8.4) past the line at the full rate (fx.c dly_lo): half rate to 2.97 s, then a quarter */
                                       "1.67s\0" "1.89s\0" "2.13s\0" "2.40s\0" "2.71s\0"
@@ -103,7 +104,9 @@ static const char PNB[] =
 #define N_MDST_N 36u
 #define N_CHRD ((const char *const *)(PNB + 1096))
 #define N_CHRD_N 18u
-#define N_DTIME ((const char *const *)(PNB + 1178))
+#define N_DTYPE ((const char *const *)(PNB + 1178))
+#define N_DTYPE_N 12u
+#define N_DTIME ((const char *const *)(PNB + 1237))
 #define N_DTIME_N (DT_DOT + 3u)
 #define PN_AT(l, i) str_nth((const char *)(l), (unsigned)(i))   /* a packed list's name i */
 static const char *desc_nm(const param_desc_t *d, int32_t i)   /* an enum's name i (a list of PNB's or of pointers) */
@@ -117,9 +120,7 @@ static const char *const N_LWAVE6[] = {"SIN", "TRI", "SAW", "SQR", "S&H", "DRIFT
 static const char N_LSYNC[] = "4BAR\0" "2BAR\0" "1BAR\0" "1/2\0" "1/4\0" "1/8D\0" "1/4T\0" "1/8\0" "1/8T\0" "1/16\0"
                               "1/16T\0" "1/32\0" "8BAR\0" "16BAR";   /* (V10.27: -13 8BAR, -14 16BAR, a tester's; V10.8.71:
                                                          * packed, str_nth) */
-static const char *const N_AMODE[] = {"OFF", "UP", "DN", "UPDN", "RND", "ORD", "REPEAT",   /* (append-only: seq.c AM_*) */
-                                       "DNUP", "UP+8", "CONV", "DIVG", "PINKY", "THUMB", "WALK", "CHORD",
-                                       "TRNS"};                         /* (JIANT: seq.c AM_TRNS) */
+/* (V10.8.72) N_AMODE: core.h PNE (packed, str_nth; append-only: seq.c AM_*, JIANT's AM_TRNS last) */
 static const char *const N_DIV[] = {"1/4", "1/8", "1/16", "1/32", "8T", "16T", "1/2", "1/1", "2BAR", "4BAR"};
 /* (JIANT 0.4) the delay's TIME: N_DIV's ten, then free times past the last division (5 ms .. 1.48 s, exponential;
  * fx.c delay_samples, DTIME_MS); (0.8.4) appended up to the longest the line holds at a quarter rate (the values
@@ -140,14 +141,12 @@ static const uint16_t DTIME_MS[N_DTIME_N - DT_FREE] = {5, 6, 7, 8, 9, 10, 11, 12
                                       , 2950
 #endif
                                       };
-static const char *const N_SCALE[] = {"CHR", "MAJ", "MIN", "DOR", "MIX", "PEN", "MPEN", "HARM",
-                                    "PHRY", "LYD", "LOC", "MEL", "BLUES", "WHOLE", "DIMHW", "DIMWH"};
+/* (V10.8.72) N_SCALE: core.h PNE (packed, str_nth) */
 static const char *const N_ONOFF[] = {"OFF", "ON"};
 static const char *const N_DLYTYPE[] = {"ANALOG", "DIGITAL", "REVERS", 0};   /* (0.6.90) DLY 3 > TYPE; (V10.6g) REVERSE */
 /* (V10.7.66) SCL > HARMONY: the progressions, gen_tables.c PROG's order (1 + PR_*) */
 /* seq.c kb_map; 1 = SNAP (stored projects: the former ON); 3 = SEQ: SNAP, and the sequencer's notes snap too as
  * they play (seq.c seq_step; the steps keep what was written). Append-only: older projects hold 0..2 */
-static const char *const N_DTYPE[] = {"SOFT", "HARD", "FOLD", "CRUSH", "RECT", "AMP"};   /* (JIANT) fx.c DT_*; 0.7.8 AMP */
 static const char *const N_FTYPE[] = {"LP", "HP", "BP", "COMB", "COMB-"};   /* (JIANT 0.5) P_FTYPE: eng_analog.c FT_*
                                                          * (0.9.9-snd1: COMB- the negative comb, MS20) */
 static const char N_NOTE_P[] = "C\0C#\0D\0D#\0E\0F\0F#\0G\0G#\0A\0A#\0B"; /* (V10.8.71: packed, str_nth; was a table of pointers) */
@@ -157,8 +156,7 @@ static const char *const N_RTYPE[] = {"ROOM", "SPRING", "SHIMR", "RESO", "CLOUD"
 /* modulation matrix (mod.c): sources, destinations (E1..E8 = P_E0..P_E7: shown with the engine's labels; V10.8.70: in PNB)
  * (0.7.0) the FX buses' globals (DELAY TIME FDBK TONE MIX, REVERB SIZE DAMP, CHORUS RATE
                                                          * DEPTH): mod.c macro_master, fx.c GFX() */
-static const char *const N_ENGNAME[] = {"ANALOG", FELUCCA_FM4 ? "DIGITAL" : "-", "PHASE", "MATH", "-", "VOICE", "-", "WHEEL", "STRING", "-",
-                                             "DRUM", "WEST", "FM6", "ADD", "ANIMAL", "EXT"};   /* (JIANT: SAMPLE 4, GRAIN 8, SLICE 13 retired; 0.8.3 ANIMAL;
+/* (V10.8.72) N_ENGNAME: core.h PNE (packed, str_nth; its last list: DIGITAL by FELUCCA_FM4) */   /* (JIANT: SAMPLE 4, GRAIN 8, SLICE 13 retired; 0.8.3 ANIMAL;
                                                          * 0.9.9-snd5 STRING ADD) */
 
 #define PD(l, f, mn, mx, df) {l, f, mn, mx, df, 0}
@@ -195,7 +193,7 @@ static const param_desc_t TP[P_COUNT] = {
     [P_LD_FLT] = PD("FILTER", F_BIPCT, -64, 63, 0),
     [P_LD_SHP] = PD("SHAPE", F_BIPCT, -64, 63, 0),
     [P_LD_AMP] = PD("AMP", F_PCT, 0, 127, 0),
-    [P_AMODE] = PE("MODE", N_AMODE, 0),
+    [P_AMODE] = PEN("MODE", N_AMODE, 0),
     [P_ARATE] = PE("RATE", N_DIV, 2),
     [P_AOCT] = PD("OCT", F_INT, 1, 4, 1),
     [P_AGATE] = PD("GATE", F_PCT, 1, 127, 64),
@@ -204,7 +202,7 @@ static const param_desc_t TP[P_COUNT] = {
     [P_AHOLD] = PE("HOLD", N_ONOFF, 0),
     [P_AORDER] = PEN("ORDER", N_ORDER, 0),
     [P_ROOT] = PD("ROOT", F_NOTE, 0, 11, 0),
-    [P_SCALE] = PE("SCALE", N_SCALE, 0),
+    [P_SCALE] = PEN("SCALE", N_SCALE, 0),
     [P_QUANT] = PEN("QUANT", N_QUANT, 0),
     [P_TRANS] = PD("TRANS", F_SEMI, -24, 24, 0),
     [P_SLEN] = PD("LEN", F_STEPS, 1, NSTEP, 16),
@@ -249,7 +247,8 @@ static const param_desc_t TP[P_COUNT] = {
     LANE(0, "KICK"), LANE(1, "SNARE"), LANE(2, "CLAP"), LANE(3, "HH CL"),
     LANE(4, "HH OP"), LANE(5, "TOM"), LANE(6, "RIM"), LANE(7, "BELL"),
 #undef LANE
-    [P_DTYPE] = PE("TYPE", N_DTYPE, 0),         /* (JIANT) DIST: SOFT (as before) HARD FOLD CRUSH RECT AMP */
+    [P_DTYPE] = PEN("TYPE", N_DTYPE, 0),        /* (JIANT) DIST: SOFT (as before) HARD FOLD CRUSH RECT AMP; (V10.8.72) BYTE's
+                                                         * formulas RING STEPS XOR WOB SFOLD SAT */
     [P_DTONE] = PD("TONE", F_BIPCT, -64, 63, 0),   /* .. its tone: darker / brighter */
     [P_MSLEN] = PD("LEN", F_STEPS, 1, 16, 16),  /* (JIANT) the modulation sequence (mod.c MS_STEP) */
     [P_MSDIV] = PE("DIV", N_DIV, 2),
@@ -285,7 +284,7 @@ static const param_desc_t GP[G_COUNT] = {
     [G_DJF] = PD("DJ FILT", F_BIPCT, -64, 63, 0),   /* (0.9.1) the master DJ FILTER: 0 off, - low-pass, + high-pass (fx.c) */
     [G_LOAD] = PEN("LOAD", N_GO, 0),
     [G_SAVE] = PEN("SAVE", N_GO, 0),
-    [G_ENGSEL] = PE("ENG", N_ENGNAME, 0),
+    [G_ENGSEL] = PEN("ENG", N_ENGNAME, 0),
     [G_CLIP] = PD("CLIP", F_PCT, 0, 100, 0),     /* the master clipper: drive x1 .. x4 into the soft clip */
     [G_CLRSEQ] = PEN("CLEAR SEQ", N_GO, 0),
     [G_INITSND] = PEN("INIT", N_GO, 0),
@@ -366,7 +365,7 @@ static const param_desc_t TVEL_DESC = {"VEL", F_PCT, 0, 127, 127, 0};   /* (afte
 static const param_desc_t WROT_DESC[2] = {               /* (0.7.8) WHEEL's ROTOR: P_WRDEP (127 = 100 %, as before), P_WDUST */
     {"DEPTH", F_PCT, 0, 127, 127, 0}, {"DUST", F_PCTINV, 0, 127, 127, 0}};
 static const param_desc_t VLANG_DESC = {"LANG", F_ENUM, 0, LG_N - 1, 0, N_LANG};   /* (0.8.5) VOICE's words: */
-static const char *const N_DKEYMODE[] = {"BASIC", "EXTRA", "KICK", "SNARE", "CLAP", "HH CL", "HH OP", "TOM", "RIM", "BELL"};
+/* (V10.8.72) N_DKEYMODE: core.h PNE (packed, str_nth) */
 static const param_desc_t DKEYMODE_DESC = {"KEY MAP",F_ENUM,0,9,1,N_DKEYMODE};   /* (V10.7.62: 2..9 named, the sound OCT -1
                                                          * plays up the keys, eng_drum.c drum_chrom; on PLAY's KNOB 4) */
 static const param_desc_t SIMG_DESC = {"IMAGE", F_PCTINV, 0, 127, 127, 0};   /* (V10.49) P_SIMG: 127 = 0 % */
@@ -527,7 +526,8 @@ static int32_t enum_rank(const param_desc_t *d, int32_t v)   /* v's place in the
 static uint32_t name_of(const param_desc_t *d, int32_t v, uint32_t *k)
 {
     uint32_t n = 0;
-    while (d->names[n])
+    const char *s;
+    while ((s = desc_nm(d, (int32_t)n)) != 0 && *s)    /* (V10.8.72: a packed list too, its "" the end) */
         n++;
     *k = n;
     return (uint32_t)(clamp(v, d->min, d->max) - d->min) * n / (uint32_t)(d->max - d->min + 1);
@@ -708,7 +708,7 @@ static void param_format(const param_desc_t *d, int32_t v, char *val, const char
     default:
         if (d->names) {                               /* F_INT with a 0-terminated name list: the range */
             uint32_t k;                               /* split evenly over the names (engine desc hooks) */
-            str_cpy(val, d->names[name_of(d, v, &k)], 6);
+            str_cpy(val, desc_nm(d, (int32_t)name_of(d, v, &k)), 6);
         } else {
             fmt_int(val, v);
         }
@@ -809,8 +809,8 @@ static const param_desc_t EQ_DESC[4] __attribute__((section(".rodata.tape"))) = 
     PD("LOW", F_INT, -12, 12, 0), PD("LO MID", F_INT, -12, 12, 0), PD("HI MID", F_INT, -12, 12, 0), PD("HIGH", F_INT, -12, 12, 0)};
 static int16_t eq_v[4] __attribute__((section(".bss.tape")));   /* (out of the merged statics, as fx.c's djf) */
 /* (V10.8.71, JIANT BYTE 43923fd4's, GPL) FX > OTT, a track each (fx.c ott_block): DEPTH (0: off, the track's chain as
- * before, bit for bit, not run), TIME (the envelopes' release; the attack ~1/20 of it; 72: ~40 ms and ~1.5 ms), UP/DN (- less upward, + less
- * downward), X-OVER (the two bands' split). Not track parameters (as DIST's NOISE): kept with the project ('O' 'T',
+ * before, bit for bit, not run), TIME (the envelopes' release, the attack's index 50 under it; V10.8.72: 48, ~32 ms back and 1 ms up, pumping with
+ * the kick; a V10.8.71 file's TIME, kept less its default, comes 24 lower), UP/DN (- less upward, + less downward), X-OVER (the two bands' split). Not track parameters (as DIST's NOISE): kept with the project ('O' 'T',
  * project.c: each less its default, so the four are kept whatever DEPTH is; without it: these defaults, OTT off) and a
  * user preset's sound (upreset.c UP_OT_AT). Ids past the parameters, under DRONE CLAY's (no editor command: the
  * Studio protocol as it was) */
@@ -818,7 +818,7 @@ static int16_t eq_v[4] __attribute__((section(".bss.tape")));   /* (out of the m
 enum { OT_DEPTH, OT_TIME, OT_UPDN, OT_XO, OT_N };
 _Static_assert(P_COUNT < ID_OT0 && ID_OT0 + OT_N <= ID_CL0 && MOT_DJF < ID_OT0, "OTT's ids between the parameters and CLAY's");
 static const param_desc_t OTT_DESC[OT_N] __attribute__((section(".rodata.tape"))) = {
-    PD("DEPTH", F_PCT, 0, 100, 0), PD("TIME", F_TIME, 30, 100, 72), PD("UP/DN", F_BIPCT, -64, 63, 0),
+    PD("DEPTH", F_PCT, 0, 100, 0), PD("TIME", F_TIME, 30, 100, 48), PD("UP/DN", F_BIPCT, -64, 63, 0),
     PD("X-OVER", F_CUTOFF, 15, 100, 37)};
 static int16_t ott_v[NTRK][OT_N] __attribute__((section(".bss.tape")));   /* (out of the merged statics) */
 static __attribute__((noinline)) void ott_put(uint32_t k, const int8_t *v)   /* track k's OTT from v, each less its

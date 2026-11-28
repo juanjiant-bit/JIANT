@@ -137,7 +137,7 @@ static void dx_cards(const page_t *pg)
         fmt_int(un, ix ? ((ix - 1) % 16 + 1) * 100 / 16 : 0);
         str_cat(un, "%", 2);
         draw_column(2, "SEND", BUS[DXS_BUS(sn)], ix ? un : "", ix ? VAL(2u) : T_DIM, ix * 1000 / 48, ICON_MIX);
-        hot_gauge_column(3, "KEY MAP", N_DKEYMODE[km], (int32_t)km * 1000 / 9);
+        hot_gauge_column(3, "KEY MAP", PN_AT(N_DKEYMODE, km), (int32_t)km * 1000 / 9);
         return;
     }
     if (pn == 3u) {                                     /* SOUND 3: WAVE FILTER P.ENV */

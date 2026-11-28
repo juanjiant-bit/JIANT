@@ -19,7 +19,7 @@
 #define ST_SL 128u                                       /* a voice's line: comb_buf[part] / NVOICE */
 #define ST_MAXP ((ST_SL - 6u) << 8)                      /* the longest period a line holds (Q8) */
 static int16_t comb_buf[NTRK][1024] __attribute__((section(".pool")));   /* (voice.c: the COMB's lines, COMB_LEN) */
-static const char *const N_STR_EXC[] = {"NOISE", "PLUCK", "PICK", "HAMMR", "STICK", "FDBK"};   /* (five letters: a knob's cell) */
+/* (V10.8.72) N_STR_EXC: core.h PNE (packed, str_nth) */   /* (five letters: a knob's cell) */
 enum { SX_NOISE, SX_PLUCK, SX_PICK, SX_HAMMER, SX_MALLET, SX_FDBK, SX_N };
 /* (p10) FDBK: a guitar's feedback. Plucked as PLUCK, then an amp hears the string and plays it back into it: the BODY
  * page becomes the amp's. GAIN how much comes back, DIST the amp's drive (a soft clip: the loop's own limiter),

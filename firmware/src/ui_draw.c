@@ -2227,8 +2227,12 @@ static void ui_draw(void)
                                                          * (V10.8.57) HOME > VISUAL too: a knob turned or OCT+'s banner a
                                                          * line at the foot a moment */
         uint32_t s, v = scrn.st == SCR_VIS;
-        if (song.cpu_q8 > 166u && anim_fr % (song.cpu_q8 > 205u ? 3u : 2u))   /* (V10.8.67) the sound busy: the picture
-                                                         * every other frame (past 80 %: every third), the UI yields first */
+        if (vq.fr == anim_fr && !ui.force && !ui.hot_t && !ui.msg_t)   /* (V10.8.72) the animation still (FREEZE, ANIM
+                                                         * OFF: its clock stopped): the picture as it is, not drawn again. The
+                                                         * sound busy: every frame (the UI's own pace, ui.c UI_PACE), each
+                                                         * with less in it (vis_fig: its points, copies, layers), never a
+                                                         * frame left out (V10.8.67's: every other or third, by the
+                                                         * animation's ticks: uneven, choppy) */
             return;
         for (s = 0; s < 2u; s++) {
             cv_begin(240, 120, T_BG);
@@ -2247,6 +2251,7 @@ static void ui_draw(void)
             }
             cv_blit(0, s * 120u);
         }
+        ui.force = 0;                                   /* (V10.8.72: drawn whole; was left set, the still check never met) */
         return;
     }
     anim_st.non = 1;                                     /* (codex/anim: the lens's entries worked out once, ui_lens.c) */

@@ -105,6 +105,27 @@ static const char PNE[] =
     /* N_AN_GROUP (eng_animal.c) */ "HOLD\0" "TRILL\0" "1+1\0" "1+3\0" "2+2\0" "2+6\0" "3+3\0" "3+9\0" "4+4\0" "4+12\0" "6+6\0" "8+8\0" "8+24\0" "12+12\0" "16+16\0" "32+32\0"
     /* N_DRW_REG (eng_wheel.c) */ "FLUTE\0" "MELLO\0" "HOLLW\0" "SMOOT\0" "3BAR\0" "BLUES\0" "GOSPL\0" "ROCK\0" "TOPS\0" "CLARI\0" "REED\0" "STRNG\0" "CHAPL\0" "BRITE\0" "BASS\0" "FULL\0"
     /* N_ADD_MODE (eng_add.c) */ "HARM\0" "ODD\0" "WIDE\0" "BELL\0" "BAR\0" "DRUM\0" "PRIME\0" "FIFTH\0" "SUB\0" "PLATE\0"
+    /* N_FM6_ALG (eng_fm6.c) */ "PAT\0" "1\0" "2\0" "3\0" "4\0" "5\0" "6\0" "7\0" "8\0" "9\0" "10\0" "11\0" "12\0" "13\0" "14\0" "15\0" "16\0" "17\0" "18\0" "19\0" "20\0" "21\0" "22\0" "23\0" "24\0" "25\0" "26\0" "27\0" "28\0" "29\0" "30\0" "31\0" "32\0" "\0"
+    /* N_FM6_PATCH (eng_fm6.c) */ "F1\0" "F2\0" "F3\0" "F4\0" "F5\0" "F6\0" "F7\0" "F8\0" "OWN\0" "B1\0" "B2\0" "B3\0" "B4\0" "B5\0" "B6\0" "B7\0" "B8\0" "B9\0" "B10\0" "B11\0" "B12\0" "B13\0" "B14\0" "B15\0" "B16\0" "B17\0" "B18\0" "B19\0" "B20\0" "B21\0" "B22\0" "B23\0" "B24\0" "B25\0" "B26\0" "B27\0" "B28\0" "B29\0" "B30\0" "B31\0" "B32\0" "\0"
+    /* N_BYTE (eng_lofi.c) */ "B01\0" "B02\0" "B03\0" "B04\0" "B05\0" "B06\0" "B07\0" "B08\0" "B09\0" "B10\0" "B11\0" "B12\0" "B13\0" "B14\0" "B15\0" "B16\0" "B17\0" "B18\0" "B19\0" "B20\0" "B21\0" "B22\0" "B23\0" "B24\0" "B25\0" "B26\0" "B27\0" "B28\0" "B29\0" "B30\0" "B31\0" "B32\0" "B33\0" "B34\0" "B35\0" "B36\0" "B37\0" "B38\0" "B39\0" "B40\0" "B41\0" "B42\0" "B43\0" "B44\0" "B45\0" "B46\0" "B47\0" "B48\0" "\0"
+    /* N_FLOAT (eng_lofi.c) */ "F01\0" "F02\0" "F03\0" "F04\0" "F05\0" "F06\0" "F07\0" "F08\0" "F09\0" "F10\0" "F11\0" "F12\0" "F13\0" "F14\0" "F15\0" "F16\0" "F17\0" "F18\0" "F19\0" "F20\0" "F21\0" "F22\0" "F23\0" "F24\0" "F25\0" "F26\0" "F27\0" "F28\0" "F29\0" "F30\0" "F31\0" "F32\0" "F33\0" "F34\0" "F35\0" "F36\0" "F37\0" "F38\0" "F39\0" "F40\0" "F41\0" "F42\0" "F43\0" "F44\0" "F45\0" "F46\0" "F47\0" "F48\0" "\0"
+    /* N_LYRIC (sing.c) */ "TEXT\0" "W1\0" "W2\0" "W3\0" "W4\0" "W5\0" "W6\0" "W7\0" "W8\0" "W9\0" "W10\0" "W11\0" "W12\0" "W13\0" "W14\0" "W15\0" "W16\0" "S1\0" "S2\0" "S3\0" "S4\0" "S5\0" "S6\0" "S7\0" "S8\0" "TEXT FIXED\0"
+    /* N_AIN_PLAY (eng_input.c) */ "THRU\0" "KEYS\0" ">T1\0" ">T2\0" ">T3\0" ">T4\0" ">T5\0" ">T6\0"
+    /* N_STR_EXC (eng_string.c) */ "NOISE\0" "PLUCK\0" "PICK\0" "HAMMR\0" "STICK\0" "FDBK\0"
+    /* N_DRW_PERC (eng_wheel.c) */ "OFF\0" "2ND\0" "3RD\0" "2SOFT\0" "3SOFT\0" "2SLOW\0" "3SLOW\0"
+    /* N_LANG (sing.c) */ "OFF\0" "ES\0" "EN\0" "JA\0" "RU\0" "DE\0" "FR\0" "ZH\0" "PT\0" "GN\0"
+    /* N_THEME (sing.c) */ "LOVE\0" "NIGHT\0" "SEA\0" "SKY\0" "ANY\0" "ROAD\0" "DREAM\0" "FIRE\0" "\0"
+    /* N_LOOP (sing.c) */ "FREE\0" "1\0" "2\0" "4\0" "8\0" "\0"
+    /* N_AMODE (params.c) */ "OFF\0" "UP\0" "DN\0" "UPDN\0" "RND\0" "ORD\0" "REPEAT\0" "DNUP\0" "UP+8\0" "CONV\0" "DIVG\0" "PINKY\0" "THUMB\0" "WALK\0" "CHORD\0" "TRNS\0"
+    /* N_SCALE (params.c) */ "CHR\0" "MAJ\0" "MIN\0" "DOR\0" "MIX\0" "PEN\0" "MPEN\0" "HARM\0" "PHRY\0" "LYD\0" "LOC\0" "MEL\0" "BLUES\0" "WHOLE\0" "DIMHW\0" "DIMWH\0"
+    /* N_DKEYMODE (params.c) */ "BASIC\0" "EXTRA\0" "KICK\0" "SNARE\0" "CLAP\0" "HH CL\0" "HH OP\0" "TOM\0" "RIM\0" "BELL\0"
+    /* N_ENGNAME (params.c; the last: its second name by the build) */ "ANALOG\0"
+#if FELUCCA_FM4
+    "DIGITAL\0"
+#else
+    "-\0"
+#endif
+    "PHASE\0" "MATH\0" "-\0" "VOICE\0" "-\0" "WHEEL\0" "STRING\0" "-\0" "DRUM\0" "WEST\0" "FM6\0" "ADD\0" "ANIMAL\0" "EXT\0"
     ;
 #define CLAY_SHN ((const char *const *)(PNE + 0))
 #define CLAY_EU ((const char *const *)(PNE + 351))
@@ -112,6 +133,36 @@ static const char PNE[] =
 #define N_AN_GROUP ((const char *const *)(PNE + 584))
 #define N_DRW_REG ((const char *const *)(PNE + 659))
 #define N_ADD_MODE ((const char *const *)(PNE + 749))
+#define N_FM6_ALG ((const char *const *)(PNE + 799))
+#define N_FM6_ALG_N 33u
+#define N_FM6_PATCH ((const char *const *)(PNE + 891))
+#define N_FM6_PATCH_N 41u
+#define N_BYTE ((const char *const *)(PNE + 1039))
+#define N_BYTE_N 48u
+#define N_FLOAT ((const char *const *)(PNE + 1232))
+#define N_FLOAT_N 48u
+#define N_LYRIC ((const char *const *)(PNE + 1425))
+#define N_LYRIC_N 26u
+#define N_AIN_PLAY ((const char *const *)(PNE + 1520))
+#define N_AIN_PLAY_N 8u
+#define N_STR_EXC ((const char *const *)(PNE + 1554))
+#define N_STR_EXC_N 6u
+#define N_DRW_PERC ((const char *const *)(PNE + 1588))
+#define N_DRW_PERC_N 7u
+#define N_LANG ((const char *const *)(PNE + 1624))
+#define N_LANG_N 10u
+#define N_THEME ((const char *const *)(PNE + 1655))
+#define N_THEME_N 8u
+#define N_LOOP ((const char *const *)(PNE + 1695))
+#define N_LOOP_N 5u
+#define N_AMODE ((const char *const *)(PNE + 1709))
+#define N_AMODE_N 16u
+#define N_SCALE ((const char *const *)(PNE + 1787))
+#define N_SCALE_N 16u
+#define N_DKEYMODE ((const char *const *)(PNE + 1862))
+#define N_DKEYMODE_N 10u
+#define N_ENGNAME ((const char *const *)(PNE + 1915))
+#define N_ENGNAME_N 16u
 static inline uint32_t desc_fmt(const param_desc_t *d) { return d->fmt >= F_INT_CT ? (uint32_t)F_INT : d->fmt; }
 static inline const char *desc_unit(const param_desc_t *d)   /* F_INT_CT .. F_REG64's, else 0 */
 {

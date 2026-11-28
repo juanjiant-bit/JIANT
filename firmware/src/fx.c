@@ -132,9 +132,20 @@ _Static_assert(sizeof rev_comb / 2u >= SP_LEN && sizeof rev_u.sp / 4u >= 4u * (S
  * and bloom), the second stage's gain rising with the drive (clean .. crunch .. lead); then a cabinet: the two-pole
  * low-pass at a speaker's corner (TONE moves it ~2.5 .. 6 kHz) and a resonance at ~1.8 kHz (a state-variable band
  * added: the presence a 12" cone has). State: dist_dc (the coupling), dist_cab_l / _b (the cabinet) */
-enum { DT_SOFT, DT_HARD, DT_FOLD, DT_CRUSH, DT_RECT, DT_AMP };
+/* (V10.8.72, JIANT BYTE's DIST_EQ, GPL) TYPE 6 .. 11 BYTE's formula effects, in FM as fixed code (dist_shape, the
+ * block's constants deq_k): RING STEPS XOR WOB SFOLD SAT, appended (SOFT .. AMP's numbers kept: a project's DIST as it
+ * was) */
+enum { DT_SOFT, DT_HARD, DT_FOLD, DT_CRUSH, DT_RECT, DT_AMP, DT_EQ0, DT_N = DT_EQ0 + 6 };
+#ifndef FM1_OPAQUE
+#define FM1_OPAQUE(v) ((void)(v))                    /* (the host: no reach to mind) */
+#endif
+static int32_t deq_k(track_t *t, uint32_t f);
+static uint32_t deq_beat;                               /* (the formulas' p: the song's beats, Q16, the block's; stopped,
+                                                         * DRONE CLAY's own clock: seq.c clay.c clay_tick) */
 #define AMP_B1 7000                                     /* the stages' biases (Q15 into tanh) */
 #define AMP_B2 (-3500)
+static __attribute__((noinline)) int32_t dist_sclip(int32_t x) { return softclip(x); }   /* (V10.8.72) the shaper's soft
+                                                         * clip, one copy (its RAM code's room: the formula types) */
 static __attribute__((noinline)) int32_t dist_shape(track_t *t, uint32_t type, int32_t x, int32_t g, int32_t d)
 {
     int32_t v = ((x >> 2) * g) >> 10, a;
@@ -158,14 +169,34 @@ static __attribute__((noinline)) int32_t dist_shape(track_t *t, uint32_t type, i
     case DT_RECT:
         a = x < 0 ? -x : x;
         t->dist_dc += (a - t->dist_dc) >> 9;             /* (its mean: the DC the rectifier adds) */
-        return softclip((((a - t->dist_dc) >> 2) * g) >> 10);
+        return dist_sclip((((a - t->dist_dc) >> 2) * g) >> 10);
     case DT_AMP:
-        a = softclip(clamp(v + (v >> 1), -400000, 400000) + AMP_B1) - softclip(AMP_B1);   /* stage 1: x1.5 the drive */
+        a = dist_sclip(clamp(v + (v >> 1), -400000, 400000) + AMP_B1) - dist_sclip(AMP_B1);   /* stage 1: x1.5 the drive */
         t->dist_dc += (a - t->dist_dc) >> 6;             /* the coupling capacitor: ~110 Hz high-pass */
         a -= t->dist_dc;
-        return softclip(((a * (24 + d)) >> 4) + AMP_B2) - softclip(AMP_B2);   /* stage 2: x1.5 .. x8 */
-    default:
-        return softclip(v + 2400) - softclip(2400);
+        return dist_sclip(((a * (24 + d)) >> 4) + AMP_B2) - dist_sclip(AMP_B2);   /* stage 2: x1.5 .. x8 */
+    case DT_SOFT:
+        return dist_sclip(v + 2400) - dist_sclip(2400);
+    default:                                            /* (V10.8.72, BYTE's formulas, deq_k's numbers) I the part, v moved
+                                                         * by NOISE as BYTE's; d the block's constant */
+        v = clamp(v, -65536, 65536) * 2;
+        a = 0;
+        switch (type) {
+        case DT_EQ0: t->dist_dc = (int32_t)((uint32_t)t->dist_dc + (uint32_t)d); a = t->dist_dc | 1; break;   /* RING:
+                                                         * I sin(ph(110 + 880 A)), the phase dist_dc's */
+        case DT_EQ0 + 1: v = ((v * d) >> 24) * t->dist_hold; break;   /* STEPS: floor(I N) / N (dist_hold 2^32 / N) */
+        case DT_EQ0 + 2: v = ((v >> 9) ^ d) << 9; break;              /* XOR: (int(128 I) ^ int(127 A)) / 128 */
+        case DT_EQ0 + 3: v = ((v >> 2) * (d >> 2)) >> 12; break;      /* WOB: I (1 - A (tri(2p) / 2 + .5)) */
+        case DT_EQ0 + 4: a = (int32_t)((uint32_t)v * (uint32_t)d) | 1; break;   /* SFOLD: sin(I (1 + 12 A) / 4) (turns) */
+        default: v = ((dist_sclip(((v >> 2) * d) >> 9) >> 1) * t->dist_hold) >> 13;   /* SAT: sat(I (1 + 20 A)) (1 - A / 2) */
+        }
+        if (a) {                                        /* (RING, SFOLD: the sine; bit 0 their mark, under the table's
+                                                         * reach) */
+            a = sine_i((uint32_t)a);
+            v = type == DT_EQ0 ? ((v >> 2) * (a >> 1)) >> 12 : a * 2;
+        }
+        return clamp(v >> 3, -24576, 24576);           /* (BYTE's v / 2 within +-98304, here a quarter of it: the TONE's
+                                                         * poles' steps in 32 bits; track_dist's << 2 puts it back) */
     }
 }
 /* (0.7.9) DIST AMP's block: track_dist's chain with the cabinet's resonance after the low-pass: the cone's, f 2 sin(pi
@@ -203,7 +234,7 @@ static uint32_t dnz_r[NTRK];
 static int32_t dnz_lp[NTRK];
 static __attribute__((noinline)) void track_dist(track_t *t, int32_t *b, uint32_t n)
 {
-    int32_t d = t->p[P_DIST], i, g, k, mk, b0 = softclip(2400), w0, w1, dw, full;
+    int32_t d = t->p[P_DIST], i, g, k, mk, b0 = softclip(2400), w0, w1, dw, full, hm, sh = 0;
     uint32_t type = (uint32_t)t->p[P_DTYPE], ti = (uint32_t)(t - trk) % NTRK;
     w0 = dist_w[ti];
     w1 = d >= 8 ? 4096 : d * 512;
@@ -219,8 +250,17 @@ static __attribute__((noinline)) void track_dist(track_t *t, int32_t *b, uint32_
     g = 4096 + d * d * 2;                                /* Q12: 1x .. ~9x, gentle at first */
     k = clamp(32000 - d * 95 + t->p[P_DTONE] * 300, 2500, 32767);   /* tone: transparent at low drive .. ~3 kHz, Q15 */
     mk = type == DT_HARD || type == DT_FOLD || type == DT_CRUSH ? 30000 - d * 60 : 30000 - d * 120;   /* make-up */
-    if (type > DT_AMP)
+    if (type >= DT_N)
         type = DT_SOFT;
+    hm = -1;
+    if (type >= DT_EQ0) {                               /* (V10.8.72, BYTE's) a formula: its block's constant (deq_k, in the
+                                                         * flash: through a register), the part as it is (no low cut, no
+                                                         * drive, no make-up), TONE and the blend as the others */
+        int32_t (*fk)(track_t *, uint32_t) = deq_k;
+        FM1_OPAQUE(fk);
+        d = fk(t, type - DT_EQ0);
+        g = 4096; mk = 32767; hm = 0; sh = 2;
+    }
     if (type == DT_AMP) {                               /* the cabinet's corner: ~4 kHz, TONE 2.5 .. 6 kHz; its make-up */
         k = clamp(14500 + t->p[P_DTONE] * 90, 9000, 20000);
         mk = 24000 - d * 70;
@@ -236,8 +276,9 @@ static __attribute__((noinline)) void track_dist(track_t *t, int32_t *b, uint32_
         uint32_t r = dnz_r[ti] | 1u;
         for (i = 0; i < (int32_t)n; i++) {
             int32_t x = b[i], y;
-            hp += (x - hp + 64) >> 7;                   /* ~55 Hz low cut: keep the bass out of the clipper */
-            x = clamp(x - hp, -230000, 230000);         /* (x >> 2) * g fits 32 bits; the clip is flat out there */
+            hp += (x - hp + 64) >> 7;                   /* ~55 Hz low cut: keep the bass out of the clipper (a formula:
+                                                         * none, hm 0) */
+            x = clamp(x - (hp & hm), -230000, 230000);  /* (x >> 2) * g fits 32 bits; the clip is flat out there */
             if (na) {                                   /* (V10.8.36) NOISE: the gain and the tone's corner moved */
                 r ^= r << 13; r ^= r >> 17; r ^= r << 5;
                 nz += mulq15(((int32_t)r >> 16) - nz, 6000);
@@ -247,7 +288,7 @@ static __attribute__((noinline)) void track_dist(track_t *t, int32_t *b, uint32_
             y = type == DT_SOFT ? softclip((((x >> 2) * g) >> 10) + 2400) - b0 : dist_shape(t, type, x, g, d);
             l1 += mulq15(y - l1, k);                    /* two poles: tames the fizz */
             l2 += mulq15(l1 - l2, k);
-            y = mulq15(l2, mk);
+            y = mulq15(l2, mk) << sh;                   /* (sh: a formula's level, 2) */
             b[i] = full ? y : b[i] + ((((y - b[i]) >> 2) * (w0 + dw * (i + 1))) >> 10);   /* (>> 2: fits 32 bits) */
         }
         t->dist_hp = hp;
@@ -258,30 +299,33 @@ static __attribute__((noinline)) void track_dist(track_t *t, int32_t *b, uint32_
     }
 }
 
-/* (V10.8.71, JIANT BYTE 43923fd4's ott_block, GPL) FX > OTT, a track's light two-band upward and downward compressor
+/* (V10.8.71, JIANT BYTE 43923fd4's ott_block, GPL) FX > OTT, a track's two-band upward and downward compressor
  * (params.c ott_v; after DIST). The split a one-pole low-pass at X-OVER (low = LP, high = x - LP: the two add up to x
  * exactly); each band's level its peak over the block, followed in log2 (Q8, 256 = 6 dB) at TIME (release; the attack
- * ~1/20 of it: ENV_EXP's index - 50; TIME 72, the default: ~1.5 ms and ~40 ms); from it, once a block, the band's gain
- * (V10.8.71, BYTE v1.1b4's law, the owner: "at 100 it barely changes the sound"): under OT_TGT up, 0.95 dB a dB, at most
- * +28 dB (-40 dBFS comes up to about -13), faded out under OT_FLOOR (no hiss brought up); over OT_TDN down, 10:1, at most
- * -24 dB; OT_TGT the makeup's level, where quiet and loud meet; UP/DN taking from one side, DEPTH the whole, squared
- * (subtle .. squashed); the gain linear, ramped across the next block (the level a block behind: no second pass).
- * Applied as x + low (g_lo - 1) + high (g_hi - 1) (unity adds 0), then over OT_KNEE (-3 dBFS) a limiter 8:1 up to full
- * scale (a hit after quiet, its first block). DEPTH 0: the gains ramp back to 1 over a block, then the track skips it
- * (mix_part: not called; its state cleared, the next start from the level it hears). The overload (voice.c's guard):
- * half the depth tripped, none while the load stays past OT_DEEP (the sound stays, only the effect eases). In the flash,
+ * ENV_EXP's index - 50: TIME 48, the default, ~32 ms back and 1 ms up: it pumps with the kick); from it, once a block,
+ * the band's gain (V10.8.72, the owner: much more extreme, as BYTE v1.1b5's): the band pulled up toward OT_TU (-18
+ * dBFS) at 0.97 dB a dB (a -46 dBFS band +27 dB, at most +36 dB, faded out under OT_FLOOR: no hiss brought up), down
+ * over OT_TD (-22 dBFS) at 20:1 (near a limiter, at most -36 dB; between the two, the two meet: a loud part's two
+ * bands, summed, about where a quiet part's one comes); UP/DN taking from one side; DEPTH's weight (ot_w) squared to 70,
+ * then a cubic to 100 (30 .. 60 musical, 80 .. 100 brutal). Then both bands driven together (+9 dB at the full weight)
+ * into the soft clip (dsp.c softclip, unity small: dense, saturated, never a hard clip; under -0.3 dBFS). The gains
+ * linear, ramped across the next block (the level a block behind: no second pass), applied as x + low (g_lo - 1) +
+ * high (g_hi - 1) (unity adds 0). DEPTH 0: the gains ramp back to 1 over a block, then the track skips it (mix_part:
+ * not called; its state cleared, the next start from the level it hears). The overload (voice.c's guard): half the
+ * weight tripped, none while the load stays past OT_DEEP (the sound stays, only the effect eases). In the flash,
  * called through a register (mix_spread's) */
 #define OT_FS 4352                                      /* log2 Q8 of a part at full scale (2^17) */
-#define OT_TGT (OT_FS - 510)                            /* -12 dBFS */
-#define OT_TDN (OT_FS - 638)                            /* -15 dBFS */
-#define OT_FLOOR (OT_FS - 2552)                         /* -60 dBFS */
-#define OT_GUP 1190                                     /* +28 dB (log2 Q8) */
-#define OT_GDN 1020                                     /* -24 dB */
-#define OT_KNEE 92682                                   /* -3 dBFS */
+#define OT_TU (OT_FS - 765)                             /* -18 dBFS: under it up */
+#define OT_TD (OT_FS - 935)                             /* -22 dBFS: over it down */
+#define OT_FLOOR (OT_FS - 2806)                         /* -66 dBFS */
+#define OT_GUP 1531                                     /* +36 dB (log2 Q8) */
+#define OT_GDN 1531                                     /* -36 dB */
+#define OT_DRV 383                                      /* +9 dB: the drive into the soft clip at the full weight */
 #define OT_DEEP 90u                                     /* (%: the guard tripped and the load's average still past it) */
-typedef struct { int32_t lp; int16_t lv[2], g[2]; } ott_t;   /* lv: the bands' levels (0: not yet heard), g their gains (log2 Q8) */
+typedef struct { int32_t lp; int16_t lv[2], g[3]; } ott_t;   /* lv: the bands' levels (0: not yet heard), g their gains and
+                                                         * the drive (log2 Q8) */
 static ott_t ott_s[NTRK] __attribute__((section(".bss.tape")));
-static int32_t ott_log2(uint32_t p)                     /* log2 Q8 of p >= 1 (within ~0.1 dB) */
+static __attribute__((noinline)) int32_t ott_log2(uint32_t p)   /* log2 Q8 of p >= 1 (within ~0.1 dB) */
 {
     uint32_t e = 31u - (uint32_t)__builtin_clz(p | 1u), m = ((p << (31u - e)) >> 23) & 255u;
     return (int32_t)(e * 256u + m + ((m * (256u - m) * 89u) >> 16));
@@ -291,6 +335,13 @@ static __attribute__((noinline)) int32_t ott_lin(int32_t q)   /* 2^(q / 256), Q1
     int32_t f = q & 255, m = 4096 + ((f * (2689 + ((f * 1407) >> 8))) >> 8), i = q >> 8;
     return i >= 0 ? m << i : m >> -i;
 }
+static int32_t ot_w(int32_t d)                          /* DEPTH 0 .. 100 to its weight 0 .. 10000: squared to 70, then a
+                                                         * cubic (1 - (1 - u)^3 over 70 .. 100): 30 900, 60 3600, 70 4900,
+                                                         * 80 8489, 90 9849, 100 10000 */
+{
+    int32_t v = 100 - d;
+    return d <= 70 ? d * d : 10000 - ((v * v * v * 12379) >> 16);
+}
 static __attribute__((noinline)) void ott_block(uint32_t ti, int32_t *b, uint32_t n)   /* (ott_v within its ranges:
                                                          * the knobs', ott_put's) */
 {
@@ -298,43 +349,52 @@ static __attribute__((noinline)) void ott_block(uint32_t ti, int32_t *b, uint32_
     ott_t *s = &ott_s[ti];
     const int16_t *v = ott_v[ti];
     int32_t dep = v[OT_DEPTH], bal = v[OT_UPDN], tm = v[OT_TIME], uw = 64 + (bal < 0 ? bal : 0), dw = bal > 0 ? 63 - bal : 64;
-    int32_t g0[2], dg[2], pk[2] = {1, 1}, lp = s->lp, a = SVF_G[v[OT_XO] & 127];
+    int32_t g0[3], dg[3], pk[2] = {1, 1}, lp = s->lp, a = SVF_G[v[OT_XO] & 127], c;
     a = (a << 12) / (4096 + a);                         /* the one-pole's coefficient, g / (1 + g), Q12 */
-    dep = load_tight && load_avg_q8 > (OT_DEEP << 8) ? 0 : dep >> (load_tight != 0);
-    for (k = 0; k < 2u; k++) {                          /* the gains: from where the last block ended to the levels' */
-        int32_t L = s->lv[k], up = ((OT_TGT - L) * 243) >> 8, dn = ((L - OT_TDN) * 230) >> 8, g;
-        if (L < OT_FLOOR)
-            up -= (OT_FLOOR - L) * 3;
-        up = clamp(up, 0, OT_GUP);
-        dn = clamp(dn, 0, OT_GDN);
-        g = clamp((((up * uw - dn * dw) >> 6) * dep * dep * 105) >> 20, -OT_GDN, OT_GUP);   /* (DEPTH squared, / 10000) */
-        g0[k] = ott_lin(s->g[k]);
-        dg[k] = (ott_lin(L > 0 ? g : 0) - g0[k]) >> CTL_LOG2;
-        g0[k] -= 4096;
-        s->g[k] = (int16_t)(L > 0 ? g : 0);
+    dep = load_tight && load_avg_q8 > (OT_DEEP << 8) ? 0 : ot_w(dep) >> (load_tight != 0);
+    for (i = 0, c = lp; i < n; i++) {                   /* (V10.8.72) this block's bands' peaks first: a hit after quiet
+                                                         * not boosted by the quiet's gain (the split as below) */
+        int32_t x = clamp(b[i], -262144, 262143), h;
+        c += ((x - c) * a) >> 12;
+        h = x - c;
+        x = c < 0 ? -c : c;
+        pk[0] = x > pk[0] ? x : pk[0];
+        x = h < 0 ? -h : h;
+        pk[1] = x > pk[1] ? x : pk[1];
     }
-    if (dep | g0[0] | g0[1]) {
+    pk[0] = ott_log2((uint32_t)pk[0]);                  /* (now the peaks' log2) */
+    pk[1] = ott_log2((uint32_t)pk[1]);
+    for (k = 0; k < 3u; k++) {                          /* the gains: from where the last block ended to the levels' */
+        int32_t L = s->lv[k & 1u], up, dn, g, l = pk[k & 1u];
+        l = L > l ? L : l;                              /* (the band's level, or this block's peak over it) */
+        up = ((OT_TU - l) * 248) >> 8; dn = ((l - OT_TD) * 243) >> 8;
+        if (l < OT_FLOOR)
+            up -= (OT_FLOOR - l) * 2;
+        g = k < 2u ? (((clamp(up, 0, OT_GUP) * uw - clamp(dn, 0, OT_GDN) * dw) >> 6) * dep * 105) >> 20 : (OT_DRV * dep * 105) >> 20;
+        g = L > 0 ? g : 0;
+        g0[k] = ott_lin(s->g[k]);
+        dg[k] = ott_lin(g) - g0[k];
+        if (dg[k] < 0 && k < 2u)                        /* (down: at once, the hit in its first sample; up: ramped) */
+            g0[k] += dg[k], dg[k] = 0;
+        dg[k] >>= CTL_LOG2;
+        g0[k] -= 4096 * (k < 2u);
+        s->g[k] = (int16_t)g;
+    }
+    if (dep | g0[0] | g0[1] | (g0[2] - 4096)) {
         for (i = 0; i < n; i++) {
-            int32_t x = clamp(b[i], -262144, 262143), h, y;
+            int32_t x = clamp(b[i], -262144, 262143), h;
             lp += ((x - lp) * a) >> 12;
             h = x - lp;
-            x = lp < 0 ? -lp : lp;                      /* (the bands' peaks) */
-            pk[0] = x > pk[0] ? x : pk[0];
-            x = h < 0 ? -h : h;
-            pk[1] = x > pk[1] ? x : pk[1];
             g0[0] += dg[0];
             g0[1] += dg[1];
-            y = b[i] + ((((lp >> 2) * (g0[0] >> 3)) >> 7) + (((h >> 2) * (g0[1] >> 3)) >> 7));   /* (Q12 >> 3: x25 fits) */
-            x = y < 0 ? -y : y;
-            if (x > OT_KNEE) {                          /* the limiter */
-                x = OT_KNEE + ((x - OT_KNEE) >> 3);
-                x = x > 131071 ? 131071 : x;
-                y = y < 0 ? -x : x;
-            }
-            b[i] = y;
+            g0[2] += dg[2];
+            x = clamp(b[i] + ((((lp >> 2) * (g0[0] >> 5)) + ((h >> 2) * (g0[1] >> 5))) >> 5), -262144, 262143);   /* (+36 dB
+                                                         * in 32 bits) */
+            b[i] = softclip((x * (g0[2] >> 2)) >> 12) << 2;   /* (the drive, x1 .. x2.8, into the soft clip: Q12 >> 2, the
+                                                         * part's 2^17 its 2^15) */
         }
     }
-    if (!dep && !s->g[0] && !s->g[1]) {                 /* (eased, or DEPTH 0, back at unity: out until DEPTH again,
+    if (!dep && !s->g[0] && !s->g[1] && !s->g[2]) {     /* (eased, or DEPTH 0, back at unity: out until DEPTH again,
                                                          * from what it hears) */
         s->lp = 0;
         s->lv[0] = s->lv[1] = 0;
@@ -342,13 +402,13 @@ static __attribute__((noinline)) void ott_block(uint32_t ti, int32_t *b, uint32_
     }
     s->lp = lp;
     for (k = 0; k < 2u; k++) {                          /* the levels, a block's peak each, followed */
-        int32_t m = ott_log2((uint32_t)pk[k]), L = s->lv[k];
+        int32_t m = pk[k], L = s->lv[k];
         L = L <= 0 ? m : L + (((m - L) * ENV_EXP[m > L ? (tm > 50 ? tm - 50 : 0) : tm]) >> 16);
         s->lv[k] = (int16_t)(L < 1 ? 1 : L);
     }
 }
 /* (out of the RAM code's room: mix_part calls it only while DEPTH is up or its gains not yet back at 1) */
-static inline __attribute__((always_inline)) int ott_on(uint32_t ti) { return ott_v[ti][OT_DEPTH] || (ott_s[ti].g[0] | ott_s[ti].g[1]); }
+static inline __attribute__((always_inline)) int ott_on(uint32_t ti) { return ott_v[ti][OT_DEPTH] || (ott_s[ti].g[0] | ott_s[ti].g[1] | ott_s[ti].g[2]); }
 
 /* master: peak limiter in front of the soft clipper. Fast attack (~0.1 ms),
  * ~150 ms release, threshold where tanh is still nearly linear, so chords
@@ -841,6 +901,36 @@ static __attribute__((always_inline)) inline uint32_t div_of(uint32_t quarter, u
     return div < 6u ? quarter / DIV_DEN[div] : div < 10u ? quarter << (div - 5u) : quarter / DIV_DEN[div % 6u];
 }
 static __attribute__((noinline)) uint32_t div_samples(uint32_t div) { return div_of(beat_samples(), div); }
+/* (V10.8.72, JIANT BYTE's DIST_EQ, GPL: its formulas, which BYTE's formula machine runs, as fixed code with the same
+ * numbers) DIST TYPE 6 .. 11: y = f(I) a sample (dist_shape), I the part (Q16, 1.0 at -12 dBFS, held within +-2), A DIST
+ * (0 .. 1), p the song's beats (Q16, deq_beat; stopped, a clock of its own):
+ *   RING  I sin(ph(110 + 880 A))            STEPS floor(I N) / N, N 2 + 30 (1 - A)    XOR (int(128 I) ^ int(127 A)) / 128
+ *   WOB   I (1 - A (tri(2p) / 2 + .5))      SFOLD sin(I (1 + 12 A) / 4) (turns)       SAT sat(I (1 + 20 A)) (1 - A / 2)
+ * then BYTE's TONE stage (the two poles DIST's other types have, TONE moving them; track_dist) and DIST's blend; NOISE
+ * (dnz_v) moving the formula's input and the tone's corner, as BYTE's (its depth FM's NOISE's). (BYTE's GATE LPF LFO.F
+ * HPF RND, its filters and gates: not here, the flash's room; FM has its own.) Here once a block: the formula's constant
+ * (dist_shape's d), STEPS' 2^32 / N and SAT's 1 - A / 2 in dist_hold */
+static const uint8_t DQ_B[6] = {110, 32, 0, 0, 1, 1};   /* (the constant ((DQ_B << 16) + DQ_K A) >> DQ_S: RING's
+                                                         * Hz, STEPS' N (2 + 30 (1 - A), Q16), XOR's int(127 A), SFOLD's 1 + 12 A
+                                                         * (Q16, / 4), SAT's 1 + 20 A (Q16 >> 6)) */
+static const int16_t DQ_K[6] = {880, -30, 127, 0, 12, 20};
+static const uint8_t DQ_S[6] = {16, 0, 16, 0, 2, 6};
+static __attribute__((noinline)) int32_t deq_k(track_t *t, uint32_t f)
+{
+    int32_t A = clamp(t->p[P_DIST], 0, 127) * 516, p = (int32_t)((deq_beat << 1) & 0xFFFFu), c = (((int32_t)DQ_B[f] << 16) + DQ_K[f] * A) >> DQ_S[f];
+    t->dist_hold = (65536 - (A >> 1)) >> 1;             /* (SAT's 1 - A / 2, Q15) */
+    if (!f)
+        return c * 97391;                               /* (RING: its pitch, a turn 2^32 / FS) */
+    if (f == 1) {                                       /* (STEPS: N Q8, 2^32 / N) */
+        t->dist_hold = (int32_t)(0xFFFFFFFFu / (uint32_t)c);
+        return c >> 8;
+    }
+    if (f == 3) {                                       /* (WOB: 1 - A (tri(2p) / 2 + .5)) */
+        p = (p & 0x8000 ? 196608 - 4 * p : 4 * p - 65536) / 2 + 32768;
+        return 65536 - (((A >> 1) * (p >> 1)) >> 14);
+    }
+    return c;
+}
 
 #include "perform.c"                                 /* the FX hold layer's effects (the master) */
 static void seq_note_on(track_t *t, uint32_t note, uint32_t vel);   /* (0.6.72: seq.c, a note MIDI OUT ALL sends) */

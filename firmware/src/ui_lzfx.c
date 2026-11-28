@@ -212,7 +212,8 @@ static void fxg_dist(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t 
     char b[16];
     (void)w;
     fxg_curve(type, x, y, h, t->p[P_DIST], fxg_en() && h > 20 ? clamp(bg_energy(), 0, 256) : -1, 1);
-    hud_tag(x + h + 8, y + 1, N_DTYPE[type], song.sel % 6u >= 4u ? 0xFFFFu : 0x0000u, FXG_TC);
+    hud_tag(x + h + 8, y + 1, PN_AT(N_DTYPE, (uint32_t)t->p[P_DTYPE] % N_DTYPE_N), song.sel % 6u >= 4u ? 0xFFFFu : 0x0000u, FXG_TC);   /* (V10.8.72: a
+                                                         * formula its name, SOFT's curve) */
     str_cpy(b, "TONE ", sizeof b);
     fmt_int(b + 5, t->p[P_DTONE]);
     fxg_label(x + h + 8, y + 15, b, T_DIM, 0);

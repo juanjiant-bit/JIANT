@@ -71,7 +71,7 @@ No command changed; an editor that takes P_COUNT, G_COUNT and P_E0 from `INFO` k
 
 | id | label | values |
 | --- | --- | --- |
-| 91 | TYPE | DIST's type, enum: 0 SOFT (the drive as before), 1 HARD, 2 FOLD (wavefolder), 3 CRUSH (bits and a held sample), 4 RECT (full-wave rectifier, an octave up) |
+| 91 | TYPE | DIST's type, enum: 0 SOFT (the drive as before), 1 HARD, 2 FOLD (wavefolder), 3 CRUSH (bits and a held sample), 4 RECT (full-wave rectifier, an octave up), 5 AMP; (V10.8.72) JIANT BYTE's formulas: 6 RING, 7 STEPS, 8 XOR, 9 WOB, 10 SFOLD, 11 SAT (`DESC` sends the list, max 11) |
 | 92 | TONE | DIST's tone, −64..63 (fmt BIPCT): darker / brighter |
 | 93 | LEN | the modulation sequence's length, 1..16 steps |
 | 94 | DIV | its step rate, the `N_DIV` enum (default 1/16) |
@@ -1175,9 +1175,9 @@ not tell.
 A track's values that are not parameters (no `P_*` slot) have ids right after them, `P_COUNT` + k (P_COUNT from
 `INFO`: 123 today, so 123..126); firmware that has them sets bit 4 of the UI caps (`55 01 caps`, and `UI_STATE`'s
 caps). Today four, FX > OTT (V10.8.71, JIANT BYTE's two-band compressor), each track its own: k 0 DEPTH (`F_PCT`
-0..100, 0: off), 1 TIME (`F_TIME` 30..100, 72), 2 UP/DN (`F_BIPCT` -64..63, 0), 3 X-OVER (`F_CUTOFF` 15..100, 37).
-`TRACK_PARAM` track, id [, v14] reads or sets them on any track (clamped to the range; no automation, no push);
+0..100, 0: off), 1 TIME (`F_TIME` 30..100, 48; V10.8.71: 72), 2 UP/DN (`F_BIPCT` -64..63, 0), 3 X-OVER (`F_CUTOFF`
+15..100, 37). `TRACK_PARAM` track, id [, v14] reads or sets them on any track (clamped to the range; no automation, no push);
 `DESC` 0 id describes them (the selected track's value). `GET` / `SET`, `DUMP`, `TRACK_DUMP` and the pushes keep to
-the parameters. They are kept with the project (FUNC's `O` `T` block) and with a user preset. JIANT BYTE numbers them
+the parameters (a change on the device is not pushed: read them with `TRACK_PARAM`). They are kept with the project (FUNC's `O` `T` block) and with a user preset. JIANT BYTE numbers them
 0xD0..0xD3 in its own protocol; a SysEx data byte is 7 bits, and here 0x50..0x53 are parameters, so FM's are
 `P_COUNT` + k.

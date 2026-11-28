@@ -18,6 +18,13 @@ The same word means the same quality wherever it appears; the page it is on says
 | A knob turned, any page (V10.8.65) | the card lit, the footer the breadcrumb | the footer says the page with it a moment: "LIFE FILTER 40", "LFO RATE 1.24 HZ", "GLOBAL BPM 121" (the cards keep their short labels) |
 | Pages with no picture of their own (V10.8.65): GLOBAL, KEY SPLIT, KEY SPLIT 2, LEVEL, FX > PUNCH IN, SEQ > DRONE CLAY, CLAY MOD, CLAY RHYTHM, CLAY TIME | the small name in the footer only | the name **large** at the panel's top left (same place and size as LIFE's), the scope under it |
 
+## DIST TYPE's names (V10.8.72)
+
+DIST TYPE keeps its first six at their stored numbers: 0 SOFT, 1 HARD, 2 FOLD (FM's triangle wavefolder), 3 CRUSH,
+4 RECT, 5 AMP. JIANT BYTE's formula effects follow, 6 RING, 7 STEPS, 8 XOR, 9 WOB, 10 SFOLD, 11 SAT, with BYTE's
+names (BYTE's GATE, LPF, LFO.F, HPF and RND are not in FM: FM has its own gate and filters). SFOLD (a sine fold) is a different sound from FOLD, so the two names stay
+apart; SAT is BYTE's saturator (a tanh, its level made up), not SOFT's biased clip.
+
 ## Renamed (ambiguous, not a sound quality)
 
 | Old | New | Why |

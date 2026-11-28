@@ -31,7 +31,7 @@ int main(void)
     ui_power_on();
     {   /* (V10.8.40) MOOD MID: the pieces V10.8.39's, byte for byte (from power-on: the tracks' values and steps, the
          * song's, the kit; a checksum of 8 seeds in EXPLORE, RANDOM and HOUSE; V10.8.39's own, the same tool) */
-        static const uint32_t MID[3] = {0xce3b95dcu, 0x0cd64a96u, 0x3484efabu};   /* (V10.8.70 recorded again: JIANT BYTE's grich, the call and response and EXPLORE's cut back, HOUSE and METALCORE trimmed; V10.8.69: JIANT BYTE's song plans (gsong), its sections' timbre moving, gen_post without the call and response, the kits' punch back; V10.8.68: JIANT BYTE 09ec6b57 / 77f2b602's generator, the kits shorter and less driven, EXPLORE's field and voices; V10.8.51: a genre's headroom, GTRIM; V10.8.48: the envelopes by role, the filter types; V10.8.47: JAZZ's hats; V10.8.46 recorded again: a part never still; V10.8.45: the envelopes' rules; V10.8.42 too; V10.8.41: the generator rewritten genre by genre:
+        static const uint32_t MID[3] = {0xce3b95dcu, 0xc1183dd2u, 0x9d6d2e23u};   /* (V10.8.72 recorded again: GEN's OTT, its tracks' LEVEL taken back, five genres' trims; V10.8.70: JIANT BYTE's grich, the call and response and EXPLORE's cut back, HOUSE and METALCORE trimmed; V10.8.69: JIANT BYTE's song plans (gsong), its sections' timbre moving, gen_post without the call and response, the kits' punch back; V10.8.68: JIANT BYTE 09ec6b57 / 77f2b602's generator, the kits shorter and less driven, EXPLORE's field and voices; V10.8.51: a genre's headroom, GTRIM; V10.8.48: the envelopes by role, the filter types; V10.8.47: JAZZ's hats; V10.8.46 recorded again: a part never still; V10.8.45: the envelopes' rules; V10.8.42 too; V10.8.41: the generator rewritten genre by genre:
          * this version's own pieces, recorded with GEN_MID=1; a change to the generator records them again) */
         uint32_t md, hs = 0, r, i;
         for (r = 1; r <= NGENRE; r++) if (str_eq(GENRE[r - 1u].name, "HOUSE")) hs = r;
@@ -252,6 +252,46 @@ int main(void)
             bad += check("MOOD DANCE +25: every piece its drums, the kick on the bar's first and third beats (a half-time's, a break's: its one)", okh);
             bad += check("MOOD DANCE +50: a kick on every beat (a half-time's, a break's: the bar's one), heard", okd);
         }
+    }
+    {   /* (V10.8.72, checked: V10.8.68's message said CALM "longer sections, slower RADIO"; its code is BYTE 09ec6b57's,
+         * the owner there: "CALM's pieces too long, each part drags") the direction pinned: MOOD CALM -50's SONG and
+         * PARTS rows fewer bars than MID's (the same seeds), DANCE's not fewer; a CALM radio's loop half a MID one's */
+        uint32_t f, md, r, j, bm[3], hs = 0;
+        int okr = 1;
+        for (r = 1; r <= NGENRE; r++) if (str_eq(GENRE[r - 1u].name, "HOUSE")) hs = r;
+        for (f = 1; f <= 2u; f++) {
+            static const int8_t MD[3] = {0, -50, 50};
+            for (md = 0; md < 3u; md++) {
+                bm[md] = 0;
+                for (r = 0; r < 12u; r++) {
+                    gp.genre = (uint8_t)hs; gp.form = (uint8_t)f; gp.seed = (uint16_t)(100u + r * 37u); grd.on = 0; grd.mood = MD[md];
+                    gen_make();
+                    for (j = 0; j < chain_config.count; j++) bm[md] += chain_config.row[j].bars;
+                }
+            }
+            printf("  rows' bars, HOUSE x 12, %s: MID %u, CALM %u, DANCE %u\n", f == 1u ? "PARTS" : "SONG", bm[0], bm[1], bm[2]);
+            okr &= bm[1] * 10u <= bm[0] * 7u && bm[2] >= bm[0];
+        }
+        grd.mood = 0; gp.form = 0; gp.genre = 0;
+        bad += check("MOOD CALM -50: a piece's rows shorter than MID's (BYTE 09ec6b57, the owner's), DANCE's not", okr);
+    }
+    {   /* a CALM radio's loop: half a MID one's bars */
+        uint32_t n, r0, nm[2], md;
+        for (md = 0; md < 2u; md++) {
+            gp.genre = 1; gp.form = 0; grd.mood = (int8_t)(md ? -50 : 0); grd.on = 0;
+            gen_press(); frames(64);
+            grd.on = 1; transport_req = 1; blk();
+            r0 = grd.rn;
+            for (n = 0; n < 80u && grd.rn == r0; n++) bars(1);
+            r0 = grd.rn;
+            for (n = 0; n < 80u && grd.rn == r0; n++) bars(1);
+            nm[md] = n;
+            transport_req = 2; blk();
+            grd.on = 0; grd.rn = 0;
+        }
+        grd.mood = 0; gp.genre = 0;
+        printf("  the radio's loop: MID %u bars, CALM %u\n", nm[0], nm[1]);
+        bad += check("MOOD CALM: the radio's loop half as long as MID's", nm[1] * 2u <= nm[0] + 1u && nm[1] * 2u + 2u >= nm[0]);
     }
     printf(bad ? "gen-entry: %d FAILED\n" : "gen-entry: all ok\n", bad);
     return bad != 0;

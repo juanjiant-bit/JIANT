@@ -1925,7 +1925,7 @@ function makeMockDevice(opt = {}) {
   for (let op = 0; op < 4; op++) TP.push(D("ATK", F.TIME, 0, 127, 0), D("DEC", F.TIME, 0, 127, 0), D("SUS", F.PCT, 0, 127, 127), D("REL", F.TIME, 0, 127, 0), D("LEVEL", F.PCT, 0, 127, 127));
   TP.push(D("ROTATE", F.INT, -32, 32, 0), D("PITCH", F.SEMI, -24, 24, 0));   /* 81, 82: STRETCH's ROTATE, TRACK's PITCH (JIANT; SHIFT until 0.6.91; the chord keys before) */
   for (const l of ["KICK", "SNARE", "CLAP", "HH CL", "HH OP", "TOM", "RIM", "BELL"]) TP.push(D(l, F.PCT, 0, 127, 127));   /* 83..90: DRUM lane levels */
-  TP.push(E("TYPE", ["SOFT", "HARD", "FOLD", "CRUSH", "RECT", "AMP"], 0), D("TONE", F.BIPCT, -64, 63, 0),   /* 91, 92: DIST (JIANT, FUNB) */
+  TP.push(E("TYPE", ["SOFT", "HARD", "FOLD", "CRUSH", "RECT", "AMP", "RING", "STEPS", "XOR", "WOB", "SFOLD", "SAT"], 0), D("TONE", F.BIPCT, -64, 63, 0),   /* 91, 92: DIST (JIANT, FUNB; V10.8.72: BYTE's formulas) */
     D("LEN", F.STEPS, 1, 16, 16), E("DIV", NDIV, 2), D("SLEW", F.PCT, 0, 127, 0));   /* 93..95: the modulation sequence */
   for (let k = 0; k < 16; k++) TP.push(D("LEVEL", F.PCT, 0, 127, 0));                     /* 96..111: its levels */
   TP.push(E("TYPE", ["LP", "HP", "BP", "COMB", "COMB-", "MS20", "LP24"], 0),                                   /* 112: the FILTER's type (JIANT 0.5) */

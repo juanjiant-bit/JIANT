@@ -60,7 +60,7 @@ static const char DRW_REG[16][DRW_NP + 1] = {
     "858000000", /* BASS   for the left hand */
     "888888888", /* FULL   everything */
 };
-static const char *const N_DRW_PERC[] = {"OFF", "2ND", "3RD", "2SOFT", "3SOFT", "2SLOW", "3SLOW"};
+/* (V10.8.72) N_DRW_PERC: core.h PNE (packed, str_nth) */
 static const char *const N_DRW_ROTR[] = {"OFF", "SLOW", "FAST"};
 
 /* partial frequency / note frequency, as a shift-and-add of the note's increment; FOLD_LIM:

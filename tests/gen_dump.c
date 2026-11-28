@@ -130,7 +130,7 @@ int main(int argc, char **argv)
         printf("\n=== %s  seed %u  energy %u  form %s  %d BPM  swing %d\n", gs.g->name, seed, energy, form == 2u ? "SONG" : form ? "PARTS" : "LOOP",
                song.g[G_BPM], song.g[G_SWING]);
         printf("SCALE page: ROOT %s  SCALE %s  QUANT %s   CHORD page (T%u): %s, VOICING %s, STRUM %d\n", NN[trk[0].p[P_ROOT] % 12],
-               N_SCALE[trk[0].p[P_SCALE]], QN[trk[0].p[P_QUANT] & 3], pd + 1u, pd < NTRK ? CDN[trk[pd].p[P_CHRD] % 12] : "-",
+               PN_AT(N_SCALE, trk[0].p[P_SCALE]), QN[trk[0].p[P_QUANT] & 3], pd + 1u, pd < NTRK ? CDN[trk[pd].p[P_CHRD] % 12] : "-",
                pd < NTRK && trk[pd].p[P_CVOI] == 1 ? "LEAD" : "CLOSE", pd < NTRK ? trk[pd].p[P_CSTR] : 0);
         dump_piece();
         if (live.mode && chain_config.count) {         /* the sections GEN stored (A is the piece above) */
@@ -158,7 +158,7 @@ int main(int argc, char **argv)
                 uint32_t m = 0, mel = 0;
                 if (!((dice_secs >> s) & 1u) || !proj_import(&p, &proj_slot[s], sizeof(project_store_t))) continue;
                 for (k = 0; k < NTRK; k++) if (gs.role[k] != RL_DRUM) { mel = k; break; }
-                printf("--- section %c: ROOT %s SCALE %s; muted:", 'A' + s, NN[p.t[mel].p[P_ROOT] % 12], N_SCALE[p.t[mel].p[P_SCALE]]);
+                printf("--- section %c: ROOT %s SCALE %s; muted:", 'A' + s, NN[p.t[mel].p[P_ROOT] % 12], PN_AT(N_SCALE, p.t[mel].p[P_SCALE]));
                 dump_lift = ((p.t[mel].p[P_ROOT] - gs.root) % 12 + 12) % 12;
                 for (k = 0; k < NTRK; k++) if (p.t[k].p[P_MUTE]) { printf(" T%u", k + 1u); m++; }
                 printf(m ? "\n" : " none\n");

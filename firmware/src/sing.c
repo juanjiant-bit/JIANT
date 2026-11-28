@@ -54,18 +54,17 @@ _Static_assert(PH_COUNT == 46, "sing.c PHON[]: one row a phoneme, in gen_lyrics.
 
 #define LYR_LEN 64u              /* a track's lyric: 63 characters and the 0 */
 enum { LG_OFF, LG_ES, LG_EN, LG_JA, LG_RU, LG_DE, LG_FR, LG_ZH, LG_PT, LG_GN, LG_N };
-static const char *const N_LANG[] = {"OFF", "ES", "EN", "JA", "RU", "DE", "FR", "ZH", "PT", "GN"};
+/* (V10.8.72) N_LANG: core.h PNE (packed, str_nth) */
 #define LYR_NW 16u               /* W1..W16: words */
 #define LYR_NS 8u                /* S1..S8: scat */
 #define LYR_FIXED (1u + LYR_NW + LYR_NS)
 #define LYR_N (LYR_FIXED + 1u)
-static const char *const N_LYRIC[LYR_N] = {"TEXT", "W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11",
-                                           "W12", "W13", "W14", "W15", "W16", "S1", "S2", "S3", "S4", "S5", "S6", "S7",
-                                           "S8", "TEXT FIXED"};
-static const char *const N_THEME[] = {"LOVE", "NIGHT", "SEA", "SKY", "ANY", "ROAD", "DREAM", "FIRE", 0};   /* 16 a name */
+/* (V10.8.72) N_LYRIC: core.h PNE (packed, str_nth) */
+_Static_assert(N_LYRIC_N == LYR_N, "a LYRIC name per value");
+/* (V10.8.72) N_THEME: core.h PNE (packed, str_nth) */   /* 16 a name */
 #define TH_ANY 4u
 #define TH_FN 8u
-static const char *const N_LOOP[] = {"FREE", "1", "2", "4", "8", 0};
+/* (V10.8.72) N_LOOP: core.h PNE (packed, str_nth) */
 static const uint8_t LOOP_N[5] = {0, 1, 2, 4, 8};
 
 /* the track's lyric text (TEXT): ASCII, 0-ended. Main loop writes (lyr_set), the audio (either core) reads at syllable

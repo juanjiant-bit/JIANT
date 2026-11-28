@@ -53,6 +53,7 @@ static __attribute__((noinline)) void clay_tick(uint32_t n)
         b = ((clk_n & 0x3FFFFu) << 14) + (clk_pos << 14) / (s16 ? s16 : 1u);
     else
         b = clay_free += (n << 16) / (bps | 1u);
+    deq_beat = b;                                       /* (V10.8.72) DIST's formula types' p (fx.c dist_eq) */
     for (tr = 0; tr < NTRK; tr++) {
         track_t *t = &trk[tr];
         const clay_t *c = clay[tr];

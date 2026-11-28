@@ -4288,9 +4288,9 @@ static int test_layer(void)
     ok = cur_page()->fam == FAM_FX && cur_page()->id[0] == G_RTYPE && cur_page()->id[1] == G_RSIZE &&
          cur_page()->id[2] == G_RDAMP && song.g[G_RTYPE] == 0;
     turn(EN_K1, 1);
-    ok &= song.g[G_RTYPE] == 1 && str_eq(GP[G_RTYPE].names[song.g[G_RTYPE]], "SPRING");
+    ok &= song.g[G_RTYPE] == 1 && str_eq(desc_nm(&GP[G_RTYPE], song.g[G_RTYPE]), "SPRING");
     turn(EN_K1, 5);                                  /* (JIANT 0.5: SHIMR RESO CLOUD after it) */
-    ok &= song.g[G_RTYPE] == 4 && str_eq(GP[G_RTYPE].names[4], "CLOUD");
+    ok &= song.g[G_RTYPE] == 4 && str_eq(desc_nm(&GP[G_RTYPE], 4), "CLOUD");
     song.playing = 0;
     project_save(2);
     turn(EN_K1, -1);

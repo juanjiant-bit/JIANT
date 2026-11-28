@@ -219,12 +219,12 @@ static void graph_sing(const track_t *t)
         cv_text_in(PANEL_X0, 44, PANEL_W, &AF_X, "LANG OFF", T_MID, bg);
         return;
     }
-    str_cpy(b, N_LANG[lang], sizeof b);
+    str_cpy(b, PN_AT(N_LANG, lang), sizeof b);
     str_cat(b, " \xB7 ", 4);
-    str_cat(b, lyr == 0u && !lyr_get((uint32_t)(t - trk))[0] ? "W1" : N_LYRIC[lyr], 8);
+    str_cat(b, lyr == 0u && !lyr_get((uint32_t)(t - trk))[0] ? "W1" : PN_AT(N_LYRIC, lyr), 8);
     if (lyr <= LYR_NW && (lyr || !lyr_get((uint32_t)(t - trk))[0])) {
         str_cat(b, " \xB7 ", 4);
-        str_cat(b, N_THEME[(uint32_t)clamp(t->p[P_E1], 0, 127) >> 4], 8);
+        str_cat(b, PN_AT(N_THEME, (uint32_t)clamp(t->p[P_E1], 0, 127) >> 4), 8);
     }
     cv_clip_text(PANEL_X0, 6 - AF_X_CAP_Y, &AF_X, b, T_TEXT, bg, lw - 30);   /* the source */
     fmt_int(b, s->nsy);
@@ -1075,7 +1075,7 @@ static void page_title(char *ti)
     if (roll_view(pg) && !drum_track(t)) {          /* the piano roll: its tinted rows' scale ("C MIN") */
         str_cpy(ti, NOTE_NM((uint32_t)t->p[P_ROOT] % 12u), 4);
         str_cat(ti, " ", 4);
-        str_cat(ti, N_SCALE[clamp(t->p[P_SCALE], 0, (int32_t)(sizeof N_SCALE / sizeof N_SCALE[0]) - 1)], 8);
+        str_cat(ti, PN_AT(N_SCALE, clamp(t->p[P_SCALE], 0, (int32_t)N_SCALE_N - 1)), 8);
     }
 }
 /* the strip's title: L centred (M when L lacks a glyph or is too wide) */

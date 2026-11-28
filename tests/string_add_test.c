@@ -198,7 +198,7 @@ static void string_tune(void)
             if (fabs(1200 * log2(f / w)) > fabs(worst)) { worst = 1200 * log2(f / w); wn = nt; wm = m; }
         }
     snprintf(what, sizeof what, "STRING in tune, every EXCITE, C1 .. C6 (decimated loops too): worst %+.1f cents (%s, key %u)",
-             worst, N_STR_EXC[wm], wn);
+             worst, PN_AT(N_STR_EXC, wm), wn);
     check(what, fabs(worst) < 12);
 }
 /* the time the RMS (20 ms frames) takes to fall 60 dB below its first frames' */

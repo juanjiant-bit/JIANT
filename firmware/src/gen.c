@@ -2026,7 +2026,8 @@ BTAPP_FN static void gmix_more(track_t *t, uint32_t r)   /* (the Bluetooth segme
  * under -1 dBFS (were up to +13 dBFS, the leveler at its floor and the limiter taking the rest: the distortion); the
  * LEVELER (fx.c lev_block) brings the whole back to its loudness. The last EXPLORE's (V10.8.69: HARD BASS and KRAUT 1 dB more, the kits' punch back: their DANCE pieces -0.1 and -0.6 dBFS) */
 static const uint8_t GTRIM[] BTAPP_RO = {29, 29, 28, 21, 21, 31, 29, 14, 21, 20, 24, 19, 16, 12, 15, 19, 16, 26, 20, 19, 12, 18,
-                                         31, 24, 21, 16, 24, 17, 16, 21};   /* (V10.8.70: HOUSE 0.5 dB, METALCORE 1 dB more: grich's throws) */
+                                         31, 24, 21, 16, 24, 17, 16, 21};   /* (V10.8.70: HOUSE 0.5 dB, METALCORE 1 dB more: grich's throws; V10.8.72: GEN's
+                                         * OTT under -1 dBFS with these, its tracks' LEVEL taken back: gen_ott) */
 _Static_assert(sizeof GTRIM == NGENRE + 1u, "GTRIM: a genre each, EXPLORE last");
 static __attribute__((noinline)) void gen_mix(track_t *t, uint32_t r)
 {
@@ -2174,6 +2175,53 @@ BTAPP_FN static void gen_fxs(track_t *t, uint32_t r)
     if ((s == FXS_FUZZ || s == FXS_WARM) && (r == RL_PAD || r == RL_ARP || r == RL_TEX))
         t->p[P_CHOR] = (int16_t)(s == FXS_FUZZ ? grr(50, 90) : grr(25, 50));
     gfxs_own(t, r, s);
+}
+
+/* (V10.8.72, the owner: "el OTT en el generador para los géneros más electrónicos") FX > OTT (params.c ott_v) on the
+ * parts it helps in the electronic genres (the club's, techno's, the bass music's, the electro and the breaks): the
+ * drums and the bass at DEPTH 40 .. 60 (GOTT: house's and minimal's 40, dubstep's, hard bass's and phonk's 60), and
+ * where the genre takes it a throw in two (the seed's) the lead, or the texture's FX, hard: 60 .. 78. The acoustic and
+ * organic genres (cumbia, jazz, the IDM's ambient and weird, kraut, neo classic, dream pop, shoegaze, metalcore),
+ * HIP HOP's and TECHNO ROCK's organic throws (boom bap, lofi, rock), EXPLORE, MOOD CALM and the pads: none. DANCE a
+ * little deeper. No draw from the piece's streams (every other choice as it was). GOR a role's TIME, UP/DN, X-OVER
+ * and its LEVEL taken back for the drive (the depth squared): the drums the fastest (the pump), a little less
+ * upward, the bass split low (its sub whole), the lead's high. Three tracks at most. Every other track's OTT off
+ * (RESOUND: the tracks it gives sounds) */
+#define GOT(lv, d, b, l) (uint8_t)((lv) | (d) << 4 | (b) << 5 | (l) << 6)
+static const uint8_t GOTT[NGENRE + 1u] BTAPP_RO = {
+    GOT(0, 0, 1, 0) | 128u, GOT(7, 1, 1, 1), GOT(10, 1, 1, 1),   /* MINIMAL TECHNO (its sub alone, 1 dB up: 128) HARD
+                                                         * TECHNO HARD BASS (DEPTH 40 + 2 lv) */
+    GOT(0, 1, 1, 1), GOT(0, 1, 1, 0), GOT(2, 1, 1, 1), GOT(2, 1, 0, 0),   /* HOUSE DEEP HOUSE TECH HOUSE TRIBAL */
+    0, GOT(2, 1, 1, 0), GOT(5, 1, 1, 1),   /* CUMBIA REGGAETON DEMBOW */
+    GOT(5, 1, 1, 1), GOT(5, 1, 1, 1), GOT(4, 1, 1, 1),   /* ELECTRO BREAKBEAT DRUM & BASS */
+    GOT(2, 1, 0, 1), 0, 0, 0, GOT(7, 1, 1, 1), 0,   /* IDM GLITCH IDM AMBIENT IDM WEIRD KRAUT EBM NEO CLASSIC */
+    GOT(5, 1, 1, 0), GOT(2, 1, 1, 1), 0,   /* ELECTRO METAL TECHNO ROCK (its synth 80s) DREAM POP */
+    GOT(10, 1, 1, 1), GOT(7, 1, 1, 1), 0, GOT(5, 1, 1, 1),   /* PHONK BAILE FUNK JAZZ HIP HOP (trap, drill, pluggnb) */
+    GOT(10, 1, 1, 1), 0, 0, 0,   /* DUBSTEP SHOEGAZE METALCORE EXPLORE */
+};
+_Static_assert(sizeof GOTT == NGENRE + 1u, "GOTT: a genre each, EXPLORE last");
+static const int8_t GOR[3][4] BTAPP_RO = {{-4, -16, 8, 12}, {4, 0, -11, 28}, {0, 0, 18, 40}};   /* (DRUM BASS LEAD or FX: TIME
+                                                         * 44 52 48, UP/DN, X-OVER 45 26 55, each less its default (ott_put);
+                                                         * LEVEL's) */
+static __attribute__((noinline)) void gen_ott(uint32_t m)   /* (m: the tracks it sets or clears) */
+{
+    uint32_t c = GOTT[gs.gi], i, k, r = gs.g->drum - DM_ROCK, x = gp.seed * 2654435761u;
+    int8_t q[OT_N];
+    if (grd.mood < -10 || (r < 5u && !(r & 1u))) c = 0;   /* (CALM; TECHNO ROCK's rock, HIP HOP's lofi and boom bap) */
+    for (k = 0; k < NTRK; k++)
+        if ((m >> k) & 1u) ott_put(k, 0);
+    for (i = 0; i < 3u; i++) {
+        r = i < 2u ? i : gs.act[RL_LEAD] && trk_gain[gs.trk_of[RL_LEAD]] < 6 ? RL_LEAD : RL_TEX;   /* (the lead, or the
+                                                         * texture, the FX: a riff's lead up front already, its GAIN) */
+        k = gs.trk_of[r];
+        if (!((c >> (4u + i)) & 1u) || k >= NTRK || !gs.act[r] || !((m >> k) & 1u) || (i == 2u && (x >> 31))) continue;
+        q[0] = (int8_t)(i < 2u ? 40 + (c & 15u) * 2 + (grd.mood > 10 ? 4 : 0) : 60 + ((x >> 8) & 15u) + ((x >> 12) & 3u));   /* (the
+                                                         * lead's, a throw in two: 60 .. 78) */
+        memcpy(q + 1, GOR[i], 3);
+        ott_put(k, q);
+        trk[k].p[P_LEVEL] = (int16_t)clamp(trk[k].p[P_LEVEL] - (c >> 7 ? -2 : q[0] * q[0] * GOR[i][3] >> 14), 1, 127);   /* (the
+                                                         * drive and the rise taken back, the depth squared; MINIMAL's sub 1 dB up, over the kick) */
+    }
 }
 
 /* ---------------------------------------------------------------------------------------- the form: parts --- */
@@ -3514,6 +3562,7 @@ static __attribute__((noinline)) void gen_make(void)
     gen_scale_page();
     gseed(GS_MIX);
     for (k = 0; k < NTRK; k++) { gen_mix(&trk[k], gs.role[k]); gen_fxs(&trk[k], gs.role[k]); gen_evolve(&trk[k], gs.role[k]); }   /* (V10.7.63: its FX) */
+    gen_ott(63u);                                       /* (V10.8.72) OTT on the electronic genres' drums, bass, lead */
     for (k = 0; k < NTRK && gx.on; k++)                 /* (0.8.6) EXPLORE: wider (V10.6n: no track's own swing: the pulse
                                                          * one) */
         if (gs.role[k] != RL_DRUM && gs.role[k] != RL_BASS) trk[k].p[P_PAN] = (int16_t)grr(-45, 45);
@@ -4052,8 +4101,9 @@ BTAPP_FN static void gen_rs_apply(void)
         }
     }
     gseed(GS_MIX);
-    for (k = 0; k < NTRK && k < trk_live; k++)
-        if (rs_role[k] < RL_N) { gen_mix(&trk[k], rs_role[k]); gen_fxs(&trk[k], rs_role[k]); gen_evolve(&trk[k], rs_role[k]); }
+    for (n = 0, k = 0; k < NTRK && k < trk_live; k++)
+        if (rs_role[k] < RL_N) { gen_mix(&trk[k], rs_role[k]); gen_fxs(&trk[k], rs_role[k]); gen_evolve(&trk[k], rs_role[k]); n |= 1u << k; }
+    gen_ott(n);                                         /* (V10.8.72) the genre's OTT on the tracks it resounds, or none */
     gp = save.p; gs = save.s; gmut = save.g; gx = save.x; gq = save.q;
 }
 static void rs_banner(void) { char b[8]; fmt_int(b, (int32_t)rs_seed); ui_say("RESOUND #", b); ui.force = 1; }

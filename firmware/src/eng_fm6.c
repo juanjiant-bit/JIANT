@@ -485,14 +485,9 @@ static void fm6_render(track_t *t, voice_t *v, int32_t *out, uint32_t len, const
 }
 
 /* --------------------------------------------------------- the engine --- */
-static const char *const N_FM6_ALG[] = {"PAT", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13",
-                                        "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25",
-                                        "26", "27", "28", "29", "30", "31", "32", 0};
-static const char *const N_FM6_PATCH[] = {"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "OWN",
-                                          "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10", "B11", "B12",
-                                          "B13", "B14", "B15", "B16", "B17", "B18", "B19", "B20", "B21", "B22", "B23",
-                                          "B24", "B25", "B26", "B27", "B28", "B29", "B30", "B31", "B32", 0};
-_Static_assert(NELEM(N_FM6_PATCH) == FM6_OWN + FM6_NBANK + 2u, "a SLOT name per value");
+/* (V10.8.72) N_FM6_ALG: core.h PNE (packed, str_nth) */
+/* (V10.8.72) N_FM6_PATCH: core.h PNE (packed, str_nth) */
+_Static_assert(N_FM6_PATCH_N == FM6_OWN + FM6_NBANK + 1u, "a SLOT name per value");
 
 /* {ALG, FB, MLVL, MRAT, MEG, VMOD, DTUN, SLOT}: SLOT the factory patch F1..F8 (fm6_track_loaded), the macros bend it.
  * (V10.6i) each with its movement (MODS). On FM6 the track's ADSR moves the carriers relative to the patch (0 0 127 0:

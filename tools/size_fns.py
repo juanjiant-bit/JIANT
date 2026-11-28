@@ -60,6 +60,7 @@ def definitions(text):
     names = []
     text = re.sub(r"/\*.*?\*/|//[^\n]*", " ", text, flags=re.S)        # comments (none hold code)
     text = re.sub(r"\b__attribute__\s*\(\((?:[^()]|\([^()]*\))*\)\)", " ", text)   # (0.9.0) before the name too
+    text = re.sub(r"^(?:BTAPP_FN|UH_SEG)[ \t]+", "", text, flags=re.M)   # (V10.8.72) the Bluetooth segment's: a macro first
     for m in DEF.finditer(text):
         i, depth = m.end() - 1, 0
         while i < len(text):
@@ -182,7 +183,12 @@ def main(src, dst):
                   # .. a FILL applied, a CLAY strike, a track silenced, the punch-ins let go, a FUGUE head's next step,
                   # the stopped preview's end, a key let go, a punch key pressed: once an event
                   "fill_apply", "clay_strike", "midi_silence_track", "pfx_end", "fg_next", "preview_end", "key_off",
-                  "pk_press"}
+                  "pk_press",
+                  # (V10.8.72, flash for DIST's formulas and GEN's OTT) a punch key, the load's half-buffer count, a step's
+                  # held chord, ramp and JAM, LIVE's queue and ghost, a section's anchor, the scene's kit, a FUGUE head,
+                  # a grain born, SWARM's ear: once a key, a half buffer, a step or a block's control, never a sample
+                  "perf_kpress", "load_half", "uac_render_start", "hc_run", "ramp_run", "jam_step", "live_q", "live_adv",
+                  "seq_anchor", "scene_drum_tick", "fugue_tick", "cl_spawn", "sw_heard"}
     names, hit = ((size_names() | cold_ui) - isr) | input_size | event_size, set()
     def mark(m):
         if m.group(2) not in names:

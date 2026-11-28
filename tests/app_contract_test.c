@@ -341,6 +341,17 @@ static void requests(void)
         ok("GET 0 P_COUNT: no reply (GET / SET keep to the parameters)", !frame(C_GET, &n));
         ok("INFO's UI caps: bit 4, the special ids", (ed_ui_caps() & 16u) != 0);
         ott_v[2][OT_DEPTH] = 0; ott_v[2][OT_XO] = 37;
+        APP(5, 0, P_DTYPE);                              /* (V10.8.72) DIST TYPE: BYTE's formulas appended, 0 .. 5 kept */
+        q = frame(5, &n);
+        {
+            uint32_t j, at[14], k = 0;
+            for (j = 9; q && j < n && k < 14u; j++)      /* (the label, the unit, then the names, each 0-terminated) */
+                if (!q[j - 1]) at[k++] = j;
+            ok("DESC 0 TYPE (91): DIST's 12 types, SOFT .. AMP at 0 .. 5, RING STEPS XOR WOB SFOLD SAT 6 .. 11 (V10.8.72)",
+               q && v14_at(q + 3) == 0 && v14_at(q + 5) == 11 && k >= 13u && !strcmp((const char *)q + at[1], "SOFT") &&
+               !strcmp((const char *)q + at[4], "CRUSH") && !strcmp((const char *)q + at[6], "AMP") &&
+               !strcmp((const char *)q + at[7], "RING") && !strcmp((const char *)q + at[11], "SFOLD") && !strcmp((const char *)q + at[12], "SAT"));
+        }
     }
     /* unknown command: no reply */
     APP0(43);
